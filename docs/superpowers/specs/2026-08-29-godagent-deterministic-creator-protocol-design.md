@@ -106,9 +106,9 @@ Expressions remain presentation-only and content-addressed. A catalog row includ
 
 ### Presets
 
-A preset is a canonical sequence of ordinary creator choices. It has no direct compiler call. Loading a preset validates every choice against the same closed command schemas used by manual creation.
+A preset is a canonical sequence of ordinary creator choices. It has no direct compiler call. Loading a preset validates every choice against the same closed kind-and-payload contracts used to construct manual commands. A stored preset choice has no revision claim of its own.
 
-Applying a preset is defined as replaying its commands in canonical order. A preset and an equivalent manual command stream must produce the same draft digest, preview digest, candidate, expression, creation artifacts, and build ID.
+Applying a preset is defined as wrapping each stored choice in an ordinary command with the actual current draft digest, then replaying those commands in canonical order. A preset and an equivalent manual command stream must produce the same draft digest, preview digest, candidate, expression, creation artifacts, and build ID.
 
 ### Catalog identity
 
@@ -117,7 +117,7 @@ The catalog digest binds:
 - policy digest;
 - sorted module rows and source digests;
 - sorted expression rows and source digests;
-- sorted preset identities and command-stream digests;
+- sorted preset identities and choice-stream digests;
 - schema version.
 
 Host paths, timestamps, filesystem enumeration order, and formatting do not enter catalog identity.
@@ -133,7 +133,7 @@ A draft is an immutable value with:
 - monotonically increasing revision;
 - previous draft digest;
 - creator provenance;
-- blueprint identity and version;
+- blueprint identity and version when supplied;
 - selected expression reference;
 - exactly zero or one selected reference for each of the nine module kinds;
 - telos, constitution, Prompt OS, memory, and Realm sections when supplied;
@@ -147,6 +147,7 @@ The draft contains no runtime endpoint, provider credential, selected hosted mod
 Commands are closed, canonical values. Initial command kinds are:
 
 - `set-blueprint`;
+- `set-genesis`;
 - `set-expression`;
 - `select-module`;
 - `set-telos`;
