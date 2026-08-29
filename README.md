@@ -30,6 +30,7 @@ npm run build:genesis-fixture
 npm run build:networked-fixture
 npm run demo
 npm run creator:local -- <command> <options>
+npm run admit:local -- <options>
 npm run certify
 npm run certify:creation-forge
 npm run certify:networked-cortex
@@ -159,6 +160,25 @@ npm run creator:web -- `
 The server binds only `127.0.0.1`, generates a fresh launch token, serves no third-party assets, rejects junctioned workspace components, and accepts only fixed same-origin API routes. An optional `--port` may select a loopback port. The visual forge ends at the same verified pre-genesis build as the CLI and has no genesis, model, Realm, keel, evolution, Inspiration, or Soul capability.
 
 `npm run certify:visual-creator` creates the separate append-only `visual-creator-shell-v1` receipt. It runs the complete no-network suite, proves every local API route is token-gated, executes the pure web handler through composition preview, exact acknowledgement, and finalization in two isolated roots, compares the resulting transaction bytes, and pins all five preceding receipts. This certificate is deliberately narrower than product certification: hosted deployment, accounts, multi-user persistence, accessibility conformance, localization, analytics, recommendation quality, genesis, models, Realm action, keel continuity, evolution, Inspiration, Lunari integration, and Soul activation remain excluded.
+
+### Local creation admission
+
+The local admission shell connects one verified creator build to the already certified foundry and transactional-genesis boundaries. It independently pins the creation policy and build ID, snapshots the exact creation, Prompt OS, and Realm inputs, requires the Realm capability set to equal the genome requirement set, compiles a verified distribution, and admits one isolated local identity beneath a dedicated workspace.
+
+```powershell
+npm run admit:local -- `
+  --creation-dir C:\path\to\reviewed-creation-output `
+  --policy-digest <trusted-creation-policy-sha256> `
+  --expected-creation-build-id <reviewed-build-sha256> `
+  --prompt-os-artifact C:\path\to\prompt-os-artifact.md `
+  --realm-contract C:\path\to\realm-contract.json `
+  --workspace C:\path\to\one-empty-agent-workspace `
+  --instance-id agent-one `
+  --creator creator:dom `
+  --checkpoint-purpose "continue the declared work with Soul dormant"
+```
+
+The workspace is bound to that exact admission. An exact retry resumes safely; changed creation, Prompt OS, Realm, identity, creator, or purpose is refused. Success returns only the creation and distribution build IDs, genesis and keel IDs, and receipt digest. It does not create or start a runnable vessel, call a model, invoke a Realm hand, load host authority, evolve the agent, activate Inspiration, integrate Lunari, or activate Soul.
 
 ## Networked cortex host
 

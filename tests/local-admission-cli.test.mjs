@@ -73,8 +73,11 @@ test('local admission CLI emits the service success value once as canonical json
   const serviceResult = Object.freeze({
     schemaVersion: 1,
     status: 'admitted',
-    admissionId: digest('c'),
-    instanceId: 'local-instance-7',
+    creationBuildId: digest('c'),
+    distributionBuildId: digest('d'),
+    genesisId: digest('e'),
+    keelId: `keel-${digest('f')}`,
+    receiptDigest: digest('1'),
   });
   let received;
   const exitCode = await runLocalAdmissionCli({
@@ -135,6 +138,21 @@ test('local admission CLI emits closed failures without rejected values', async 
     code: 'option-unexpected',
   })}\n`);
   assert.doesNotMatch(stream.read().stderr, /service-rejection-canary/);
+
+  const projectionStream = capture();
+  const projectionCode = await runLocalAdmissionCli({
+    argv: [...valid],
+    ...projectionStream.io,
+    service: async () => ({ ...serviceResult, secret: 'projection-canary' }),
+  });
+  assert.equal(projectionCode, 1);
+  assert.equal(projectionStream.read().stdout, '');
+  assert.equal(projectionStream.read().stderr, `${canonicalJson({
+    schemaVersion: 1,
+    status: 'failed',
+    code: 'internal-failure',
+  })}\n`);
+  assert.doesNotMatch(projectionStream.read().stderr, /projection-canary/);
 });
 
 test('direct local admission process rejects malformed input without loading admission work', async () => {

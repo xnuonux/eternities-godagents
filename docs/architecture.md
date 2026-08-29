@@ -27,6 +27,7 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 | creator protocol | exposes a headless catalog, immutable commands, preset replay, pure preview, review sealing, and reviewed finalization through the existing creation compiler |
 | local creator shell | maps strict local operator arguments to bounded catalog, preset preview, and explicitly digest-approved finalization output |
 | visual creator shell | presents fixed presets and exact review evidence over a token-gated loopback boundary, then confines approved finalization below one configured workspace |
+| local admission shell | snapshots one verified creation and compatible local distribution, then composes transactional genesis beneath one exact-bound workspace without starting runtime execution |
 
 ## Phase 1 creation boundary
 
@@ -69,6 +70,12 @@ Modular composition treats a validated preset as a sealed foundation rather than
 The visual certificate is append-only and separate from the immutable Phase 3 protocol receipt. It proves the local shell as a deterministic transport and review client: loopback binding, per-launch token enforcement across every fixed API route, operator-workflow parity, exactly nine kind-matched module selections plus one expression, one-use acknowledgement of the exact ready preview, workspace and junction confinement, fixed self-contained assets, closed errors, and two byte-identical pure-handler finalizations of the certified Aether build.
 
 The certificate does not elevate the browser into an authority boundary. It does not certify hosted deployment, accounts, multi-user persistence, accessibility conformance, localization, analytics, recommendation quality, genesis admission, model routing, Realm action, keel continuity, governed evolution, Inspiration, Lunari integration, or Soul activation. Those require independent designs and receipts.
+
+## Local creation admission boundary
+
+The local admission shell is the first operator-facing composition of the frozen creation, foundry, and transactional-genesis layers. It verifies and snapshots a reviewed creation build plus exact Prompt OS and Realm inputs before creating a dedicated workspace. The verified genome must require exactly the capability set supplied by the Realm contract. A canonical binding then owns the immutable creation and distribution snapshots, transaction, journal, and local keel paths beneath one workspace.
+
+Only an exact retry may reuse that workspace. Transactional genesis retains its crash-safe recovery and independent receipt verification. The shell returns a bounded admission projection but does not construct or start a persistent vessel, load runtime host policy, contact a model, invoke a Realm hand, lift frozen evolution, activate Inspiration, integrate Lunari, or activate Soul.
 
 ## Phase 2 transactional genesis boundary
 
