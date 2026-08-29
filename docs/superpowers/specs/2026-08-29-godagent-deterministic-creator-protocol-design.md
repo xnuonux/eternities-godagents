@@ -204,7 +204,7 @@ Finalization requires:
 - output directories that contain no unexpected entries;
 - the independently supplied policy digest pin.
 
-The finalizer replays preview from source, compares every digest, writes canonical `creation-candidate.json` and `expression-overlay.json` inputs to a transaction-owned source directory, and invokes `compileCreation()` with the original validated module library and policy pin. It then runs `verifyCreationBuild()` and returns its frozen manifest.
+The finalizer replays preview from source, compares every digest, captures the reviewed policy and selected modules from the catalog-bound source loader, and then revalidates source freshness. It writes canonical candidate, expression, policy, and selected-module snapshots to a transaction-owned source directory and invokes `compileCreation()` only against that immutable snapshot and the independent policy pin. Live library files cannot change the compiler inputs after freshness verification. It then runs `verifyCreationBuild()`, compares the compiled module rows and genome digest with the reviewed sources, and returns its frozen manifest.
 
 If the catalog, draft, policy, module bytes, expression bytes, reviewed preview, or output contents changed, finalization fails before claiming completion. Failed finalization leaves no accepted review seal and cannot call transactional genesis.
 
@@ -232,6 +232,7 @@ The first slice does not automatically call Phase 2 genesis. This keeps creation
 - incompatible complete drafts preview as blocked with closed issue codes;
 - preset/manual divergence fails parity certification;
 - changed reviewed state fails finalization;
+- source changes after freshness verification cannot enter the immutable finalized snapshot;
 - unexpected source or output entries fail closed;
 - compiler or verifier rejection remains authoritative;
 - no failure path creates a vessel, keel, evolution record, or Soul state.

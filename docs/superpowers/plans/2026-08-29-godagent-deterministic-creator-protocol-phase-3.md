@@ -312,7 +312,7 @@ git commit -m "feat: preview creator drafts through one command path"
 
 **Interfaces:**
 - Consumes: `previewCreatorDraft`, `compileCreation`, `verifyCreationBuild`, `canonicalJson`, `sha256Value`
-- Produces: `buildCreatorReviewSeal({ catalogDigest, draftDigest, previewDigest })`, `finalizeCreatorDraft({ draft, catalog, reviewSeal, sourceDirectory, outputDirectory, policyPath, expectedPolicyDigest, moduleDirectory, sourceLoader })`
+- Produces: `buildCreatorReviewSeal({ catalogDigest, draftDigest, previewDigest })`, `finalizeCreatorDraft({ draft, catalog, reviewSeal, sourceDirectory, outputDirectory, expectedPolicyDigest, sourceLoader })`
 
 - [ ] **Step 1: Write failing review-seal and finalization tests**
 
@@ -344,7 +344,9 @@ The schema requires lowercase 64-character digests and no unknown fields.
 
 - [ ] **Step 4: Implement fail-before-write finalization**
 
-Recompute preview first, verify the review seal, verify the catalog's policy digest equals the independent pin, and confirm both target directories are absent or empty before creating either. Materialize canonical candidate and expression inputs, call `compileCreation` with the exact original module directory and policy pin, call `verifyCreationBuild`, compare manifest genome digest to the ready preview, and return a frozen result containing only the seal, paths, and verified manifest.
+Recompute preview first, verify the review seal, verify the catalog's policy digest equals the independent pin, and confirm both target directories are absent or empty before creating either. Capture the reviewed policy and selected modules from the catalog-bound source loader before its final freshness check. Materialize canonical candidate, expression, policy, and selected-module inputs into a transaction-owned immutable snapshot. Call `compileCreation` only against that snapshot and the policy pin, call `verifyCreationBuild`, compare the compiled module rows and genome digest to the reviewed sources, and return a frozen result containing only the seal, paths, and verified manifest.
+
+Add a deterministic race regression whose freshness verifier mutates a live non-genome module surface after validation. The finalized build must still contain the reviewed module bytes and preserve the reviewed build identity.
 
 If a post-write compiler failure occurs, preserve the transaction-owned source and output directories as explicit failed evidence; never report success and never invoke genesis.
 

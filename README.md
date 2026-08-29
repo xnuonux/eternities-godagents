@@ -97,7 +97,7 @@ validated catalog
   -> existing Phase 1 creation compiler and verifier
 ```
 
-Finalization materializes only reviewed pre-genesis inputs and a verified creation build. It does not admit genesis, instantiate a vessel, bind a personal keel, call a model, grant runtime authority, or activate Soul. The creator draft fixes evolution to `frozen-v0` and the Soul port to `dormant`; catalog and presentation data cannot change those states.
+Finalization materializes only reviewed pre-genesis inputs and a verified creation build. It captures policy and selected-module bytes from the reviewed catalog, rechecks live source freshness, and compiles only from the transaction-owned immutable snapshot, closing post-review source races. It does not admit genesis, instantiate a vessel, bind a personal keel, call a model, grant runtime authority, or activate Soul. The creator draft fixes evolution to `frozen-v0` and the Soul port to `dormant`; catalog and presentation data cannot change those states.
 
 `npm run build:creator-fixture` rebuilds two reviewed presets through isolated finalization roots and prints their catalog, draft, preview, parity, and creation-build digests. `npm run certify:creator-protocol` requires a clean source commit, runs the complete suite under the network guard, compares two byte-identical fixture roots, verifies all historical receipts, and writes `receipts/creator-protocol-phase3-certification.json` for only `GC-001` through `GC-008`.
 

@@ -10,6 +10,7 @@ import { previewCreatorDraft } from './preview.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
 const jsonBytes = (value) => `${canonicalJson(value)}\n`;
+const byteCompare = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 
 function sealProjection(seal) {
   return {
@@ -42,6 +43,25 @@ async function assertEmptyTarget(path) {
   }
 }
 
+function captureReviewedSources({ preview, catalog, sourceLoader, expectedPolicyDigest }) {
+  const policy = sourceLoader.resolvePolicy();
+  if (sha256Value(policy) !== expectedPolicyDigest) {
+    throw new TypeError('creator policy source differs from reviewed catalog');
+  }
+  const catalogRows = new Map(catalog.modules.map((row) => [row.ref, row]));
+  const modules = Object.entries(preview.candidate.moduleRefs)
+    .sort(([left], [right]) => byteCompare(left, right))
+    .map(([kind, ref]) => {
+      const row = catalogRows.get(ref);
+      const source = sourceLoader.resolveModule(ref);
+      if (!row || row.kind !== kind || sha256Value(source) !== row.sourceDigest) {
+        throw new TypeError('creator module source differs from reviewed catalog');
+      }
+      return { kind, ref, source, sourceDigest: row.sourceDigest };
+    });
+  return deepFreeze(structuredClone({ policy, modules }));
+}
+
 export function buildCreatorReviewSeal({ catalogDigest, draftDigest, previewDigest }) {
   const unsigned = { schemaVersion: 1, catalogDigest, draftDigest, previewDigest };
   const seal = { ...unsigned, sealDigest: sha256Value(unsigned) };
@@ -56,9 +76,7 @@ export async function finalizeCreatorDraft({
   reviewSeal,
   sourceDirectory,
   outputDirectory,
-  policyPath,
   expectedPolicyDigest,
-  moduleDirectory,
 }) {
   if (typeof sourceDirectory !== 'string' || typeof outputDirectory !== 'string'
       || resolve(sourceDirectory) === resolve(outputDirectory)) {
@@ -78,15 +96,23 @@ export async function finalizeCreatorDraft({
   if (typeof sourceLoader.verifyCurrent !== 'function') {
     throw new TypeError('creator source freshness verifier is required');
   }
-  await sourceLoader.verifyCurrent();
   await assertEmptyTarget(sourceDirectory);
   await assertEmptyTarget(outputDirectory);
+  const reviewed = captureReviewedSources({ preview, catalog, sourceLoader, expectedPolicyDigest });
+  await sourceLoader.verifyCurrent();
 
   await mkdir(sourceDirectory, { recursive: true });
   const candidatePath = join(sourceDirectory, 'creation-candidate.json');
   const expressionPath = join(sourceDirectory, 'expression-overlay.json');
+  const policyPath = join(sourceDirectory, 'creation-policy.json');
+  const moduleDirectory = join(sourceDirectory, 'modules');
+  await mkdir(moduleDirectory);
   await writeFile(candidatePath, jsonBytes(preview.candidate), 'utf8');
   await writeFile(expressionPath, jsonBytes(preview.expression), 'utf8');
+  await writeFile(policyPath, jsonBytes(reviewed.policy), 'utf8');
+  for (const module of reviewed.modules) {
+    await writeFile(join(moduleDirectory, `${module.kind}.json`), jsonBytes(module.source), 'utf8');
+  }
 
   const compiled = await compileCreation({
     candidatePath,
@@ -97,7 +123,12 @@ export async function finalizeCreatorDraft({
     outputDir: outputDirectory,
   });
   const manifest = await verifyCreationBuild(outputDirectory, { expectedPolicyDigest });
-  if (manifest.buildId !== compiled.manifest.buildId || manifest.genomeDigest !== preview.genomeDigest) {
+  const reviewedModuleRows = reviewed.modules
+    .map(({ kind, ref, sourceDigest }) => ({ kind, ref, sha256: sourceDigest }))
+    .sort((left, right) => byteCompare(left.ref, right.ref));
+  if (manifest.buildId !== compiled.manifest.buildId
+      || manifest.genomeDigest !== preview.genomeDigest
+      || canonicalJson(compiled.moduleManifest.modules) !== canonicalJson(reviewedModuleRows)) {
     throw new TypeError('finalized creation differs from reviewed preview');
   }
   return deepFreeze(structuredClone({
@@ -107,4 +138,3 @@ export async function finalizeCreatorDraft({
     manifest,
   }));
 }
-

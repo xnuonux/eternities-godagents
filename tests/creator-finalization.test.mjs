@@ -75,9 +75,7 @@ for (const presetRef of ['preset:aether-architect@1.0.0', 'preset:quiet-cartogra
       reviewSeal: state.reviewSeal,
       sourceDirectory,
       outputDirectory,
-      policyPath: options().policyPath,
       expectedPolicyDigest,
-      moduleDirectory: options().moduleDirectory,
     });
     assert.equal(result.manifest.buildId.length, 64);
     assert.equal(result.manifest.genomeDigest, state.preview.genomeDigest);
@@ -89,7 +87,17 @@ for (const presetRef of ['preset:aether-architect@1.0.0', 'preset:quiet-cartogra
       JSON.parse(await readFile(join(sourceDirectory, 'expression-overlay.json'), 'utf8')),
       state.preview.expression,
     );
-    assert.deepEqual((await readdir(sourceDirectory)).sort(), ['creation-candidate.json', 'expression-overlay.json']);
+    assert.deepEqual((await readdir(sourceDirectory)).sort(), [
+      'creation-candidate.json',
+      'creation-policy.json',
+      'expression-overlay.json',
+      'modules',
+    ]);
+    assert.deepEqual(
+      JSON.parse(await readFile(join(sourceDirectory, 'creation-policy.json'), 'utf8')),
+      state.sourceLoader.resolvePolicy(),
+    );
+    assert.equal((await readdir(join(sourceDirectory, 'modules'))).length, 9);
     if (presetRef.includes('aether-architect')) {
       assert.equal(result.manifest.buildId, '9837b7c8a8cdcc5e11f5094ef5b0307aa18790e11099860c283057a27e0f0e64');
     }
@@ -113,9 +121,7 @@ test('incomplete, blocked, and substituted reviewed state fail before filesystem
     reviewSeal: incompleteSeal,
     sourceDirectory: join(root, 'source'),
     outputDirectory: join(root, 'output'),
-    policyPath: options().policyPath,
     expectedPolicyDigest,
-    moduleDirectory: options().moduleDirectory,
   };
   await assert.rejects(() => finalizeCreatorDraft(base), /creator draft is not ready/);
   await assert.rejects(() => access(base.sourceDirectory));
@@ -154,9 +160,7 @@ test('unexpected target entries and changed reviewed libraries fail closed', asy
     ...state,
     sourceDirectory: occupiedSource,
     outputDirectory: join(root, 'unused-output'),
-    policyPath: options().policyPath,
     expectedPolicyDigest,
-    moduleDirectory: options().moduleDirectory,
   }), /creator finalization target is not empty/);
 
   const libraryRoot = join(root, 'library');
@@ -184,10 +188,50 @@ test('unexpected target entries and changed reviewed libraries fail closed', asy
     ...local,
     sourceDirectory,
     outputDirectory,
-    policyPath: localOptions.policyPath,
     expectedPolicyDigest,
-    moduleDirectory: localOptions.moduleDirectory,
   }), /creator source library changed after review/);
   await assert.rejects(() => access(sourceDirectory));
   await assert.rejects(() => access(outputDirectory));
+});
+
+test('a source race after freshness verification cannot enter the finalized build', async (context) => {
+  const root = await workspace(context, 'godagent-creator-race-');
+  const libraryRoot = join(root, 'library');
+  await mkdir(libraryRoot);
+  await Promise.all([
+    cp(new URL('creation/modules/', fixtureRoot), join(libraryRoot, 'modules'), { recursive: true }),
+    cp(new URL('creator/expressions/', fixtureRoot), join(libraryRoot, 'expressions'), { recursive: true }),
+    cp(new URL('creator/presets/', fixtureRoot), join(libraryRoot, 'presets'), { recursive: true }),
+    cp(new URL('creation/creation-policy.json', fixtureRoot), join(libraryRoot, 'policy.json')),
+  ]);
+  const localOptions = options({
+    policyPath: join(libraryRoot, 'policy.json'),
+    moduleDirectory: join(libraryRoot, 'modules'),
+    expressionDirectory: join(libraryRoot, 'expressions'),
+    presetDirectory: join(libraryRoot, 'presets'),
+  });
+  const state = await ready('preset:aether-architect@1.0.0', localOptions);
+  const personalityPath = join(libraryRoot, 'modules', 'personality.json');
+  const racingLoader = {
+    ...state.sourceLoader,
+    async verifyCurrent() {
+      await state.sourceLoader.verifyCurrent();
+      const personality = JSON.parse(await readFile(personalityPath, 'utf8'));
+      personality.provenance.source = 'changed after the freshness check';
+      await writeFile(personalityPath, JSON.stringify(personality), 'utf8');
+      return true;
+    },
+  };
+  const sourceDirectory = join(root, 'source');
+  const outputDirectory = join(root, 'output');
+  const result = await finalizeCreatorDraft({
+    ...state,
+    sourceLoader: racingLoader,
+    sourceDirectory,
+    outputDirectory,
+    expectedPolicyDigest,
+  });
+  assert.equal(result.manifest.buildId, '9837b7c8a8cdcc5e11f5094ef5b0307aa18790e11099860c283057a27e0f0e64');
+  const finalizedPersonality = JSON.parse(await readFile(join(sourceDirectory, 'modules', 'personality.json'), 'utf8'));
+  assert.equal(finalizedPersonality.provenance.source, 'canonical creation fixture');
 });

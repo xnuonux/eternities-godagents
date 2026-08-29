@@ -192,9 +192,7 @@ export async function buildCreatorFixture({ repositoryRoot, outputRoot }) {
       reviewSeal,
       sourceDirectory: join(target, fixtureName, 'source'),
       outputDirectory: join(target, fixtureName, 'output'),
-      policyPath: options.policyPath,
       expectedPolicyDigest,
-      moduleDirectory: options.moduleDirectory,
     });
     rows.push({
       presetRef,
