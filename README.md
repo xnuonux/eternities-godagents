@@ -139,7 +139,9 @@ The shell ends at a verified creation build. It does not run genesis, create a v
 
 ### Visual creator shell
 
-The visual forge is a loopback-only client of the same bounded operator workflow. It lists only validated presets, presents the exact expression, module ledger, exclusions, attributes, and preview digest, and keeps finalization disabled until the operator acknowledges that reviewed projection. A one-use server confirmation binds that acknowledgement to the exact preset, creator, and preview digest. The browser cannot supply filesystem paths: the server builds in an unpredictable atomic staging directory below the verified `--workspace` and publishes only to the reviewed digest path.
+The visual forge is a loopback-only client of the same bounded operator workflow. A validated preset supplies the sealed foundation, after which the operator may choose one cataloged expression and one cataloged module from each of the nine closed architecture kinds. Foundation defaults remain byte-identical to the ordinary preset path, while replacements become ordinary immutable creator commands in canonical order. The resulting compatibility evidence, expression, module ledger, exclusions, attributes, and preview digest remain visible before finalization.
+
+A one-use server confirmation binds acknowledgement to the entire exact composition and preview digest. Incompatible mixtures cannot be acknowledged. The browser cannot edit constitution, effects, Realm authority, provider routing, evolution, Inspiration, or Soul, and it cannot supply filesystem paths: the server builds in an unpredictable atomic staging directory below the verified `--workspace` and publishes only to the reviewed digest path.
 
 ```powershell
 npm run creator:web -- `
