@@ -19,6 +19,10 @@ const schemaFiles = {
   'creation-module': 'creation-module.schema.json',
   'module-manifest': 'module-manifest.schema.json',
   'creation-build-manifest': 'creation-build-manifest.schema.json',
+  'genesis-intent': 'genesis-intent.schema.json',
+  'genesis-state': 'genesis-state.schema.json',
+  'genesis-receipt': 'genesis-receipt.schema.json',
+  'keel-record': 'keel-record.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 128 }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "genesisId", "keelId", "instanceId", "state", "previousStateDigest", "evidence", "stateDigest", "recordedAt"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "genesisId": { "$ref": "#/$defs/digest" },
+    "keelId": { "type": "string", "minLength": 69, "maxLength": 69 },
+    "instanceId": { "$ref": "#/$defs/identifier" },
+    "state": { "enum": ["prepared", "keel-prepared", "journal-prepared", "mutually-bound", "admitted", "aborted", "quarantined"] },
+    "previousStateDigest": { "$ref": "#/$defs/digest" },
+    "evidence": { "type": "object", "additionalProperties": true },
+    "stateDigest": { "$ref": "#/$defs/digest" },
+    "recordedAt": { "type": "string", "minLength": 1, "maxLength": 64 }
+  }
+}

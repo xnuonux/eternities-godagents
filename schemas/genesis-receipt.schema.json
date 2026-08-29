@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 128 }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "status", "genesisId", "keelId", "instanceId", "creatorRef", "creationBuildId", "distributionBuildId", "policyDigest", "genomeValueDigest", "genomeContentDigest", "constitutionDigest", "soulPortDigest", "journalBindingBaseDigest", "journalHeadDigest", "keelBindingBaseDigest", "keelHeadDigest", "transactionStateDigest", "receiptDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "status": { "const": "admitted" },
+    "genesisId": { "$ref": "#/$defs/digest" },
+    "keelId": { "type": "string", "minLength": 69, "maxLength": 69 },
+    "instanceId": { "$ref": "#/$defs/identifier" },
+    "creatorRef": { "$ref": "#/$defs/identifier" },
+    "creationBuildId": { "$ref": "#/$defs/digest" },
+    "distributionBuildId": { "$ref": "#/$defs/digest" },
+    "policyDigest": { "$ref": "#/$defs/digest" },
+    "genomeValueDigest": { "$ref": "#/$defs/digest" },
+    "genomeContentDigest": { "$ref": "#/$defs/digest" },
+    "constitutionDigest": { "$ref": "#/$defs/digest" },
+    "soulPortDigest": { "$ref": "#/$defs/digest" },
+    "journalBindingBaseDigest": { "$ref": "#/$defs/digest" },
+    "journalHeadDigest": { "$ref": "#/$defs/digest" },
+    "keelBindingBaseDigest": { "$ref": "#/$defs/digest" },
+    "keelHeadDigest": { "$ref": "#/$defs/digest" },
+    "transactionStateDigest": { "$ref": "#/$defs/digest" },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  }
+}
