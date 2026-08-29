@@ -137,6 +137,22 @@ npm run creator:local -- finalize-preset `
 
 The shell ends at a verified creation build. It does not run genesis, create a vessel or keel, contact a model, invoke a Realm hand, evolve an agent, or activate Inspiration or Soul.
 
+### Visual creator shell
+
+The visual forge is a loopback-only client of the same bounded operator workflow. It lists only validated presets, presents the exact expression, module ledger, exclusions, attributes, and preview digest, and keeps finalization disabled until the operator acknowledges that reviewed projection. The browser cannot supply filesystem paths: the server derives an isolated transaction below `--workspace` from the reviewed preview digest.
+
+```powershell
+npm run creator:web -- `
+  --policy C:\path\to\creation-policy.json `
+  --policy-digest <trusted-sha256> `
+  --modules C:\path\to\modules `
+  --expressions C:\path\to\expressions `
+  --presets C:\path\to\presets `
+  --workspace C:\path\to\creator-workspace
+```
+
+The server binds only `127.0.0.1`, generates a fresh launch token, serves no third-party assets, and accepts only fixed same-origin API routes. An optional `--port` may select a loopback port. The visual forge ends at the same verified pre-genesis build as the CLI and has no genesis, model, Realm, keel, evolution, Inspiration, or Soul capability.
+
 ## Networked cortex host
 
 The networked extension keeps endpoint, model, timeout, retry policy, host authority, and credential-variable selection outside the deterministic distribution. Build the compatible fixture with `npm run build:networked-fixture`, copy `fixtures/host-policy.json` to an operator-controlled location, and adjust its non-secret runtime policy. The API credential itself belongs only in the environment variable named by that policy.

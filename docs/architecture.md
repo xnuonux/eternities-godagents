@@ -26,6 +26,7 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 | temporary-worker boundary | projects bounded external context and proposal authority without exposing a personal-keel capability |
 | creator protocol | exposes a headless catalog, immutable commands, preset replay, pure preview, review sealing, and reviewed finalization through the existing creation compiler |
 | local creator shell | maps strict local operator arguments to bounded catalog, preset preview, and explicitly digest-approved finalization output |
+| visual creator shell | presents fixed presets and exact review evidence over a token-gated loopback boundary, then confines approved finalization below one configured workspace |
 
 ## Phase 1 creation boundary
 
@@ -58,6 +59,8 @@ Preview is pure and has three closed states: incomplete, blocked, or ready. A re
 The boundary ends at a verified creation build. It does not perform genesis admission, create a persistent vessel, bind a keel, contact a model, choose runtime policy, grant Realm authority, evolve an agent, or activate Inspiration or Soul. Phase 3 certifies `GC-001` through `GC-008` with manual/preset parity, fail-before-write substitution tests, two isolated byte-identical fixture roots, the guarded complete suite, and unchanged historical receipts.
 
 The first local shell consumes this boundary through a reusable operator workflow. It accepts fixed library paths and the separate policy digest, exposes only the bounded catalog or review projection, and requires the exact current preview digest before finalization. Its parser rejects unknown and command-inapplicable options, while its process boundary emits canonical success values or closed failure codes without raw exception text. The shell has no privileged preset path and no access to genesis, cortex, Realm, keel, evolution, Inspiration, or Soul capabilities.
+
+The visual shell consumes that same operator workflow rather than reimplementing creation. A loopback-only server serves fixed self-contained assets, issues a random per-launch token, requires that token on every API route, and derives transaction paths only beneath an operator-configured workspace. The browser receives closed catalog and preview projections, never source paths or module bodies. Any selection or identity change clears review acknowledgement; finalization always recomputes the preview and requires its exact digest before writing. Browser-facing errors remain closed and the server exposes no genesis or runtime capability.
 
 ## Phase 2 transactional genesis boundary
 
