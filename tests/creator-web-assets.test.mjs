@@ -56,3 +56,8 @@ test('visual shell script uses fixed same-origin APIs and text-safe DOM construc
   assert.doesNotMatch(js, /https?:\/\//);
   assert.doesNotMatch(js, /localStorage|sessionStorage|document\.cookie/);
 });
+
+test('successful forging consumes the exact review acknowledgement', async () => {
+  const { js } = await assets();
+  assert.match(js, /ui\.buildId\.textContent = result\.creationBuildId;[\s\S]*?ui\.reviewAck\.checked = false;\s*ui\.reviewAck\.disabled = true;/);
+});

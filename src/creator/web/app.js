@@ -244,6 +244,7 @@
       });
       ui.buildId.textContent = result.creationBuildId;
       ui.forgeResult.hidden = false;
+      ui.reviewAck.checked = false;
       ui.reviewAck.disabled = true;
       setStatus(ui.globalStatus, 'Verified pre-genesis build complete. No vessel or Soul was created.');
     } catch (error) {
