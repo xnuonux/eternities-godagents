@@ -4,10 +4,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
+import { canonicalJson } from '../src/core/canonical-json.mjs';
+import { sha256Text } from '../src/core/digest.mjs';
 import { runLocalHost } from '../src/host/local-cli.mjs';
 
 const validPolicy = JSON.parse(await readFile(new URL('../fixtures/host-policy.json', import.meta.url), 'utf8'));
 validPolicy.provider.credentialEnv = 'GODAGENT_TEST_API_KEY';
+const policyDigest = sha256Text(canonicalJson(validPolicy));
+const validEnv = (credential) => ({
+  GODAGENT_TEST_API_KEY: credential,
+  GODAGENT_POLICY_SHA256: policyDigest,
+});
 
 async function fixtureFiles(t) {
   const root = await mkdtemp(join(tmpdir(), 'godagent-cli-'));
@@ -31,7 +38,7 @@ test('local host derives mission authority and context only from validated polic
   let trustedMission;
   const code = await runLocalHost({
     argv: ['--policy', policyPath, '--mission', missionPath],
-    env: { GODAGENT_TEST_API_KEY: 'canary-cli-secret' },
+    env: validEnv('canary-cli-secret'),
     stdout,
     stderr,
     execute: async ({ mission, credentialResolver }) => {
@@ -73,7 +80,7 @@ test('local host rejects secret flags and unknown endpoint overrides before exec
     let executed = false;
     const code = await runLocalHost({
       argv: args,
-      env: { GODAGENT_TEST_API_KEY: 'canary-env-secret' },
+      env: validEnv('canary-env-secret'),
       stdout,
       stderr,
       execute: async () => { executed = true; },
@@ -91,7 +98,7 @@ test('local host reports closed failure codes without provider or credential tex
   const stderr = sink();
   const code = await runLocalHost({
     argv: ['--policy', policyPath, '--mission', missionPath],
-    env: { GODAGENT_TEST_API_KEY: 'canary-env-secret' },
+    env: validEnv('canary-env-secret'),
     stdout,
     stderr,
     execute: async () => { throw new Error('provider leaked canary-env-secret'); },
@@ -110,7 +117,7 @@ test('local host rejects a credential pasted into mission text before execution 
   let executed = false;
   const code = await runLocalHost({
     argv: ['--policy', policyPath, '--mission', missionPath],
-    env: { GODAGENT_TEST_API_KEY: 'canary-mission-secret' },
+    env: validEnv('canary-mission-secret'),
     stdout,
     stderr,
     execute: async () => { executed = true; },
@@ -120,4 +127,24 @@ test('local host rejects a credential pasted into mission text before execution 
   assert.equal(executed, false);
   assert.deepEqual(JSON.parse(stderr.read()), { status: 'failed', reasonCode: 'invalid-mission' });
   assert.equal(`${stdout.read()}${stderr.read()}`.includes('canary-mission-secret'), false);
+});
+
+test('local host rejects a policy whose canonical digest differs from the operator pin', async (t) => {
+  const { policyPath, missionPath } = await fixtureFiles(t);
+  const tampered = { ...validPolicy, provider: { ...validPolicy.provider, endpointOrigin: 'https://attacker.example' } };
+  await writeFile(policyPath, `${JSON.stringify(tampered, null, 2)}\n`, 'utf8');
+  const stdout = sink();
+  const stderr = sink();
+  let executed = false;
+  const code = await runLocalHost({
+    argv: ['--policy', policyPath, '--mission', missionPath],
+    env: validEnv('canary-policy-pin-secret'),
+    stdout,
+    stderr,
+    execute: async () => { executed = true; },
+  });
+
+  assert.equal(code, 1);
+  assert.equal(executed, false);
+  assert.deepEqual(JSON.parse(stderr.read()), { status: 'failed', reasonCode: 'policy-integrity' });
 });

@@ -30,6 +30,8 @@ const inferencePolicy = {
   retryableReasonCodes: ['timeout', 'connect-failed', 'rate-limited', 'transient-server'],
   hostPolicyId: 'networked-test-policy',
   hostPolicyDigest: 'f'.repeat(64),
+  maxCompletionTokens: 128,
+  maxCycleCompletionTokens: 256,
 };
 
 async function noQualifiedTransport(request) {
@@ -227,4 +229,3 @@ test('recovery after durable request uses the next bounded attempt ordinal', asy
   assert.equal(cortex.executionCount, 1);
   assert.equal(realm.inspect().counter, 1);
 });
-

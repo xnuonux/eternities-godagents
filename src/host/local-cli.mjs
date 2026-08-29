@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { timingSafeEqual } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -56,6 +57,8 @@ export async function executeNetworkedVessel({
     timeoutMs: policy.provider.timeoutMs,
     maxResponseBytes: policy.provider.maxResponseBytes,
     maxProposalTtlMs: policy.provider.maxProposalTtlMs,
+    maxPromptBytes: policy.provider.maxPromptBytes,
+    maxCompletionTokens: policy.provider.maxCompletionTokens,
     transport: createHttpsTransport({ fetchImpl }),
     resolveCredential: credentialResolver.resolve,
   });
@@ -70,6 +73,7 @@ export async function executeNetworkedVessel({
     clock,
     inferencePolicy: {
       ...policy.inference,
+      maxCompletionTokens: policy.provider.maxCompletionTokens,
       hostPolicyId: policy.policyId,
       hostPolicyDigest: policyDigest,
     },
@@ -106,6 +110,13 @@ export async function runLocalHost({
 
   try {
     const { policy, digest } = await loadHostPolicy(paths.policyPath);
+    const pinnedDigest = env?.GODAGENT_POLICY_SHA256?.toLowerCase();
+    const digestMatches = /^[a-f0-9]{64}$/.test(pinnedDigest ?? '')
+      && timingSafeEqual(Buffer.from(pinnedDigest, 'hex'), Buffer.from(digest, 'hex'));
+    if (!digestMatches) {
+      writeJson(stderr, { status: 'failed', reasonCode: 'policy-integrity' });
+      return 1;
+    }
     const text = (await readFile(paths.missionPath, 'utf8')).trim();
     if (!text) throw new Error('mission is empty');
     const credentialResolver = createCredentialResolver({ env, variableName: policy.provider.credentialEnv });

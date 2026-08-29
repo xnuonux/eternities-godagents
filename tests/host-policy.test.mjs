@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import {
@@ -23,10 +25,13 @@ const validPolicy = {
     timeoutMs: 5000,
     maxResponseBytes: 16384,
     maxProposalTtlMs: 120000,
+    maxPromptBytes: 8192,
+    maxCompletionTokens: 128,
   },
   inference: {
     maxAttempts: 2,
     retryableReasonCodes: ['connect-failed', 'timeout', 'rate-limited', 'transient-server'],
+    maxCycleCompletionTokens: 256,
   },
   runtime: {
     instanceId: 'networked-fixture-1',
@@ -73,6 +78,7 @@ test('host policy rejects endpoint downgrade, arbitrary model, excessive retry, 
     ['HTTP endpoint', { ...validPolicy, provider: { ...validPolicy.provider, endpointOrigin: 'http://models.example.test' } }, /HTTPS/],
     ['model outside allowlist', { ...validPolicy, provider: { ...validPolicy.provider, selectedModel: 'other-model' } }, /selected model/],
     ['excessive retry', { ...validPolicy, inference: { ...validPolicy.inference, maxAttempts: 9 } }, /maxAttempts/],
+    ['insufficient cycle budget', { ...validPolicy, inference: { ...validPolicy.inference, maxCycleCompletionTokens: 64 } }, /maxCycleCompletionTokens/],
     ['credential value', { ...validPolicy, provider: { ...validPolicy.provider, apiKey: 'canary-policy-secret' } }, /apiKey/],
     ['authority expansion', { ...validPolicy, authority: ['realm:write', 'realm:admin'] }, /authority/],
   ];
@@ -95,3 +101,20 @@ test('credential resolver exposes one value only through resolve and never seria
   assert.throws(() => createCredentialResolver({ env: {}, variableName: 'GODAGENT_TEST_API_KEY' }), /unavailable/);
 });
 
+test('policy digest utility emits the canonical operator pin', async (t) => {
+  const path = await writePolicy(t, validPolicy);
+  const loaded = await loadHostPolicy(path);
+  const result = await new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(process.execPath, [fileURLToPath(new URL('../scripts/hash-host-policy.mjs', import.meta.url)), path], {
+      shell: false,
+      windowsHide: true,
+    });
+    let stdout = '';
+    child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.once('error', rejectPromise);
+    child.once('close', (code) => resolvePromise({ code, stdout }));
+  });
+
+  assert.deepEqual(result, { code: 0, stdout: `${loaded.digest}\n` });
+});

@@ -34,11 +34,20 @@ npm run certify:networked-cortex
 
 `npm run certify` requires a clean worktree. It reruns the complete suite, rebuilds the fixture distribution twice in a verified temporary directory, compares exact artifacts, and writes `receipts/godagent-v0-certification.json`.
 
-`npm run certify:networked-cortex` preserves the historical v0 receipt, runs the complete suite under a fail-closed network guard, verifies credential-canary containment, and writes a separate `receipts/networked-cortex-certification.json`.
+`npm run certify:networked-cortex` preserves the historical v0 receipt, runs the complete suite under a fail-closed Node-process-tree network guard, verifies credential-canary containment, and writes a separate `receipts/networked-cortex-certification.json`. It does not claim OS-level isolation for arbitrary non-Node child processes.
 
 ## Networked cortex host
 
 The networked extension keeps endpoint, model, timeout, retry policy, host authority, and credential-variable selection outside the deterministic distribution. Build the compatible fixture with `npm run build:networked-fixture`, copy `fixtures/host-policy.json` to an operator-controlled location, and adjust its non-secret runtime policy. The API credential itself belongs only in the environment variable named by that policy.
+
+The policy is an operator-controlled trust root. Before launch, compute its canonical digest through a trusted terminal and pin that digest separately:
+
+```powershell
+$env:GODAGENT_POLICY_SHA256 = npm run --silent policy:digest -- C:\path\host-policy.json
+$env:GODAGENT_MODEL_API_KEY = '<provider credential>'
+```
+
+Changing the policy path, endpoint, authority, model allowlist, retry budget, or Godskills root without updating the separate digest pin fails before credential resolution. The fixture policy also bounds prompt bytes, completion tokens per attempt, completion tokens per cycle, response bytes, timeout, and attempt count.
 
 The host accepts only a policy path and a plain-text mission path:
 
@@ -46,7 +55,7 @@ The host accepts only a policy path and a plain-text mission path:
 npm run host:local -- --policy C:\path\host-policy.json --mission C:\path\mission.txt
 ```
 
-The host rejects credentials in command-line arguments, policy values, and mission text. Tests and certification use injected transports and make no provider request.
+The host rejects credentials in command-line arguments, policy values, mission text, and reflected provider output. Accepted action payloads and expected transitions must satisfy the selected Realm hand contract before a Realm invocation. Tests and certification use injected transports and make no provider request.
 
 ## Causal loop
 

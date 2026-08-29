@@ -22,9 +22,11 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 
 ## Networked cortex extension
 
-The OpenAI-compatible adapter implements the same proposal-only cortex role through an injected HTTPS transport. It prepares a deterministic semantic request digest, returns only strict typed proposal results, and classifies malformed or failed provider responses into closed reason codes. Raw requests, raw responses, headers, exception messages, and credentials cannot enter the adapter result.
+The OpenAI-compatible adapter implements the same proposal-only cortex role through an injected HTTPS transport. It prepares a deterministic semantic request digest, returns only strict typed proposal results, and classifies malformed or failed provider responses into closed reason codes. Raw requests, raw responses, headers, exception messages, credentials, and free-form provider-authored prose cannot enter the accepted proposal. Reflected credentials and credential-shaped nested fields fail closed.
 
-The local host loads one strict policy that defines non-secret provider configuration, bounded retry, authority, Realm identity, and Godskills constraints. Authority is copied from this validated policy into the admitted mission; mission text cannot grant or expand it. Credentials are available only through an in-memory resolver closure.
+The local host loads one strict policy that defines non-secret provider configuration, bounded retry, prompt and completion budgets, authority, Realm identity, and Godskills constraints. Its canonical digest must match an operator-supplied `GODAGENT_POLICY_SHA256` pin before credential resolution. Authority is copied from this validated policy into the admitted mission; mission text cannot grant or expand it. Credentials are available only through an in-memory resolver closure.
+
+Each Realm hand declares a strict input schema and expected-outcome derivation. The adapter checks these constraints before accepting a proposal, and the action gateway independently checks them against a fresh pre-action observation before invoking the hand. For the fixture Realm, `counter.increment` permits exactly `{ "amount": 1 }` and exactly the observed counter plus one.
 
 Inference attempts form a separate durable lifecycle before constitutional decision:
 
@@ -32,7 +34,7 @@ Inference attempts form a separate durable lifecycle before constitutional decis
 cortex.requested -> cortex.accepted + proposal | cortex.failed(reasonCode)
 ```
 
-Recovery after durable acceptance reuses the journaled proposal. Recovery after an unresolved request may spend only the next policy-authorized attempt. This economic retry ledger is separate from Realm action idempotency.
+Recovery after durable acceptance reuses the journaled proposal. Recovery after an unresolved request may spend only the next policy-authorized attempt. Prompt bytes, completion tokens per attempt, and reserved completion tokens per cycle are bounded before transport. This economic retry ledger is separate from Realm action idempotency.
 
 ## Trust order
 

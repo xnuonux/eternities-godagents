@@ -9,7 +9,7 @@
     "provider": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["adapterId", "profile", "endpointOrigin", "endpointPath", "modelIds", "selectedModel", "credentialEnv", "timeoutMs", "maxResponseBytes", "maxProposalTtlMs"],
+      "required": ["adapterId", "profile", "endpointOrigin", "endpointPath", "modelIds", "selectedModel", "credentialEnv", "timeoutMs", "maxResponseBytes", "maxProposalTtlMs", "maxPromptBytes", "maxCompletionTokens"],
       "properties": {
         "adapterId": { "const": "openai-compatible-v1" },
         "profile": { "const": "chat-completions-json" },
@@ -20,19 +20,22 @@
         "credentialEnv": { "type": "string", "minLength": 1 },
         "timeoutMs": { "type": "integer", "minimum": 1 },
         "maxResponseBytes": { "type": "integer", "minimum": 1 },
-        "maxProposalTtlMs": { "type": "integer", "minimum": 1 }
+        "maxProposalTtlMs": { "type": "integer", "minimum": 1 },
+        "maxPromptBytes": { "type": "integer", "minimum": 1 },
+        "maxCompletionTokens": { "type": "integer", "minimum": 1 }
       }
     },
     "inference": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["maxAttempts", "retryableReasonCodes"],
+      "required": ["maxAttempts", "retryableReasonCodes", "maxCycleCompletionTokens"],
       "properties": {
         "maxAttempts": { "type": "integer", "minimum": 1 },
         "retryableReasonCodes": {
           "type": "array",
           "items": { "enum": ["connect-failed", "timeout", "rate-limited", "transient-server"] }
-        }
+        },
+        "maxCycleCompletionTokens": { "type": "integer", "minimum": 1 }
       }
     },
     "runtime": {

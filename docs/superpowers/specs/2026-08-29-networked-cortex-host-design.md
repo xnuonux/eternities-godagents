@@ -194,3 +194,12 @@ The historical v0 receipt remains immutable. A new versioned networked-cortex re
 
 These require separate authorization and evidence. None is implied by this slice.
 
+## Post-review hardening
+
+The independent adversarial review identified two unacceptable gaps in the first candidate: provider-controlled nested proposal values could enter continuity, and a declared hand could carry an unbounded payload. The implemented design therefore adds three mandatory controls:
+
+- provider prose is normalized, reflected credentials and credential-shaped nested fields are rejected, and accepted intent and outcomes must satisfy a strict Realm hand contract;
+- every hand declares an input schema and expected-outcome derivation that are checked both at adapter admission and immediately before Realm invocation;
+- host policy bounds prompt bytes, completion tokens per attempt, completion tokens per cycle, response bytes, timeout, and attempts, and its canonical digest must match a separately supplied operator pin before credential resolution.
+
+The certification network guard propagates through spawned Node processes. OS-level isolation for arbitrary non-Node child processes and signed policy identity remain explicit exclusions.

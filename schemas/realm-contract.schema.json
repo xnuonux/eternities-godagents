@@ -26,12 +26,55 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "effect", "requiredAuthority", "idempotent"],
+        "required": ["id", "effect", "requiredAuthority", "idempotent", "inputSchema", "expectedOutcome"],
         "properties": {
           "id": { "type": "string", "minLength": 1 },
           "effect": { "type": "string", "minLength": 1 },
           "requiredAuthority": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-          "idempotent": { "type": "boolean" }
+          "idempotent": { "type": "boolean" },
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "additionalProperties", "required", "properties"],
+            "properties": {
+              "type": { "const": "object" },
+              "additionalProperties": { "const": false },
+              "required": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "properties": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["type", "minimum", "maximum"],
+                  "properties": {
+                    "type": { "enum": ["integer", "number", "string", "boolean"] },
+                    "minimum": { "type": "integer" },
+                    "maximum": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "expectedOutcome": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "fields"],
+            "properties": {
+              "type": { "const": "observation-delta" },
+              "fields": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["observationField", "addInputField"],
+                  "properties": {
+                    "observationField": { "type": "string", "minLength": 1 },
+                    "addInputField": { "type": "string", "minLength": 1 }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },

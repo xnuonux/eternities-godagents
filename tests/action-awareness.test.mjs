@@ -9,7 +9,7 @@ import { commitDecision } from '../src/runtime/arbiter.mjs';
 
 const contract = JSON.parse(await readFile(new URL('../fixtures/realm-contract.json', import.meta.url), 'utf8'));
 
-function decision({ amount = 1, epoch = 0, handId = 'counter.increment' } = {}) {
+function decision({ amount = 1, expectedCounter = amount, epoch = 0, handId = 'counter.increment' } = {}) {
   const proposal = {
     schemaVersion: 1,
     proposalId: `proposal-${handId}-${amount}`,
@@ -19,7 +19,7 @@ function decision({ amount = 1, epoch = 0, handId = 'counter.increment' } = {}) 
     claim: `increment by ${amount}`,
     evidenceRefs: ['observation-0'],
     intent: { effect: 'local-write', handId, amount },
-    expectedOutcome: { counter: amount },
+    expectedOutcome: { counter: expectedCounter },
     cost: 1,
     risk: 'low',
     uncertainty: 'verified-fixture',
@@ -90,6 +90,23 @@ test('undeclared hand, missing authority, and stale decision fail before invocat
         realm,
         authority: entry.authority,
         stateEpoch: entry.stateEpoch,
+      }),
+      AuthorityError,
+    );
+    assert.equal(realm.inspect().invocationCount, 0);
+  }
+});
+
+test('hand input and expected-transition expansion fail before Realm invocation', async () => {
+  for (const committed of [decision({ amount: 999999 }), decision({ expectedCounter: 999999 })]) {
+    const realm = createFixtureRealm({ contract });
+    await assert.rejects(
+      () => executeCommittedAction({
+        decision: committed,
+        action: action(committed),
+        realm,
+        authority: ['realm:write'],
+        stateEpoch: 0,
       }),
       AuthorityError,
     );

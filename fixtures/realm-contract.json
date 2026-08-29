@@ -12,7 +12,21 @@
       "id": "counter.increment",
       "effect": "local-write",
       "requiredAuthority": ["realm:write"],
-      "idempotent": true
+      "idempotent": true,
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["amount"],
+        "properties": {
+          "amount": { "type": "integer", "minimum": 1, "maximum": 1 }
+        }
+      },
+      "expectedOutcome": {
+        "type": "observation-delta",
+        "fields": {
+          "counter": { "observationField": "counter", "addInputField": "amount" }
+        }
+      }
     }
   ],
   "resources": {

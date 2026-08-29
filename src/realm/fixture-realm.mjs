@@ -27,7 +27,7 @@ export function createFixtureRealm({
     async observe() {
       return observation(
         `observation-${invocationCount}`,
-        failureMode === 'observation-mismatch' ? counter + 1 : counter,
+        failureMode === 'observation-mismatch' && invocationCount > 0 ? counter + 1 : counter,
       );
     },
     async invoke({ handId, payload, idempotencyKey }) {

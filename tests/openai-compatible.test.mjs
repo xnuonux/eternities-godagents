@@ -18,6 +18,20 @@ const context = Object.freeze({
     permittedEffects: ['local-write'],
     availableAuthority: ['realm:write'],
     availablePreconditions: ['realm-observed'],
+    handContracts: {
+      'counter.increment': {
+        inputSchema: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['amount'],
+          properties: { amount: { type: 'integer', minimum: 1, maximum: 1 } },
+        },
+        expectedOutcome: {
+          type: 'observation-delta',
+          fields: { counter: { observationField: 'counter', addInputField: 'amount' } },
+        },
+      },
+    },
   },
 });
 
@@ -64,6 +78,8 @@ function createCortex(transport, overrides = {}) {
     timeoutMs: 5_000,
     maxResponseBytes: 16_384,
     maxProposalTtlMs: 120_000,
+    maxPromptBytes: 8_192,
+    maxCompletionTokens: 128,
     transport,
     resolveCredential: () => CANARY,
     ...overrides,
@@ -85,12 +101,15 @@ test('adapter emits a bounded OpenAI-compatible request and assigns trusted prop
   assert.equal(captured.headers.authorization, `Bearer ${CANARY}`);
   assert.equal(requestBody.model, 'test-model');
   assert.equal(requestBody.n, 1);
+  assert.equal(requestBody.max_completion_tokens, 128);
   assert.deepEqual(requestBody.response_format, { type: 'json_object' });
   assert.equal(result.status, 'accepted');
   assert.equal(result.proposal.proposalId, 'attempt-1:proposal');
   assert.equal(result.proposal.organId, 'openai-compatible-v1');
   assert.equal(result.proposal.sourceStateEpoch, 0);
   assert.deepEqual(result.proposal.evidenceRefs, ['observation-1']);
+  assert.equal(result.proposal.claim, 'networked cortex proposed one bounded governed action');
+  assert.equal(result.proposal.uncertainty, 'networked-provider-proposal');
   assert.deepEqual(result.usage, { inputTokens: 23, outputTokens: 41 });
   assert.equal(JSON.stringify(result).includes(CANARY), false);
 });
@@ -108,6 +127,9 @@ test('adapter rejects malformed and ambiguous provider responses without a propo
     ['stale epoch', providerBody({ ...validProposalContent, sourceStateEpoch: 9 }), 'semantic-rejected'],
     ['authority expansion', providerBody({ ...validProposalContent, requiredAuthority: ['realm:write', 'realm:admin'] }), 'semantic-rejected'],
     ['effect expansion', providerBody({ ...validProposalContent, intent: { effect: 'external-write', handId: 'counter.increment', amount: 1 } }), 'semantic-rejected'],
+    ['input expansion', providerBody({ ...validProposalContent, intent: { effect: 'local-write', handId: 'counter.increment', amount: 999999 } }), 'semantic-rejected'],
+    ['expected transition expansion', providerBody({ ...validProposalContent, expectedOutcome: { counter: 999999 } }), 'semantic-rejected'],
+    ['credential-shaped nested field', providerBody({ ...validProposalContent, intent: { ...validProposalContent.intent, apiKey: 'not-a-real-secret' } }), 'schema-rejected'],
   ];
 
   for (const [name, body, reasonCode] of cases) {
@@ -118,12 +140,36 @@ test('adapter rejects malformed and ambiguous provider responses without a propo
   }
 });
 
+test('adapter rejects a provider response that reflects the bearer credential', async () => {
+  const reflected = providerBody({ ...validProposalContent, claim: `reflected ${CANARY}` });
+  const result = await createCortex(async () => response(reflected))
+    .infer(context, { attemptId: 'attempt-reflection', ordinal: 1 });
+
+  assert.equal(result.status, 'failed');
+  assert.equal(result.reasonCode, 'schema-rejected');
+  assert.equal(JSON.stringify(result).includes(CANARY), false);
+});
+
 test('adapter rejects oversized output before JSON parsing', async () => {
   const result = await createCortex(async () => response('x'.repeat(200)), { maxResponseBytes: 64 })
     .infer(context, { attemptId: 'attempt-large', ordinal: 1 });
 
   assert.equal(result.status, 'failed');
   assert.equal(result.reasonCode, 'oversized-output');
+});
+
+test('adapter enforces prompt and provider completion budgets before acceptance', async () => {
+  let called = false;
+  const oversizedPrompt = await createCortex(async () => { called = true; return response(); }, { maxPromptBytes: 256 })
+    .infer({ ...context, mission: 'x'.repeat(1_000) }, { attemptId: 'attempt-large-prompt', ordinal: 1 });
+  assert.equal(oversizedPrompt.reasonCode, 'budget-exhausted');
+  assert.equal(called, false);
+
+  const overBudgetEnvelope = JSON.parse(providerBody());
+  overBudgetEnvelope.usage.completion_tokens = 129;
+  const oversizedCompletion = await createCortex(async () => response(JSON.stringify(overBudgetEnvelope)))
+    .infer(context, { attemptId: 'attempt-large-completion', ordinal: 1 });
+  assert.equal(oversizedCompletion.reasonCode, 'budget-exhausted');
 });
 
 test('adapter classifies HTTP and transport failures into closed reason codes', async () => {
@@ -160,4 +206,3 @@ test('HTTPS transport rejects downgrade before fetch', async () => {
   );
   assert.equal(called, false);
 });
-

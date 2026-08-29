@@ -248,6 +248,10 @@ export async function createVessel({
         permittedEffects: distribution.genome.constitution.allowedEffects.filter((effect) => hostEffects.has(effect)),
         availableAuthority: [...authority].filter((entry) => hostAuthority.has(entry)).sort(),
         availablePreconditions: ['realm-observed'].filter((entry) => hostPreconditions.has(entry)),
+        handContracts: Object.fromEntries(distribution.realmContract.hands.map((hand) => [hand.id, {
+          inputSchema: hand.inputSchema,
+          expectedOutcome: hand.expectedOutcome,
+        }])),
       },
     };
   }

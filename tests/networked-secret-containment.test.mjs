@@ -5,6 +5,8 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 
 import { createOpenAICompatibleCortex } from '../src/cortex/openai-compatible.mjs';
+import { canonicalJson } from '../src/core/canonical-json.mjs';
+import { sha256Text } from '../src/core/digest.mjs';
 import { compileDistribution } from '../src/foundry/compile.mjs';
 import { runLocalHost } from '../src/host/local-cli.mjs';
 import { createFixtureRealm } from '../src/realm/fixture-realm.mjs';
@@ -115,7 +117,7 @@ async function hostWorkspace(t, name, providerContent) {
       headers: { 'content-type': 'application/json' },
     });
   };
-  return { root, policyPath, missionPath, fetchImpl };
+  return { root, policyPath, missionPath, fetchImpl, policyDigest: sha256Text(canonicalJson(policy)) };
 }
 
 test('end-to-end local host leaves the canary credential out of every durable and emitted surface', async (t) => {
@@ -124,7 +126,7 @@ test('end-to-end local host leaves the canary credential out of every durable an
   const stderr = sink();
   const code = await runLocalHost({
     argv: ['--policy', workspace.policyPath, '--mission', workspace.missionPath],
-    env: { GODAGENT_CONTAINMENT_KEY: CANARY },
+    env: { GODAGENT_CONTAINMENT_KEY: CANARY, GODAGENT_POLICY_SHA256: workspace.policyDigest },
     stdout,
     stderr,
     fetchImpl: workspace.fetchImpl,
@@ -151,7 +153,7 @@ test('provider output cannot manufacture host authority or reach a Realm hand', 
   const stderr = sink();
   const code = await runLocalHost({
     argv: ['--policy', workspace.policyPath, '--mission', workspace.missionPath],
-    env: { GODAGENT_CONTAINMENT_KEY: CANARY },
+    env: { GODAGENT_CONTAINMENT_KEY: CANARY, GODAGENT_POLICY_SHA256: workspace.policyDigest },
     stdout,
     stderr,
     fetchImpl: workspace.fetchImpl,
@@ -163,6 +165,26 @@ test('provider output cannot manufacture host authority or reach a Realm hand', 
   assert.deepEqual(JSON.parse(stderr.read()), { status: 'failed', reasonCode: 'semantic-rejected' });
   assert.equal(journal.events.some((event) => event.eventType === 'decision.committed'), false);
   assert.equal(journal.events.some((event) => event.eventType === 'action.invoking'), false);
+});
+
+test('provider-reflected credential is rejected before accepted-proposal journaling', async (t) => {
+  const workspace = await hostWorkspace(t, 'reflected-secret', proposal(0, { claim: `reflected ${CANARY}` }));
+  const stdout = sink();
+  const stderr = sink();
+  const code = await runLocalHost({
+    argv: ['--policy', workspace.policyPath, '--mission', workspace.missionPath],
+    env: { GODAGENT_CONTAINMENT_KEY: CANARY, GODAGENT_POLICY_SHA256: workspace.policyDigest },
+    stdout,
+    stderr,
+    fetchImpl: workspace.fetchImpl,
+    clock: () => fixedNow,
+  });
+  const journalText = await readFile(join(workspace.root, 'state', 'events.jsonl'), 'utf8');
+
+  assert.equal(code, 1);
+  assert.deepEqual(JSON.parse(stderr.read()), { status: 'failed', reasonCode: 'schema-rejected' });
+  assert.equal(journalText.includes(CANARY), false);
+  assert.equal(journalText.includes('cortex.accepted'), false);
 });
 
 test('fixture to networked to fixture cortex migration preserves the vessel and dormant Soul', async (t) => {
@@ -194,6 +216,8 @@ test('fixture to networked to fixture cortex migration preserves the vessel and 
     timeoutMs: 5000,
     maxResponseBytes: 16384,
     maxProposalTtlMs: 120000,
+    maxPromptBytes: 8192,
+    maxCompletionTokens: 128,
     transport: async () => ({
       status: 200,
       headers: {},
@@ -209,6 +233,8 @@ test('fixture to networked to fixture cortex migration preserves the vessel and 
       retryableReasonCodes: [],
       hostPolicyId: 'migration-policy',
       hostPolicyDigest: 'f'.repeat(64),
+      maxCompletionTokens: 128,
+      maxCycleCompletionTokens: 128,
     },
   });
   await middle.runCycle(mission('mission-networked'));

@@ -2,6 +2,7 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { AuthorityError, UncertainEffectError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
+import { assertExpectedOutcome, assertHandPayload } from './hand-contract.mjs';
 
 function observedProjection(observation, expected) {
   return Object.fromEntries(Object.keys(expected).map((key) => [key, observation[key]]));
@@ -43,23 +44,39 @@ export async function executeCommittedAction({
 }) {
   assertSchema('decision-commit', decision);
   const hand = authorize({ decision, action, realm, authority, stateEpoch });
+  assertHandPayload(hand, action.payload);
+  const observationBefore = await realm.observe();
   let invocation;
   let observation;
 
-  try {
-    invocation = await realm.invoke({
-      handId: action.handId,
-      payload: action.payload,
-      idempotencyKey: action.idempotencyKey,
-    });
-  } catch (error) {
-    if (!(error instanceof UncertainEffectError)) throw error;
-    const reconciled = await realm.reconcile(action.idempotencyKey);
-    invocation = reconciled.invocation ?? {
-      status: 'uncertain',
-      externalReceipt: `unverified-${action.idempotencyKey}`,
-    };
-    observation = reconciled.observation;
+  const alreadyAtExpected = canonicalJson(observedProjection(observationBefore, decision.expectedOutcome))
+    === canonicalJson(decision.expectedOutcome);
+  if (alreadyAtExpected) {
+    const existing = await realm.reconcile(action.idempotencyKey);
+    if (existing.invocation) {
+      invocation = existing.invocation;
+      observation = existing.observation;
+    }
+  }
+
+  if (!invocation) assertExpectedOutcome(hand, action.payload, observationBefore, decision.expectedOutcome);
+
+  if (!invocation) {
+    try {
+      invocation = await realm.invoke({
+        handId: action.handId,
+        payload: action.payload,
+        idempotencyKey: action.idempotencyKey,
+      });
+    } catch (error) {
+      if (!(error instanceof UncertainEffectError)) throw error;
+      const reconciled = await realm.reconcile(action.idempotencyKey);
+      invocation = reconciled.invocation ?? {
+        status: 'uncertain',
+        externalReceipt: `unverified-${action.idempotencyKey}`,
+      };
+      observation = reconciled.observation;
+    }
   }
 
   observation ??= await realm.observe();

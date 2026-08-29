@@ -3,6 +3,8 @@ import { sha256Text, sha256Value } from '../core/digest.mjs';
 import { SchemaError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
 import { acceptedProposal, failedInference } from './result.mjs';
+import { assertNoCredentialFields } from './receipt-safety.mjs';
+import { assertExpectedOutcome, assertHandPayload } from '../realm/hand-contract.mjs';
 
 const proposalFields = new Set([
   'sourceStateEpoch',
@@ -39,11 +41,12 @@ function sanitizedUsage(envelope) {
   return { inputTokens, outputTokens };
 }
 
-function requestFor({ modelId, context }) {
+function requestFor({ modelId, context, maxCompletionTokens }) {
   return {
     model: modelId,
     n: 1,
     temperature: 0,
+    max_completion_tokens: maxCompletionTokens,
     response_format: { type: 'json_object' },
     messages: [
       {
@@ -66,7 +69,7 @@ function requestFor({ modelId, context }) {
   };
 }
 
-function parseProviderProposal({ bodyText, modelId, context, attempt, adapterId, maxProposalTtlMs }) {
+function parseProviderProposal({ bodyText, modelId, context, attempt, adapterId, maxProposalTtlMs, maxCompletionTokens }) {
   let envelope;
   try {
     envelope = JSON.parse(bodyText);
@@ -96,10 +99,24 @@ function parseProviderProposal({ bodyText, modelId, context, attempt, adapterId,
     || Object.keys(content).some((key) => !proposalFields.has(key))) {
     return { failure: 'schema-rejected' };
   }
+  try {
+    assertNoCredentialFields(content);
+  } catch {
+    return { failure: 'schema-rejected' };
+  }
 
   const constraints = context.constraints ?? {};
   const expiresAt = Date.parse(content.expiresAt);
   const now = Date.parse(context.now);
+  const handContract = constraints.handContracts?.[content.intent?.handId];
+  const { effect: _effect, handId: _handId, ...handPayload } = content.intent ?? {};
+  let handSemanticsValid = true;
+  try {
+    assertHandPayload(handContract, handPayload);
+    assertExpectedOutcome(handContract, handPayload, context.observation, content.expectedOutcome);
+  } catch {
+    handSemanticsValid = false;
+  }
   if (content.sourceStateEpoch !== context.stateEpoch
     || !Number.isFinite(expiresAt)
     || expiresAt <= now
@@ -107,7 +124,8 @@ function parseProviderProposal({ bodyText, modelId, context, attempt, adapterId,
     || !subsetOf(content.requiredAuthority, constraints.availableAuthority ?? [])
     || !subsetOf(content.preconditions, constraints.availablePreconditions ?? [])
     || !constraints.allowedHands?.includes(content.intent?.handId)
-    || !constraints.permittedEffects?.includes(content.intent?.effect)) {
+    || !constraints.permittedEffects?.includes(content.intent?.effect)
+    || !handSemanticsValid) {
     return { failure: 'semantic-rejected' };
   }
 
@@ -117,13 +135,13 @@ function parseProviderProposal({ bodyText, modelId, context, attempt, adapterId,
     organId: adapterId,
     organVersion: '1',
     sourceStateEpoch: context.stateEpoch,
-    claim: content.claim,
+    claim: 'networked cortex proposed one bounded governed action',
     evidenceRefs: [context.observation.observationId],
     intent: content.intent,
     expectedOutcome: content.expectedOutcome,
     cost: content.cost,
     risk: content.risk,
-    uncertainty: content.uncertainty,
+    uncertainty: 'networked-provider-proposal',
     requiredAuthority: content.requiredAuthority,
     preconditions: content.preconditions,
     expiresAt: content.expiresAt,
@@ -137,6 +155,7 @@ function parseProviderProposal({ bodyText, modelId, context, attempt, adapterId,
   }
   const usage = sanitizedUsage(envelope);
   if (!usage) return { failure: 'invalid-response' };
+  if (usage.outputTokens > maxCompletionTokens) return { failure: 'budget-exhausted' };
   return { proposal, usage, responseDigest: sha256Value(content) };
 }
 
@@ -148,6 +167,8 @@ export function createOpenAICompatibleCortex({
   timeoutMs,
   maxResponseBytes,
   maxProposalTtlMs,
+  maxPromptBytes,
+  maxCompletionTokens,
   transport,
   resolveCredential,
 }) {
@@ -157,13 +178,18 @@ export function createOpenAICompatibleCortex({
   if (typeof transport !== 'function' || typeof resolveCredential !== 'function') {
     throw new TypeError('transport and credential resolver are required');
   }
+  if (!Number.isInteger(maxPromptBytes) || maxPromptBytes < 256
+    || !Number.isInteger(maxCompletionTokens) || maxCompletionTokens < 1) {
+    throw new TypeError('prompt and completion budgets are required');
+  }
   const endpointUrl = new URL(endpoint);
   if (endpointUrl.protocol !== 'https:') throw new Error('network cortex endpoint requires HTTPS');
 
   function prepare(context, attempt) {
-    const requestBody = requestFor({ modelId, context });
+    const requestBody = requestFor({ modelId, context, maxCompletionTokens });
     const body = canonicalJson(requestBody);
     const requestDigest = sha256Text(body);
+    const promptOverBudget = Buffer.byteLength(body, 'utf8') > maxPromptBytes;
     const metadata = Object.freeze({
       attemptId: attempt.attemptId,
       ordinal: attempt.ordinal,
@@ -176,6 +202,7 @@ export function createOpenAICompatibleCortex({
     return Object.freeze({
       metadata,
       async execute() {
+        if (promptOverBudget) return failedInference('budget-exhausted', metadata);
         let credential;
         try {
           credential = resolveCredential();
@@ -210,11 +237,22 @@ export function createOpenAICompatibleCortex({
         if (Buffer.byteLength(response.bodyText, 'utf8') > maxResponseBytes) {
           return failedInference('oversized-output', { ...metadata, responseDigest });
         }
+        if (response.bodyText.includes(credential)) {
+          return failedInference('schema-rejected', { ...metadata, responseDigest });
+        }
         if (!Number.isInteger(response.status) || response.status < 200 || response.status >= 300) {
           return failedInference(classifyStatus(response.status), { ...metadata, responseDigest });
         }
 
-        const parsed = parseProviderProposal({ bodyText: response.bodyText, modelId, context, attempt, adapterId, maxProposalTtlMs });
+        const parsed = parseProviderProposal({
+          bodyText: response.bodyText,
+          modelId,
+          context,
+          attempt,
+          adapterId,
+          maxProposalTtlMs,
+          maxCompletionTokens,
+        });
         if (parsed.failure) return failedInference(parsed.failure, { ...metadata, responseDigest });
         return acceptedProposal(parsed.proposal, {
           ...metadata,

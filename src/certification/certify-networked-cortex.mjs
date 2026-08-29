@@ -15,6 +15,8 @@ const exclusions = [
   'live-provider-cost',
   'live-provider-latency',
   'lunari-integration',
+  'os-level-network-isolation',
+  'signed-host-policy',
   'soul-runtime',
 ];
 
@@ -49,7 +51,7 @@ export function buildNetworkedCertificationReceipt(input) {
     }
     return { id, status: evidence.status, basis: [...evidence.basis].sort() };
   });
-  for (const name of ['canaryContainment', 'networkIsolation', 'historicalReceipt']) {
+  for (const name of ['canaryContainment', 'nodeProcessTreeNetworkGuard', 'historicalReceipt']) {
     validateProofGate(name, input.proof[name]);
   }
   const status = input.testSuite.status === 'pass'
@@ -122,7 +124,10 @@ export async function certifyNetworkedCortex({ repositoryRoot, outputPath }) {
     testSuite: { status: 'pass', tests: Number(match[1]) },
     proof: {
       canaryContainment: { status: 'pass', basis: ['tests/networked-secret-containment.test.mjs'] },
-      networkIsolation: { status: 'pass', basis: ['src/certification/no-network-guard.mjs', 'guarded-complete-test-suite'] },
+      nodeProcessTreeNetworkGuard: {
+        status: 'pass',
+        basis: ['src/certification/no-network-guard.mjs', 'guarded-complete-test-suite-and-node-children'],
+      },
       historicalReceipt: { status: 'pass', sha256: historicalDigest },
     },
     requirements,

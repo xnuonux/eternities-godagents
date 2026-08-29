@@ -322,5 +322,12 @@ git status --short --branch
 
 ## Final evidence
 
-This section is filled only from fresh command output after Task 8. Until then, the networked-cortex extension remains implemented-but-uncertified or pending.
+The independent Terra review reproduced two p1 defects in the first candidate: provider-controlled nested values could enter the journal, and an allowed Realm hand could carry an unbounded payload. It also identified completion-spend, policy-integrity, and process-local network-guard gaps. The hardened candidate now:
 
+- rejects reflected credentials and credential-shaped provider data, normalizes free-form provider prose, and scans the end-to-end journal surface;
+- validates strict per-hand inputs and expected transitions at both adapter admission and the action gateway;
+- bounds prompt bytes, completion tokens per attempt, completion tokens per cycle, response bytes, timeouts, and attempt count;
+- requires a separately supplied canonical policy digest before credential resolution;
+- propagates the certification guard through spawned Node processes while excluding OS-level isolation and signed policy identity.
+
+Fresh pre-certification verification on 2026-08-29 produced 92 passing tests, fixture build `116a4cf0e9abc8063a528fd25e142a9b2ee6b5e1418f4ad980795f8bd994be01`, networked fixture build `f54f0943e230d3249f20318f085e6f4917895f1974c2bff9e61158385eee2914`, a successful local demo with discrepancy class `none`, and a clean `git diff --check`. The versioned receipt generated from the final clean source commit is the authority for the exact source commit, test-output digest, and certification digest.

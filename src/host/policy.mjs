@@ -45,7 +45,17 @@ function validateSemantics(policy) {
   if (policy.provider.maxProposalTtlMs < 1_000 || policy.provider.maxProposalTtlMs > 600_000) {
     throw new Error('host policy maxProposalTtlMs is outside bounds');
   }
+  if (policy.provider.maxPromptBytes < 256 || policy.provider.maxPromptBytes > 1_048_576) {
+    throw new Error('host policy maxPromptBytes is outside bounds');
+  }
+  if (policy.provider.maxCompletionTokens < 1 || policy.provider.maxCompletionTokens > 8_192) {
+    throw new Error('host policy maxCompletionTokens is outside bounds');
+  }
   if (policy.inference.maxAttempts > 3) throw new Error('host policy maxAttempts exceeds 3');
+  if (policy.inference.maxCycleCompletionTokens < policy.provider.maxCompletionTokens
+    || policy.inference.maxCycleCompletionTokens > 24_576) {
+    throw new Error('host policy maxCycleCompletionTokens is outside bounds');
+  }
   if (!unique(policy.inference.retryableReasonCodes)
     || policy.inference.retryableReasonCodes.some((reason) => !retryableReasons.has(reason))) {
     throw new Error('host policy retryableReasonCodes are invalid');
@@ -82,4 +92,3 @@ export function createCredentialResolver({ env, variableName }) {
     },
   });
 }
-

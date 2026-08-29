@@ -28,6 +28,7 @@ const failureReasons = new Set([
   'schema-rejected',
   'semantic-rejected',
   'retry-exhausted',
+  'budget-exhausted',
 ]);
 
 const commonKeys = Object.freeze([
@@ -120,4 +121,3 @@ export function projectInferenceEvent(event) {
   }
   return deepFreeze(projected);
 }
-

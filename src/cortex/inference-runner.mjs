@@ -47,6 +47,10 @@ export async function runInference({
   if (typeof cortex?.prepare !== 'function') throw new TypeError('networked cortex must expose prepare');
   if (!Number.isInteger(policy?.maxAttempts) || policy.maxAttempts < 1) throw new TypeError('maxAttempts must be positive');
   if (!Array.isArray(policy.retryableReasonCodes)) throw new TypeError('retryableReasonCodes must be an array');
+  if (!Number.isInteger(policy.maxCompletionTokens) || policy.maxCompletionTokens < 1
+    || !Number.isInteger(policy.maxCycleCompletionTokens) || policy.maxCycleCompletionTokens < 1) {
+    throw new TypeError('completion-token budgets must be positive integers');
+  }
   if (!Number.isInteger(existingAttempts) || existingAttempts < 0) throw new TypeError('existingAttempts must be non-negative');
 
   if (existingAttempts >= policy.maxAttempts) {
@@ -68,6 +72,18 @@ export async function runInference({
     const attempt = { attemptId: attemptIdFor(context, ordinal), ordinal };
     const prepared = cortex.prepare(context, attempt);
     lastMetadata = prepared.metadata;
+    if (ordinal * policy.maxCompletionTokens > policy.maxCycleCompletionTokens) {
+      const terminal = failedInference('budget-exhausted', prepared.metadata);
+      const failed = projectInferenceEvent(projectionInput(
+        'cortex.failed',
+        resultMetadata(terminal),
+        context,
+        policy,
+        terminal.reasonCode,
+      ));
+      await record('cortex.failed', { inference: failed });
+      return terminal;
+    }
     const requested = projectInferenceEvent(projectionInput(
       'cortex.requested',
       prepared.metadata,

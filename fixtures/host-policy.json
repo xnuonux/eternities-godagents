@@ -11,11 +11,14 @@
     "credentialEnv": "GODAGENT_MODEL_API_KEY",
     "timeoutMs": 5000,
     "maxResponseBytes": 16384,
-    "maxProposalTtlMs": 120000
+    "maxProposalTtlMs": 120000,
+    "maxPromptBytes": 8192,
+    "maxCompletionTokens": 128
   },
   "inference": {
     "maxAttempts": 2,
-    "retryableReasonCodes": ["connect-failed", "timeout", "rate-limited", "transient-server"]
+    "retryableReasonCodes": ["connect-failed", "timeout", "rate-limited", "transient-server"],
+    "maxCycleCompletionTokens": 256
   },
   "runtime": {
     "instanceId": "networked-fixture-1",

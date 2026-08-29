@@ -25,6 +25,8 @@ const policy = Object.freeze({
   retryableReasonCodes: ['timeout', 'connect-failed', 'rate-limited', 'transient-server'],
   hostPolicyId: 'policy-1',
   hostPolicyDigest: digest('f'),
+  maxCompletionTokens: 60,
+  maxCycleCompletionTokens: 120,
 });
 
 const proposalFor = (attemptId) => ({
@@ -177,4 +179,21 @@ test('recovery with an exhausted attempt budget records terminal failure without
   assert.equal(cortex.preparedCount, 0);
   assert.equal(cortex.executedCount, 0);
   assert.deepEqual(events.map((event) => event.eventType), ['cortex.failed']);
+});
+
+test('cycle completion-token budget can stop retries before the attempt ceiling', async () => {
+  const events = [];
+  const cortex = scriptedCortex(['timeout', 'accepted'], events);
+  const result = await runInference({
+    cortex,
+    context,
+    policy: { ...policy, maxCycleCompletionTokens: 60 },
+    record: async (eventType, payload) => events.push({ eventType, payload }),
+  });
+
+  assert.equal(result.reasonCode, 'budget-exhausted');
+  assert.equal(cortex.executedCount, 1);
+  assert.deepEqual(events.map((event) => event.eventType), [
+    'cortex.requested', 'cortex.failed', 'cortex.failed',
+  ]);
 });

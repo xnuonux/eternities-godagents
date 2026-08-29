@@ -30,7 +30,8 @@
         "invalid-response",
         "schema-rejected",
         "semantic-rejected",
-        "retry-exhausted"
+        "retry-exhausted",
+        "budget-exhausted"
       ]
     },
     "proposal": { "type": "object", "additionalProperties": true },
