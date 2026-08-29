@@ -6,6 +6,7 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
+import { runInference } from '../cortex/inference-runner.mjs';
 import { executeCommittedAction } from '../realm/action-gateway.mjs';
 import { routeGodskill } from '../skills/godskills-adapter.mjs';
 import { createDormantSoulPort } from '../soul/dormant-port.mjs';
@@ -35,6 +36,9 @@ function initialState(instanceId, constitutionDigest, artifactId) {
     outstandingAction: null,
     lastDecisionId: null,
     lastActionId: null,
+    inferenceAttemptCount: 0,
+    lastInference: null,
+    acceptedProposal: null,
   };
 }
 
@@ -46,7 +50,24 @@ function reduceVessel(state, event) {
       return { ...state, status: 'perceiving', currentMission: event.payload.mission };
     case 'realm.observed':
       return { ...state, status: 'deliberating', lastObservation: event.payload.observation };
+    case 'cortex.requested':
+      return {
+        ...state,
+        status: 'inferring',
+        inferenceAttemptCount: state.inferenceAttemptCount + 1,
+        lastInference: event.payload.inference,
+      };
+    case 'cortex.failed':
+      return { ...state, status: 'inferring', lastInference: event.payload.inference };
+    case 'cortex.accepted':
+      return {
+        ...state,
+        status: 'proposal-accepted',
+        lastInference: event.payload.inference,
+        acceptedProposal: event.payload.proposal,
+      };
     case 'proposal.collected':
+      return { ...state, status: 'deliberating' };
     case 'godskill.routed':
       return state;
     case 'decision.committed':
@@ -73,6 +94,9 @@ function reduceVessel(state, event) {
         currentMission: null,
         outstandingDecision: null,
         outstandingAction: null,
+        inferenceAttemptCount: 0,
+        lastInference: null,
+        acceptedProposal: null,
       };
     case 'cycle.aborted':
       return {
@@ -83,6 +107,9 @@ function reduceVessel(state, event) {
         currentMission: null,
         outstandingDecision: null,
         outstandingAction: null,
+        inferenceAttemptCount: 0,
+        lastInference: null,
+        acceptedProposal: null,
       };
     default:
       return state;
@@ -122,6 +149,7 @@ export async function createVessel({
   realm,
   godskillsTransport,
   clock,
+  inferencePolicy = null,
   crashAt = null,
   bypassArbiter = false,
   disableActionReconciliation = false,
@@ -203,41 +231,41 @@ export async function createVessel({
     if (crashAt === checkpoint) throw new Error(`injected crash after ${checkpoint}`);
   }
 
-  async function runCycle(mission) {
-    if (state.status !== 'idle') throw new Error(`vessel is not idle: ${state.status}`);
-    await record('mission.admitted', { mission }, {
-      sourceClass: 'user-mission',
-      sourceRef: mission.requestId,
-      causationId: mission.requestId,
-      correlationId: `${instanceId}:${mission.requestId}`,
-    });
-    injectCrash('admission');
-
-    const observation = await realm.observe();
-    await record('realm.observed', { observation }, {
-      sourceClass: 'realm-observation',
-      sourceRef: observation.observationId,
-    });
-    const organ = {
-      id: cortex.adapterId,
-      propose: () => cortex.infer({
-        mission: mission.text,
-        missionId: mission.requestId,
-        observation,
-        stateEpoch: state.epoch,
-        now: clock(),
-      }),
-    };
-    const proposals = await collectProposals({
-      organs: [organ],
-      state: {
-        epoch: state.epoch,
-        missionId: mission.requestId,
-        now: clock(),
-        preconditions: ['realm-observed'],
+  function cortexContext(mission, observation) {
+    const authority = new Set(mission.authority);
+    const hostAuthority = new Set(mission.hostContext.availableAuthority);
+    const hostEffects = new Set(mission.hostContext.permittedEffects);
+    const hostPreconditions = new Set(mission.hostContext.availablePreconditions);
+    return {
+      instanceId,
+      mission: mission.text,
+      missionId: mission.requestId,
+      observation,
+      stateEpoch: state.epoch,
+      now: clock(),
+      constraints: {
+        allowedHands: distribution.realmContract.hands.map((hand) => hand.id),
+        permittedEffects: distribution.genome.constitution.allowedEffects.filter((effect) => hostEffects.has(effect)),
+        availableAuthority: [...authority].filter((entry) => hostAuthority.has(entry)).sort(),
+        availablePreconditions: ['realm-observed'].filter((entry) => hostPreconditions.has(entry)),
       },
-      context: { observationId: observation.observationId },
+    };
+  }
+
+  async function collectNetworkedProposal(mission, observation, existingAttempts = 0, lastAttempt = null) {
+    if (!inferencePolicy) throw new Error('networked cortex requires an inference policy');
+    return runInference({
+      cortex,
+      context: cortexContext(mission, observation),
+      policy: inferencePolicy,
+      existingAttempts,
+      lastAttempt,
+      record,
+      checkpoint: injectCrash,
     });
+  }
+
+  async function completeFromProposals(mission, proposals) {
     for (const proposal of proposals) {
       await record('proposal.collected', { proposal }, {
         sourceClass: 'cortex-proposal',
@@ -303,7 +331,57 @@ export async function createVessel({
       sourceClass: 'vessel-runtime',
       sourceRef: mission.requestId,
     });
-    return { decision, route, receipt };
+    return { status: 'completed', decision, route, receipt };
+  }
+
+  async function runCycle(mission) {
+    if (state.status !== 'idle') throw new Error(`vessel is not idle: ${state.status}`);
+    await record('mission.admitted', { mission }, {
+      sourceClass: 'user-mission',
+      sourceRef: mission.requestId,
+      causationId: mission.requestId,
+      correlationId: `${instanceId}:${mission.requestId}`,
+    });
+    injectCrash('admission');
+
+    const observation = await realm.observe();
+    await record('realm.observed', { observation }, {
+      sourceClass: 'realm-observation',
+      sourceRef: observation.observationId,
+    });
+    if (typeof cortex.prepare === 'function') {
+      const inference = await collectNetworkedProposal(mission, observation);
+      if (inference.status === 'failed') {
+        await record('cycle.aborted', { reason: 'cortex-failed', reasonCode: inference.reasonCode }, {
+          sourceClass: 'cortex-failure',
+          sourceRef: inference.attemptId,
+        });
+        return { status: 'failed', inference };
+      }
+      return completeFromProposals(mission, [inference.proposal]);
+    }
+
+    const organ = {
+      id: cortex.adapterId,
+      propose: () => cortex.infer({
+        mission: mission.text,
+        missionId: mission.requestId,
+        observation,
+        stateEpoch: state.epoch,
+        now: clock(),
+      }),
+    };
+    const proposals = await collectProposals({
+      organs: [organ],
+      state: {
+        epoch: state.epoch,
+        missionId: mission.requestId,
+        now: clock(),
+        preconditions: ['realm-observed'],
+      },
+      context: { observationId: observation.observationId },
+    });
+    return completeFromProposals(mission, proposals);
   }
 
   async function recover() {
@@ -315,6 +393,29 @@ export async function createVessel({
     });
     state = restored.state;
     if (state.status === 'idle') return inspect();
+
+    if (state.status === 'proposal-accepted' && state.acceptedProposal) {
+      await completeFromProposals(state.currentMission, [state.acceptedProposal]);
+      return inspect();
+    }
+
+    if (state.status === 'inferring' && typeof cortex.prepare === 'function') {
+      const inference = await collectNetworkedProposal(
+        state.currentMission,
+        state.lastObservation,
+        state.inferenceAttemptCount,
+        state.lastInference,
+      );
+      if (inference.status === 'failed') {
+        await record('cycle.aborted', { reason: 'cortex-failed', reasonCode: inference.reasonCode }, {
+          sourceClass: 'recovery-reconciliation',
+          sourceRef: inference.attemptId,
+        });
+      } else {
+        await completeFromProposals(state.currentMission, [inference.proposal]);
+      }
+      return inspect();
+    }
 
     if (state.status === 'acting') {
       const { action, decision, authority } = state.outstandingAction;

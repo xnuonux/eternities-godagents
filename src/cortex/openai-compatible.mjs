@@ -160,67 +160,78 @@ export function createOpenAICompatibleCortex({
   const endpointUrl = new URL(endpoint);
   if (endpointUrl.protocol !== 'https:') throw new Error('network cortex endpoint requires HTTPS');
 
-  return Object.freeze({
+  function prepare(context, attempt) {
+    const requestBody = requestFor({ modelId, context });
+    const body = canonicalJson(requestBody);
+    const requestDigest = sha256Text(body);
+    const metadata = Object.freeze({
+      attemptId: attempt.attemptId,
+      ordinal: attempt.ordinal,
+      adapterId,
+      profile,
+      modelId,
+      requestDigest,
+    });
+
+    return Object.freeze({
+      metadata,
+      async execute() {
+        let credential;
+        try {
+          credential = resolveCredential();
+        } catch {
+          return failedInference('authentication', metadata);
+        }
+        if (typeof credential !== 'string' || credential.length === 0) {
+          return failedInference('authentication', metadata);
+        }
+
+        let response;
+        try {
+          response = await transport({
+            url: endpointUrl.href,
+            method: 'POST',
+            headers: { 'content-type': 'application/json', authorization: `Bearer ${credential}` },
+            body,
+            timeoutMs,
+            maxResponseBytes,
+          });
+        } catch (error) {
+          const reasonCode = error?.name === 'AbortError'
+            ? 'timeout'
+            : error?.name === 'ResponseTooLargeError'
+              ? 'oversized-output'
+              : 'connect-failed';
+          return failedInference(reasonCode, metadata);
+        }
+
+        if (typeof response?.bodyText !== 'string') return failedInference('invalid-response', metadata);
+        const responseDigest = sha256Text(response.bodyText);
+        if (Buffer.byteLength(response.bodyText, 'utf8') > maxResponseBytes) {
+          return failedInference('oversized-output', { ...metadata, responseDigest });
+        }
+        if (!Number.isInteger(response.status) || response.status < 200 || response.status >= 300) {
+          return failedInference(classifyStatus(response.status), { ...metadata, responseDigest });
+        }
+
+        const parsed = parseProviderProposal({ bodyText: response.bodyText, modelId, context, attempt, adapterId, maxProposalTtlMs });
+        if (parsed.failure) return failedInference(parsed.failure, { ...metadata, responseDigest });
+        return acceptedProposal(parsed.proposal, {
+          ...metadata,
+          responseDigest: parsed.responseDigest,
+          usage: parsed.usage,
+        });
+      },
+    });
+  }
+
+  const cortex = {
     adapterId,
     profile,
+    prepare,
     async infer(context, attempt) {
-      const requestBody = requestFor({ modelId, context });
-      const body = canonicalJson(requestBody);
-      const requestDigest = sha256Text(body);
-      const metadata = {
-        attemptId: attempt.attemptId,
-        ordinal: attempt.ordinal,
-        adapterId,
-        profile,
-        modelId,
-        requestDigest,
-      };
-      let credential;
-      try {
-        credential = resolveCredential();
-      } catch {
-        return failedInference('authentication', metadata);
-      }
-      if (typeof credential !== 'string' || credential.length === 0) {
-        return failedInference('authentication', metadata);
-      }
-
-      let response;
-      try {
-        response = await transport({
-          url: endpointUrl.href,
-          method: 'POST',
-          headers: { 'content-type': 'application/json', authorization: `Bearer ${credential}` },
-          body,
-          timeoutMs,
-          maxResponseBytes,
-        });
-      } catch (error) {
-        const reasonCode = error?.name === 'AbortError'
-          ? 'timeout'
-          : error?.name === 'ResponseTooLargeError'
-            ? 'oversized-output'
-            : 'connect-failed';
-        return failedInference(reasonCode, metadata);
-      }
-
-      if (typeof response?.bodyText !== 'string') return failedInference('invalid-response', metadata);
-      const responseDigest = sha256Text(response.bodyText);
-      if (Buffer.byteLength(response.bodyText, 'utf8') > maxResponseBytes) {
-        return failedInference('oversized-output', { ...metadata, responseDigest });
-      }
-      if (!Number.isInteger(response.status) || response.status < 200 || response.status >= 300) {
-        return failedInference(classifyStatus(response.status), { ...metadata, responseDigest });
-      }
-
-      const parsed = parseProviderProposal({ bodyText: response.bodyText, modelId, context, attempt, adapterId, maxProposalTtlMs });
-      if (parsed.failure) return failedInference(parsed.failure, { ...metadata, responseDigest });
-      return acceptedProposal(parsed.proposal, {
-        ...metadata,
-        responseDigest: parsed.responseDigest,
-        usage: parsed.usage,
-      });
+      return prepare(context, attempt).execute();
     },
-  });
+  };
+  return Object.freeze(cortex);
 }
-
