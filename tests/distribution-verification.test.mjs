@@ -74,3 +74,19 @@ test('distribution verifier rejects manifest artifact substitution and recompute
   await writeFile(wrongBuildPath, `${canonicalJson(wrongBuildManifest)}\n`, 'utf8');
   await assert.rejects(() => verifyDistribution(wrongBuild), /build id mismatch/);
 });
+
+test('distribution verifier rejects compatibility and proof claims not derived from its artifacts', async (context) => {
+  const widened = await cloneDistribution(context);
+  const widenedPath = join(widened, 'distribution-manifest.json');
+  const widenedManifest = JSON.parse(await readFile(widenedPath, 'utf8'));
+  widenedManifest.compatibility.realmIds.push('unverified-realm');
+  await writeFile(widenedPath, `${canonicalJson(widenedManifest)}\n`, 'utf8');
+  await assert.rejects(() => verifyDistribution(widened), /compatibility mismatch/);
+
+  const falsified = await cloneDistribution(context);
+  const falsifiedPath = join(falsified, 'distribution-manifest.json');
+  const falsifiedManifest = JSON.parse(await readFile(falsifiedPath, 'utf8'));
+  falsifiedManifest.validations[0].status = 'fail';
+  await writeFile(falsifiedPath, `${canonicalJson(falsifiedManifest)}\n`, 'utf8');
+  await assert.rejects(() => verifyDistribution(falsified), /validation mismatch/);
+});

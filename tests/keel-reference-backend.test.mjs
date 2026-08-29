@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
@@ -154,4 +154,18 @@ test('backend rejects path escape before filesystem access', async (context) => 
   const { backend } = await fixture(context);
   await assert.rejects(() => backend.inspectNamespace({ keelId: '../outside' }), IntegrityError);
   await assert.rejects(() => backend.inspectNamespace({ keelId: 'keel-ABC' }), IntegrityError);
+});
+
+test('namespace preparation replaces uncommitted files when no identity commit marker exists', async (context) => {
+  const { root, backend } = await fixture(context);
+  const first = preparation('agent-a');
+  const directory = join(root, first.keelId);
+  await mkdir(directory, { recursive: true });
+  await writeFile(join(directory, 'chain.jsonl'), '{"partial":', 'utf8');
+  await writeFile(join(directory, 'state.json'), '{"partial":true}\n', 'utf8');
+
+  const prepared = await backend.prepareNamespace(first);
+  assert.equal(prepared.status, 'active');
+  assert.equal(prepared.recordCount, 1);
+  assert.equal(prepared.instanceId, 'agent-a');
 });

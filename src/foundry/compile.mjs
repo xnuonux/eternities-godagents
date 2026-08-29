@@ -99,6 +99,30 @@ export async function verifyDistribution(distributionDir) {
     throw new Error('distribution artifact identity mismatch');
   }
   if (manifest.genomeDigest !== sha256Text(genomeText)) throw new Error('distribution genome digest mismatch');
+  const expectedCompatibility = {
+    cortexAdapters: [...genome.cortex.allowedAdapters].sort(),
+    realmIds: [realm.realmId],
+    schemaRange: '1',
+  };
+  if (canonicalJson(manifest.compatibility) !== canonicalJson(expectedCompatibility)) {
+    throw new Error('distribution compatibility mismatch');
+  }
+  if (canonicalJson(manifest.resolvedComponents) !== canonicalJson(['genome', 'prompt-os', 'realm'])) {
+    throw new Error('distribution resolved component mismatch');
+  }
+  if (canonicalJson(manifest.omittedComponents) !== canonicalJson(['soul-runtime'])) {
+    throw new Error('distribution omitted component mismatch');
+  }
+  const expectedValidations = [
+    { id: 'agent-genome-schema', status: 'pass' },
+    { id: 'prompt-os-metadata', status: 'pass' },
+    { id: 'realm-contract-schema', status: 'pass' },
+    { id: 'realm-capabilities', status: 'pass' },
+    { id: 'soul-port-dormant', status: 'pass' },
+  ];
+  if (canonicalJson(manifest.validations) !== canonicalJson(expectedValidations)) {
+    throw new Error('distribution validation mismatch');
+  }
   return Object.freeze(structuredClone(manifest));
 }
 

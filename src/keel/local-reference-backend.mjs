@@ -233,9 +233,15 @@ export function createLocalKeelBackend({ root, clock = () => new Date().toISOStr
         recordedAt: clock(),
       });
       const identity = { schemaVersion: 1, keelId, instanceId, genesisId, bedrockDigest: first.contentDigest };
-      await atomicJson(paths.identity, identity);
+      await Promise.all([
+        rm(paths.chain, { force: true }),
+        rm(paths.state, { force: true }),
+        rm(`${paths.identity}.writing`, { force: true }),
+        rm(`${paths.state}.writing`, { force: true }),
+      ]);
       await writeFile(paths.chain, `${canonicalJson(first)}\n`, { encoding: 'utf8', flag: 'wx' });
       await atomicJson(paths.state, stateValue({ status: 'active', genesisId }));
+      await atomicJson(paths.identity, identity);
       return inspectNamespace({ keelId });
     });
   }
