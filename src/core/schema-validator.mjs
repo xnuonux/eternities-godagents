@@ -10,6 +10,7 @@ const schemaFiles = {
   'organ-proposal': 'organ-proposal.schema.json',
   'decision-commit': 'decision-commit.schema.json',
   'action-receipt': 'action-receipt.schema.json',
+  'cortex-attempt': 'cortex-attempt.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

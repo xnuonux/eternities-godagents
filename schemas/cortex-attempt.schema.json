@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "status", "attemptId", "ordinal", "adapterId", "profile", "modelId", "requestDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "status": { "enum": ["accepted", "failed"] },
+    "attemptId": { "type": "string", "minLength": 1 },
+    "ordinal": { "type": "integer", "minimum": 1 },
+    "adapterId": { "type": "string", "minLength": 1 },
+    "profile": { "type": "string", "minLength": 1 },
+    "modelId": { "type": "string", "minLength": 1 },
+    "requestDigest": { "$ref": "#/$defs/digest" },
+    "responseDigest": { "$ref": "#/$defs/digest" },
+    "reasonCode": {
+      "enum": [
+        "connect-failed",
+        "timeout",
+        "rate-limited",
+        "transient-server",
+        "authentication",
+        "authorization",
+        "invalid-request",
+        "forbidden-endpoint",
+        "forbidden-model",
+        "refusal",
+        "oversized-output",
+        "invalid-response",
+        "schema-rejected",
+        "semantic-rejected",
+        "retry-exhausted"
+      ]
+    },
+    "proposal": { "type": "object", "additionalProperties": true },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputTokens", "outputTokens"],
+      "properties": {
+        "inputTokens": { "type": "integer", "minimum": 0 },
+        "outputTokens": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
