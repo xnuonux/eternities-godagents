@@ -27,13 +27,22 @@
         <p>Choose a sealed architecture. Every path resolves through the same compiler.</p>
       </div>
       <div id="preset-list" class="preset-list" role="radiogroup" aria-label="Creation paths"></div>
+      <fieldset id="composition-controls" class="composition-controls" hidden>
+        <legend>Forge facets</legend>
+        <p class="field-note">Choose one validated expression and one module from every closed architecture class.</p>
+        <label class="facet-control" for="expression-select">
+          <span>Expression · name · presentation</span>
+          <select id="expression-select" name="expression"></select>
+        </label>
+        <div id="module-selects" class="module-selects"></div>
+      </fieldset>
       <div class="identity-input">
         <label for="creator-ref">Creator identity</label>
         <input id="creator-ref" name="creator-ref" value="creator:dom" maxlength="128" pattern="[a-z0-9][a-z0-9:._-]{0,127}" autocomplete="off" spellcheck="false">
         <p class="field-note">Bound into draft provenance. It grants no authority.</p>
       </div>
       <button id="preview-button" class="action action-secondary" type="button" disabled>
-        <span>Preview this path</span><span aria-hidden="true">↗</span>
+        <span>Preview this design</span><span aria-hidden="true">↗</span>
       </button>
       <p id="path-status" class="inline-status" aria-live="polite">Loading the validated catalog.</p>
       <div class="catalog-proof"><span>Catalog</span><code id="catalog-digest">unavailable</code></div>

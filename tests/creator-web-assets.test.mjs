@@ -21,7 +21,9 @@ test('visual shell contains the complete semantic character-creator structure', 
     'Concordance halo',
     'Review ledger',
     'Creator identity',
-    'Preview this path',
+    'Forge facets',
+    'Expression · name · presentation',
+    'Preview this design',
     'I reviewed this exact preview digest',
     'Forge reviewed build',
     'aria-live="polite"',
@@ -46,7 +48,10 @@ test('visual shell implements its specific palette, responsive reflow, focus, an
 
 test('visual shell script uses fixed same-origin APIs and text-safe DOM construction', async () => {
   const { js } = await assets();
-  for (const route of ['/api/catalog', '/api/preview-preset', '/api/acknowledge-preview', '/api/finalize-preset']) {
+  for (const route of [
+    '/api/catalog', '/api/preview-preset',
+    '/api/preview-composition', '/api/acknowledge-composition', '/api/finalize-composition',
+  ]) {
     assert.match(js, new RegExp(route.replaceAll('/', '\\/')));
   }
   assert.match(js, /x-godagent-local-session/);
@@ -55,6 +60,9 @@ test('visual shell script uses fixed same-origin APIs and text-safe DOM construc
   assert.doesNotMatch(js, /innerHTML|insertAdjacentHTML|eval\(|new Function/);
   assert.doesNotMatch(js, /https?:\/\//);
   assert.doesNotMatch(js, /localStorage|sessionStorage|document\.cookie/);
+  for (const kind of ['lineage', 'archetype', 'attributes', 'personality', 'voice', 'organs', 'godskills', 'cortex', 'embodiment']) {
+    assert.match(js, new RegExp(`['\"]${kind}['\"]`));
+  }
 });
 
 test('successful forging consumes the exact review acknowledgement', async () => {

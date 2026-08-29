@@ -3,10 +3,25 @@
 
   const sessionToken = globalThis.__GODAGENT_LOCAL__?.sessionToken;
   const svgNamespace = `http${'://'}www.w3.org/2000/svg`;
-  const state = { catalog: null, presetRef: null, preview: null, busy: false };
+  const moduleKinds = Object.freeze([
+    'lineage', 'archetype', 'attributes', 'personality', 'voice',
+    'organs', 'godskills', 'cortex', 'embodiment',
+  ]);
+  const state = {
+    catalog: null,
+    presetRef: null,
+    selection: null,
+    preview: null,
+    busy: false,
+    foundationRevision: 0,
+    designRevision: 0,
+  };
   const ui = Object.freeze({
     presetList: document.querySelector('#preset-list'),
     presetTemplate: document.querySelector('#preset-card-template'),
+    compositionControls: document.querySelector('#composition-controls'),
+    expressionSelect: document.querySelector('#expression-select'),
+    moduleSelects: document.querySelector('#module-selects'),
     creatorRef: document.querySelector('#creator-ref'),
     previewButton: document.querySelector('#preview-button'),
     pathStatus: document.querySelector('#path-status'),
@@ -89,6 +104,63 @@
     return value;
   }
 
+  function compositionInput() {
+    if (!state.selection || !state.presetRef) return null;
+    return {
+      foundation: state.presetRef,
+      creator: ui.creatorRef.value,
+      expression: state.selection.expression,
+      moduleRefs: { ...state.selection.moduleRefs },
+    };
+  }
+
+  function option(value, label) {
+    const node = element('option', '', label);
+    node.value = value;
+    return node;
+  }
+
+  function onSelectionChange() {
+    if (!state.selection) return;
+    state.selection.expression = ui.expressionSelect.value;
+    for (const select of ui.moduleSelects.querySelectorAll('select[data-kind]')) {
+      state.selection.moduleRefs[select.dataset.kind] = select.value;
+    }
+    state.designRevision += 1;
+    clearReview();
+    setStatus(ui.pathStatus, 'Architecture changed. Preview the exact composition before forging.');
+    updateActions();
+  }
+
+  function renderComposition(selection) {
+    state.selection = {
+      expression: selection.expressionRef,
+      moduleRefs: { ...selection.moduleRefs },
+    };
+    ui.expressionSelect.replaceChildren(...state.catalog.expressions.map((row) => option(
+      row.ref,
+      `${row.name} · ${row.pronouns} · ${row.genderPresentation}`,
+    )));
+    ui.expressionSelect.value = state.selection.expression;
+    ui.moduleSelects.replaceChildren();
+    for (const kind of moduleKinds) {
+      const control = element('label', 'facet-control');
+      control.append(element('span', '', kind));
+      const select = element('select');
+      select.dataset.kind = kind;
+      select.setAttribute('aria-label', `${kind} module`);
+      select.replaceChildren(...state.catalog.modules
+        .filter((row) => row.kind === kind)
+        .map((row) => option(row.ref, titleFromRef(row.ref))));
+      select.value = state.selection.moduleRefs[kind];
+      select.addEventListener('change', onSelectionChange);
+      control.append(select);
+      ui.moduleSelects.append(control);
+    }
+    ui.expressionSelect.onchange = onSelectionChange;
+    ui.compositionControls.hidden = false;
+  }
+
   function clearReview() {
     state.preview = null;
     ui.emptyReview.hidden = false;
@@ -109,19 +181,47 @@
 
   function updateActions() {
     const creatorValid = ui.creatorRef.checkValidity();
-    ui.previewButton.disabled = state.busy || !state.presetRef || !creatorValid;
+    const selectionReady = state.selection
+      && state.selection.expression
+      && moduleKinds.every((kind) => state.selection.moduleRefs[kind]);
+    ui.previewButton.disabled = state.busy || !state.presetRef || !selectionReady || !creatorValid;
     ui.forgeButton.disabled = state.busy || !state.preview || state.preview.status !== 'ready' || !ui.reviewAck.checked;
+    ui.expressionSelect.disabled = state.busy;
+    for (const select of ui.moduleSelects.querySelectorAll('select[data-kind]')) select.disabled = state.busy;
+    for (const button of ui.presetList.querySelectorAll('.preset-card')) button.disabled = state.busy;
   }
 
-  function selectPreset(ref) {
+  async function selectPreset(ref) {
+    const revision = state.foundationRevision + 1;
+    state.foundationRevision = revision;
+    state.designRevision += 1;
     state.presetRef = ref;
+    state.selection = null;
     for (const button of ui.presetList.querySelectorAll('.preset-card')) {
       button.setAttribute('aria-checked', String(button.dataset.ref === ref));
       button.tabIndex = button.dataset.ref === ref ? 0 : -1;
     }
     clearReview();
-    setStatus(ui.pathStatus, `${titleFromRef(ref)} selected. Preview to resolve its full architecture.`);
+    ui.compositionControls.hidden = true;
+    state.busy = true;
+    setStatus(ui.pathStatus, `Loading ${titleFromRef(ref)} as the sealed foundation.`);
     updateActions();
+    try {
+      const preview = await api('/api/preview-preset', {
+        method: 'POST', body: { preset: ref, creator: ui.creatorRef.value },
+      });
+      if (revision !== state.foundationRevision) return;
+      renderComposition(preview.selection);
+      setStatus(ui.pathStatus, `${titleFromRef(ref)} loaded. Refine its facets or preview the defaults.`);
+    } catch (error) {
+      if (revision !== state.foundationRevision) return;
+      setStatus(ui.pathStatus, failureMessages[error.code] ?? 'The foundation could not be loaded.', 'error');
+    } finally {
+      if (revision === state.foundationRevision) {
+        state.busy = false;
+        updateActions();
+      }
+    }
   }
 
   function renderPresets() {
@@ -133,19 +233,19 @@
       button.querySelector('.preset-index').textContent = String(index + 1).padStart(2, '0');
       button.querySelector('.preset-name').textContent = titleFromRef(preset.ref);
       button.querySelector('.preset-meta').textContent = `${preset.choiceCount} sealed choices · ${shortDigest(preset.sourceDigest)}`;
-      button.addEventListener('click', () => selectPreset(preset.ref));
+      button.addEventListener('click', () => { void selectPreset(preset.ref); });
       button.addEventListener('keydown', (event) => {
         if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
         event.preventDefault();
         const cards = [...ui.presetList.querySelectorAll('.preset-card')];
         const direction = event.key === 'ArrowDown' ? 1 : -1;
         const next = cards[(cards.indexOf(button) + direction + cards.length) % cards.length];
-        selectPreset(next.dataset.ref);
+        void selectPreset(next.dataset.ref);
         next.focus();
       });
       ui.presetList.append(fragment);
     });
-    if (state.catalog.presets[0]) selectPreset(state.catalog.presets[0].ref);
+    if (state.catalog.presets[0]) void selectPreset(state.catalog.presets[0].ref);
   }
 
   function polar(radius, angle) {
@@ -195,7 +295,10 @@
   function renderReview(preview) {
     ui.emptyReview.hidden = true;
     ui.reviewContent.hidden = false;
-    ui.selectionLedger.replaceChildren(ledgerRow('Expression', preview.selection.expressionRef));
+    ui.selectionLedger.replaceChildren(
+      ledgerRow('Foundation', preview.foundationRef ?? preview.presetRef),
+      ledgerRow('Expression', preview.selection.expressionRef),
+    );
     for (const [kind, ref] of Object.entries(preview.selection.moduleRefs).sort(([left], [right]) => left.localeCompare(right))) {
       ui.selectionLedger.append(ledgerRow(kind, ref));
     }
@@ -203,7 +306,7 @@
     ui.previewDigest.textContent = preview.previewDigest;
     ui.reviewAck.checked = false;
     ui.reviewAck.disabled = preview.status !== 'ready';
-    ui.designation.textContent = titleFromRef(state.presetRef);
+    ui.designation.textContent = titleFromRef(preview.selection.expressionRef);
     if (preview.status === 'ready') {
       renderHalo(preview.derivedAttributes);
       ui.haloCaption.textContent = `Thirteen bounded attributes · genome ${shortDigest(preview.genomeDigest)}`;
@@ -216,13 +319,16 @@
   }
 
   async function previewSelection() {
-    if (!state.presetRef || !ui.creatorRef.checkValidity()) return;
+    const input = compositionInput();
+    if (!input || !ui.creatorRef.checkValidity()) return;
+    const revision = state.designRevision;
     state.busy = true;
     clearReview();
     updateActions();
     setStatus(ui.pathStatus, 'Resolving modules through the certified creator protocol.');
     try {
-      const preview = await api('/api/preview-preset', { method: 'POST', body: { preset: state.presetRef, creator: ui.creatorRef.value } });
+      const preview = await api('/api/preview-composition', { method: 'POST', body: input });
+      if (revision !== state.designRevision) return;
       state.preview = preview;
       renderReview(preview);
       setStatus(ui.pathStatus, `${titleFromRef(state.presetRef)} resolved as ${preview.status}.`);
@@ -236,20 +342,21 @@
 
   async function forgeSelection() {
     if (!state.preview || !ui.reviewAck.checked) return;
+    const input = compositionInput();
+    if (!input) return;
     state.busy = true;
     updateActions();
     ui.forgeResult.hidden = true;
     setStatus(ui.globalStatus, 'Verifying the review seal and compiling the immutable source snapshot.');
     try {
-      const acknowledgement = await api('/api/acknowledge-preview', {
+      const acknowledgement = await api('/api/acknowledge-composition', {
         method: 'POST',
-        body: { preset: state.presetRef, creator: ui.creatorRef.value, expectedPreviewDigest: state.preview.previewDigest },
+        body: { ...input, expectedPreviewDigest: state.preview.previewDigest },
       });
-      const result = await api('/api/finalize-preset', {
+      const result = await api('/api/finalize-composition', {
         method: 'POST',
         body: {
-          preset: state.presetRef,
-          creator: ui.creatorRef.value,
+          ...input,
           expectedPreviewDigest: state.preview.previewDigest,
           reviewConfirmation: acknowledgement.reviewConfirmation,
         },
@@ -277,8 +384,8 @@
       state.catalog = await api('/api/catalog');
       ui.catalogDigest.textContent = state.catalog.catalogDigest;
       ui.footerProof.textContent = `CATALOG ${shortDigest(state.catalog.catalogDigest)}`;
-      renderPresets();
       setStatus(ui.pathStatus, `${state.catalog.presets.length} validated creation paths loaded.`);
+      renderPresets();
       updateActions();
     } catch (error) {
       setStatus(ui.pathStatus, failureMessages[error.code] ?? 'The validated catalog could not be loaded.', 'error');
@@ -288,6 +395,10 @@
   ui.previewButton.addEventListener('click', previewSelection);
   ui.forgeButton.addEventListener('click', forgeSelection);
   ui.reviewAck.addEventListener('change', updateActions);
-  ui.creatorRef.addEventListener('input', () => { clearReview(); updateActions(); });
+  ui.creatorRef.addEventListener('input', () => {
+    state.designRevision += 1;
+    clearReview();
+    updateActions();
+  });
   initialize();
 })();

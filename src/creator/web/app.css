@@ -32,7 +32,7 @@ body {
     radial-gradient(circle at 50% 44%, rgba(55, 65, 119, 0.26), transparent 38rem),
     linear-gradient(135deg, var(--deep), var(--void) 48%, #11142b);
 }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { color: inherit; }
 
 .skip-link {
@@ -95,6 +95,15 @@ button { color: inherit; }
 .preset-copy strong { display: block; font-family: var(--display); font-size: 1rem; font-weight: 400; }
 .preset-copy small { display: block; margin-top: 0.25rem; overflow: hidden; color: var(--dim); font-family: var(--mono); font-size: 0.59rem; text-overflow: ellipsis; white-space: nowrap; }
 .preset-arrow { color: var(--cyan); font-size: 1.3rem; }
+
+.composition-controls { min-width: 0; margin: 0 0 1.4rem; padding: 1rem 0 0; border: 0; border-top: 1px solid var(--cool-line); }
+.composition-controls legend { padding: 0 0.5rem 0 0; color: var(--cyan); font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+.composition-controls > .field-note { margin-bottom: 0.9rem; }
+.module-selects { display: grid; gap: 0.65rem; margin-top: 0.65rem; }
+.facet-control { display: grid; gap: 0.35rem; min-width: 0; }
+.facet-control > span { color: var(--dim); font-size: 0.68rem; font-weight: 600; text-transform: capitalize; }
+.facet-control select { width: 100%; min-width: 0; padding: 0.58rem 2rem 0.58rem 0.65rem; border: 1px solid rgba(170, 166, 186, 0.26); border-radius: 0; background: #0d0918; color: var(--mist); font-family: var(--mono); font-size: 0.62rem; text-overflow: ellipsis; }
+.facet-control select:hover { border-color: rgba(124, 212, 217, 0.45); }
 
 .identity-input { margin-top: 1.5rem; }
 .identity-input label { display: block; margin-bottom: 0.5rem; font-size: 0.76rem; font-weight: 600; }
