@@ -73,6 +73,28 @@ export function buildTransactionalGenesisCertificationReceipt(input) {
   return { ...unsigned, receiptDigest: sha256Value(unsigned) };
 }
 
+export function projectDeterministicTestSummary(stdout) {
+  const cases = [];
+  for (const line of stdout.split(/\r?\n/)) {
+    const match = line.match(/^([✔✖])\s+(.+?)\s+\([0-9.]+ms\)$/u);
+    if (match) cases.push({ name: match[2], status: match[1] === '✔' ? 'pass' : 'fail' });
+  }
+  cases.sort((left, right) => byteCompare(`${left.status}:${left.name}`, `${right.status}:${right.name}`));
+  const readCount = (label) => {
+    const match = stdout.match(new RegExp(`^ℹ ${label} (\\d+)$`, 'mu'));
+    if (!match) throw new Error(`certification could not read Node ${label} count`);
+    return Number(match[1]);
+  };
+  const summary = {
+    tests: readCount('tests'),
+    pass: readCount('pass'),
+    fail: readCount('fail'),
+    cases,
+  };
+  if (summary.cases.length !== summary.tests) throw new Error('certification test case summary is incomplete');
+  return Object.freeze(summary);
+}
+
 function run(command, args, cwd) {
   return new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(command, args, { cwd, shell: false, windowsHide: true });
@@ -183,8 +205,7 @@ export async function certifyTransactionalGenesisPhase2({ repositoryRoot, output
   const planText = await readFile(join(root, 'docs', 'superpowers', 'plans', '2026-08-29-godagent-transactional-genesis-phase-2.md'), 'utf8');
   const guard = join(root, 'src', 'certification', 'no-network-guard.mjs');
   const testRun = await run(process.execPath, ['--import', pathToFileURL(guard).href, '--test'], root);
-  const testCount = testRun.stdout.match(/ℹ tests (\d+)/);
-  if (!testCount) throw new Error('certification could not read the Node test count');
+  const testSummary = projectDeterministicTestSummary(testRun.stdout);
 
   const temporaryRoot = await mkdtemp(join(tmpdir(), 'godagent-genesis-cert-'));
   let left;
@@ -203,6 +224,7 @@ export async function certifyTransactionalGenesisPhase2({ repositoryRoot, output
   const statusAfter = await run('git', ['status', '--porcelain'], root);
   if (statusAfter.stdout.trim() !== '') throw new Error('certification changed source before receipt write');
   const commit = (await run('git', ['rev-parse', 'HEAD'], root)).stdout.trim();
+  const testFileManifest = await recursiveByteManifest(join(root, 'tests'));
   const requirements = Object.fromEntries(requirementIds.map((id) => [id, {
     status: 'pass',
     basis: requirementEvidence[id],
@@ -211,13 +233,14 @@ export async function certifyTransactionalGenesisPhase2({ repositoryRoot, output
     source: {
       commit,
       nodeVersion: process.version,
-      testOutputDigest: sha256Text(testRun.stdout),
+      testSummaryDigest: sha256Value(testSummary),
+      testFileManifestDigest: sha256Value(testFileManifest),
       specificationDigest: sha256Text(specificationText),
       planDigest: sha256Text(planText),
       genesisProjectionDigest: sha256Value(left.genesisReceipt),
       historicalReceiptDigests: historicalDigests,
     },
-    testSuite: { status: 'pass', tests: Number(testCount[1]) },
+    testSuite: { status: 'pass', tests: testSummary.tests },
     proof: {
       cleanSource: { status: 'pass', basis: ['git status --porcelain before and after proof execution'] },
       guardedSuite: { status: 'pass', basis: ['src/certification/no-network-guard.mjs', 'guarded complete Node test suite'] },

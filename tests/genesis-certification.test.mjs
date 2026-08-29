@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildTransactionalGenesisCertificationReceipt } from '../src/certification/certify-transactional-genesis-phase2.mjs';
+import {
+  buildTransactionalGenesisCertificationReceipt,
+  projectDeterministicTestSummary,
+} from '../src/certification/certify-transactional-genesis-phase2.mjs';
 
 const requirementIds = ['GF-006', 'GF-007', 'GF-008', 'GF-009', 'GF-012'];
 
@@ -17,7 +20,8 @@ function input(rows = requirements()) {
     source: {
       commit: 'a'.repeat(40),
       nodeVersion: 'v24.18.0',
-      testOutputDigest: 'b'.repeat(64),
+      testSummaryDigest: 'b'.repeat(64),
+      testFileManifestDigest: '0'.repeat(64),
       specificationDigest: 'c'.repeat(64),
       planDigest: 'd'.repeat(64),
       genesisProjectionDigest: 'e'.repeat(64),
@@ -74,4 +78,22 @@ test('failed suite, dirty source, divergent genesis, or absent interruption proo
     mutate(value);
     assert.equal(buildTransactionalGenesisCertificationReceipt(value).status, 'rejected');
   }
+});
+
+test('certification test summary excludes timings and output order from its identity', () => {
+  const left = [
+    '✔ second contract (20.12ms)',
+    '✔ first contract (1.02ms)',
+    'ℹ tests 2',
+    'ℹ pass 2',
+    'ℹ fail 0',
+  ].join('\n');
+  const right = [
+    '✔ first contract (99.90ms)',
+    '✔ second contract (0.01ms)',
+    'ℹ tests 2',
+    'ℹ pass 2',
+    'ℹ fail 0',
+  ].join('\n');
+  assert.deepEqual(projectDeterministicTestSummary(left), projectDeterministicTestSummary(right));
 });
