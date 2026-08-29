@@ -5,7 +5,7 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
 import { verifyCreationBuild } from '../creation/compile.mjs';
-import { verifyDistribution } from '../foundry/compile.mjs';
+import { loadVerifiedDistribution } from '../foundry/compile.mjs';
 import { createDormantSoulPort } from '../soul/dormant-port.mjs';
 import { deriveGenesisIdentity } from './identity.mjs';
 
@@ -28,7 +28,8 @@ export async function verifyGenesisInputs({
   if (creation.buildId !== expectedCreationBuildId) {
     throw new IntegrityError('creation build id pin mismatch');
   }
-  const distribution = await verifyDistribution(distributionDir);
+  const distributionSnapshot = await loadVerifiedDistribution(distributionDir);
+  const distribution = distributionSnapshot.manifest;
   const genomeArtifact = creation.artifacts.find((row) => row.path === 'agent-genome.json');
   if (!genomeArtifact || genomeArtifact.sha256 !== distribution.genomeDigest) {
     throw new IntegrityError('creation and distribution genome content digest mismatch');
@@ -57,6 +58,7 @@ export async function verifyGenesisInputs({
   return Object.freeze({
     creation,
     distribution,
+    distributionSnapshot,
     genome,
     moduleManifest,
     identity,

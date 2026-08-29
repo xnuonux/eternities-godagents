@@ -116,7 +116,14 @@ function reduceVessel(state, event) {
   }
 }
 
-async function loadDistribution(distributionDir) {
+async function loadDistribution(distributionDir, verifiedDistribution = null) {
+  if (verifiedDistribution) {
+    return {
+      manifest: verifiedDistribution.manifest,
+      genome: verifiedDistribution.genome,
+      realmContract: verifiedDistribution.realmContract,
+    };
+  }
   const root = localDirectory(distributionDir);
   const [manifest, genome, realmContract, promptText] = await Promise.all([
     readJson(join(root, 'distribution-manifest.json')),
@@ -142,6 +149,7 @@ async function loadDistribution(distributionDir) {
 
 export async function createVessel({
   distributionDir,
+  verifiedDistribution = null,
   instanceId,
   journalPath,
   snapshotPath,
@@ -156,7 +164,7 @@ export async function createVessel({
 }) {
   if (bypassArbiter) throw new Error('arbiter bypass is prohibited by Godagent v0');
   if (disableActionReconciliation) throw new Error('action reconciliation is mandatory in Godagent v0');
-  const distribution = await loadDistribution(distributionDir);
+  const distribution = await loadDistribution(distributionDir, verifiedDistribution);
   if (!distribution.genome.cortex.allowedAdapters.includes(cortex.adapterId)) {
     throw new Error(`cortex adapter ${cortex.adapterId} is not allowed by the genome`);
   }

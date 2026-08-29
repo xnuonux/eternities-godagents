@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
+import { sha256Text } from '../src/core/digest.mjs';
 import { compileCreation } from '../src/creation/compile.mjs';
 import { compileDistribution } from '../src/foundry/compile.mjs';
 import { prepareGenesis } from '../src/genesis/coordinator.mjs';
@@ -241,4 +242,39 @@ test('cortex replacement preserves all non-cortex identity and continuity', asyn
   }
   assert.equal(second.inspect().epoch, 2);
   assert.equal(realm.inspect().counter, 2);
+});
+
+test('distribution substitution between wake verification and vessel construction fails closed', async (context) => {
+  const { request, runtime } = await fixture(context, 'substitution-');
+  const admitted = await prepareGenesis(request);
+  const realAdapter = request.keelAdapter;
+  let substituted = false;
+  const substitutingAdapter = Object.freeze({
+    ...realAdapter,
+    async inspectNamespace(input) {
+      const inspected = await realAdapter.inspectNamespace(input);
+      if (!substituted) {
+        substituted = true;
+        const genomePath = join(request.distributionDir, 'agent-genome.json');
+        const manifestPath = join(request.distributionDir, 'distribution-manifest.json');
+        const genome = JSON.parse(await readFile(genomePath, 'utf8'));
+        genome.constitution.principles = ['substituted after verification'];
+        const genomeBytes = `${canonicalJson(genome)}\n`;
+        await writeFile(genomePath, genomeBytes, 'utf8');
+        const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+        manifest.artifacts.find((row) => row.path === 'agent-genome.json').sha256 = sha256Text(genomeBytes);
+        await writeFile(manifestPath, `${canonicalJson(manifest)}\n`, 'utf8');
+      }
+      return inspected;
+    },
+  });
+
+  const vessel = await createPersistentVessel({
+    genesis: { ...request, receiptPath: admitted.receiptPath },
+    runtime,
+    keelAdapter: substitutingAdapter,
+  });
+  assert.equal(vessel.inspect().constitutionDigest, admitted.genesisReceipt.constitutionDigest);
+  await assert.rejects(() => vessel.runCycle(mission('substitution-blocked')), /distribution.*mismatch/);
+  assert.equal(runtime.realm.inspect().invocationCount, 0);
 });

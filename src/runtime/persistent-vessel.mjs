@@ -1,4 +1,6 @@
-import { verifyGenesisReceipt } from '../genesis/verify.mjs';
+import { canonicalJson } from '../core/canonical-json.mjs';
+import { IntegrityError } from '../core/errors.mjs';
+import { verifyGenesisAdmission } from '../genesis/verify.mjs';
 import { createVessel } from './vessel.mjs';
 
 function assertRuntime(runtime) {
@@ -13,13 +15,23 @@ export async function createPersistentVessel({ genesis, runtime, keelAdapter }) 
   if (!genesis || typeof genesis !== 'object') throw new TypeError('admitted genesis inputs are required');
   assertRuntime(runtime);
 
+  let capturedDistribution = null;
+
   async function wake() {
-    return verifyGenesisReceipt({ ...genesis, keelAdapter });
+    const admission = await verifyGenesisAdmission({ ...genesis, keelAdapter });
+    if (capturedDistribution
+        && canonicalJson(admission.distributionSnapshot) !== canonicalJson(capturedDistribution)) {
+      throw new IntegrityError('verified distribution snapshot mismatch');
+    }
+    return admission;
   }
 
-  const genesisReceipt = await wake();
+  const admission = await wake();
+  const genesisReceipt = admission.receipt;
+  capturedDistribution = admission.distributionSnapshot;
   const vessel = await createVessel({
     distributionDir: genesis.distributionDir,
+    verifiedDistribution: capturedDistribution,
     instanceId: genesis.instanceId,
     journalPath: genesis.journalPath,
     snapshotPath: genesis.snapshotPath,

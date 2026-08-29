@@ -25,7 +25,7 @@ async function readReceipt(receiptPath) {
   return receipt;
 }
 
-export async function verifyGenesisReceipt({
+export async function verifyGenesisAdmission({
   receiptPath,
   creationDir,
   distributionDir,
@@ -116,5 +116,12 @@ export async function verifyGenesisReceipt({
       || binding.payload.journalHeadDigest !== receipt.journalHeadDigest) {
     throw new IntegrityError('genesis keel head binding mismatch');
   }
-  return Object.freeze(structuredClone(receipt));
+  return Object.freeze({
+    receipt: Object.freeze(structuredClone(receipt)),
+    distributionSnapshot: inputs.distributionSnapshot,
+  });
+}
+
+export async function verifyGenesisReceipt(input) {
+  return (await verifyGenesisAdmission(input)).receipt;
 }

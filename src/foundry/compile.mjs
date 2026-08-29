@@ -27,6 +27,14 @@ function sameArray(left, right) {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
+function deepFreeze(value) {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const child of Object.values(value)) deepFreeze(child);
+  }
+  return value;
+}
+
 function distributionBuildProjection({ genome, realm, promptSha256 }) {
   const sources = [
     { role: 'genome', path: 'agent-genome.json', sha256: sha256Text(jsonBytes(genome)) },
@@ -45,7 +53,7 @@ function distributionBuildProjection({ genome, realm, promptSha256 }) {
   };
 }
 
-export async function verifyDistribution(distributionDir) {
+export async function loadVerifiedDistribution(distributionDir) {
   const root = localPath(distributionDir);
   const names = (await readdir(root)).sort();
   if (!sameArray(names, [...expectedDistributionFiles].sort())) {
@@ -123,7 +131,16 @@ export async function verifyDistribution(distributionDir) {
   if (canonicalJson(manifest.validations) !== canonicalJson(expectedValidations)) {
     throw new Error('distribution validation mismatch');
   }
-  return Object.freeze(structuredClone(manifest));
+  return deepFreeze({
+    manifest: structuredClone(manifest),
+    genome: structuredClone(genome),
+    realmContract: structuredClone(realm),
+    promptArtifact: promptText,
+  });
+}
+
+export async function verifyDistribution(distributionDir) {
+  return (await loadVerifiedDistribution(distributionDir)).manifest;
 }
 
 export async function compileDistribution({
