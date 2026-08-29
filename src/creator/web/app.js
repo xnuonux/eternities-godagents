@@ -186,6 +186,7 @@
       && moduleKinds.every((kind) => state.selection.moduleRefs[kind]);
     ui.previewButton.disabled = state.busy || !state.presetRef || !selectionReady || !creatorValid;
     ui.forgeButton.disabled = state.busy || !state.preview || state.preview.status !== 'ready' || !ui.reviewAck.checked;
+    ui.creatorRef.disabled = state.busy;
     ui.expressionSelect.disabled = state.busy;
     for (const select of ui.moduleSelects.querySelectorAll('select[data-kind]')) select.disabled = state.busy;
     for (const button of ui.presetList.querySelectorAll('.preset-card')) button.disabled = state.busy;

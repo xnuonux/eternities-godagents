@@ -55,6 +55,7 @@ test('visual shell script uses fixed same-origin APIs and text-safe DOM construc
     assert.match(js, new RegExp(route.replaceAll('/', '\\/')));
   }
   assert.match(js, /x-godagent-local-session/);
+  assert.match(js, /ui\.creatorRef\.disabled = state\.busy/);
   assert.match(js, /createElement/);
   assert.match(js, /textContent/);
   assert.doesNotMatch(js, /innerHTML|insertAdjacentHTML|eval\(|new Function/);
