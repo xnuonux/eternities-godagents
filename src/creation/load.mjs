@@ -16,6 +16,10 @@ async function readJson(path) {
   return JSON.parse(await readFile(path, 'utf8'));
 }
 
+function childPath(directory, name) {
+  return directory instanceof URL ? new URL(name, directory) : join(directory, name);
+}
+
 function readonlyMap(source) {
   const map = new Map(source);
   const reject = () => { throw new TypeError('creation module map is read-only'); };
@@ -48,7 +52,7 @@ export async function loadCreationSources({
 
   const allModules = new Map();
   for (const file of moduleFiles.filter((name) => name.endsWith('.json')).sort(byteCompare)) {
-    const input = await readJson(join(moduleDirectory, file));
+    const input = await readJson(childPath(moduleDirectory, file));
     const module = validateModuleContract(input, policy);
     const ref = moduleRef(module);
     if (allModules.has(ref)) throw new TypeError(`duplicate module ref ${ref}`);
