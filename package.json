@@ -17,6 +17,7 @@
     "creator:local": "node src/creator/local-cli.mjs",
     "creator:web": "node src/creator/web/server.mjs",
     "admit:local": "node src/genesis/local-cli.mjs",
+    "launch:local": "node src/host/admitted-cli.mjs",
     "host:local": "node src/host/local-cli.mjs",
     "policy:digest": "node scripts/hash-host-policy.mjs",
     "verify:certifications": "node src/certification/verify-ledger.mjs",

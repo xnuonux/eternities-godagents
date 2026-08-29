@@ -184,6 +184,22 @@ The trusted local workspace is bound to that exact admission. An exact retry rec
 
 `npm run certify:local-admission` issues the separate append-only `local-admission-shell-v1` receipt. It runs the complete no-network suite, executes two fixed-clock admissions from independently compiled creation fixtures, compares every workspace byte and identity, and pins all six preceding receipts. Its exclusions preserve the trusted-local limitation and every non-runtime boundary above.
 
+### Admitted local launch
+
+`launch:local` is the safe bridge from that inert admission to one networked mission. The host policy must name the exact admission-owned distribution, journal, snapshot, and instance. The launcher rejects changed bindings or runtime paths, verifies the transactional genesis receipt, journal, creation, distribution, and personal keel before runtime construction, then verifies them again through the persistent-vessel wake before the cycle.
+
+```powershell
+$env:GODAGENT_POLICY_SHA256 = npm run --silent policy:digest -- C:\path\host-policy.json
+$env:GODAGENT_MODEL_API_KEY = '<provider credential>'
+npm run launch:local -- `
+  --admission C:\path\agent-workspace\admission `
+  --policy C:\path\host-policy.json `
+  --mission C:\path\mission.txt `
+  --request-id operator:20260829:001
+```
+
+One invocation runs at most one unseen mission and exits. Retrying the same request ID returns its recorded outcome or recovers its interrupted cycle without admitting a duplicate. Reusing that ID with changed mission or policy-derived authority fails closed. The launcher does not daemonize, widen host authority, modify genesis, lift frozen evolution, integrate Lunari, activate Inspiration, or activate Soul. This implementation has not yet received a separate certification receipt.
+
 `npm run verify:certifications` audits the exact seven-file certification ledger. It requires canonical bytes, recomputes each internal receipt digest, verifies certified status, resolves every source commit as a Git commit in this repository, and checks the exact required historical file set and hashes across the versioned receipt formats. It returns one canonical ledger projection and digest. This is an integrity audit, not a substitute for rerunning a receipt at its pinned source commit.
 
 ## Networked cortex host

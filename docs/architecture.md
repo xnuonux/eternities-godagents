@@ -79,6 +79,12 @@ Only an exact retry may reuse that workspace. Transactional genesis retains its 
 
 The separate `local-admission-shell-v1` receipt certifies this exact trusted-local boundary through two byte-identical fixed-clock admissions, all publication and genesis interruption tests, the complete guarded suite, source and test manifests, and unchanged historical receipts. It explicitly excludes concurrent hostile path manipulation under the same Windows user rather than presenting Node path checks as OS isolation.
 
+## Admitted local launch boundary
+
+The admitted launcher composes, but does not replace, the local admission and networked host boundaries. A separately pinned host policy must resolve its distribution, journal, snapshot, and instance references exactly to one admission binding. The launcher rejects current reparse points and unexpected entry kinds, verifies the complete genesis admission before constructing provider or Realm runtime components, and then constructs only through the persistent-vessel wrapper. That wrapper repeats admission verification on wake and before every cycle.
+
+The launch boundary executes one mission per process and returns only bounded identity and action references. Provider policy remains runtime authority rather than agent identity. The shell does not certify provider quality, background operation, hostile same-user OS isolation, hosted durability, evolution, Inspiration, Lunari, or Soul activation. A separate append-only certification is required before describing this implementation as certified.
+
 ## Phase 2 transactional genesis boundary
 
 Phase 2 converts a verified pre-genesis build into an admitted genesis result only after one deterministic transaction binds every immutable identity and continuity surface. The caller independently pins the creation-policy digest and creation-build ID. The coordinator derives the distribution-build and both genome digests from verified artifacts and checks their cross-artifact consistency. Genesis derives stable `genesisId` and `keelId` values from those verified values plus the instance and creator references; identity reuse with different bound data is rejected.
