@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "proposalId", "organId", "organVersion", "sourceStateEpoch", "claim", "evidenceRefs", "intent", "expectedOutcome", "cost", "risk", "uncertainty", "requiredAuthority", "preconditions", "expiresAt", "priority"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "proposalId": { "type": "string", "minLength": 1 },
+    "organId": { "type": "string", "minLength": 1 },
+    "organVersion": { "type": "string", "minLength": 1 },
+    "sourceStateEpoch": { "type": "integer", "minimum": 0 },
+    "claim": { "type": "string", "minLength": 1 },
+    "evidenceRefs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "intent": { "type": "object", "additionalProperties": true },
+    "expectedOutcome": { "type": "object", "additionalProperties": true },
+    "cost": { "type": "integer", "minimum": 0 },
+    "risk": { "enum": ["low", "moderate", "high"] },
+    "uncertainty": { "type": "string", "minLength": 1 },
+    "requiredAuthority": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "preconditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "expiresAt": { "type": "string", "minLength": 1 },
+    "priority": { "type": "integer", "minimum": 0 }
+  }
+}

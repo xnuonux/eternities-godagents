@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "blueprint", "genesis", "telos", "constitution", "promptOs", "cortex", "organs", "memory", "godskills", "realm", "evolution", "soulPort"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "blueprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "genesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["createdBy", "sourceManifest"],
+      "properties": {
+        "createdBy": { "type": "string", "minLength": 1 },
+        "sourceManifest": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "telos": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mission", "successConditions", "stopConditions"],
+      "properties": {
+        "mission": { "type": "string", "minLength": 1 },
+        "successConditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "stopConditions": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "constitution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "principles", "allowedEffects", "amendmentPolicy"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "principles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "allowedEffects": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "amendmentPolicy": { "const": "frozen-v0" }
+      }
+    },
+    "promptOs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edition", "allowedAdapters", "requiredCapabilities"],
+      "properties": {
+        "edition": { "type": "string", "minLength": 1 },
+        "allowedAdapters": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "requiredCapabilities": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "cortex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowedAdapters", "requiredCapabilities"],
+      "properties": {
+        "allowedAdapters": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "requiredCapabilities": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "organs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version", "cadence", "kind"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 },
+          "cadence": { "enum": ["cycle", "event", "recovery"] },
+          "kind": { "enum": ["perception", "goal", "planning", "reconciliation", "memory", "social"] }
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classes", "foreignHistoryPolicy"],
+      "properties": {
+        "classes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "foreignHistoryPolicy": { "const": "provenance-only" }
+      }
+    },
+    "godskills": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contractId", "maxComposition"],
+      "properties": {
+        "contractId": { "const": "eternities-portable-router-v1" },
+        "maxComposition": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "realm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredCapabilities"],
+      "properties": {
+        "requiredCapabilities": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "evolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy"],
+      "properties": { "policy": { "const": "frozen-v0" } }
+    },
+    "soulPort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "status"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "status": { "const": "dormant" }
+      }
+    }
+  }
+}

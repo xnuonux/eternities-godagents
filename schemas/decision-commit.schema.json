@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "decisionId", "missionId", "selectedProposalIds", "sourceStateEpoch", "constitutionalBasis", "authorityBasis", "committedIntent", "expectedOutcome", "allowedEffects", "budget", "expiresAt", "stopConditions", "receiptDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "decisionId": { "type": "string", "minLength": 1 },
+    "missionId": { "type": "string", "minLength": 1 },
+    "selectedProposalIds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "sourceStateEpoch": { "type": "integer", "minimum": 0 },
+    "constitutionalBasis": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "authorityBasis": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "committedIntent": { "type": "object", "additionalProperties": true },
+    "expectedOutcome": { "type": "object", "additionalProperties": true },
+    "allowedEffects": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxActions"],
+      "properties": { "maxActions": { "type": "integer", "minimum": 1 } }
+    },
+    "expiresAt": { "type": "string", "minLength": 1 },
+    "stopConditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  }
+}

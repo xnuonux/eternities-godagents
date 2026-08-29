@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "blueprint": {
+    "id": "fixture-agent",
+    "version": "0.1.0"
+  },
+  "genesis": {
+    "createdBy": "eternities-inc",
+    "sourceManifest": ["adr-0002", "prompt-os", "eternities-godskills"]
+  },
+  "telos": {
+    "mission": "advance one governed fixture counter while preserving exact causal receipts",
+    "successConditions": ["one authorized increment closes without discrepancy"],
+    "stopConditions": ["one action completes", "authority is absent", "realm truth is uncertain"]
+  },
+  "constitution": {
+    "id": "godagent-v0-fixture-constitution",
+    "version": "1",
+    "principles": ["purpose-is-not-permission", "capability-is-not-authority", "consequence-before-completion"],
+    "allowedEffects": ["local-read", "local-write"],
+    "amendmentPolicy": "frozen-v0"
+  },
+  "promptOs": {
+    "edition": "general-intelligence",
+    "allowedAdapters": ["generic"],
+    "requiredCapabilities": []
+  },
+  "cortex": {
+    "allowedAdapters": ["fixture-a", "fixture-b"],
+    "requiredCapabilities": ["structured-proposals"]
+  },
+  "organs": [
+    { "id": "perception", "version": "1", "cadence": "cycle", "kind": "perception" },
+    { "id": "planner", "version": "1", "cadence": "cycle", "kind": "planning" },
+    { "id": "reconciliation", "version": "1", "cadence": "recovery", "kind": "reconciliation" }
+  ],
+  "memory": {
+    "classes": ["working", "episodic", "constitutional"],
+    "foreignHistoryPolicy": "provenance-only"
+  },
+  "godskills": {
+    "contractId": "eternities-portable-router-v1",
+    "maxComposition": 3
+  },
+  "realm": {
+    "requiredCapabilities": ["counter.observe", "counter.increment"]
+  },
+  "evolution": {
+    "policy": "frozen-v0"
+  },
+  "soulPort": {
+    "schemaVersion": 1,
+    "status": "dormant"
+  }
+}

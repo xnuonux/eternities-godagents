@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "realmId", "version", "trustModel", "capabilities", "observations", "hands", "resources", "privacy", "lifecycle", "compatibleDistributions"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "realmId": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "trustModel": { "const": "fixture-local" },
+    "capabilities": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "freshness"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "freshness": { "enum": ["cycle", "event"] }
+        }
+      }
+    },
+    "hands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "effect", "requiredAuthority", "idempotent"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "effect": { "type": "string", "minLength": 1 },
+          "requiredAuthority": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "idempotent": { "type": "boolean" }
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxActionsPerCycle"],
+      "properties": { "maxActionsPerCycle": { "type": "integer", "minimum": 1 } }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retention"],
+      "properties": { "retention": { "const": "test-only" } }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry", "suspension", "recovery", "exit"],
+      "properties": {
+        "entry": { "const": "explicit" },
+        "suspension": { "const": "fail-closed" },
+        "recovery": { "const": "reconcile" },
+        "exit": { "const": "receipt-required" }
+      }
+    },
+    "compatibleDistributions": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  }
+}

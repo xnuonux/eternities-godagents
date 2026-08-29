@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "actionId", "idempotencyKey", "decisionId", "realmId", "handId", "authorityRef", "expectedTransition", "invocation", "observedTransition", "discrepancyClass", "disposition", "receiptDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "actionId": { "type": "string", "minLength": 1 },
+    "idempotencyKey": { "type": "string", "minLength": 1 },
+    "decisionId": { "type": "string", "minLength": 1 },
+    "realmId": { "type": "string", "minLength": 1 },
+    "handId": { "type": "string", "minLength": 1 },
+    "authorityRef": { "type": "string", "minLength": 1 },
+    "expectedTransition": { "type": "object", "additionalProperties": true },
+    "invocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "externalReceipt"],
+      "properties": {
+        "status": { "enum": ["applied", "denied", "uncertain", "failed"] },
+        "externalReceipt": { "type": "string", "minLength": 1 }
+      }
+    },
+    "observedTransition": { "type": "object", "additionalProperties": true },
+    "discrepancyClass": { "enum": ["none", "unexpected-state", "unverified-effect", "denied", "failed"] },
+    "disposition": { "enum": ["complete", "repair", "escalate", "terminal"] },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  }
+}

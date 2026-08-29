@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "realmId": "fixture-workbench",
+  "version": "1",
+  "trustModel": "fixture-local",
+  "capabilities": ["counter.observe", "counter.increment"],
+  "observations": [
+    { "id": "counter.state", "freshness": "cycle" }
+  ],
+  "hands": [
+    {
+      "id": "counter.increment",
+      "effect": "local-write",
+      "requiredAuthority": ["realm:write"],
+      "idempotent": true
+    }
+  ],
+  "resources": {
+    "maxActionsPerCycle": 1
+  },
+  "privacy": {
+    "retention": "test-only"
+  },
+  "lifecycle": {
+    "entry": "explicit",
+    "suspension": "fail-closed",
+    "recovery": "reconcile",
+    "exit": "receipt-required"
+  },
+  "compatibleDistributions": ["0.1.x"]
+}

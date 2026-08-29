@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "instanceId", "sequence", "stateEpoch", "eventType", "sourceClass", "sourceRef", "causationId", "correlationId", "payload", "previousDigest", "contentDigest", "recordedAt"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "instanceId": { "type": "string", "minLength": 1 },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "stateEpoch": { "type": "integer", "minimum": 0 },
+    "eventType": { "type": "string", "minLength": 1 },
+    "sourceClass": { "type": "string", "minLength": 1 },
+    "sourceRef": { "type": "string", "minLength": 1 },
+    "causationId": { "type": "string", "minLength": 1 },
+    "correlationId": { "type": "string", "minLength": 1 },
+    "payload": { "type": "object", "additionalProperties": true },
+    "previousDigest": { "$ref": "#/$defs/digest" },
+    "contentDigest": { "$ref": "#/$defs/digest" },
+    "recordedAt": { "type": "string", "minLength": 1 }
+  }
+}
