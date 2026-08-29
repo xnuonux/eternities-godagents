@@ -3,11 +3,109 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
   <title>Godagent Forge</title>
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-  <main id="app"><h1>Godagent Forge</h1><p>Loading validated creation paths.</p></main>
+  <a class="skip-link" href="#forge-main">Skip to creator</a>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <header class="masthead">
+    <a class="wordmark" href="#forge-main" aria-label="Eternities Godagent Forge">
+      <span class="wordmark-mark">E</span><span>ETERNITIES</span>
+    </a>
+    <div class="boundary-stamp" aria-label="Local pre-genesis environment">
+      <span class="status-lamp"></span>LOCAL FOUNDRY · PRE-GENESIS
+    </div>
+  </header>
+
+  <main id="forge-main" class="forge-grid">
+    <section class="identity-panel instrument-panel" aria-labelledby="paths-title">
+      <div class="panel-heading">
+        <p class="eyebrow">Identity lattice</p>
+        <h2 id="paths-title">Validated creation paths</h2>
+        <p>Choose a sealed architecture. Every path resolves through the same compiler.</p>
+      </div>
+      <div id="preset-list" class="preset-list" role="radiogroup" aria-label="Creation paths"></div>
+      <div class="identity-input">
+        <label for="creator-ref">Creator identity</label>
+        <input id="creator-ref" name="creator-ref" value="creator:dom" maxlength="128" pattern="[a-z0-9][a-z0-9:._-]{0,127}" autocomplete="off" spellcheck="false">
+        <p class="field-note">Bound into draft provenance. It grants no authority.</p>
+      </div>
+      <button id="preview-button" class="action action-secondary" type="button" disabled>
+        <span>Preview this path</span><span aria-hidden="true">↗</span>
+      </button>
+      <p id="path-status" class="inline-status" aria-live="polite">Loading the validated catalog.</p>
+      <div class="catalog-proof"><span>Catalog</span><code id="catalog-digest">unavailable</code></div>
+    </section>
+
+    <section class="halo-panel" aria-labelledby="forge-title">
+      <div class="forge-title-block">
+        <p class="eyebrow">The architecture around the mind</p>
+        <h1 id="forge-title">Godagent Forge</h1>
+        <p id="agent-designation" class="agent-designation">Select a path to begin</p>
+      </div>
+      <figure class="halo-instrument" aria-labelledby="halo-title halo-caption">
+        <figcaption id="halo-title" class="visually-hidden">Concordance halo</figcaption>
+        <svg id="concordance-halo" viewBox="0 0 520 520" role="img" aria-labelledby="halo-title halo-caption">
+          <circle class="halo-orbit halo-orbit-outer" cx="260" cy="260" r="226"></circle>
+          <circle class="halo-orbit halo-orbit-mid" cx="260" cy="260" r="174"></circle>
+          <circle class="halo-orbit halo-orbit-inner" cx="260" cy="260" r="82"></circle>
+          <g id="halo-spokes"></g>
+          <g class="center-sigil" aria-hidden="true">
+            <path d="M260 188 312 218 312 278 260 330 208 278 208 218Z"></path>
+            <path d="M260 188 260 330M208 218 312 278M312 218 208 278"></path>
+            <circle cx="260" cy="248" r="13"></circle>
+          </g>
+        </svg>
+        <p id="halo-caption">Derived attributes appear after a compatible preview.</p>
+      </figure>
+      <div id="attribute-values" class="attribute-values" aria-label="Derived attribute values"></div>
+    </section>
+
+    <section class="review-panel instrument-panel" aria-labelledby="review-title">
+      <div class="panel-heading">
+        <p class="eyebrow">Covenant checkpoint</p>
+        <h2 id="review-title">Review ledger</h2>
+        <p>Nothing is born here. This seals a verified pre-genesis design.</p>
+      </div>
+      <div id="empty-review" class="empty-review">
+        <span class="empty-glyph" aria-hidden="true">◇</span>
+        <p>Preview a creation path to reveal its exact composition.</p>
+      </div>
+      <div id="review-content" class="review-content" hidden>
+        <dl id="selection-ledger" class="selection-ledger"></dl>
+        <div class="exclusion-block">
+          <h3>Outside this design</h3><div id="exclusion-list" class="chip-list"></div>
+        </div>
+        <div class="digest-block"><span>Preview digest</span><code id="preview-digest">unavailable</code></div>
+        <label class="review-acknowledgement" for="review-ack">
+          <input id="review-ack" type="checkbox" disabled>
+          <span><strong>I reviewed this exact preview digest</strong><small>Any identity or path change clears this acknowledgement.</small></span>
+        </label>
+        <button id="forge-button" class="action action-primary" type="button" disabled>
+          <span>Forge reviewed build</span><span aria-hidden="true">✦</span>
+        </button>
+      </div>
+      <div id="forge-result" class="forge-result" aria-live="polite" hidden>
+        <span class="result-mark" aria-hidden="true">✓</span>
+        <div><strong>Verified creation build forged</strong><code id="build-id"></code></div>
+      </div>
+      <p id="global-status" class="global-status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <footer class="proof-footer">
+    <span>CREATOR PROTOCOL · REVIEW PINNED · SOUL DORMANT</span><span id="footer-proof">Awaiting catalog proof</span>
+  </footer>
+  <template id="preset-card-template">
+    <button class="preset-card" type="button" role="radio" aria-checked="false">
+      <span class="preset-index"></span>
+      <span class="preset-copy"><strong class="preset-name"></strong><small class="preset-meta"></small></span>
+      <span class="preset-arrow" aria-hidden="true">›</span>
+    </button>
+  </template>
+  <noscript>This local creator requires JavaScript to preview validated paths.</noscript>
   <script src="/runtime-config.js"></script>
   <script src="/app.js"></script>
 </body>
