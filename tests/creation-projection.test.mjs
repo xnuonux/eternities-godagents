@@ -8,9 +8,11 @@ import { loadCreationSources } from '../src/creation/load.mjs';
 import { projectGenome } from '../src/creation/project-genome.mjs';
 
 const root = new URL('../fixtures/creation/', import.meta.url);
+const expectedPolicyDigest = 'c4e3411726fcb32159678b65348e3e14e67f4b011ba73391d19988dee056158b';
 const paths = {
   candidatePath: new URL('creation-candidate.json', root),
   policyPath: new URL('creation-policy.json', root),
+  expectedPolicyDigest,
   expressionPath: new URL('expression-overlay.json', root),
   moduleDirectory: new URL('modules/', root),
 };

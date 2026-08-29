@@ -12,6 +12,7 @@ import {
 import { loadCreationSources } from '../src/creation/load.mjs';
 
 const creationRoot = new URL('../fixtures/creation/', import.meta.url);
+const expectedPolicyDigest = 'c4e3411726fcb32159678b65348e3e14e67f4b011ba73391d19988dee056158b';
 const readFixture = async (name) => JSON.parse(await readFile(new URL(name, creationRoot), 'utf8'));
 
 async function temporarySources() {
@@ -21,6 +22,7 @@ async function temporarySources() {
     root,
     candidatePath: join(root, 'creation-candidate.json'),
     policyPath: join(root, 'creation-policy.json'),
+    expectedPolicyDigest,
     expressionPath: join(root, 'expression-overlay.json'),
     moduleDirectory: join(root, 'modules'),
   };

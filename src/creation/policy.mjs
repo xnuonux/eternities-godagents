@@ -33,8 +33,13 @@ export function validateCreationPolicy(input) {
   return deepFreeze(policy);
 }
 
-export async function loadCreationPolicy(policyPath) {
+export async function loadCreationPolicy(policyPath, expectedPolicyDigest) {
+  if (typeof expectedPolicyDigest !== 'string' || !/^[a-f0-9]{64}$/.test(expectedPolicyDigest)) {
+    throw new TypeError('creation policy digest pin is required');
+  }
   const input = JSON.parse(await readFile(policyPath, 'utf8'));
   const policy = validateCreationPolicy(input);
-  return Object.freeze({ policy, policyDigest: sha256Value(policy) });
+  const policyDigest = sha256Value(policy);
+  if (policyDigest !== expectedPolicyDigest) throw new TypeError('creation policy digest pin mismatch');
+  return Object.freeze({ policy, policyDigest });
 }

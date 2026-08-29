@@ -38,6 +38,7 @@ const requirementEvidence = Object.freeze({
 
 const byteCompare = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 const sha256Bytes = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const expectedCreationPolicyDigest = 'c4e3411726fcb32159678b65348e3e14e67f4b011ba73391d19988dee056158b';
 
 function validateGate(label, gate) {
   if (!gate || !['pass', 'fail'].includes(gate.status)) throw new Error(`certification proof is invalid for ${label}`);
@@ -130,12 +131,16 @@ export async function certifyCreationForgePhase1({ repositoryRoot, outputPath })
     const options = {
       candidatePath: join(root, 'fixtures', 'creation', 'creation-candidate.json'),
       policyPath: join(root, 'fixtures', 'creation', 'creation-policy.json'),
+      expectedPolicyDigest: expectedCreationPolicyDigest,
       expressionPath: join(root, 'fixtures', 'creation', 'expression-overlay.json'),
       moduleDirectory: join(root, 'fixtures', 'creation', 'modules'),
     };
     left = await compileCreation({ ...options, outputDir: join(temporaryRoot, 'left') });
     right = await compileCreation({ ...options, outputDir: join(temporaryRoot, 'right') });
-    await Promise.all([verifyCreationBuild(left.outputDir), verifyCreationBuild(right.outputDir)]);
+    await Promise.all([
+      verifyCreationBuild(left.outputDir, { expectedPolicyDigest: expectedCreationPolicyDigest }),
+      verifyCreationBuild(right.outputDir, { expectedPolicyDigest: expectedCreationPolicyDigest }),
+    ]);
     [leftBytes, rightBytes] = await Promise.all([
       recursiveByteManifest(left.outputDir),
       recursiveByteManifest(right.outputDir),

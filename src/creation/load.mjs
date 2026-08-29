@@ -34,11 +34,12 @@ function readonlyMap(source) {
 export async function loadCreationSources({
   candidatePath,
   policyPath,
+  expectedPolicyDigest,
   expressionPath,
   moduleDirectory,
 }) {
   const [{ policy, policyDigest }, candidateInput, expressionInput, moduleFiles] = await Promise.all([
-    loadCreationPolicy(policyPath),
+    loadCreationPolicy(policyPath, expectedPolicyDigest),
     readJson(candidatePath),
     readJson(expressionPath),
     readdir(moduleDirectory),

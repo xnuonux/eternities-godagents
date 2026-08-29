@@ -45,6 +45,19 @@ export function assertCreationCompatibility({ candidate, policy, selectedModules
     if (module.moduleKind !== kind || moduleRef(module) !== candidate.moduleRefs[kind]) {
       throw new TypeError(`module-ref integrity failed for ${kind}`);
     }
+    if (module.baseModuleRefs.length !== 0) {
+      throw new TypeError('base module inheritance is not supported in Phase 1');
+    }
+  }
+
+  const providedCompatibilityTags = Object.values(selectedModules)
+    .flatMap((module) => module.compatibility.providesTags);
+  for (const module of Object.values(selectedModules)) {
+    assertContains(
+      providedCompatibilityTags,
+      module.compatibility.requiresTags,
+      'compatibility tag is unavailable',
+    );
   }
 
   assertSubset(candidate.constitution.allowedEffects, policy.allowedEffects, 'effect');

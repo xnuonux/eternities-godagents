@@ -40,7 +40,7 @@ npm run certify:networked-cortex
 
 ## Modular creation forge
 
-The Phase 1 forge accepts one strict candidate, one independently digested creation-policy ceiling, one presentation-only expression overlay, and exactly nine selected module kinds: lineage, archetype, attributes, personality, voice, organs, Godskills, cortex, and embodiment.
+The Phase 1 forge accepts one strict candidate, one independently pinned creation-policy ceiling, one presentation-only expression overlay, and exactly nine selected module kinds: lineage, archetype, attributes, personality, voice, organs, Godskills, cortex, and embodiment. The compiler and verifier both require the expected policy SHA-256 from a trust path separate from the policy file; calculating a digest after accepting an arbitrary policy is not sufficient.
 
 ```text
 candidate + creation policy + expression + selected modules
@@ -58,6 +58,7 @@ Expression, pronouns, presentation, personality prose, and visual identity remai
 `npm run certify:creation-forge` requires clean source, runs the full suite under the Node process-tree network guard, compares two fresh byte-identical builds, verifies both historical receipts, and certifies only `GF-001` through `GF-005`, `GF-010`, and `GF-011`.
 
 Phase 1 explicitly excludes genesis transactions, keel binding, cross-agent delegation, governed evolution, a creator interface, live-provider quality, Lunari integration, Soul runtime, and vessel instantiation.
+Module inheritance is also closed in Phase 1: non-empty `baseModuleRefs` are rejected rather than silently accepted without inheritance semantics.
 
 ## Networked cortex host
 

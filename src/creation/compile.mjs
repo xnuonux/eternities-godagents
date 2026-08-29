@@ -101,11 +101,18 @@ function artifactRows(values) {
 export async function compileCreation({
   candidatePath,
   policyPath,
+  expectedPolicyDigest,
   expressionPath,
   moduleDirectory,
   outputDir,
 }) {
-  const sources = await loadCreationSources({ candidatePath, policyPath, expressionPath, moduleDirectory });
+  const sources = await loadCreationSources({
+    candidatePath,
+    policyPath,
+    expectedPolicyDigest,
+    expressionPath,
+    moduleDirectory,
+  });
   const selectedModules = resolveSelectedModules(sources);
   const validations = assertCreationCompatibility({
     candidate: sources.candidate,
@@ -157,7 +164,7 @@ export async function compileCreation({
     await writeFile(childPath(outputDir, name), jsonBytes(value), 'utf8');
   }
   await writeFile(childPath(outputDir, 'creation-build-manifest.json'), jsonBytes(manifest), 'utf8');
-  const verified = await verifyCreationBuild(outputDir);
+  const verified = await verifyCreationBuild(outputDir, { expectedPolicyDigest });
   return Object.freeze({ manifest: verified, moduleManifest, genome, outputDir });
 }
 
@@ -182,7 +189,10 @@ function assertModuleManifestIntegrity(moduleManifest, candidate, manifest) {
   }
 }
 
-export async function verifyCreationBuild(outputDir) {
+export async function verifyCreationBuild(outputDir, { expectedPolicyDigest } = {}) {
+  if (typeof expectedPolicyDigest !== 'string' || !/^[a-f0-9]{64}$/.test(expectedPolicyDigest)) {
+    throw new TypeError('creation policy digest pin is required');
+  }
   const names = (await readdir(outputDir)).sort(byteCompare);
   if (!sameArray(names, [...OUTPUT_FILES].sort(byteCompare))) {
     throw new IntegrityError('creation output artifact set mismatch');
@@ -193,6 +203,7 @@ export async function verifyCreationBuild(outputDir) {
   const manifest = JSON.parse(manifestText);
   if (manifestText !== jsonBytes(manifest)) throw new IntegrityError('creation build manifest is not canonical');
   assertSchema('creation-build-manifest', manifest);
+  if (manifest.policyDigest !== expectedPolicyDigest) throw new IntegrityError('creation policy digest pin mismatch');
 
   const rowsByPath = new Map();
   for (const row of manifest.artifacts) {

@@ -9,9 +9,11 @@ import { deriveAttributes } from '../src/creation/derive-attributes.mjs';
 import { loadCreationSources } from '../src/creation/load.mjs';
 
 const root = new URL('../fixtures/creation/', import.meta.url);
+const expectedPolicyDigest = 'c4e3411726fcb32159678b65348e3e14e67f4b011ba73391d19988dee056158b';
 const paths = {
   candidatePath: new URL('creation-candidate.json', root),
   policyPath: new URL('creation-policy.json', root),
+  expectedPolicyDigest,
   expressionPath: new URL('expression-overlay.json', root),
   moduleDirectory: new URL('modules/', root),
 };
@@ -68,6 +70,14 @@ test('canonical creation passes every closed compatibility gate', () => {
 });
 
 test('compatibility rejects broken class composition', () => {
+  const inheritedVariant = clone(selected);
+  inheritedVariant.lineage.baseModuleRefs = ['lineage:synthetic-explorer@0.9.0'];
+  assert.throws(() => assertCreationCompatibility({ candidate: sources.candidate, policy: sources.policy, selectedModules: inheritedVariant }), /base module inheritance/);
+
+  const missingGenericTag = clone(selected);
+  missingGenericTag.voice.compatibility.requiresTags = ['missing.compatibility-tag'];
+  assert.throws(() => assertCreationCompatibility({ candidate: sources.candidate, policy: sources.policy, selectedModules: missingGenericTag }), /compatibility tag/);
+
   const missingTag = clone(selected);
   missingTag.lineage.payload.compatibleArchetypeTags = ['other'];
   assert.throws(() => assertCreationCompatibility({ candidate: sources.candidate, policy: sources.policy, selectedModules: missingTag }), /archetype tag/);
