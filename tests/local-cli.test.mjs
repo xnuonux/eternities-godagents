@@ -101,3 +101,23 @@ test('local host reports closed failure codes without provider or credential tex
   assert.deepEqual(JSON.parse(stderr.read()), { status: 'failed', reasonCode: 'host-failed' });
   assert.equal(`${stdout.read()}${stderr.read()}`.includes('canary-env-secret'), false);
 });
+
+test('local host rejects a credential pasted into mission text before execution or journaling', async (t) => {
+  const { policyPath, missionPath } = await fixtureFiles(t);
+  await writeFile(missionPath, 'use canary-mission-secret to increment once\n', 'utf8');
+  const stdout = sink();
+  const stderr = sink();
+  let executed = false;
+  const code = await runLocalHost({
+    argv: ['--policy', policyPath, '--mission', missionPath],
+    env: { GODAGENT_TEST_API_KEY: 'canary-mission-secret' },
+    stdout,
+    stderr,
+    execute: async () => { executed = true; },
+  });
+
+  assert.equal(code, 1);
+  assert.equal(executed, false);
+  assert.deepEqual(JSON.parse(stderr.read()), { status: 'failed', reasonCode: 'invalid-mission' });
+  assert.equal(`${stdout.read()}${stderr.read()}`.includes('canary-mission-secret'), false);
+});

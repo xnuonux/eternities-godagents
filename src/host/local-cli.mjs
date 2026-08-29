@@ -109,6 +109,10 @@ export async function runLocalHost({
     const text = (await readFile(paths.missionPath, 'utf8')).trim();
     if (!text) throw new Error('mission is empty');
     const credentialResolver = createCredentialResolver({ env, variableName: policy.provider.credentialEnv });
+    if (text.includes(credentialResolver.resolve())) {
+      writeJson(stderr, { status: 'failed', reasonCode: 'invalid-mission' });
+      return 1;
+    }
     const mission = Object.freeze({
       requestId: `mission-${sha256Text(text).slice(0, 24)}`,
       text,
@@ -150,4 +154,3 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     stderr: process.stderr,
   });
 }
-
