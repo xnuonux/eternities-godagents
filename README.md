@@ -202,6 +202,8 @@ One invocation runs at most one unseen mission and exits. An admission-owned liv
 
 `npm run verify:certifications` audits the exact seven-file certification ledger. It requires canonical bytes, recomputes each internal receipt digest, verifies certified status, resolves every source commit as a Git commit in this repository, and checks the exact required historical file set and hashes across the versioned receipt formats. It returns one canonical ledger projection and digest. This is an integrity audit, not a substitute for rerunning a receipt at its pinned source commit.
 
+`npm run verify:release-lineage` additionally resolves the current `HEAD` and proves that every registered certification source commit is its Git ancestor. It emits one content-addressed release-lineage projection. This closes source-history detachment; it still does not claim that current-head behavior has been recertified.
+
 ## Networked cortex host
 
 The networked extension keeps endpoint, model, timeout, retry policy, host authority, and credential-variable selection outside the deterministic distribution. Build the compatible fixture with `npm run build:networked-fixture`, copy `fixtures/host-policy.json` to an operator-controlled location, and adjust its non-secret runtime policy. The API credential itself belongs only in the environment variable named by that policy.

@@ -21,6 +21,7 @@
     "host:local": "node src/host/local-cli.mjs",
     "policy:digest": "node scripts/hash-host-policy.mjs",
     "verify:certifications": "node src/certification/verify-ledger.mjs",
+    "verify:release-lineage": "node src/certification/verify-release-lineage.mjs",
     "certify": "node src/certification/certify-v0.mjs",
     "certify:networked-cortex": "node src/certification/certify-networked-cortex.mjs",
     "certify:creation-forge": "node src/certification/certify-creation-forge-phase1.mjs",
