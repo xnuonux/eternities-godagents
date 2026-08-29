@@ -139,7 +139,7 @@ The shell ends at a verified creation build. It does not run genesis, create a v
 
 ### Visual creator shell
 
-The visual forge is a loopback-only client of the same bounded operator workflow. It lists only validated presets, presents the exact expression, module ledger, exclusions, attributes, and preview digest, and keeps finalization disabled until the operator acknowledges that reviewed projection. The browser cannot supply filesystem paths: the server derives an isolated transaction below `--workspace` from the reviewed preview digest.
+The visual forge is a loopback-only client of the same bounded operator workflow. It lists only validated presets, presents the exact expression, module ledger, exclusions, attributes, and preview digest, and keeps finalization disabled until the operator acknowledges that reviewed projection. A one-use server confirmation binds that acknowledgement to the exact preset, creator, and preview digest. The browser cannot supply filesystem paths: the server builds in an unpredictable atomic staging directory below the verified `--workspace` and publishes only to the reviewed digest path.
 
 ```powershell
 npm run creator:web -- `
@@ -151,7 +151,7 @@ npm run creator:web -- `
   --workspace C:\path\to\creator-workspace
 ```
 
-The server binds only `127.0.0.1`, generates a fresh launch token, serves no third-party assets, and accepts only fixed same-origin API routes. An optional `--port` may select a loopback port. The visual forge ends at the same verified pre-genesis build as the CLI and has no genesis, model, Realm, keel, evolution, Inspiration, or Soul capability.
+The server binds only `127.0.0.1`, generates a fresh launch token, serves no third-party assets, rejects junctioned workspace components, and accepts only fixed same-origin API routes. An optional `--port` may select a loopback port. The visual forge ends at the same verified pre-genesis build as the CLI and has no genesis, model, Realm, keel, evolution, Inspiration, or Soul capability.
 
 ## Networked cortex host
 

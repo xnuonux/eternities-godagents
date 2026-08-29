@@ -1,6 +1,6 @@
-import { timingSafeEqual } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import { dirname, join, resolve, sep } from 'node:path';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { lstat, mkdir, mkdtemp, readFile, realpath, rename, rm } from 'node:fs/promises';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { canonicalJson } from '../../core/canonical-json.mjs';
@@ -112,11 +112,63 @@ function workflowFailure(error) {
   return failure(error.code, status);
 }
 
+export function isPathWithinRoot(root, target) {
+  const remainder = relative(resolve(root), resolve(target));
+  return remainder !== ''
+    && remainder !== '..'
+    && !remainder.startsWith(`..${sep}`)
+    && !isAbsolute(remainder);
+}
+
+async function assertConfinedDirectory(root, directory) {
+  const stats = await lstat(directory);
+  if (!stats.isDirectory() || stats.isSymbolicLink()) {
+    throw new WebBoundaryError('workspace-boundary-invalid', 409);
+  }
+  const canonical = await realpath(directory);
+  if (!isPathWithinRoot(root, canonical)) {
+    throw new WebBoundaryError('workspace-boundary-invalid', 409);
+  }
+  return canonical;
+}
+
+async function assertTargetAbsent(path) {
+  try {
+    await lstat(path);
+    throw new WebBoundaryError('transaction-occupied', 409);
+  } catch (error) {
+    if (error?.code === 'ENOENT') return;
+    throw error;
+  }
+}
+
+async function removePendingSafely(buildsRoot, pendingRoot) {
+  try {
+    const stats = await lstat(pendingRoot);
+    if (!stats.isDirectory() || stats.isSymbolicLink()) return;
+    const canonical = await realpath(pendingRoot);
+    if (!isPathWithinRoot(buildsRoot, canonical)) return;
+    await rm(pendingRoot, { recursive: true, force: true });
+  } catch {
+    // Failed staging is inert. Refuse risky cleanup rather than following changed filesystem state.
+  }
+}
+
 export async function createCreatorWebApp({ operatorOptions, workspace, sessionToken }) {
   if (!TOKEN.test(sessionToken) || typeof workspace !== 'string' || workspace.length === 0) {
     throw new TypeError('visual creator application configuration is invalid');
   }
-  const workspaceRoot = resolve(workspace);
+  const configuredWorkspace = resolve(workspace);
+  await mkdir(configuredWorkspace, { recursive: true });
+  const workspaceStats = await lstat(configuredWorkspace);
+  if (!workspaceStats.isDirectory() || workspaceStats.isSymbolicLink()) {
+    throw new TypeError('visual creator workspace is invalid');
+  }
+  const workspaceRoot = await realpath(configuredWorkspace);
+  const configuredBuilds = join(workspaceRoot, 'builds');
+  await mkdir(configuredBuilds, { recursive: true });
+  const buildsRoot = await assertConfinedDirectory(workspaceRoot, configuredBuilds);
+  const reviewConfirmations = new Map();
   const assets = Object.fromEntries(await Promise.all(Object.entries(staticTypes).map(async ([path, [name, type]]) => [
     path,
     [await readFile(join(assetDirectory, name), 'utf8'), type],
@@ -153,22 +205,69 @@ export async function createCreatorWebApp({ operatorOptions, workspace, sessionT
             return workflowFailure(error);
           }
         }
-        if (url.pathname === '/api/finalize-preset') {
+        if (url.pathname === '/api/acknowledge-preview') {
           if (request.method !== 'POST') return failure('method-invalid', 405);
           const body = await readJson(request, ['preset', 'creator', 'expectedPreviewDigest']);
           if (!DIGEST.test(body.expectedPreviewDigest)) throw new WebBoundaryError('body-invalid', 400);
-          const transactionRoot = resolve(workspaceRoot, 'builds', body.expectedPreviewDigest);
-          if (!transactionRoot.startsWith(`${workspaceRoot}${sep}`)) {
-            throw new WebBoundaryError('workspace-boundary-invalid', 400);
-          }
+          let preview;
           try {
-            return jsonResponse(await finalizeOperatorPreset({
-              ...operatorOptions,
-              ...body,
-              sourceDir: join(transactionRoot, 'source'),
-              outputDir: join(transactionRoot, 'output'),
-            }));
+            preview = await previewOperatorPreset({ ...operatorOptions, preset: body.preset, creator: body.creator });
           } catch (error) {
+            return workflowFailure(error);
+          }
+          if (preview.status !== 'ready') return failure('preview-not-ready', 409);
+          if (preview.previewDigest !== body.expectedPreviewDigest) return failure('preview-digest-mismatch', 409);
+          const reviewConfirmation = randomBytes(32).toString('hex');
+          if (reviewConfirmations.size >= 64) reviewConfirmations.delete(reviewConfirmations.keys().next().value);
+          reviewConfirmations.set(reviewConfirmation, Object.freeze({
+            preset: body.preset,
+            creator: body.creator,
+            previewDigest: body.expectedPreviewDigest,
+          }));
+          return jsonResponse({ schemaVersion: 1, status: 'acknowledged', reviewConfirmation });
+        }
+        if (url.pathname === '/api/finalize-preset') {
+          if (request.method !== 'POST') return failure('method-invalid', 405);
+          const body = await readJson(request, ['preset', 'creator', 'expectedPreviewDigest', 'reviewConfirmation']);
+          if (!DIGEST.test(body.expectedPreviewDigest) || !TOKEN.test(body.reviewConfirmation)) {
+            throw new WebBoundaryError('body-invalid', 400);
+          }
+          const acknowledged = reviewConfirmations.get(body.reviewConfirmation);
+          reviewConfirmations.delete(body.reviewConfirmation);
+          if (!acknowledged
+              || acknowledged.preset !== body.preset
+              || acknowledged.creator !== body.creator
+              || acknowledged.previewDigest !== body.expectedPreviewDigest) {
+            throw new WebBoundaryError('review-confirmation-invalid', 409);
+          }
+          await assertConfinedDirectory(workspaceRoot, buildsRoot);
+          const transactionRoot = resolve(buildsRoot, body.expectedPreviewDigest);
+          if (!isPathWithinRoot(buildsRoot, transactionRoot)) throw new WebBoundaryError('workspace-boundary-invalid', 409);
+          await assertTargetAbsent(transactionRoot);
+          const pendingRoot = await mkdtemp(join(buildsRoot, '.pending-'));
+          const sourceDirectory = join(pendingRoot, 'source');
+          const outputDirectory = join(pendingRoot, 'output');
+          try {
+            await mkdir(sourceDirectory);
+            await mkdir(outputDirectory);
+            await assertConfinedDirectory(pendingRoot, sourceDirectory);
+            await assertConfinedDirectory(pendingRoot, outputDirectory);
+            const finalized = await finalizeOperatorPreset({
+              ...operatorOptions,
+              preset: body.preset,
+              creator: body.creator,
+              expectedPreviewDigest: body.expectedPreviewDigest,
+              sourceDir: sourceDirectory,
+              outputDir: outputDirectory,
+            });
+            await assertConfinedDirectory(buildsRoot, pendingRoot);
+            await assertConfinedDirectory(pendingRoot, sourceDirectory);
+            await assertConfinedDirectory(pendingRoot, outputDirectory);
+            await rename(pendingRoot, transactionRoot);
+            return jsonResponse(finalized);
+          } catch (error) {
+            await removePendingSafely(buildsRoot, pendingRoot);
+            if (error instanceof WebBoundaryError) throw error;
             return workflowFailure(error);
           }
         }

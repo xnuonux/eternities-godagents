@@ -46,7 +46,7 @@ test('visual shell implements its specific palette, responsive reflow, focus, an
 
 test('visual shell script uses fixed same-origin APIs and text-safe DOM construction', async () => {
   const { js } = await assets();
-  for (const route of ['/api/catalog', '/api/preview-preset', '/api/finalize-preset']) {
+  for (const route of ['/api/catalog', '/api/preview-preset', '/api/acknowledge-preview', '/api/finalize-preset']) {
     assert.match(js, new RegExp(route.replaceAll('/', '\\/')));
   }
   assert.match(js, /x-godagent-local-session/);

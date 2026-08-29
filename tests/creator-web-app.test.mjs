@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
 import { previewOperatorPreset } from '../src/creator/operator-workflow.mjs';
-import { createCreatorWebApp } from '../src/creator/web/app.mjs';
+import { createCreatorWebApp, isPathWithinRoot } from '../src/creator/web/app.mjs';
 
 const expectedPolicyDigest = 'c4e3411726fcb32159678b65348e3e14e67f4b011ba73391d19988dee056158b';
 const fixtureRoot = new URL('../fixtures/', import.meta.url);
@@ -39,6 +39,15 @@ function request(path, { method = 'GET', body, auth = token, contentType = 'appl
 async function value(response) {
   const text = await response.text();
   return { text, body: JSON.parse(text) };
+}
+
+async function acknowledge(app, input, previewDigest) {
+  const response = await app.handle(request('/api/acknowledge-preview', {
+    method: 'POST',
+    body: { ...input, expectedPreviewDigest: previewDigest },
+  }));
+  assert.equal(response.status, 200);
+  return (await value(response)).body.reviewConfirmation;
 }
 
 test('visual creator serves only fixed self-contained assets with hardened headers', async (context) => {
@@ -91,17 +100,18 @@ test('catalog and preset preview equal the bounded operator workflow', async (co
 test('visual finalization is digest-gated and confined beneath the configured workspace', async (context) => {
   const { app, workspace } = await setup(context);
   const input = { preset: 'preset:aether-architect@1.0.0', creator: 'creator:dom' };
-  const stale = await app.handle(request('/api/finalize-preset', {
+  const stale = await app.handle(request('/api/acknowledge-preview', {
     method: 'POST',
     body: { ...input, expectedPreviewDigest: 'f'.repeat(64) },
   }));
   assert.equal(stale.status, 409);
-  await assert.rejects(() => access(join(workspace, 'builds')));
+  await assert.rejects(() => access(join(workspace, 'builds', 'f'.repeat(64))));
 
   const preview = await previewOperatorPreset({ ...operatorOptions, ...input });
+  const reviewConfirmation = await acknowledge(app, input, preview.previewDigest);
   const finalized = await app.handle(request('/api/finalize-preset', {
     method: 'POST',
-    body: { ...input, expectedPreviewDigest: preview.previewDigest },
+    body: { ...input, expectedPreviewDigest: preview.previewDigest, reviewConfirmation },
   }));
   const result = (await value(finalized)).body;
   assert.equal(finalized.status, 200);
@@ -110,6 +120,67 @@ test('visual finalization is digest-gated and confined beneath the configured wo
   const transaction = join(workspace, 'builds', preview.previewDigest);
   assert.equal(JSON.parse(await readFile(join(transaction, 'source', 'creation-candidate.json'), 'utf8')).blueprint.id, 'aether-architect');
   assert.equal(JSON.parse(await readFile(join(transaction, 'output', 'creation-build-manifest.json'), 'utf8')).buildId, result.creationBuildId);
+});
+
+test('visual finalization requires one exact one-use review confirmation', async (context) => {
+  const { app, workspace } = await setup(context);
+  const input = { preset: 'preset:aether-architect@1.0.0', creator: 'creator:dom' };
+  const preview = await previewOperatorPreset({ ...operatorOptions, ...input });
+  const unacknowledged = await app.handle(request('/api/finalize-preset', {
+    method: 'POST',
+    body: { ...input, expectedPreviewDigest: preview.previewDigest, reviewConfirmation: 'f'.repeat(64) },
+  }));
+  assert.equal(unacknowledged.status, 409);
+  await assert.rejects(() => access(join(workspace, 'builds', preview.previewDigest)));
+
+  const reviewConfirmation = await acknowledge(app, input, preview.previewDigest);
+  const first = await app.handle(request('/api/finalize-preset', {
+    method: 'POST',
+    body: { ...input, expectedPreviewDigest: preview.previewDigest, reviewConfirmation },
+  }));
+  assert.equal(first.status, 200);
+  const replay = await app.handle(request('/api/finalize-preset', {
+    method: 'POST',
+    body: { ...input, expectedPreviewDigest: preview.previewDigest, reviewConfirmation },
+  }));
+  assert.equal(replay.status, 409);
+});
+
+test('known digest junctions cannot redirect visual finalization outside the workspace', async (context) => {
+  const { app, workspace } = await setup(context);
+  const outside = await mkdtemp(join(tmpdir(), 'godagent-creator-outside-'));
+  context.after(() => rm(outside, { recursive: true, force: true }));
+  const input = { preset: 'preset:aether-architect@1.0.0', creator: 'creator:dom' };
+  const preview = await previewOperatorPreset({ ...operatorOptions, ...input });
+  const transaction = join(workspace, 'builds', preview.previewDigest);
+  await mkdir(transaction, { recursive: true });
+  await symlink(outside, join(transaction, 'source'), 'junction');
+  const reviewConfirmation = await acknowledge(app, input, preview.previewDigest);
+  const response = await app.handle(request('/api/finalize-preset', {
+    method: 'POST',
+    body: { ...input, expectedPreviewDigest: preview.previewDigest, reviewConfirmation },
+  }));
+  assert.ok(response.status >= 400);
+  await assert.rejects(() => access(join(outside, 'creation-candidate.json')));
+});
+
+test('a junctioned builds root is rejected during visual creator startup', async (context) => {
+  const workspace = await mkdtemp(join(tmpdir(), 'godagent-creator-workspace-'));
+  const outside = await mkdtemp(join(tmpdir(), 'godagent-creator-builds-outside-'));
+  context.after(() => rm(workspace, { recursive: true, force: true }));
+  context.after(() => rm(outside, { recursive: true, force: true }));
+  await symlink(outside, join(workspace, 'builds'), 'junction');
+  await assert.rejects(
+    () => createCreatorWebApp({ operatorOptions, workspace, sessionToken: token }),
+    /workspace|request failed/,
+  );
+});
+
+test('workspace containment is root-aware', () => {
+  assert.equal(isPathWithinRoot('C:\\', 'C:\\builds\\abc'), true);
+  assert.equal(isPathWithinRoot('C:\\forge', 'C:\\forge\\builds\\abc'), true);
+  assert.equal(isPathWithinRoot('C:\\forge', 'C:\\forge-escape\\abc'), false);
+  assert.equal(isPathWithinRoot('C:\\forge', 'D:\\forge\\abc'), false);
 });
 
 test('methods, content types, body bounds, unknown fields, and canaries fail closed', async (context) => {

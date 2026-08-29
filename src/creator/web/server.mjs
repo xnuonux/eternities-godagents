@@ -83,6 +83,29 @@ function closedServerFailure(response, status, code) {
   response.end(body);
 }
 
+export async function handleCreatorHttpRequest({ incoming, outgoing, app, expectedHost }) {
+  try {
+    if (incoming.headers.host !== expectedHost) {
+      closedServerFailure(outgoing, 421, 'host-invalid');
+      return;
+    }
+    const method = incoming.method ?? 'GET';
+    const init = { method, headers: incoming.headers };
+    if (!['GET', 'HEAD'].includes(method)) {
+      init.body = Readable.toWeb(incoming);
+      init.duplex = 'half';
+    }
+    const request = new Request(`http://${expectedHost}${incoming.url ?? '/'}`, init);
+    const response = await app.handle(request);
+    const headers = Object.fromEntries(response.headers.entries());
+    outgoing.writeHead(response.status, headers);
+    outgoing.end(Buffer.from(await response.arrayBuffer()));
+  } catch {
+    if (!outgoing.headersSent) closedServerFailure(outgoing, 500, 'server-failure');
+    else outgoing.destroy();
+  }
+}
+
 export async function startCreatorWebServer({ operatorOptions, workspace, port = DEFAULT_PORT }) {
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
     throw new TypeError('visual creator server port is invalid');
@@ -90,27 +113,8 @@ export async function startCreatorWebServer({ operatorOptions, workspace, port =
   const sessionToken = createWebSessionToken();
   const app = await createCreatorWebApp({ operatorOptions, workspace, sessionToken });
   let expectedHost;
-  const server = createServer(async (incoming, outgoing) => {
-    try {
-      if (incoming.headers.host !== expectedHost) {
-        closedServerFailure(outgoing, 421, 'host-invalid');
-        return;
-      }
-      const method = incoming.method ?? 'GET';
-      const init = { method, headers: incoming.headers };
-      if (!['GET', 'HEAD'].includes(method)) {
-        init.body = Readable.toWeb(incoming);
-        init.duplex = 'half';
-      }
-      const request = new Request(`http://${expectedHost}${incoming.url ?? '/'}`, init);
-      const response = await app.handle(request);
-      const headers = Object.fromEntries(response.headers.entries());
-      outgoing.writeHead(response.status, headers);
-      outgoing.end(Buffer.from(await response.arrayBuffer()));
-    } catch {
-      if (!outgoing.headersSent) closedServerFailure(outgoing, 500, 'server-failure');
-      else outgoing.destroy();
-    }
+  const server = createServer((incoming, outgoing) => {
+    void handleCreatorHttpRequest({ incoming, outgoing, app, expectedHost });
   });
   await new Promise((resolvePromise, rejectPromise) => {
     server.once('error', rejectPromise);

@@ -51,20 +51,21 @@ The initial direction was checked against common dark AI dashboards. Glowing gla
 
 The host binds only to `127.0.0.1`. Each launch creates a random 256-bit session token. Static HTML loads the token from a same-origin runtime configuration script. Every API route requires the token in `x-godagent-local-session`; the host sends no permissive CORS headers and applies a self-only Content Security Policy.
 
-The host receives the same five library inputs as the CLI plus one operator-selected workspace root. Browser requests never supply arbitrary filesystem paths. Finalization derives a transaction directory beneath the configured workspace from the reviewed preview digest and rejects existing or escaping targets.
+The host receives the same five library inputs as the CLI plus one operator-selected workspace root. Browser requests never supply arbitrary filesystem paths. The host canonicalizes the workspace, rejects junctioned boundary components, builds inside an unpredictable atomically created staging directory, and publishes to the reviewed preview-digest path only after successful verification. Existing, escaping, or reparse-point targets fail closed.
 
 ## API
 
 - `GET /api/catalog`: exact bounded catalog;
 - `POST /api/preview-preset`: `{ preset, creator }` to bounded review projection;
-- `POST /api/finalize-preset`: `{ preset, creator, expectedPreviewDigest }` to verified build projection;
+- `POST /api/acknowledge-preview`: `{ preset, creator, expectedPreviewDigest }` to a one-use review confirmation;
+- `POST /api/finalize-preset`: `{ preset, creator, expectedPreviewDigest, reviewConfirmation }` to verified build projection;
 - fixed static assets only: `/`, `/app.css`, `/app.js`, `/runtime-config.js`.
 
 Bodies are strict JSON, content-type checked, and byte-limited. Unknown routes, methods, fields, invalid tokens, stale digests, occupied transactions, and workflow failures return closed JSON codes without paths, source text, rejected values, or exception text.
 
 ## Review interaction
 
-Preview is explicit. A ready preview populates the halo and review ledger. The forge control remains disabled until the operator checks a statement that names the exact visible preview digest. Any preset or creator change clears that acknowledgement and invalidates the displayed review.
+Preview is explicit. A ready preview populates the halo and review ledger. The forge control remains disabled until the operator checks a statement that names the exact visible preview digest. The host recomputes that exact ready preview before issuing a bounded one-use confirmation, and finalization consumes it. Any preset or creator change clears the acknowledgement and invalidates the displayed review.
 
 Finalization creates a verified pre-genesis build only. It does not call genesis, create a vessel or keel, contact a model, invoke a Realm hand, evolve an agent, or activate Inspiration or Soul.
 

@@ -35,7 +35,10 @@
     'preview-digest-mismatch': 'The reviewed design changed. Preview it again before forging.',
     'preview-not-ready': 'This creation path is not ready to forge.',
     'preset-unavailable': 'This creation path is no longer available.',
+    'review-confirmation-invalid': 'The review confirmation expired. Review and acknowledge the preview again.',
     'session-invalid': 'The local forge session expired. Restart the creator.',
+    'transaction-occupied': 'This reviewed build already exists in the workspace.',
+    'workspace-boundary-invalid': 'The configured forge workspace did not pass its boundary check.',
     'workflow-input-invalid': 'The creator identity or path is invalid.',
   });
 
@@ -238,9 +241,18 @@
     ui.forgeResult.hidden = true;
     setStatus(ui.globalStatus, 'Verifying the review seal and compiling the immutable source snapshot.');
     try {
-      const result = await api('/api/finalize-preset', {
+      const acknowledgement = await api('/api/acknowledge-preview', {
         method: 'POST',
         body: { preset: state.presetRef, creator: ui.creatorRef.value, expectedPreviewDigest: state.preview.previewDigest },
+      });
+      const result = await api('/api/finalize-preset', {
+        method: 'POST',
+        body: {
+          preset: state.presetRef,
+          creator: ui.creatorRef.value,
+          expectedPreviewDigest: state.preview.previewDigest,
+          reviewConfirmation: acknowledgement.reviewConfirmation,
+        },
       });
       ui.buildId.textContent = result.creationBuildId;
       ui.forgeResult.hidden = false;
