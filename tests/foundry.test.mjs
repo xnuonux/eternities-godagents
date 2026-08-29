@@ -98,3 +98,20 @@ test('foundry rejects a realm that cannot satisfy the genome', async (t) => {
     /required realm capability missing\.capability/,
   );
 });
+
+test('networked fixture distribution allows the adapter without embedding runtime provider configuration', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'godagent-networked-foundry-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const result = await compileDistribution({
+    genomePath: fixturePath('networked-agent-genome.json'),
+    promptArtifactPath: fixturePath('prompt-os-artifact.md'),
+    realmContractPath: fixturePath('realm-contract.json'),
+    outputDir: root,
+  });
+  const serialized = JSON.stringify(result.manifest);
+
+  assert.deepEqual(result.manifest.compatibility.cortexAdapters, ['openai-compatible-v1']);
+  for (const forbidden of ['endpointOrigin', 'selectedModel', 'credentialEnv', 'timeoutMs', 'maxAttempts']) {
+    assert.equal(serialized.includes(forbidden), false, forbidden);
+  }
+});
