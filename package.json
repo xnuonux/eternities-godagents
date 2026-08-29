@@ -9,6 +9,7 @@
   "scripts": {
     "test": "node --test",
     "build:fixture": "node scripts/build-fixture.mjs",
+    "build:creation-fixture": "node scripts/build-creation-fixture.mjs",
     "build:networked-fixture": "node scripts/build-networked-fixture.mjs",
     "demo": "node scripts/run-demo.mjs",
     "host:local": "node src/host/local-cli.mjs",

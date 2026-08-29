@@ -22,7 +22,13 @@
         }
       }
     },
-    "validations": { "type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": { "$ref": "#/$defs/identifier" } },
+    "validations": {
+      "type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "status"],
+        "properties": { "id": { "$ref": "#/$defs/identifier" }, "status": { "const": "pass" } }
+      }
+    },
     "omittedComponents": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": { "$ref": "#/$defs/identifier" } }
   }
 }
