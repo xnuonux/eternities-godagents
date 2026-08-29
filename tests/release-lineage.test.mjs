@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { verifyReleaseLineage } from '../src/certification/verify-release-lineage.mjs';
@@ -24,4 +26,28 @@ test('a head predating later certification sources fails lineage verification', 
     }),
     /not an ancestor/,
   );
+});
+
+test('ambient Git control variables cannot redirect the release head', async () => {
+  const expected = await verifyReleaseLineage({ repositoryRoot, receiptDirectory });
+  const script = fileURLToPath(new URL('../src/certification/verify-release-lineage.mjs', import.meta.url));
+  const foreignGitDirectory = fileURLToPath(new URL('../../.git/', repositoryRoot));
+  const result = await new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(process.execPath, [script], {
+      shell: false,
+      windowsHide: true,
+      env: { ...process.env, GIT_DIR: foreignGitDirectory, GIT_WORK_TREE: fileURLToPath(repositoryRoot) },
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.once('error', rejectPromise);
+    child.once('close', (code) => resolvePromise({ code, stdout, stderr }));
+  });
+  assert.equal(result.code, 0);
+  assert.equal(result.stderr, '');
+  assert.equal(JSON.parse(result.stdout).headCommit, expected.headCommit);
 });

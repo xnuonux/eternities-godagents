@@ -10,13 +10,26 @@ import { verifyCertificationLedger } from './verify-ledger.mjs';
 const execFileAsync = promisify(execFile);
 const COMMIT = /^[a-f0-9]{40}$/;
 
+function cleanGitEnvironment() {
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.toUpperCase().startsWith('GIT_')),
+  );
+  env.GIT_CONFIG_GLOBAL = process.platform === 'win32' ? 'NUL' : '/dev/null';
+  env.GIT_CONFIG_NOSYSTEM = '1';
+  env.GIT_NO_REPLACE_OBJECTS = '1';
+  return env;
+}
+
 function localPath(value) {
   return value instanceof URL ? fileURLToPath(value) : resolve(value);
 }
 
-async function resolveCommit(repositoryRoot, ref) {
+async function resolveCommit(repositoryRoot, ref, gitEnvironment) {
   const { stdout } = await execFileAsync(
-    'git', ['-C', repositoryRoot, 'rev-parse', '--verify', `${ref}^{commit}`], { windowsHide: true },
+    'git', ['-C', repositoryRoot, 'rev-parse', '--verify', `${ref}^{commit}`], {
+      windowsHide: true,
+      env: gitEnvironment,
+    },
   );
   const commit = stdout.trim();
   if (!COMMIT.test(commit)) throw new Error('release head is invalid');
@@ -29,12 +42,20 @@ export async function verifyReleaseLineage({ repositoryRoot, receiptDirectory, h
   }
   const repository = localPath(repositoryRoot);
   const receipts = localPath(receiptDirectory);
-  const ledger = await verifyCertificationLedger({ receiptDirectory: receipts, repositoryRoot: repository });
-  const headCommit = await resolveCommit(repository, head);
+  const gitEnvironment = cleanGitEnvironment();
+  const ledger = await verifyCertificationLedger({
+    receiptDirectory: receipts,
+    repositoryRoot: repository,
+    gitEnvironment,
+  });
+  const headCommit = await resolveCommit(repository, head, gitEnvironment);
   for (const row of ledger.receipts) {
     try {
       await execFileAsync(
-        'git', ['-C', repository, 'merge-base', '--is-ancestor', row.sourceCommit, headCommit], { windowsHide: true },
+        'git', ['-C', repository, 'merge-base', '--is-ancestor', row.sourceCommit, headCommit], {
+          windowsHide: true,
+          env: gitEnvironment,
+        },
       );
     } catch {
       throw new Error(`certification source is not an ancestor of release head: ${row.certificationId}`);

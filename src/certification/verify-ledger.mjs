@@ -86,15 +86,18 @@ function declaredLinks(file, receipt) {
   return [];
 }
 
-async function requireCommit(repositoryRoot, commit, file) {
+async function requireCommit(repositoryRoot, commit, file, gitEnvironment) {
   try {
-    await execFileAsync('git', ['-C', repositoryRoot, 'cat-file', '-e', `${commit}^{commit}`], { windowsHide: true });
+    await execFileAsync('git', ['-C', repositoryRoot, 'cat-file', '-e', `${commit}^{commit}`], {
+      windowsHide: true,
+      ...(gitEnvironment === undefined ? {} : { env: gitEnvironment }),
+    });
   } catch {
     throw new Error(`certification source commit does not resolve: ${file}`);
   }
 }
 
-export async function verifyCertificationLedger({ receiptDirectory, repositoryRoot }) {
+export async function verifyCertificationLedger({ receiptDirectory, repositoryRoot, gitEnvironment }) {
   const directory = localPath(receiptDirectory);
   const repository = repositoryRoot === undefined ? resolve(directory, '..') : localPath(repositoryRoot);
   const files = (await readdir(directory)).sort();
@@ -119,7 +122,7 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     if (certificationId !== registry[file]) throw new Error(`certification identity mismatch: ${file}`);
     const sourceCommit = receipt.source?.commit;
     if (!COMMIT.test(sourceCommit)) throw new Error(`certification source commit is invalid: ${file}`);
-    await requireCommit(repository, sourceCommit, file);
+    await requireCommit(repository, sourceCommit, file, gitEnvironment);
     loaded.set(file, {
       receipt,
       fileSha256: sha256Text(text),
