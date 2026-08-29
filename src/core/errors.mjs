@@ -21,3 +21,11 @@ export class AuthorityError extends Error {
     this.name = 'AuthorityError';
   }
 }
+
+export class DecisionRequiredError extends Error {
+  constructor(categories) {
+    super(`decision required: ${[...categories].sort().join(', ')}`);
+    this.name = 'DecisionRequiredError';
+    this.categories = [...categories].sort();
+  }
+}
