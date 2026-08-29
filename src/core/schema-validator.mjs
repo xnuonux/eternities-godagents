@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 
+import { canonicalJson } from './canonical-json.mjs';
 import { SchemaError } from './errors.mjs';
 
 const schemaFiles = {
@@ -64,8 +65,27 @@ function validateNode({ schemaName, root, rule, value, pointer }) {
   if (typeof value === 'string' && rule.minLength !== undefined && value.length < rule.minLength) {
     throw new SchemaError(schemaName, pointer, `minLength ${rule.minLength}`);
   }
+  if (typeof value === 'string' && rule.maxLength !== undefined && value.length > rule.maxLength) {
+    throw new SchemaError(schemaName, pointer, `maxLength ${rule.maxLength}`);
+  }
   if (typeof value === 'number' && rule.minimum !== undefined && value < rule.minimum) {
     throw new SchemaError(schemaName, pointer, `minimum ${rule.minimum}`);
+  }
+  if (typeof value === 'number' && rule.maximum !== undefined && value > rule.maximum) {
+    throw new SchemaError(schemaName, pointer, `maximum ${rule.maximum}`);
+  }
+
+  if (Array.isArray(value) && rule.minItems !== undefined && value.length < rule.minItems) {
+    throw new SchemaError(schemaName, pointer, `minItems ${rule.minItems}`);
+  }
+  if (Array.isArray(value) && rule.maxItems !== undefined && value.length > rule.maxItems) {
+    throw new SchemaError(schemaName, pointer, `maxItems ${rule.maxItems}`);
+  }
+  if (Array.isArray(value) && rule.uniqueItems === true) {
+    const canonicalItems = value.map((entry) => canonicalJson(entry));
+    if (new Set(canonicalItems).size !== canonicalItems.length) {
+      throw new SchemaError(schemaName, pointer, 'uniqueItems');
+    }
   }
 
   if (Array.isArray(value) && rule.items) {
@@ -110,11 +130,15 @@ function validateNode({ schemaName, root, rule, value, pointer }) {
   }
 }
 
+export function validateAgainstSchema(schemaName, schema, value) {
+  validateNode({ schemaName, root: schema, rule: schema, value, pointer: '' });
+  return value;
+}
+
 export function assertSchema(schemaName, value) {
   const schema = schemas.get(schemaName);
   if (!schema) {
     throw new SchemaError(schemaName, '', 'unknown schema');
   }
-  validateNode({ schemaName, root: schema, rule: schema, value, pointer: '' });
-  return value;
+  return validateAgainstSchema(schemaName, schema, value);
 }

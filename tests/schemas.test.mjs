@@ -4,7 +4,7 @@ import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
 import { SchemaError } from '../src/core/errors.mjs';
-import { assertSchema } from '../src/core/schema-validator.mjs';
+import { assertSchema, validateAgainstSchema } from '../src/core/schema-validator.mjs';
 
 const fixtureUrl = (name) => new URL(`../fixtures/${name}`, import.meta.url);
 const readJson = async (name) => JSON.parse(await readFile(fixtureUrl(name), 'utf8'));
@@ -19,6 +19,38 @@ test('canonical JSON rejects values that cannot have stable JSON meaning', () =>
 
   assert.throws(() => canonicalJson({ value: Number.NaN }), /finite number/);
   assert.throws(() => canonicalJson(cyclic), /cyclic value/);
+});
+
+test('schema validator enforces bounded strings, numbers, and arrays', () => {
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['name', 'score', 'tags'],
+    properties: {
+      name: { type: 'string', minLength: 1, maxLength: 8 },
+      score: { type: 'integer', minimum: 0, maximum: 100 },
+      tags: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 2,
+        uniqueItems: true,
+        items: { type: 'string', minLength: 1 },
+      },
+    },
+  };
+
+  assert.equal(validateAgainstSchema('bounded-fixture', schema, {
+    name: 'aegis', score: 90, tags: ['guardian'],
+  }).score, 90);
+  assert.throws(() => validateAgainstSchema('bounded-fixture', schema, {
+    name: 'name-too-long', score: 90, tags: ['guardian'],
+  }), /maxLength 8/);
+  assert.throws(() => validateAgainstSchema('bounded-fixture', schema, {
+    name: 'aegis', score: 101, tags: ['guardian'],
+  }), /maximum 100/);
+  assert.throws(() => validateAgainstSchema('bounded-fixture', schema, {
+    name: 'aegis', score: 90, tags: ['guardian', 'guardian'],
+  }), /uniqueItems/);
 });
 
 test('strict schemas accept the complete v0 fixtures', async () => {
