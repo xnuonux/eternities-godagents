@@ -2,7 +2,7 @@
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
-Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary and a modular Phase 1 creation forge. The forge compiles creator choices into deterministic pre-genesis artifacts. It does not instantiate a vessel, bind a keel, run evolution, or activate Soul.
+Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, and a Phase 2 transactional genesis boundary. The forge compiles creator choices into deterministic pre-genesis artifacts. Transactional genesis binds one verified creation build and distribution to one journal, one isolated personal keel, and one canonical admission receipt before a persistent vessel may run. Evolution and Soul activation remain excluded.
 
 The canonical architecture is [ADR-0002](C:/dev/eternities-canon/.worktrees/godagents-inspiration-covenant/architecture/ADR-0002-godagent-v0-runtime-and-foundry.md).
 
@@ -25,11 +25,13 @@ The canonical architecture is [ADR-0002](C:/dev/eternities-canon/.worktrees/goda
 npm test
 npm run build:fixture
 npm run build:creation-fixture
+npm run build:genesis-fixture
 npm run build:networked-fixture
 npm run demo
 npm run certify
 npm run certify:creation-forge
 npm run certify:networked-cortex
+npm run certify:transactional-genesis
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -59,6 +61,26 @@ Expression, pronouns, presentation, personality prose, and visual identity remai
 
 Phase 1 explicitly excludes genesis transactions, keel binding, cross-agent delegation, governed evolution, a creator interface, live-provider quality, Lunari integration, Soul runtime, and vessel instantiation.
 Module inheritance is also closed in Phase 1: non-empty `baseModuleRefs` are rejected rather than silently accepted without inheritance semantics.
+
+## Transactional genesis and personal keel
+
+Phase 2 requires caller-supplied pins for the creation-policy digest and creation-build ID. It verifies the creation build and distribution, derives the distribution and genome digests from those artifacts, and checks their cross-artifact consistency. A deterministic coordinator then derives the genesis and keel identities, advances one digest-linked transaction state machine, initializes one isolated keel namespace, appends mutually bound journal and keel genesis records, writes a canonical receipt, and independently re-verifies the complete boundary before returning an admitted genesis result. Constructing a runnable persistent wrapper is a separate step that also requires runtime dependencies and the keel adapter.
+
+```text
+verified creation + verified distribution + caller pins
+  -> deterministic genesis and keel identity
+  -> isolated keel and journal preparation
+  -> mutually bound genesis evidence
+  -> canonical admission receipt
+  -> independent wake verification
+  -> persistent runnable vessel
+```
+
+Every durable interruption boundary is resumable without duplicate genesis rows. Existing admitted genesis is reopened only after full verification. Mismatched or quarantined evidence fails closed. Empty, truncated, dead-owner, and stale lock recovery preserves a grace period and uses atomic reclaim, while a live or recent owner remains protected.
+
+The persistent wrapper keeps vessel identity, journal continuity, and keel identity stable across cortex replacement. Checkpoint promotion records exact cross-chain provenance. Temporary workers receive bounded context and proposal authority only; they cannot receive a personal-keel writer. Phase 2 certifies `GF-006` through `GF-009` plus `GF-012` and still excludes creator UI, governed evolution, hosted multi-tenant durability, live-provider quality, Lunari integration, collective team memory, and Soul activation.
+
+`npm run certify:transactional-genesis` must run from its clean source commit. It executes the guarded complete suite, creates two byte-identical fresh genesis roots, verifies failure-injection coverage and historical receipts, and writes `receipts/transactional-genesis-phase2-certification.json`. The committed receipt pins that exact source commit; verify a merged receipt by reproducing the command at the pinned source commit and comparing canonical receipt bytes.
 
 ## Networked cortex host
 

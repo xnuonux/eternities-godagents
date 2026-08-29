@@ -20,6 +20,10 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 | memory admission | preserves source class and forbids foreign content from entering as lived history |
 | Soul port | returns only the frozen state `{ "schemaVersion": 1, "status": "dormant" }` |
 | creation forge | validates nine modular selections against a separately digested ceiling and compiles deterministic pre-genesis artifacts |
+| genesis coordinator | binds one verified creation and distribution to one journal, one isolated keel, and one admission receipt through an idempotent state machine |
+| keel reference backend | maintains isolated append-only personal-keel namespaces with hash-chain verification, ownership uniqueness, quarantine, and crash-safe locks |
+| persistent vessel wrapper | refuses partial genesis, re-verifies both continuity chains on wake, and preserves identity across cortex replacement |
+| temporary-worker boundary | projects bounded external context and proposal authority without exposing a personal-keel capability |
 
 ## Phase 1 creation boundary
 
@@ -40,6 +44,24 @@ Phase 1 proof rows are:
 - `GF-011`: dormant Soul refusal
 
 No Phase 1 artifact is a vessel, keel, genesis receipt, creator interface, evolution engine, or Soul runtime. Those remain later boundaries with separate admission and rollback designs.
+
+## Phase 2 transactional genesis boundary
+
+Phase 2 converts a verified pre-genesis build into an admitted genesis result only after one deterministic transaction binds every immutable identity and continuity surface. The caller independently pins the creation-policy digest and creation-build ID. The coordinator derives the distribution-build and both genome digests from verified artifacts and checks their cross-artifact consistency. Genesis derives stable `genesisId` and `keelId` values from those verified values plus the instance and creator references; identity reuse with different bound data is rejected.
+
+The coordinator advances one closed state chain:
+
+```text
+prepared -> keel-prepared -> journal-prepared -> mutually-bound -> admitted
+    \-------------------------------------------------------> aborted
+    \----------------------------------------------------> quarantined
+```
+
+Preparation creates one isolated keel namespace and one vessel journal. The journal's `vessel.created` and `genesis.bound` events and the keel's `binding` record cross-reference the same deterministic genesis identity. A canonical receipt binds their exact heads and transaction-state digest. The coordinator writes the receipt, advances durable state to `admitted`, and then independently re-reads and verifies the receipt, state file, creation build, distribution, journal, and keel before returning. A crash after the durable admission transition is safe: retry re-verifies the entire admitted boundary before exposing the result.
+
+Recovery is exact-idempotent. A retry continues the next missing durable transition, an admitted transaction is reverified without duplicate rows, and an aborted or quarantined transaction is never silently revived. Committed evidence is preserved for audit. Dead or expired malformed lock files can be atomically reclaimed after a grace period; live and recent locks remain fail-closed.
+
+The admitted wrapper wakes both continuity chains before every persistent run. Cortex replacement changes only the proposal source. Checkpoint promotion records reciprocal journal and keel provenance, while temporary workers have no personal-keel write surface. Phase 2 proves `GF-006`, `GF-007`, `GF-008`, `GF-009`, and `GF-012`; it does not prove creator UI, evolution, hosted durability, collective memory, Lunari integration, live-provider quality, or Soul activation.
 
 ## Networked cortex extension
 
