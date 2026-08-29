@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "voice",
+  "id": "resonant-warm",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "luminous emissary catalog expansion" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": [], "providesTags": ["voice.resonant-warm"] },
+  "capabilities": [],
+  "presentationTags": ["resonant", "warm"],
+  "payload": { "tone": "warm", "register": "luminous", "vocabularyProfile": "relational-poetic", "pacing": "responsive" }
+}

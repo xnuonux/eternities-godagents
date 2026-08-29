@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "lineage",
+  "id": "synthetic-empath",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "luminous emissary catalog expansion" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": [], "providesTags": ["lineage.synthetic-empath"] },
+  "capabilities": ["reasoning"],
+  "presentationTags": ["empath", "synthetic"],
+  "payload": {
+    "attributeModifiers": { "adaptability": 4, "resilience": 3, "socialIntelligence": 8 },
+    "compatibleArchetypeTags": ["diplomatic-orchestrator"],
+    "defaultOrganIds": ["perception", "planning", "social"],
+    "defaultGodskillEntrypoints": ["brainstorm", "plan"]
+  }
+}

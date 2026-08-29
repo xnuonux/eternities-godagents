@@ -57,6 +57,7 @@ const historicalReceiptDigests = Object.freeze({
 });
 const presetRefs = Object.freeze([
   'preset:aether-architect@1.0.0',
+  'preset:luminous-emissary@1.0.0',
   'preset:quiet-cartographer@1.0.0',
 ]);
 const expectedPolicyDigest = 'c4e3411726fcb32159678b65348e3e14e67f4b011ba73391d19988dee056158b';

@@ -133,7 +133,7 @@ test('creator catalog rejects policy mismatch and authority-shaped preset choice
   );
 });
 
-test('phase 3 fixture catalog exposes two real creation paths', async () => {
+test('creator fixture catalog exposes three coherent creation paths', async () => {
   const root = new URL('../fixtures/', import.meta.url);
   const { catalog, sourceLoader } = await loadCreatorLibrary({
     policyPath: new URL('creation/creation-policy.json', root),
@@ -142,15 +142,18 @@ test('phase 3 fixture catalog exposes two real creation paths', async () => {
     expressionDirectory: new URL('creator/expressions/', root),
     presetDirectory: new URL('creator/presets/', root),
   });
-  assert.equal(catalog.modules.length, 14);
+  assert.equal(catalog.modules.length, 19);
   assert.deepEqual(catalog.expressions.map((row) => row.ref), [
     'expression:aether-architect@1.0.0',
+    'expression:ilyra-emissary@1.0.0',
     'expression:quiet-cartographer@1.0.0',
   ]);
   assert.deepEqual(catalog.presets.map((row) => row.ref), [
     'preset:aether-architect@1.0.0',
+    'preset:luminous-emissary@1.0.0',
     'preset:quiet-cartographer@1.0.0',
   ]);
   assert.equal(sourceLoader.resolvePreset('preset:aether-architect@1.0.0').choices.length, 17);
+  assert.equal(sourceLoader.resolvePreset('preset:luminous-emissary@1.0.0').choices.length, 17);
   assert.equal(sourceLoader.resolvePreset('preset:quiet-cartographer@1.0.0').choices.length, 17);
 });

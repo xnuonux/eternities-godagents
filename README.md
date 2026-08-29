@@ -143,6 +143,8 @@ The visual forge is a loopback-only client of the same bounded operator workflow
 
 A one-use server confirmation binds acknowledgement to the entire exact composition and preview digest. Incompatible mixtures cannot be acknowledged. The browser cannot edit constitution, effects, Realm authority, provider routing, evolution, Inspiration, or Soul, and it cannot supply filesystem paths: the server builds in an unpredictable atomic staging directory below the verified `--workspace` and publishes only to the reviewed digest path.
 
+The bundled catalog currently provides three coherent identity foundations: Aether Architect, Quiet Cartographer, and Ilyra the Luminous Emissary. Identity-bearing lineages, archetypes, attribute sets, personalities, voices, and expressions each have three validated choices. Operational organs, Godskills, cortex, and embodiment remain singular until a real alternate implementation exists.
+
 ```powershell
 npm run creator:web -- `
   --policy C:\path\to\creation-policy.json `

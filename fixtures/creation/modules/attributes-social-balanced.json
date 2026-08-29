@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "attributes",
+  "id": "social-balanced",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "luminous emissary catalog expansion" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": ["archetype.diplomatic-orchestrator"], "providesTags": ["attributes.social-balanced"] },
+  "capabilities": [],
+  "presentationTags": ["diplomatic", "social"],
+  "payload": {
+    "values": {
+      "adaptability": 62,
+      "autonomy": 50,
+      "caution": 60,
+      "creativity": 65,
+      "initiative": 58,
+      "learningVelocity": 63,
+      "memoryDiscipline": 65,
+      "perception": 68,
+      "planning": 66,
+      "precision": 64,
+      "reasoning": 68,
+      "resilience": 61,
+      "socialIntelligence": 72
+    }
+  }
+}

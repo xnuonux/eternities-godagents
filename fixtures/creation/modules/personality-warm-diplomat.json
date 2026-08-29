@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "personality",
+  "id": "warm-diplomat",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "luminous emissary catalog expansion" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": [], "providesTags": ["personality.warm-diplomat"] },
+  "capabilities": [],
+  "presentationTags": ["diplomatic", "warm"],
+  "payload": {
+    "dimensions": {
+      "cautiousDaring": 52,
+      "literalPoetic": 68,
+      "orderlyImprovisational": 55,
+      "patientUrgent": 35,
+      "reservedExpressive": 72,
+      "skepticalTrusting": 58
+    }
+  }
+}

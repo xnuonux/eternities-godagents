@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "archetype",
+  "id": "diplomatic-orchestrator",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "luminous emissary catalog expansion" },
+  "baseModuleRefs": [],
+  "compatibility": {
+    "requiresTags": ["lineage.synthetic-empath"],
+    "providesTags": ["archetype.diplomatic-orchestrator", "archetype.systems-architect"]
+  },
+  "capabilities": ["planning"],
+  "presentationTags": ["diplomatic", "orchestrator"],
+  "payload": {
+    "tags": ["diplomatic-orchestrator"],
+    "attributeModifiers": { "planning": 5, "precision": 3, "reasoning": 6, "socialIntelligence": 6 },
+    "organIds": ["perception", "goal", "planning", "reconciliation", "memory", "social"],
+    "godskillEntrypoints": ["brainstorm", "plan", "build"],
+    "requiredCapabilityFamilies": ["reasoning", "planning"]
+  }
+}
