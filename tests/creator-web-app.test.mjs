@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
-import { previewOperatorPreset } from '../src/creator/operator-workflow.mjs';
+import { previewOperatorComposition, previewOperatorPreset } from '../src/creator/operator-workflow.mjs';
 import { createCreatorWebApp, isPathWithinRoot } from '../src/creator/web/app.mjs';
 
 const expectedPolicyDigest = 'c4e3411726fcb32159678b65348e3e14e67f4b011ba73391d19988dee056158b';
@@ -43,6 +43,25 @@ async function value(response) {
 
 async function acknowledge(app, input, previewDigest) {
   const response = await app.handle(request('/api/acknowledge-preview', {
+    method: 'POST',
+    body: { ...input, expectedPreviewDigest: previewDigest },
+  }));
+  assert.equal(response.status, 200);
+  return (await value(response)).body.reviewConfirmation;
+}
+
+async function compositionInput(foundation = 'preset:aether-architect@1.0.0') {
+  const preset = await previewOperatorPreset({ ...operatorOptions, preset: foundation, creator: 'creator:dom' });
+  return {
+    foundation,
+    creator: 'creator:dom',
+    expression: preset.selection.expressionRef,
+    moduleRefs: preset.selection.moduleRefs,
+  };
+}
+
+async function acknowledgeComposition(app, input, previewDigest) {
+  const response = await app.handle(request('/api/acknowledge-composition', {
     method: 'POST',
     body: { ...input, expectedPreviewDigest: previewDigest },
   }));
@@ -142,6 +161,42 @@ test('visual finalization requires one exact one-use review confirmation', async
   const replay = await app.handle(request('/api/finalize-preset', {
     method: 'POST',
     body: { ...input, expectedPreviewDigest: preview.previewDigest, reviewConfirmation },
+  }));
+  assert.equal(replay.status, 409);
+});
+
+test('modular composition routes preserve parity and bind the full selection once', async (context) => {
+  const { app, workspace } = await setup(context);
+  const input = await compositionInput();
+  const previewResponse = await app.handle(request('/api/preview-composition', { method: 'POST', body: input }));
+  assert.equal(previewResponse.status, 200);
+  const preview = (await value(previewResponse)).body;
+  assert.deepEqual(preview, await previewOperatorComposition({ ...operatorOptions, ...input }));
+
+  const reviewConfirmation = await acknowledgeComposition(app, input, preview.previewDigest);
+  const changed = {
+    ...input,
+    moduleRefs: { ...input.moduleRefs, voice: 'voice:quiet-precise@1.0.0' },
+  };
+  const mismatch = await app.handle(request('/api/finalize-composition', {
+    method: 'POST',
+    body: { ...changed, expectedPreviewDigest: preview.previewDigest, reviewConfirmation },
+  }));
+  assert.equal(mismatch.status, 409);
+  await assert.rejects(() => access(join(workspace, 'builds', preview.previewDigest)));
+
+  const secondConfirmation = await acknowledgeComposition(app, input, preview.previewDigest);
+  const finalized = await app.handle(request('/api/finalize-composition', {
+    method: 'POST',
+    body: { ...input, expectedPreviewDigest: preview.previewDigest, reviewConfirmation: secondConfirmation },
+  }));
+  const result = (await value(finalized)).body;
+  assert.equal(finalized.status, 200);
+  assert.equal(result.creationBuildId, '9837b7c8a8cdcc5e11f5094ef5b0307aa18790e11099860c283057a27e0f0e64');
+
+  const replay = await app.handle(request('/api/finalize-composition', {
+    method: 'POST',
+    body: { ...input, expectedPreviewDigest: preview.previewDigest, reviewConfirmation: secondConfirmation },
   }));
   assert.equal(replay.status, 409);
 });

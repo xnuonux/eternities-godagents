@@ -4,10 +4,13 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { canonicalJson } from '../../core/canonical-json.mjs';
+import { sha256Value } from '../../core/digest.mjs';
 import {
   CreatorWorkflowError,
+  finalizeOperatorComposition,
   finalizeOperatorPreset,
   loadOperatorCatalog,
+  previewOperatorComposition,
   previewOperatorPreset,
 } from '../operator-workflow.mjs';
 
@@ -174,6 +177,49 @@ export async function createCreatorWebApp({ operatorOptions, workspace, sessionT
     [await readFile(join(assetDirectory, name), 'utf8'), type],
   ])));
 
+  function bindingDigest(kind, input, previewDigest) {
+    return sha256Value({ schemaVersion: 1, kind, input, previewDigest });
+  }
+
+  function issueConfirmation(binding) {
+    const reviewConfirmation = randomBytes(32).toString('hex');
+    if (reviewConfirmations.size >= 64) reviewConfirmations.delete(reviewConfirmations.keys().next().value);
+    reviewConfirmations.set(reviewConfirmation, binding);
+    return reviewConfirmation;
+  }
+
+  function consumeConfirmation(reviewConfirmation, binding) {
+    const acknowledged = reviewConfirmations.get(reviewConfirmation);
+    reviewConfirmations.delete(reviewConfirmation);
+    if (acknowledged !== binding) throw new WebBoundaryError('review-confirmation-invalid', 409);
+  }
+
+  async function finalizeInWorkspace(expectedPreviewDigest, operation) {
+    await assertConfinedDirectory(workspaceRoot, buildsRoot);
+    const transactionRoot = resolve(buildsRoot, expectedPreviewDigest);
+    if (!isPathWithinRoot(buildsRoot, transactionRoot)) throw new WebBoundaryError('workspace-boundary-invalid', 409);
+    await assertTargetAbsent(transactionRoot);
+    const pendingRoot = await mkdtemp(join(buildsRoot, '.pending-'));
+    const sourceDirectory = join(pendingRoot, 'source');
+    const outputDirectory = join(pendingRoot, 'output');
+    try {
+      await mkdir(sourceDirectory);
+      await mkdir(outputDirectory);
+      await assertConfinedDirectory(pendingRoot, sourceDirectory);
+      await assertConfinedDirectory(pendingRoot, outputDirectory);
+      const finalized = await operation({ sourceDirectory, outputDirectory });
+      await assertConfinedDirectory(buildsRoot, pendingRoot);
+      await assertConfinedDirectory(pendingRoot, sourceDirectory);
+      await assertConfinedDirectory(pendingRoot, outputDirectory);
+      await rename(pendingRoot, transactionRoot);
+      return jsonResponse(finalized);
+    } catch (error) {
+      await removePendingSafely(buildsRoot, pendingRoot);
+      if (error instanceof WebBoundaryError) throw error;
+      return workflowFailure(error);
+    }
+  }
+
   return Object.freeze({
     async handle(request) {
       try {
@@ -205,6 +251,15 @@ export async function createCreatorWebApp({ operatorOptions, workspace, sessionT
             return workflowFailure(error);
           }
         }
+        if (url.pathname === '/api/preview-composition') {
+          if (request.method !== 'POST') return failure('method-invalid', 405);
+          const body = await readJson(request, ['foundation', 'creator', 'expression', 'moduleRefs']);
+          try {
+            return jsonResponse(await previewOperatorComposition({ ...operatorOptions, ...body }));
+          } catch (error) {
+            return workflowFailure(error);
+          }
+        }
         if (url.pathname === '/api/acknowledge-preview') {
           if (request.method !== 'POST') return failure('method-invalid', 405);
           const body = await readJson(request, ['preset', 'creator', 'expectedPreviewDigest']);
@@ -217,13 +272,34 @@ export async function createCreatorWebApp({ operatorOptions, workspace, sessionT
           }
           if (preview.status !== 'ready') return failure('preview-not-ready', 409);
           if (preview.previewDigest !== body.expectedPreviewDigest) return failure('preview-digest-mismatch', 409);
-          const reviewConfirmation = randomBytes(32).toString('hex');
-          if (reviewConfirmations.size >= 64) reviewConfirmations.delete(reviewConfirmations.keys().next().value);
-          reviewConfirmations.set(reviewConfirmation, Object.freeze({
-            preset: body.preset,
+          const reviewConfirmation = issueConfirmation(bindingDigest(
+            'preset', { preset: body.preset, creator: body.creator }, body.expectedPreviewDigest,
+          ));
+          return jsonResponse({ schemaVersion: 1, status: 'acknowledged', reviewConfirmation });
+        }
+        if (url.pathname === '/api/acknowledge-composition') {
+          if (request.method !== 'POST') return failure('method-invalid', 405);
+          const body = await readJson(request, [
+            'foundation', 'creator', 'expression', 'moduleRefs', 'expectedPreviewDigest',
+          ]);
+          if (!DIGEST.test(body.expectedPreviewDigest)) throw new WebBoundaryError('body-invalid', 400);
+          const input = {
+            foundation: body.foundation,
             creator: body.creator,
-            previewDigest: body.expectedPreviewDigest,
-          }));
+            expression: body.expression,
+            moduleRefs: body.moduleRefs,
+          };
+          let preview;
+          try {
+            preview = await previewOperatorComposition({ ...operatorOptions, ...input });
+          } catch (error) {
+            return workflowFailure(error);
+          }
+          if (preview.status !== 'ready') return failure('preview-not-ready', 409);
+          if (preview.previewDigest !== body.expectedPreviewDigest) return failure('preview-digest-mismatch', 409);
+          const reviewConfirmation = issueConfirmation(bindingDigest(
+            'composition', input, body.expectedPreviewDigest,
+          ));
           return jsonResponse({ schemaVersion: 1, status: 'acknowledged', reviewConfirmation });
         }
         if (url.pathname === '/api/finalize-preset') {
@@ -232,44 +308,47 @@ export async function createCreatorWebApp({ operatorOptions, workspace, sessionT
           if (!DIGEST.test(body.expectedPreviewDigest) || !TOKEN.test(body.reviewConfirmation)) {
             throw new WebBoundaryError('body-invalid', 400);
           }
-          const acknowledged = reviewConfirmations.get(body.reviewConfirmation);
-          reviewConfirmations.delete(body.reviewConfirmation);
-          if (!acknowledged
-              || acknowledged.preset !== body.preset
-              || acknowledged.creator !== body.creator
-              || acknowledged.previewDigest !== body.expectedPreviewDigest) {
-            throw new WebBoundaryError('review-confirmation-invalid', 409);
-          }
-          await assertConfinedDirectory(workspaceRoot, buildsRoot);
-          const transactionRoot = resolve(buildsRoot, body.expectedPreviewDigest);
-          if (!isPathWithinRoot(buildsRoot, transactionRoot)) throw new WebBoundaryError('workspace-boundary-invalid', 409);
-          await assertTargetAbsent(transactionRoot);
-          const pendingRoot = await mkdtemp(join(buildsRoot, '.pending-'));
-          const sourceDirectory = join(pendingRoot, 'source');
-          const outputDirectory = join(pendingRoot, 'output');
-          try {
-            await mkdir(sourceDirectory);
-            await mkdir(outputDirectory);
-            await assertConfinedDirectory(pendingRoot, sourceDirectory);
-            await assertConfinedDirectory(pendingRoot, outputDirectory);
-            const finalized = await finalizeOperatorPreset({
+          consumeConfirmation(body.reviewConfirmation, bindingDigest(
+            'preset', { preset: body.preset, creator: body.creator }, body.expectedPreviewDigest,
+          ));
+          return await finalizeInWorkspace(body.expectedPreviewDigest, ({ sourceDirectory, outputDirectory }) => (
+            finalizeOperatorPreset({
               ...operatorOptions,
               preset: body.preset,
               creator: body.creator,
               expectedPreviewDigest: body.expectedPreviewDigest,
               sourceDir: sourceDirectory,
               outputDir: outputDirectory,
-            });
-            await assertConfinedDirectory(buildsRoot, pendingRoot);
-            await assertConfinedDirectory(pendingRoot, sourceDirectory);
-            await assertConfinedDirectory(pendingRoot, outputDirectory);
-            await rename(pendingRoot, transactionRoot);
-            return jsonResponse(finalized);
-          } catch (error) {
-            await removePendingSafely(buildsRoot, pendingRoot);
-            if (error instanceof WebBoundaryError) throw error;
-            return workflowFailure(error);
+            })
+          ));
+        }
+        if (url.pathname === '/api/finalize-composition') {
+          if (request.method !== 'POST') return failure('method-invalid', 405);
+          const body = await readJson(request, [
+            'foundation', 'creator', 'expression', 'moduleRefs',
+            'expectedPreviewDigest', 'reviewConfirmation',
+          ]);
+          if (!DIGEST.test(body.expectedPreviewDigest) || !TOKEN.test(body.reviewConfirmation)) {
+            throw new WebBoundaryError('body-invalid', 400);
           }
+          const input = {
+            foundation: body.foundation,
+            creator: body.creator,
+            expression: body.expression,
+            moduleRefs: body.moduleRefs,
+          };
+          consumeConfirmation(body.reviewConfirmation, bindingDigest(
+            'composition', input, body.expectedPreviewDigest,
+          ));
+          return await finalizeInWorkspace(body.expectedPreviewDigest, ({ sourceDirectory, outputDirectory }) => (
+            finalizeOperatorComposition({
+              ...operatorOptions,
+              ...input,
+              expectedPreviewDigest: body.expectedPreviewDigest,
+              sourceDir: sourceDirectory,
+              outputDir: outputDirectory,
+            })
+          ));
         }
         return failure('route-invalid', 404);
       } catch (error) {
