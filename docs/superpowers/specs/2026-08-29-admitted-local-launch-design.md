@@ -1,7 +1,9 @@
 # Admitted local launch shell
 
-**Status:** approved autonomous implementation boundary  
-**Depends on:** certified local admission shell, persistent-vessel wrapper, networked cortex host  
+**Status:** approved autonomous implementation boundary
+
+**Depends on:** certified local admission shell, persistent-vessel wrapper, networked cortex host
+
 **Does not implement:** background service, hosted accounts, multi-user isolation, evolution, Inspiration, Lunari, or Soul activation
 
 ## Purpose
