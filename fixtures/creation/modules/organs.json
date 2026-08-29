@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "organs",
+  "id": "builder-core",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "canonical creation fixture" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": ["archetype.systems-architect"], "providesTags": ["organs.builder-core"] },
+  "capabilities": ["memory"],
+  "presentationTags": ["builder"],
+  "payload": {
+    "organs": [
+      { "id": "perception", "version": "1.0.0", "cadence": "cycle", "kind": "perception" },
+      { "id": "goal", "version": "1.0.0", "cadence": "event", "kind": "goal" },
+      { "id": "planning", "version": "1.0.0", "cadence": "cycle", "kind": "planning" },
+      { "id": "reconciliation", "version": "1.0.0", "cadence": "recovery", "kind": "reconciliation" },
+      { "id": "memory", "version": "1.0.0", "cadence": "event", "kind": "memory" },
+      { "id": "social", "version": "1.0.0", "cadence": "event", "kind": "social" }
+    ]
+  }
+}

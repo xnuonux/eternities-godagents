@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "archetype",
+  "id": "systems-architect",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "canonical creation fixture" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": ["lineage.synthetic-explorer"], "providesTags": ["archetype.systems-architect"] },
+  "capabilities": ["planning"],
+  "presentationTags": ["architect"],
+  "payload": {
+    "tags": ["architect"],
+    "attributeModifiers": { "planning": 12, "reasoning": 10, "precision": 5 },
+    "organIds": ["perception", "goal", "planning", "reconciliation", "memory", "social"],
+    "godskillEntrypoints": ["brainstorm", "plan", "build"],
+    "requiredCapabilityFamilies": ["reasoning", "planning"]
+  }
+}

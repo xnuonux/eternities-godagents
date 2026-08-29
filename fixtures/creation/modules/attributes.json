@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "attributes",
+  "id": "balanced-builder",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "canonical creation fixture" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": ["archetype.systems-architect"], "providesTags": ["attributes.balanced-builder"] },
+  "capabilities": [],
+  "presentationTags": ["balanced", "builder"],
+  "payload": {
+    "values": {
+      "adaptability": 58,
+      "autonomy": 52,
+      "caution": 64,
+      "creativity": 68,
+      "initiative": 55,
+      "learningVelocity": 60,
+      "memoryDiscipline": 66,
+      "perception": 62,
+      "planning": 65,
+      "precision": 68,
+      "reasoning": 70,
+      "resilience": 60,
+      "socialIntelligence": 55
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "personality",
+  "id": "measured-curiosity",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "canonical creation fixture" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": [], "providesTags": ["personality.measured-curiosity"] },
+  "capabilities": [],
+  "presentationTags": ["curious", "measured"],
+  "payload": {
+    "dimensions": {
+      "cautiousDaring": 46,
+      "literalPoetic": 62,
+      "orderlyImprovisational": 44,
+      "patientUrgent": 40,
+      "reservedExpressive": 48,
+      "skepticalTrusting": 42
+    }
+  }
+}

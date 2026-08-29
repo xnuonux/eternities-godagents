@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "ref": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "moduleKind": { "enum": ["lineage", "archetype", "attributes", "personality", "voice", "organs", "godskills", "cortex", "embodiment"] }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "candidateDigest", "policyDigest", "expressionDigest", "selection", "modules", "validations"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "candidateDigest": { "$ref": "#/$defs/digest" }, "policyDigest": { "$ref": "#/$defs/digest" }, "expressionDigest": { "$ref": "#/$defs/digest" },
+    "selection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["lineage", "archetype", "attributes", "personality", "voice", "organs", "godskills", "cortex", "embodiment"],
+      "properties": {
+        "lineage": { "$ref": "#/$defs/ref" }, "archetype": { "$ref": "#/$defs/ref" }, "attributes": { "$ref": "#/$defs/ref" },
+        "personality": { "$ref": "#/$defs/ref" }, "voice": { "$ref": "#/$defs/ref" }, "organs": { "$ref": "#/$defs/ref" },
+        "godskills": { "$ref": "#/$defs/ref" }, "cortex": { "$ref": "#/$defs/ref" }, "embodiment": { "$ref": "#/$defs/ref" }
+      }
+    },
+    "modules": {
+      "type": "array", "minItems": 9, "maxItems": 9,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["ref", "kind", "sha256"],
+        "properties": { "ref": { "$ref": "#/$defs/ref" }, "kind": { "$ref": "#/$defs/moduleKind" }, "sha256": { "$ref": "#/$defs/digest" } }
+      }
+    },
+    "validations": { "type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 128 } }
+  }
+}

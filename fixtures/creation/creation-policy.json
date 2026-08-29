@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "policyId": "creation-ceiling-local-builder-v1",
+  "allowedEffects": ["local-read", "local-write"],
+  "allowedCapabilities": ["reasoning", "planning", "memory", "filesystem.read", "filesystem.write", "cortex.proposals", "presentation.local"],
+  "allowedPromptAdapters": ["prompt-os-v1"],
+  "allowedCortexAdapters": ["openai-compatible"],
+  "allowedGodskillsContracts": ["eternities-portable-router-v1"],
+  "allowedGodskillEntrypoints": ["brainstorm", "plan", "build"],
+  "allowedRealmCapabilities": ["filesystem.read", "filesystem.write"],
+  "maxGodskillsComposition": 3
+}

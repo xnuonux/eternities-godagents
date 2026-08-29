@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "godskills",
+  "id": "portable-builder",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "canonical creation fixture" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": ["organs.builder-core"], "providesTags": ["godskills.portable-builder"] },
+  "capabilities": ["filesystem.read", "filesystem.write"],
+  "presentationTags": ["builder"],
+  "payload": {
+    "contractId": "eternities-portable-router-v1",
+    "maxComposition": 3,
+    "entrypointIds": ["brainstorm", "plan", "build"]
+  }
+}

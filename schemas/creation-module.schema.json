@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "text": { "type": "string", "minLength": 1, "maxLength": 4096 },
+    "set": { "type": "array", "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/identifier" } }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "moduleKind", "id", "version", "provenance", "baseModuleRefs", "compatibility", "capabilities", "presentationTags", "payload"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "moduleKind": { "enum": ["lineage", "archetype", "attributes", "personality", "voice", "organs", "godskills", "cortex", "embodiment"] },
+    "id": { "$ref": "#/$defs/identifier" }, "version": { "$ref": "#/$defs/identifier" },
+    "provenance": {
+      "type": "object", "additionalProperties": false, "required": ["author", "source"],
+      "properties": { "author": { "$ref": "#/$defs/identifier" }, "source": { "$ref": "#/$defs/text" } }
+    },
+    "baseModuleRefs": { "$ref": "#/$defs/set" },
+    "compatibility": {
+      "type": "object", "additionalProperties": false, "required": ["requiresTags", "providesTags"],
+      "properties": { "requiresTags": { "$ref": "#/$defs/set" }, "providesTags": { "$ref": "#/$defs/set" } }
+    },
+    "capabilities": { "$ref": "#/$defs/set" },
+    "presentationTags": { "$ref": "#/$defs/set" },
+    "payload": { "type": "object" }
+  }
+}

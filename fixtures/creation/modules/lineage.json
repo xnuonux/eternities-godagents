@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "lineage",
+  "id": "synthetic-explorer",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "canonical creation fixture" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": [], "providesTags": ["lineage.synthetic-explorer"] },
+  "capabilities": ["reasoning"],
+  "presentationTags": ["synthetic", "explorer"],
+  "payload": {
+    "attributeModifiers": { "adaptability": 8, "resilience": 6 },
+    "compatibleArchetypeTags": ["architect"],
+    "defaultOrganIds": ["perception", "planning"],
+    "defaultGodskillEntrypoints": ["brainstorm", "plan"]
+  }
+}

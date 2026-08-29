@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "embodiment",
+  "id": "local-workbench",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "canonical creation fixture" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": ["cortex.openai-compatible"], "providesTags": ["embodiment.local-workbench"] },
+  "capabilities": ["presentation.local"],
+  "presentationTags": ["local", "workbench"],
+  "payload": {
+    "tags": ["local-workbench"],
+    "requiredRealmCapabilities": ["filesystem.read", "filesystem.write"],
+    "presentationSurfaces": ["terminal", "desktop"]
+  }
+}

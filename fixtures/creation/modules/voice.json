@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "voice",
+  "id": "clear-cosmic",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "canonical creation fixture" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": [], "providesTags": ["voice.clear-cosmic"] },
+  "capabilities": [],
+  "presentationTags": ["clear", "cosmic"],
+  "payload": { "tone": "measured", "register": "direct", "vocabularyProfile": "technical-poetic", "pacing": "deliberate" }
+}

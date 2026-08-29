@@ -13,6 +13,12 @@ const schemaFiles = {
   'action-receipt': 'action-receipt.schema.json',
   'cortex-attempt': 'cortex-attempt.schema.json',
   'host-policy': 'host-policy.schema.json',
+  'creation-candidate': 'creation-candidate.schema.json',
+  'expression-overlay': 'expression-overlay.schema.json',
+  'creation-policy': 'creation-policy.schema.json',
+  'creation-module': 'creation-module.schema.json',
+  'module-manifest': 'module-manifest.schema.json',
+  'creation-build-manifest': 'creation-build-manifest.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

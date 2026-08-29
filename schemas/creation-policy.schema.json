@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "set": { "type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/identifier" } }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "policyId", "allowedEffects", "allowedCapabilities", "allowedPromptAdapters", "allowedCortexAdapters", "allowedGodskillsContracts", "allowedGodskillEntrypoints", "allowedRealmCapabilities", "maxGodskillsComposition"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "policyId": { "$ref": "#/$defs/identifier" },
+    "allowedEffects": { "$ref": "#/$defs/set" },
+    "allowedCapabilities": { "$ref": "#/$defs/set" },
+    "allowedPromptAdapters": { "$ref": "#/$defs/set" },
+    "allowedCortexAdapters": { "$ref": "#/$defs/set" },
+    "allowedGodskillsContracts": { "$ref": "#/$defs/set" },
+    "allowedGodskillEntrypoints": { "$ref": "#/$defs/set" },
+    "allowedRealmCapabilities": { "$ref": "#/$defs/set" },
+    "maxGodskillsComposition": { "type": "integer", "minimum": 1, "maximum": 32 }
+  }
+}
