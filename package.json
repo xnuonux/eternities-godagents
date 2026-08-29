@@ -10,12 +10,14 @@
     "test": "node --test",
     "build:fixture": "node scripts/build-fixture.mjs",
     "build:creation-fixture": "node scripts/build-creation-fixture.mjs",
+    "build:genesis-fixture": "node scripts/build-genesis-fixture.mjs",
     "build:networked-fixture": "node scripts/build-networked-fixture.mjs",
     "demo": "node scripts/run-demo.mjs",
     "host:local": "node src/host/local-cli.mjs",
     "policy:digest": "node scripts/hash-host-policy.mjs",
     "certify": "node src/certification/certify-v0.mjs",
     "certify:networked-cortex": "node src/certification/certify-networked-cortex.mjs",
-    "certify:creation-forge": "node src/certification/certify-creation-forge-phase1.mjs"
+    "certify:creation-forge": "node src/certification/certify-creation-forge-phase1.mjs",
+    "certify:transactional-genesis": "node src/certification/certify-transactional-genesis-phase2.mjs"
   }
 }
