@@ -35,6 +35,7 @@ npm run certify:creation-forge
 npm run certify:networked-cortex
 npm run certify:transactional-genesis
 npm run certify:creator-protocol
+npm run certify:visual-creator
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -156,6 +157,8 @@ npm run creator:web -- `
 ```
 
 The server binds only `127.0.0.1`, generates a fresh launch token, serves no third-party assets, rejects junctioned workspace components, and accepts only fixed same-origin API routes. An optional `--port` may select a loopback port. The visual forge ends at the same verified pre-genesis build as the CLI and has no genesis, model, Realm, keel, evolution, Inspiration, or Soul capability.
+
+`npm run certify:visual-creator` creates the separate append-only `visual-creator-shell-v1` receipt. It runs the complete no-network suite, proves every local API route is token-gated, executes the pure web handler through composition preview, exact acknowledgement, and finalization in two isolated roots, compares the resulting transaction bytes, and pins all five preceding receipts. This certificate is deliberately narrower than product certification: hosted deployment, accounts, multi-user persistence, accessibility conformance, localization, analytics, recommendation quality, genesis, models, Realm action, keel continuity, evolution, Inspiration, Lunari integration, and Soul activation remain excluded.
 
 ## Networked cortex host
 

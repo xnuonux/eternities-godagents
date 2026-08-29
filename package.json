@@ -22,6 +22,7 @@
     "certify:networked-cortex": "node src/certification/certify-networked-cortex.mjs",
     "certify:creation-forge": "node src/certification/certify-creation-forge-phase1.mjs",
     "certify:transactional-genesis": "node src/certification/certify-transactional-genesis-phase2.mjs",
-    "certify:creator-protocol": "node src/certification/certify-creator-protocol-phase3.mjs"
+    "certify:creator-protocol": "node src/certification/certify-creator-protocol-phase3.mjs",
+    "certify:visual-creator": "node src/certification/certify-visual-creator-shell.mjs"
   }
 }

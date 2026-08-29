@@ -64,6 +64,12 @@ The visual shell consumes that same operator workflow rather than reimplementing
 
 Modular composition treats a validated preset as a sealed foundation rather than a privileged alternate compiler. The operator supplies one final expression and exactly one module reference for each closed module kind. The workflow replays the foundation, applies only necessary replacements through ordinary digest-linked commands in canonical order, and then uses the same preview and finalization path. Default composition is therefore identical to preset replay, click order cannot affect identity, and incompatible mixtures remain blocked. Foundation-controlled telos, constitution, Prompt OS, memory policy, Realm requirements, evolution, and dormant Soul state are not browser-editable.
 
+## Visual creator shell v1 certification boundary
+
+The visual certificate is append-only and separate from the immutable Phase 3 protocol receipt. It proves the local shell as a deterministic transport and review client: loopback binding, per-launch token enforcement across every fixed API route, operator-workflow parity, exactly nine kind-matched module selections plus one expression, one-use acknowledgement of the exact ready preview, workspace and junction confinement, fixed self-contained assets, closed errors, and two byte-identical pure-handler finalizations of the certified Aether build.
+
+The certificate does not elevate the browser into an authority boundary. It does not certify hosted deployment, accounts, multi-user persistence, accessibility conformance, localization, analytics, recommendation quality, genesis admission, model routing, Realm action, keel continuity, governed evolution, Inspiration, Lunari integration, or Soul activation. Those require independent designs and receipts.
+
 ## Phase 2 transactional genesis boundary
 
 Phase 2 converts a verified pre-genesis build into an admitted genesis result only after one deterministic transaction binds every immutable identity and continuity surface. The caller independently pins the creation-policy digest and creation-build ID. The coordinator derives the distribution-build and both genome digests from verified artifacts and checks their cross-artifact consistency. Genesis derives stable `genesisId` and `keelId` values from those verified values plus the instance and creator references; identity reuse with different bound data is rejected.
