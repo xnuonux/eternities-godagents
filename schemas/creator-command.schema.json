@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "expectedDraftDigest", "payload"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": {
+      "enum": [
+        "set-blueprint", "set-genesis", "set-expression", "select-module",
+        "set-telos", "set-constitution", "set-prompt-os", "set-memory", "set-realm"
+      ]
+    },
+    "expectedDraftDigest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "payload": { "type": "object" }
+  }
+}

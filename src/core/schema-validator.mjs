@@ -23,6 +23,9 @@ const schemaFiles = {
   'genesis-state': 'genesis-state.schema.json',
   'genesis-receipt': 'genesis-receipt.schema.json',
   'keel-record': 'keel-record.schema.json',
+  'creator-command': 'creator-command.schema.json',
+  'creator-draft': 'creator-draft.schema.json',
+  'creator-preset': 'creator-preset.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

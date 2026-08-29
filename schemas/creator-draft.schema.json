@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "catalogDigest", "creatorRef", "revision", "previousDraftDigest",
+    "moduleRefs", "evolution", "soulPort", "draftDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "catalogDigest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "creatorRef": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "previousDraftDigest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "blueprint": { "type": "object" },
+    "genesis": { "type": "object" },
+    "telos": { "type": "object" },
+    "constitution": { "type": "object" },
+    "promptOs": { "type": "object" },
+    "memory": { "type": "object" },
+    "moduleRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lineage": { "type": "string" },
+        "archetype": { "type": "string" },
+        "attributes": { "type": "string" },
+        "personality": { "type": "string" },
+        "voice": { "type": "string" },
+        "organs": { "type": "string" },
+        "godskills": { "type": "string" },
+        "cortex": { "type": "string" },
+        "embodiment": { "type": "string" }
+      }
+    },
+    "expressionRef": { "type": "string" },
+    "realm": { "type": "object" },
+    "evolution": { "type": "object" },
+    "soulPort": { "type": "object" },
+    "draftDigest": { "type": "string", "minLength": 64, "maxLength": 64 }
+  }
+}
