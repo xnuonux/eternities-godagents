@@ -1,7 +1,12 @@
 import { AuthorityError, UncertainEffectError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
 
-export function createFixtureRealm({ contract, initialCounter = 0, failureMode = 'none' }) {
+export function createFixtureRealm({
+  contract,
+  initialCounter = 0,
+  failureMode = 'none',
+  untrustedObservation = null,
+}) {
   assertSchema('realm-contract', contract);
   let counter = initialCounter;
   let invocationCount = 0;
@@ -9,13 +14,21 @@ export function createFixtureRealm({ contract, initialCounter = 0, failureMode =
   let postEffectFailureDelivered = false;
   const outcomes = new Map();
 
+  function observation(observationId, visibleCounter = counter) {
+    return {
+      observationId,
+      counter: visibleCounter,
+      ...(untrustedObservation === null ? {} : { untrusted: structuredClone(untrustedObservation) }),
+    };
+  }
+
   return Object.freeze({
     contract,
     async observe() {
-      return {
-        observationId: `observation-${invocationCount}`,
-        counter: failureMode === 'observation-mismatch' ? counter + 1 : counter,
-      };
+      return observation(
+        `observation-${invocationCount}`,
+        failureMode === 'observation-mismatch' ? counter + 1 : counter,
+      );
     },
     async invoke({ handId, payload, idempotencyKey }) {
       const hand = contract.hands.find((entry) => entry.id === handId);
@@ -44,7 +57,7 @@ export function createFixtureRealm({ contract, initialCounter = 0, failureMode =
       const invocation = outcomes.get(idempotencyKey) ?? null;
       return {
         invocation,
-        observation: { observationId: `reconciliation-${reconciliationCount}`, counter },
+        observation: observation(`reconciliation-${reconciliationCount}`),
       };
     },
     inspect() {
