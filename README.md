@@ -37,6 +37,7 @@ npm run certify:networked-cortex
 npm run certify:transactional-genesis
 npm run certify:creator-protocol
 npm run certify:visual-creator
+npm run certify:local-admission
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -179,6 +180,8 @@ npm run admit:local -- `
 ```
 
 The trusted local workspace is bound to that exact admission. An exact retry recovers interrupted snapshot publication and transactional genesis; changed creation, Prompt OS, Realm, identity, creator, or purpose is refused. Pre-existing and observed reparse-point substitution is rejected, but this local shell is not an OS sandbox against a hostile process concurrently manipulating paths as the same Windows user. Success returns only the creation and distribution build IDs, genesis and keel IDs, and receipt digest. It does not create or start a runnable vessel, call a model, invoke a Realm hand, load host authority, evolve the agent, activate Inspiration, integrate Lunari, or activate Soul.
+
+`npm run certify:local-admission` issues the separate append-only `local-admission-shell-v1` receipt. It runs the complete no-network suite, executes two fixed-clock admissions from independently compiled creation fixtures, compares every workspace byte and identity, and pins all six preceding receipts. Its exclusions preserve the trusted-local limitation and every non-runtime boundary above.
 
 ## Networked cortex host
 

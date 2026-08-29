@@ -77,6 +77,8 @@ The local admission shell is the first operator-facing composition of the frozen
 
 Only an exact retry may reuse that workspace. Transactional genesis retains its crash-safe recovery and independent receipt verification. The shell returns a bounded admission projection but does not construct or start a persistent vessel, load runtime host policy, contact a model, invoke a Realm hand, lift frozen evolution, activate Inspiration, integrate Lunari, or activate Soul.
 
+The separate `local-admission-shell-v1` receipt certifies this exact trusted-local boundary through two byte-identical fixed-clock admissions, all publication and genesis interruption tests, the complete guarded suite, source and test manifests, and unchanged historical receipts. It explicitly excludes concurrent hostile path manipulation under the same Windows user rather than presenting Node path checks as OS isolation.
+
 ## Phase 2 transactional genesis boundary
 
 Phase 2 converts a verified pre-genesis build into an admitted genesis result only after one deterministic transaction binds every immutable identity and continuity surface. The caller independently pins the creation-policy digest and creation-build ID. The coordinator derives the distribution-build and both genome digests from verified artifacts and checks their cross-artifact consistency. Genesis derives stable `genesisId` and `keelId` values from those verified values plus the instance and creator references; identity reuse with different bound data is rejected.
