@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { userInfo } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
@@ -13,6 +14,14 @@ const jsonBytes = (value) => `${canonicalJson(value)}\n`;
 function pathIdentity(path) {
   const value = resolve(path);
   return process.platform === 'win32' ? value.toLowerCase() : value;
+}
+
+export function defaultLocalInstanceRegistryRoot() {
+  const profile = userInfo().homedir;
+  if (typeof profile !== 'string' || profile.length === 0 || /[\0\r\n]/.test(profile)) {
+    throw new IntegrityError('OS account profile directory is unavailable');
+  }
+  return join(profile, '.eternities', 'godagents', 'instances');
 }
 
 function recordValue({ binding, admissionRoot }) {

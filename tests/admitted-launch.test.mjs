@@ -271,7 +271,7 @@ test('a junctioned admission subtree is rejected before runtime construction', a
   assert.equal(fixture.getRealm(), undefined);
 });
 
-test('a copied admission cannot fork one machine-resident persistent identity', async (context) => {
+test('a copied admission cannot fork one OS-account-resident persistent identity', async (context) => {
   const fixture = await setup(context, 'residency');
   await launchAdmittedLocalAgent({ ...fixture, clock: fixedClock });
   const copiedRoot = join(fixture.root, 'copied-admission');

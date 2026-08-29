@@ -1,6 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
 import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 import { createHttpsTransport } from '../cortex/http-transport.mjs';
@@ -14,7 +13,7 @@ import { createPersistentVessel } from '../runtime/persistent-vessel.mjs';
 import { createLocalGodskillsTransport } from '../skills/godskills-adapter.mjs';
 import { acquireFileLock } from '../state/file-lock.mjs';
 import { readVerifiedJournal } from '../state/journal.mjs';
-import { claimLocalInstanceResidency } from './local-instance-registry.mjs';
+import { claimLocalInstanceResidency, defaultLocalInstanceRegistryRoot } from './local-instance-registry.mjs';
 import { createCredentialResolver, loadHostPolicy } from './policy.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -193,15 +192,6 @@ async function defaultRuntimeFactory({
   });
 }
 
-function defaultRegistryRoot(env) {
-  const base = process.platform === 'win32'
-    ? env?.LOCALAPPDATA
-    : env?.XDG_STATE_HOME;
-  return base && !/[\0\r\n]/.test(base)
-    ? join(base, 'Eternities', 'Godagents', 'instances')
-    : join(homedir(), '.eternities', 'godagents', 'instances');
-}
-
 export async function launchAdmittedLocalAgent({
   admissionRoot,
   policyPath,
@@ -273,7 +263,7 @@ export async function launchAdmittedLocalAgent({
 
   try {
     await claimLocalInstanceResidency({
-      registryRoot: registryRoot ?? defaultRegistryRoot(env),
+      registryRoot: registryRoot ?? defaultLocalInstanceRegistryRoot(),
       binding,
       admissionRoot: root,
     });

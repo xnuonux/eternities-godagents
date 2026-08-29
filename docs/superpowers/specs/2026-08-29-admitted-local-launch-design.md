@@ -26,7 +26,7 @@ The admission root must be the canonical `admission` directory produced by `admi
 6. calls `createPersistentVessel`, which re-verifies the genesis receipt, transaction state, journal prefix and head, keel identity and head, immutable creation, and immutable distribution before use;
 7. requires the policy Realm ID to equal the verified distribution Realm contract;
 8. reconciles the request ID against the verified journal: a matching terminal request returns its recorded bounded outcome, a matching interruption is recovered without admitting another cycle, and a conflicting reuse fails closed;
-9. claims the instance in one machine-local residency registry and rejects a copied admission root;
+9. claims the instance in one OS-account-local residency registry whose root does not come from launch environment variables, and rejects a copied admission root;
 10. holds one live-owner launch lock across request projection, recovery, inference, and action;
 11. persists the local reference Realm state and idempotency outcomes beneath the admission-owned vessel directory;
 12. runs one bounded unseen mission using the existing networked cortex, inference budgets, Godskills transport, constitutional arbiter, and Realm gateway.
