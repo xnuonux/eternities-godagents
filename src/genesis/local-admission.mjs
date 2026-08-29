@@ -179,6 +179,15 @@ async function assertSafeTree(root, directory = root) {
   }
 }
 
+async function assertAdmissionLayout(admissionRoot) {
+  const required = ['binding.json', 'creation', 'distribution'];
+  const allowed = new Set([...required, 'keels', 'transaction', 'vessel']);
+  const names = await readdir(admissionRoot);
+  if (required.some((name) => !names.includes(name)) || names.some((name) => !allowed.has(name))) {
+    fail('workspace-invalid');
+  }
+}
+
 async function verifyPublished(admissionRoot, input, binding) {
   await assertSafeTree(admissionRoot);
   const actual = await readCanonical(join(admissionRoot, 'binding.json'), 'workspace-invalid');
@@ -239,12 +248,14 @@ export async function admitLocalCreation(input) {
   try {
     const prepared = await preflight(input, temporaryRoot);
     const admissionRoot = await publishAdmission(input, prepared);
+    await assertAdmissionLayout(admissionRoot);
     for (const name of ['transaction', 'vessel', 'keels']) {
       const directory = join(admissionRoot, name);
       await mkdir(directory, { recursive: true });
       await assertDirectory(directory, admissionRoot, 'workspace-invalid');
     }
     await assertSafeTree(admissionRoot);
+    await assertAdmissionLayout(admissionRoot);
     const keelAdapter = createLocalKeelBackend({ root: join(admissionRoot, 'keels'), clock });
     let admitted;
     try {

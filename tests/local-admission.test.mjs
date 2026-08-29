@@ -158,6 +158,16 @@ test('a junctioned admission subtree cannot redirect recovery writes outside the
   ]);
 });
 
+test('unexpected files in a bound admission workspace fail closed', async (context) => {
+  const { request, workspace } = await setup(context, '-unexpected');
+  await admitLocalCreation(request);
+  await writeFile(join(workspace, 'admission', 'foreign.txt'), 'foreign\n', 'utf8');
+  await assert.rejects(
+    () => admitLocalCreation(request),
+    (error) => error instanceof LocalAdmissionError && error.code === 'workspace-invalid',
+  );
+});
+
 test('every genesis crash point resumes without duplicate journal or keel rows', async (context) => {
   const crashPoints = [
     'after-prepared',
