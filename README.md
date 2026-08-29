@@ -29,6 +29,7 @@ npm run build:creator-fixture
 npm run build:genesis-fixture
 npm run build:networked-fixture
 npm run demo
+npm run creator:local -- <command> <options>
 npm run certify
 npm run certify:creation-forge
 npm run certify:networked-cortex
@@ -102,6 +103,39 @@ Finalization materializes only reviewed pre-genesis inputs and a verified creati
 `npm run build:creator-fixture` rebuilds two reviewed presets through isolated finalization roots and prints their catalog, draft, preview, parity, and creation-build digests. `npm run certify:creator-protocol` requires a clean source commit, runs the complete suite under the network guard, compares two byte-identical fixture roots, verifies all historical receipts, and writes `receipts/creator-protocol-phase3-certification.json` for only `GC-001` through `GC-008`.
 
 Phase 3 does not certify a browser interface, recommendation intelligence, hosted multi-tenant persistence, accessibility, localization, analytics, genesis admission, governed evolution, Inspiration, Lunari integration, or Soul activation.
+
+### Local creator shell
+
+The local creator CLI is the first operator shell over the certified protocol. It accepts only `catalog`, `preview-preset`, and `finalize-preset`. Every command uses explicit local library paths and an independently supplied policy digest. Output is one canonical JSON value, and failures expose only closed codes.
+
+```powershell
+npm run creator:local -- preview-preset `
+  --policy C:\path\to\creation-policy.json `
+  --policy-digest <trusted-sha256> `
+  --modules C:\path\to\modules `
+  --expressions C:\path\to\expressions `
+  --presets C:\path\to\presets `
+  --preset preset:aether-architect@1.0.0 `
+  --creator creator:dom
+```
+
+Review the returned selection, issues, attributes, excluded-authority fields, and `previewDigest`. Finalization requires that exact digest plus empty transaction-owned source and output directories:
+
+```powershell
+npm run creator:local -- finalize-preset `
+  --policy C:\path\to\creation-policy.json `
+  --policy-digest <trusted-sha256> `
+  --modules C:\path\to\modules `
+  --expressions C:\path\to\expressions `
+  --presets C:\path\to\presets `
+  --preset preset:aether-architect@1.0.0 `
+  --creator creator:dom `
+  --expected-preview-digest <reviewed-preview-sha256> `
+  --source-dir C:\path\to\empty-source-transaction `
+  --output-dir C:\path\to\empty-build-transaction
+```
+
+The shell ends at a verified creation build. It does not run genesis, create a vessel or keel, contact a model, invoke a Realm hand, evolve an agent, or activate Inspiration or Soul.
 
 ## Networked cortex host
 

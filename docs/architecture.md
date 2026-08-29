@@ -25,6 +25,7 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 | persistent vessel wrapper | refuses partial genesis, re-verifies both continuity chains on wake, and preserves identity across cortex replacement |
 | temporary-worker boundary | projects bounded external context and proposal authority without exposing a personal-keel capability |
 | creator protocol | exposes a headless catalog, immutable commands, preset replay, pure preview, review sealing, and reviewed finalization through the existing creation compiler |
+| local creator shell | maps strict local operator arguments to bounded catalog, preset preview, and explicitly digest-approved finalization output |
 
 ## Phase 1 creation boundary
 
@@ -55,6 +56,8 @@ Creator drafts are immutable digest-linked revisions. Every command must name th
 Preview is pure and has three closed states: incomplete, blocked, or ready. A ready preview contains the exact candidate, expression, derived attributes, and operational genome that finalization will use. Review seals bind the catalog, draft, and preview digests. Finalization captures the reviewed policy and selected modules, reloads the source library for freshness, requires the independent creation-policy digest pin, rejects occupied targets, and writes a transaction-owned immutable snapshot containing candidate, expression, policy, and selected modules. The existing Phase 1 compiler reads only that snapshot. Finalization reports no success unless the compiled module rows equal the reviewed source digests and the finalized genome digest equals the reviewed preview.
 
 The boundary ends at a verified creation build. It does not perform genesis admission, create a persistent vessel, bind a keel, contact a model, choose runtime policy, grant Realm authority, evolve an agent, or activate Inspiration or Soul. Phase 3 certifies `GC-001` through `GC-008` with manual/preset parity, fail-before-write substitution tests, two isolated byte-identical fixture roots, the guarded complete suite, and unchanged historical receipts.
+
+The first local shell consumes this boundary through a reusable operator workflow. It accepts fixed library paths and the separate policy digest, exposes only the bounded catalog or review projection, and requires the exact current preview digest before finalization. Its parser rejects unknown and command-inapplicable options, while its process boundary emits canonical success values or closed failure codes without raw exception text. The shell has no privileged preset path and no access to genesis, cortex, Realm, keel, evolution, Inspiration, or Soul capabilities.
 
 ## Phase 2 transactional genesis boundary
 
