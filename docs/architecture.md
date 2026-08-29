@@ -24,6 +24,7 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 | keel reference backend | maintains isolated append-only personal-keel namespaces with hash-chain verification, ownership uniqueness, quarantine, and crash-safe locks |
 | persistent vessel wrapper | refuses partial genesis, re-verifies both continuity chains on wake, and preserves identity across cortex replacement |
 | temporary-worker boundary | projects bounded external context and proposal authority without exposing a personal-keel capability |
+| creator protocol | exposes a headless catalog, immutable commands, preset replay, pure preview, review sealing, and reviewed finalization through the existing creation compiler |
 
 ## Phase 1 creation boundary
 
@@ -44,6 +45,16 @@ Phase 1 proof rows are:
 - `GF-011`: dormant Soul refusal
 
 No Phase 1 artifact is a vessel, keel, genesis receipt, creator interface, evolution engine, or Soul runtime. Those remain later boundaries with separate admission and rollback designs.
+
+## Phase 3 headless creator boundary
+
+The creator protocol is the deterministic input layer above the Phase 1 compiler. It does not duplicate creation semantics. It validates direct catalog sources, gives the catalog a content identity, and exposes modules, expressions, and presets only through closed projections and resolving methods. Source freshness is reverified after review and before filesystem writes.
+
+Creator drafts are immutable digest-linked revisions. Every command must name the exact current draft digest, so stale or reordered interaction fails without mutation. Presets are validated ordered choice streams replayed through the same command function as manual choices. A future visual shell, conversational guide, or autonomous designer remains a replaceable client of this protocol and receives no alternate authority path.
+
+Preview is pure and has three closed states: incomplete, blocked, or ready. A ready preview contains the exact candidate, expression, derived attributes, and operational genome that finalization will use. Review seals bind the catalog, draft, and preview digests. Finalization then reloads the reviewed source library, requires the independent creation-policy digest pin, rejects occupied targets, writes canonical candidate and expression inputs, and invokes the existing Phase 1 compiler and verifier. It reports no success unless the finalized genome digest equals the reviewed preview.
+
+The boundary ends at a verified creation build. It does not perform genesis admission, create a persistent vessel, bind a keel, contact a model, choose runtime policy, grant Realm authority, evolve an agent, or activate Inspiration or Soul. Phase 3 certifies `GC-001` through `GC-008` with manual/preset parity, fail-before-write substitution tests, two isolated byte-identical fixture roots, the guarded complete suite, and unchanged historical receipts.
 
 ## Phase 2 transactional genesis boundary
 

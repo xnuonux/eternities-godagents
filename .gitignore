@@ -1,4 +1,5 @@
 artifacts/demo-runtime/
 artifacts/creation-fixture/
 artifacts/genesis-fixture/
+artifacts/creator-fixture/
 .worktrees/

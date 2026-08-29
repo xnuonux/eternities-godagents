@@ -2,7 +2,7 @@
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
-Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, and a Phase 2 transactional genesis boundary. The forge compiles creator choices into deterministic pre-genesis artifacts. Transactional genesis binds one verified creation build and distribution to one journal, one isolated personal keel, and one canonical admission receipt before a persistent vessel may run. Evolution and Soul activation remain excluded.
+Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, and a headless Phase 3 creator protocol. The protocol turns manual choices or reusable presets into the same immutable reviewed draft and Phase 1 creation build. Transactional genesis remains a separate operation that binds one verified creation build and distribution to one journal, one isolated personal keel, and one canonical admission receipt before a persistent vessel may run. Evolution and Soul activation remain excluded.
 
 The canonical architecture is [ADR-0002](C:/dev/eternities-canon/.worktrees/godagents-inspiration-covenant/architecture/ADR-0002-godagent-v0-runtime-and-foundry.md).
 
@@ -25,6 +25,7 @@ The canonical architecture is [ADR-0002](C:/dev/eternities-canon/.worktrees/goda
 npm test
 npm run build:fixture
 npm run build:creation-fixture
+npm run build:creator-fixture
 npm run build:genesis-fixture
 npm run build:networked-fixture
 npm run demo
@@ -32,6 +33,7 @@ npm run certify
 npm run certify:creation-forge
 npm run certify:networked-cortex
 npm run certify:transactional-genesis
+npm run certify:creator-protocol
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -81,6 +83,25 @@ Every durable interruption boundary is resumable without duplicate genesis rows.
 The persistent wrapper keeps vessel identity, journal continuity, and keel identity stable across cortex replacement. Checkpoint promotion records exact cross-chain provenance. Temporary workers receive bounded context and proposal authority only; they cannot receive a personal-keel writer. Phase 2 certifies `GF-006` through `GF-009` plus `GF-012` and still excludes creator UI, governed evolution, hosted multi-tenant durability, live-provider quality, Lunari integration, collective team memory, and Soul activation.
 
 `npm run certify:transactional-genesis` must run from its clean source commit. It executes the guarded complete suite, creates two byte-identical fresh genesis roots, verifies failure-injection coverage and historical receipts, and writes `receipts/transactional-genesis-phase2-certification.json`. The committed receipt pins that exact source commit; verify a merged receipt by reproducing the command at the pinned source commit and comparing canonical receipt bytes.
+
+## Headless creator protocol
+
+Phase 3 provides one interface-neutral protocol for future visual, conversational, command-line, or agent-guided creators. A catalog contains validated, content-addressed modules, expressions, and presets. Every user or software choice becomes an ordinary immutable command against an exact draft digest. Presets have no privileged execution path: they replay the same commands in the same order and must produce the same draft and preview identity as equivalent manual choices.
+
+```text
+validated catalog
+  -> digest-linked creator commands or preset replay
+  -> pure incomplete, blocked, or ready preview
+  -> review seal over catalog + draft + preview
+  -> source freshness check
+  -> existing Phase 1 creation compiler and verifier
+```
+
+Finalization materializes only reviewed pre-genesis inputs and a verified creation build. It does not admit genesis, instantiate a vessel, bind a personal keel, call a model, grant runtime authority, or activate Soul. The creator draft fixes evolution to `frozen-v0` and the Soul port to `dormant`; catalog and presentation data cannot change those states.
+
+`npm run build:creator-fixture` rebuilds two reviewed presets through isolated finalization roots and prints their catalog, draft, preview, parity, and creation-build digests. `npm run certify:creator-protocol` requires a clean source commit, runs the complete suite under the network guard, compares two byte-identical fixture roots, verifies all historical receipts, and writes `receipts/creator-protocol-phase3-certification.json` for only `GC-001` through `GC-008`.
+
+Phase 3 does not certify a browser interface, recommendation intelligence, hosted multi-tenant persistence, accessibility, localization, analytics, genesis admission, governed evolution, Inspiration, Lunari integration, or Soul activation.
 
 ## Networked cortex host
 
