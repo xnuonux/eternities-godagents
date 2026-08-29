@@ -107,6 +107,13 @@ export async function loadCreatorLibrary({
   expressionDirectory,
   presetDirectory,
 }) {
+  const reloadOptions = {
+    policyPath,
+    expectedPolicyDigest,
+    moduleDirectory,
+    expressionDirectory,
+    presetDirectory,
+  };
   const [{ policy, policyDigest }, moduleFiles, expressionFiles, presetFiles] = await Promise.all([
     loadCreationPolicy(policyPath, expectedPolicyDigest),
     directJsonFiles(moduleDirectory),
@@ -152,6 +159,13 @@ export async function loadCreatorLibrary({
     resolveModule: resolver(moduleSources),
     resolveExpression: resolver(expressionSources),
     resolvePreset: resolver(presetSources),
+    async verifyCurrent() {
+      const refreshed = await loadCreatorLibrary(reloadOptions);
+      if (refreshed.catalog.catalogDigest !== catalog.catalogDigest) {
+        throw new TypeError('creator source library changed after review');
+      }
+      return true;
+    },
   });
   return Object.freeze({ catalog, sourceLoader });
 }

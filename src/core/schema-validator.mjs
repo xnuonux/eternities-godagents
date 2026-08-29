@@ -26,6 +26,7 @@ const schemaFiles = {
   'creator-command': 'creator-command.schema.json',
   'creator-draft': 'creator-draft.schema.json',
   'creator-preset': 'creator-preset.schema.json',
+  'creator-review-seal': 'creator-review-seal.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

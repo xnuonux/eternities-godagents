@@ -62,7 +62,7 @@ function stringSet(value, item, maximum = 32) {
   if (!Array.isArray(value) || value.length < 1 || value.length > maximum) throw invalidChoice();
   const output = value.map(item);
   if (new Set(output).size !== output.length) throw invalidChoice();
-  return output.sort();
+  return output;
 }
 
 function validatePayload(kind, payload) {
@@ -164,4 +164,3 @@ export function validateCreatorCommand(input) {
     throw invalidCommand();
   }
 }
-

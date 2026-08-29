@@ -144,6 +144,6 @@ export function previewCreatorDraft({ draft, catalog, sourceLoader }) {
     derivedAttributes,
     validations,
     genome,
+    genomeDigest: sha256Value(genome),
   });
 }
-

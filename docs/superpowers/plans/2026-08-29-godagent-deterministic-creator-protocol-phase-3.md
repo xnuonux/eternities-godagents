@@ -199,7 +199,7 @@ const unsigned = {
 const catalog = deepFreeze({ ...unsigned, catalogDigest: sha256Value(unsigned) });
 ```
 
-Catalog rows may contain only the fields named in the spec. Return raw validated source values only through a separate frozen `sourceLoader` with `catalogDigest`, `resolvePolicy()`, `resolveModule(ref)`, `resolveExpression(ref)`, and `resolvePreset(ref)` methods. Each resolver returns a fresh frozen clone, rejects unknown refs, and cannot enumerate or mutate the backing maps. `loadCreatorCatalog` returns only `library.catalog`.
+Catalog rows may contain only the fields named in the spec. Return raw validated source values only through a separate frozen `sourceLoader` with `catalogDigest`, `resolvePolicy()`, `resolveModule(ref)`, `resolveExpression(ref)`, `resolvePreset(ref)`, and async `verifyCurrent()` methods. Each resolver returns a fresh frozen clone, rejects unknown refs, and cannot enumerate or mutate the backing maps. `verifyCurrent()` reloads every declared library through the same validation path and requires the same catalog digest before finalization. `loadCreatorCatalog` returns only `library.catalog`.
 
 - [ ] **Step 5: Run focused catalog and historical creation tests**
 
