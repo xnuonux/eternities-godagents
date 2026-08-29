@@ -1,17 +1,20 @@
 import { loadCreatorLibrary } from './catalog.mjs';
-import { createCreatorDraft } from './draft.mjs';
+import { applyCreatorCommand, createCreatorDraft } from './draft.mjs';
 import { buildCreatorReviewSeal, finalizeCreatorDraft } from './finalize.mjs';
 import { replayCreatorPreset } from './preset.mjs';
 import { previewCreatorDraft } from './preview.mjs';
+import { MODULE_KINDS, parseModuleRef } from '../creation/contracts.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
 const PRESET_REF = /^preset:[a-z0-9][a-z0-9._-]{0,127}@[a-z0-9][a-z0-9._-]{0,127}$/;
 const CREATOR_REF = /^[a-z0-9][a-z0-9:._-]{0,127}$/;
+const EXPRESSION_REF = /^expression:[a-z0-9][a-z0-9._-]{0,127}@[a-z0-9][a-z0-9._-]{0,127}$/;
 const MESSAGES = Object.freeze({
   'library-invalid': 'creator library is invalid',
   'preset-unavailable': 'creator preset is unavailable',
   'preview-digest-mismatch': 'creator preview digest does not match current review',
   'preview-not-ready': 'creator preview is not ready',
+  'selection-unavailable': 'creator selection is unavailable',
   'workflow-input-invalid': 'creator workflow input is invalid',
 });
 
@@ -77,11 +80,71 @@ async function buildReview(options) {
   return Object.freeze({ ...library, draft, preview });
 }
 
-function projectReview({ presetRef, preview }) {
+function validateCompositionInput({ foundation, creator, expression, moduleRefs }) {
+  if (!PRESET_REF.test(foundation) || !CREATOR_REF.test(creator) || !EXPRESSION_REF.test(expression)
+      || !moduleRefs || typeof moduleRefs !== 'object' || Array.isArray(moduleRefs)) {
+    fail('workflow-input-invalid');
+  }
+  const actualKinds = Object.keys(moduleRefs).sort();
+  const expectedKinds = [...MODULE_KINDS].sort();
+  if (actualKinds.length !== expectedKinds.length
+      || actualKinds.some((kind, index) => kind !== expectedKinds[index])) fail('workflow-input-invalid');
+  try {
+    for (const kind of MODULE_KINDS) {
+      if (parseModuleRef(moduleRefs[kind]).kind !== kind) fail('workflow-input-invalid');
+    }
+  } catch (error) {
+    if (error instanceof CreatorWorkflowError) throw error;
+    fail('workflow-input-invalid');
+  }
+}
+
+async function buildCompositionReview(options) {
+  validateCompositionInput(options);
+  const library = await loadLibrary(options);
+  let foundation;
+  try {
+    foundation = library.sourceLoader.resolvePreset(options.foundation);
+  } catch {
+    fail('preset-unavailable');
+  }
+  if (!library.catalog.expressions.some((row) => row.ref === options.expression)
+      || MODULE_KINDS.some((kind) => !library.catalog.modules.some(
+        (row) => row.kind === kind && row.ref === options.moduleRefs[kind],
+      ))) fail('selection-unavailable');
+  let draft;
+  try {
+    const initial = createCreatorDraft({
+      catalogDigest: library.catalog.catalogDigest,
+      creatorRef: options.creator,
+    });
+    draft = replayCreatorPreset({ draft: initial, preset: foundation });
+    const choices = [];
+    if (draft.expressionRef !== options.expression) {
+      choices.push({ kind: 'set-expression', payload: { ref: options.expression } });
+    }
+    for (const kind of MODULE_KINDS) {
+      if (draft.moduleRefs[kind] !== options.moduleRefs[kind]) {
+        choices.push({ kind: 'select-module', payload: { kind, ref: options.moduleRefs[kind] } });
+      }
+    }
+    for (const choice of choices) {
+      draft = applyCreatorCommand({
+        draft,
+        command: { schemaVersion: 1, ...choice, expectedDraftDigest: draft.draftDigest },
+      });
+    }
+  } catch {
+    fail('workflow-input-invalid');
+  }
+  const preview = previewCreatorDraft({ draft, ...library });
+  return Object.freeze({ ...library, draft, preview });
+}
+
+function projectReview({ presetRef, foundationRef, preview }) {
   const output = {
     schemaVersion: 1,
     status: preview.status,
-    presetRef,
     catalogDigest: preview.catalogDigest,
     draftDigest: preview.draftDigest,
     previewDigest: preview.previewDigest,
@@ -89,6 +152,8 @@ function projectReview({ presetRef, preview }) {
     issues: preview.issues,
     excludedFromAuthority: preview.excludedFromAuthority,
   };
+  if (presetRef !== undefined) output.presetRef = presetRef;
+  if (foundationRef !== undefined) output.foundationRef = foundationRef;
   if (preview.status === 'ready') {
     output.derivedAttributes = preview.derivedAttributes;
     output.genomeDigest = preview.genomeDigest;
@@ -105,13 +170,12 @@ export async function previewOperatorPreset(options) {
   return projectReview({ presetRef: options.preset, preview: review.preview });
 }
 
-export async function finalizeOperatorPreset(options) {
-  if (!options || !DIGEST.test(options.expectedPreviewDigest)
-      || typeof options.sourceDir !== 'string' || options.sourceDir.length === 0
-      || typeof options.outputDir !== 'string' || options.outputDir.length === 0) {
-    fail('workflow-input-invalid');
-  }
-  const review = await buildReview(options);
+export async function previewOperatorComposition(options) {
+  const review = await buildCompositionReview(options);
+  return projectReview({ foundationRef: options.foundation, preview: review.preview });
+}
+
+async function finalizeReview({ review, options }) {
   if (review.preview.status !== 'ready') fail('preview-not-ready');
   if (review.preview.previewDigest !== options.expectedPreviewDigest) fail('preview-digest-mismatch');
   const reviewSeal = buildCreatorReviewSeal({
@@ -138,4 +202,24 @@ export async function finalizeOperatorPreset(options) {
     creationBuildId: result.manifest.buildId,
     genomeDigest: result.manifest.genomeDigest,
   });
+}
+
+export async function finalizeOperatorPreset(options) {
+  if (!options || !DIGEST.test(options.expectedPreviewDigest)
+      || typeof options.sourceDir !== 'string' || options.sourceDir.length === 0
+      || typeof options.outputDir !== 'string' || options.outputDir.length === 0) {
+    fail('workflow-input-invalid');
+  }
+  const review = await buildReview(options);
+  return finalizeReview({ review, options });
+}
+
+export async function finalizeOperatorComposition(options) {
+  if (!options || !DIGEST.test(options.expectedPreviewDigest)
+      || typeof options.sourceDir !== 'string' || options.sourceDir.length === 0
+      || typeof options.outputDir !== 'string' || options.outputDir.length === 0) {
+    fail('workflow-input-invalid');
+  }
+  const review = await buildCompositionReview(options);
+  return finalizeReview({ review, options });
 }
