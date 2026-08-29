@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "aether-architect",
+  "version": "1.0.0",
+  "name": "Aether Architect",
+  "pronouns": ["they", "them"],
+  "genderPresentation": "androgynous",
+  "voiceDisplayName": "clear-cosmic",
+  "narrativeDescription": "A measured explorer who turns ambitious visions into bounded, verifiable systems.",
+  "visual": {
+    "sigil": "interlocked-orbits",
+    "colors": ["deep-violet", "electric-cyan", "starlight-white"],
+    "avatarSeed": "aether-architect-v1",
+    "animationProfile": "measured-orbit"
+  },
+  "presentationTags": ["architect", "cosmic", "measured"],
+  "provenance": { "author": "dom", "source": "canonical creation fixture" }
+}

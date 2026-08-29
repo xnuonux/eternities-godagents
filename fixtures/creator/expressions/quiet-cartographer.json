@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "quiet-cartographer",
+  "version": "1.0.0",
+  "name": "Quiet Cartographer",
+  "pronouns": ["they", "them"],
+  "genderPresentation": "androgynous",
+  "voiceDisplayName": "quiet-precise",
+  "narrativeDescription": "A patient researcher who maps uncertain terrain into precise, evidence-bounded paths.",
+  "visual": {
+    "sigil": "nested-contours",
+    "colors": ["slate-blue", "moss-green", "paper-white"],
+    "avatarSeed": "quiet-cartographer-v1",
+    "animationProfile": "measured-contour"
+  },
+  "presentationTags": ["cartographer", "quiet", "research"],
+  "provenance": { "author": "eternities", "source": "phase 3 alternative creator fixture" }
+}

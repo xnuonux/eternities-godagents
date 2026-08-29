@@ -153,7 +153,7 @@ git commit -m "feat: add immutable creator draft protocol"
 
 **Interfaces:**
 - Consumes: `loadCreationPolicy(path, expectedDigest)`, `validateModuleContract(module, policy)`, `moduleRef(module)`, `expressionRef(expression)`, `validateCreatorCommand(command)`, `canonicalJson`, `sha256Text`, `sha256Value`
-- Produces: `loadCreatorCatalog({ policyPath, expectedPolicyDigest, moduleDirectory, expressionDirectory, presetDirectory }) -> frozen catalog`
+- Produces: `loadCreatorLibrary({ policyPath, expectedPolicyDigest, moduleDirectory, expressionDirectory, presetDirectory }) -> { catalog, sourceLoader }` and `loadCreatorCatalog(options) -> frozen catalog`
 
 - [ ] **Step 1: Write failing catalog tests**
 
@@ -199,7 +199,7 @@ const unsigned = {
 const catalog = deepFreeze({ ...unsigned, catalogDigest: sha256Value(unsigned) });
 ```
 
-Catalog rows may contain only the fields named in the spec. Do not return raw policy or raw module maps.
+Catalog rows may contain only the fields named in the spec. Return raw validated source values only through a separate frozen `sourceLoader` with `catalogDigest`, `resolveModule(ref)`, `resolveExpression(ref)`, and `resolvePreset(ref)` methods. Each resolver returns a fresh frozen clone, rejects unknown refs, and cannot enumerate or mutate the backing maps. `loadCreatorCatalog` returns only `library.catalog`.
 
 - [ ] **Step 5: Run focused catalog and historical creation tests**
 

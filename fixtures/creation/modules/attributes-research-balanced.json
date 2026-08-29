@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "attributes",
+  "id": "research-balanced",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "phase 3 alternative creator fixture" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": ["archetype.research-strategist"], "providesTags": ["attributes.research-balanced"] },
+  "capabilities": [],
+  "presentationTags": ["balanced", "research"],
+  "payload": {
+    "values": {
+      "adaptability": 64,
+      "autonomy": 50,
+      "caution": 72,
+      "creativity": 62,
+      "initiative": 49,
+      "learningVelocity": 68,
+      "memoryDiscipline": 74,
+      "perception": 70,
+      "planning": 72,
+      "precision": 76,
+      "reasoning": 74,
+      "resilience": 65,
+      "socialIntelligence": 48
+    }
+  }
+}

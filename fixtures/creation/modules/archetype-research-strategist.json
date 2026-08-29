@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "archetype",
+  "id": "research-strategist",
+  "version": "1.0.0",
+  "provenance": { "author": "eternities", "source": "phase 3 alternative creator fixture" },
+  "baseModuleRefs": [],
+  "compatibility": { "requiresTags": ["lineage.synthetic-cartographer"], "providesTags": ["archetype.research-strategist", "archetype.systems-architect"] },
+  "capabilities": ["planning"],
+  "presentationTags": ["research", "strategist"],
+  "payload": {
+    "tags": ["research-strategist"],
+    "attributeModifiers": { "caution": 4, "planning": 9, "precision": 7, "reasoning": 10 },
+    "organIds": ["memory", "perception", "planning"],
+    "godskillEntrypoints": ["brainstorm", "plan"],
+    "requiredCapabilityFamilies": ["planning", "reasoning"]
+  }
+}
