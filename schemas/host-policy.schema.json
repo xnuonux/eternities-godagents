@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "policyId", "provider", "inference", "runtime", "realmId", "authority", "hostContext"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "policyId": { "type": "string", "minLength": 1 },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapterId", "profile", "endpointOrigin", "endpointPath", "modelIds", "selectedModel", "credentialEnv", "timeoutMs", "maxResponseBytes", "maxProposalTtlMs"],
+      "properties": {
+        "adapterId": { "const": "openai-compatible-v1" },
+        "profile": { "const": "chat-completions-json" },
+        "endpointOrigin": { "type": "string", "minLength": 1 },
+        "endpointPath": { "type": "string", "minLength": 1 },
+        "modelIds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "selectedModel": { "type": "string", "minLength": 1 },
+        "credentialEnv": { "type": "string", "minLength": 1 },
+        "timeoutMs": { "type": "integer", "minimum": 1 },
+        "maxResponseBytes": { "type": "integer", "minimum": 1 },
+        "maxProposalTtlMs": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "inference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxAttempts", "retryableReasonCodes"],
+      "properties": {
+        "maxAttempts": { "type": "integer", "minimum": 1 },
+        "retryableReasonCodes": {
+          "type": "array",
+          "items": { "enum": ["connect-failed", "timeout", "rate-limited", "transient-server"] }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instanceId", "distributionDir", "journalPath", "snapshotPath", "godskillsRepository"],
+      "properties": {
+        "instanceId": { "type": "string", "minLength": 1 },
+        "distributionDir": { "type": "string", "minLength": 1 },
+        "journalPath": { "type": "string", "minLength": 1 },
+        "snapshotPath": { "type": "string", "minLength": 1 },
+        "godskillsRepository": { "type": "string", "minLength": 1 }
+      }
+    },
+    "realmId": { "type": "string", "minLength": 1 },
+    "authority": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "hostContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["permittedEffects", "availableAuthority", "availablePreconditions", "forbiddenCapabilities", "maximumRisk", "minimumEvidenceConfidence", "contextBudget", "maxCompositionSize"],
+      "properties": {
+        "permittedEffects": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "availableAuthority": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "availablePreconditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "forbiddenCapabilities": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "maximumRisk": { "enum": ["low", "moderate", "high"] },
+        "minimumEvidenceConfidence": { "enum": ["unverified", "inferred", "verified"] },
+        "contextBudget": { "type": "integer", "minimum": 1 },
+        "maxCompositionSize": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

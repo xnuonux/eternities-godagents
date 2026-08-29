@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "policyId": "local-networked-fixture",
+  "provider": {
+    "adapterId": "openai-compatible-v1",
+    "profile": "chat-completions-json",
+    "endpointOrigin": "https://models.example.test",
+    "endpointPath": "/v1/chat/completions",
+    "modelIds": ["test-model"],
+    "selectedModel": "test-model",
+    "credentialEnv": "GODAGENT_MODEL_API_KEY",
+    "timeoutMs": 5000,
+    "maxResponseBytes": 16384,
+    "maxProposalTtlMs": 120000
+  },
+  "inference": {
+    "maxAttempts": 2,
+    "retryableReasonCodes": ["connect-failed", "timeout", "rate-limited", "transient-server"]
+  },
+  "runtime": {
+    "instanceId": "networked-fixture-1",
+    "distributionDir": "../dist/networked-fixture-agent",
+    "journalPath": "../artifacts/networked-runtime/events.jsonl",
+    "snapshotPath": "../artifacts/networked-runtime/snapshot.json",
+    "godskillsRepository": "C:/dev/eternities-godskills"
+  },
+  "realmId": "fixture-workbench",
+  "authority": ["realm:write"],
+  "hostContext": {
+    "permittedEffects": ["local-read", "local-write"],
+    "availableAuthority": ["local-read", "local-write", "realm:write"],
+    "availablePreconditions": ["realm-present", "realm-observed"],
+    "forbiddenCapabilities": [],
+    "maximumRisk": "moderate",
+    "minimumEvidenceConfidence": "verified",
+    "contextBudget": 4000,
+    "maxCompositionSize": 3
+  }
+}
