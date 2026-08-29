@@ -77,6 +77,26 @@ test('composition accepts exactly one expression and all nine closed module kind
   }
 });
 
+test('cross-kind and unavailable module references fail closed', async () => {
+  const input = await defaultComposition('preset:aether-architect@1.0.0');
+  const rows = [
+    {
+      input: { ...input, moduleRefs: { ...input.moduleRefs, voice: input.moduleRefs.material } },
+      code: 'workflow-input-invalid',
+    },
+    {
+      input: { ...input, moduleRefs: { ...input.moduleRefs, voice: 'voice:unavailable@1.0.0' } },
+      code: 'selection-unavailable',
+    },
+  ];
+  for (const { input: invalid, code } of rows) {
+    await assert.rejects(
+      () => previewOperatorComposition({ ...library, ...invalid }),
+      (error) => error instanceof CreatorWorkflowError && error.code === code,
+    );
+  }
+});
+
 test('an incompatible composition is blocked and cannot finalize', async (context) => {
   const input = await defaultComposition('preset:aether-architect@1.0.0');
   input.moduleRefs = { ...input.moduleRefs, lineage: 'lineage:synthetic-cartographer@1.0.0' };

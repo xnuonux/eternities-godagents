@@ -90,13 +90,31 @@ test('visual creator serves only fixed self-contained assets with hardened heade
   assert.equal((await app.handle(request('/unknown', { auth: null }))).status, 404);
 });
 
-test('every visual creator API route requires the exact launch token', async (context) => {
+test('every fixed visual creator API route rejects absent, wrong, and malformed launch tokens', async (context) => {
   const { app } = await setup(context);
-  for (const auth of [null, 'b'.repeat(64), `${token}x`]) {
-    const response = await app.handle(request('/api/catalog', { auth }));
-    const result = await value(response);
-    assert.equal(response.status, 401);
-    assert.equal(result.text, `${canonicalJson({ schemaVersion: 1, status: 'failed', code: 'session-invalid' })}\n`);
+  const routes = [
+    ['/api/catalog', 'GET', undefined],
+    ['/api/preview-preset', 'POST', { preset: 'preset:aether-architect@1.0.0', creator: 'creator:dom' }],
+    ['/api/preview-composition', 'POST', await compositionInput()],
+    ['/api/acknowledge-preview', 'POST', {
+      preset: 'preset:aether-architect@1.0.0', creator: 'creator:dom', expectedPreviewDigest: 'f'.repeat(64),
+    }],
+    ['/api/acknowledge-composition', 'POST', { ...await compositionInput(), expectedPreviewDigest: 'f'.repeat(64) }],
+    ['/api/finalize-preset', 'POST', {
+      preset: 'preset:aether-architect@1.0.0', creator: 'creator:dom',
+      expectedPreviewDigest: 'f'.repeat(64), reviewConfirmation: 'f'.repeat(64),
+    }],
+    ['/api/finalize-composition', 'POST', {
+      ...await compositionInput(), expectedPreviewDigest: 'f'.repeat(64), reviewConfirmation: 'f'.repeat(64),
+    }],
+  ];
+  for (const [path, method, body] of routes) {
+    for (const auth of [null, 'b'.repeat(64), 'not-a-launch-token']) {
+      const response = await app.handle(request(path, { method, body, auth }));
+      const result = await value(response);
+      assert.equal(response.status, 401, `${path} accepted ${auth ?? 'an absent token'}`);
+      assert.equal(result.text, `${canonicalJson({ schemaVersion: 1, status: 'failed', code: 'session-invalid' })}\n`);
+    }
   }
 });
 
@@ -201,6 +219,31 @@ test('modular composition routes preserve parity and bind the full selection onc
   assert.equal(replay.status, 409);
 });
 
+test('incompatible compositions cannot be acknowledged or finalized and create no transaction', async (context) => {
+  const { app, workspace } = await setup(context);
+  const input = await compositionInput();
+  input.moduleRefs = { ...input.moduleRefs, lineage: 'lineage:synthetic-cartographer@1.0.0' };
+  const preview = await previewOperatorComposition({ ...operatorOptions, ...input });
+  assert.equal(preview.status, 'blocked');
+
+  const acknowledgement = await app.handle(request('/api/acknowledge-composition', {
+    method: 'POST',
+    body: { ...input, expectedPreviewDigest: preview.previewDigest },
+  }));
+  assert.equal(acknowledgement.status, 409);
+
+  const finalization = await app.handle(request('/api/finalize-composition', {
+    method: 'POST',
+    body: {
+      ...input,
+      expectedPreviewDigest: preview.previewDigest,
+      reviewConfirmation: 'f'.repeat(64),
+    },
+  }));
+  assert.equal(finalization.status, 409);
+  await assert.rejects(() => access(join(workspace, 'builds', preview.previewDigest)));
+});
+
 test('known digest junctions cannot redirect visual finalization outside the workspace', async (context) => {
   const { app, workspace } = await setup(context);
   const outside = await mkdtemp(join(tmpdir(), 'godagent-creator-outside-'));
@@ -212,6 +255,24 @@ test('known digest junctions cannot redirect visual finalization outside the wor
   await symlink(outside, join(transaction, 'source'), 'junction');
   const reviewConfirmation = await acknowledge(app, input, preview.previewDigest);
   const response = await app.handle(request('/api/finalize-preset', {
+    method: 'POST',
+    body: { ...input, expectedPreviewDigest: preview.previewDigest, reviewConfirmation },
+  }));
+  assert.ok(response.status >= 400);
+  await assert.rejects(() => access(join(outside, 'creation-candidate.json')));
+});
+
+test('known digest junctions cannot redirect composition finalization outside the workspace', async (context) => {
+  const { app, workspace } = await setup(context);
+  const outside = await mkdtemp(join(tmpdir(), 'godagent-creator-composition-outside-'));
+  context.after(() => rm(outside, { recursive: true, force: true }));
+  const input = await compositionInput();
+  const preview = await previewOperatorComposition({ ...operatorOptions, ...input });
+  const transaction = join(workspace, 'builds', preview.previewDigest);
+  await mkdir(transaction, { recursive: true });
+  await symlink(outside, join(transaction, 'source'), 'junction');
+  const reviewConfirmation = await acknowledgeComposition(app, input, preview.previewDigest);
+  const response = await app.handle(request('/api/finalize-composition', {
     method: 'POST',
     body: { ...input, expectedPreviewDigest: preview.previewDigest, reviewConfirmation },
   }));
@@ -255,6 +316,28 @@ test('methods, content types, body bounds, unknown fields, and canaries fail clo
     const response = await app.handle(row);
     const text = await response.text();
     assert.ok(response.status >= 400);
+    assert.doesNotMatch(text, new RegExp(canary));
+    assert.deepEqual(Object.keys(JSON.parse(text)).sort(), ['code', 'schemaVersion', 'status']);
+  }
+});
+
+test('composition routes reject unknown canary fields without reflection', async (context) => {
+  const { app } = await setup(context);
+  const input = await compositionInput();
+  const canary = 'composition-route-canary';
+  const rows = [
+    request('/api/preview-composition', { method: 'POST', body: { ...input, canary } }),
+    request('/api/acknowledge-composition', {
+      method: 'POST', body: { ...input, expectedPreviewDigest: 'f'.repeat(64), canary },
+    }),
+    request('/api/finalize-composition', {
+      method: 'POST', body: { ...input, expectedPreviewDigest: 'f'.repeat(64), reviewConfirmation: 'f'.repeat(64), canary },
+    }),
+  ];
+  for (const row of rows) {
+    const response = await app.handle(row);
+    const text = await response.text();
+    assert.equal(response.status, 400);
     assert.doesNotMatch(text, new RegExp(canary));
     assert.deepEqual(Object.keys(JSON.parse(text)).sort(), ['code', 'schemaVersion', 'status']);
   }
