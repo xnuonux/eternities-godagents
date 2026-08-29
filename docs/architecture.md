@@ -19,6 +19,27 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 | continuity store | writes hash-chained JSONL, immutable snapshots, verified replay, and quarantined tails |
 | memory admission | preserves source class and forbids foreign content from entering as lived history |
 | Soul port | returns only the frozen state `{ "schemaVersion": 1, "status": "dormant" }` |
+| creation forge | validates nine modular selections against a separately digested ceiling and compiles deterministic pre-genesis artifacts |
+
+## Phase 1 creation boundary
+
+Creation is a compiler boundary, not a birth event. A strict candidate selects one lineage, archetype, attribute set, personality, voice, organ loadout, Godskills bundle, cortex class, and embodiment. The loader resolves canonical references, rejects collisions and kind mismatches, and recursively blocks authority, credentials, provider routing, retry controls, Inspiration state, and Soul state from module payloads.
+
+The creation policy is a compile-time ceiling. It can reject candidate effects, adapters, capabilities, Godskills contracts, entrypoints, composition counts, and Realm requirements, but it cannot grant runtime host authority. Compatibility then verifies lineage-archetype tags, organ and Godskill membership, capability families, embodiment requirements, frozen evolution, dormant Soul, and bounded deterministic attributes.
+
+Only the strict v0 operational projection enters `agent-genome.json`. Expression and presentation remain in `expression-overlay.json`; selected module references and digests remain in `module-manifest.json`; creator input and the policy ceiling remain separate canonical artifacts. The build manifest binds all five content artifacts, derived attributes, validation rows, and the exact omitted components.
+
+Phase 1 proof rows are:
+
+- `GF-001`: deterministic pre-genesis build
+- `GF-002`: expression authority firewall
+- `GF-003`: meaningful lineage and archetype projection without authority
+- `GF-004`: bounded deterministic attributes
+- `GF-005`: preset and manual path equivalence
+- `GF-010`: frozen evolution refusal
+- `GF-011`: dormant Soul refusal
+
+No Phase 1 artifact is a vessel, keel, genesis receipt, creator interface, evolution engine, or Soul runtime. Those remain later boundaries with separate admission and rollback designs.
 
 ## Networked cortex extension
 

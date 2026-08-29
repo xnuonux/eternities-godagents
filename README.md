@@ -2,7 +2,7 @@
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
-Version `0.2.0` preserves the certified local v0 vessel and adds a separately certified networked-cortex boundary: one OpenAI-compatible adapter and one policy-bound local host. It does not certify compatibility, latency, cost, or quality against a live commercial provider and does not implement Soul, Inspiration, residency, Minecraft, Lunari, or a hosted service.
+Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary and a modular Phase 1 creation forge. The forge compiles creator choices into deterministic pre-genesis artifacts. It does not instantiate a vessel, bind a keel, run evolution, or activate Soul.
 
 The canonical architecture is [ADR-0002](C:/dev/eternities-canon/.worktrees/godagents-inspiration-covenant/architecture/ADR-0002-godagent-v0-runtime-and-foundry.md).
 
@@ -24,9 +24,11 @@ The canonical architecture is [ADR-0002](C:/dev/eternities-canon/.worktrees/goda
 ```powershell
 npm test
 npm run build:fixture
+npm run build:creation-fixture
 npm run build:networked-fixture
 npm run demo
 npm run certify
+npm run certify:creation-forge
 npm run certify:networked-cortex
 ```
 
@@ -35,6 +37,27 @@ npm run certify:networked-cortex
 `npm run certify` requires a clean worktree. It reruns the complete suite, rebuilds the fixture distribution twice in a verified temporary directory, compares exact artifacts, and writes `receipts/godagent-v0-certification.json`.
 
 `npm run certify:networked-cortex` preserves the historical v0 receipt, runs the complete suite under a fail-closed Node-process-tree network guard, verifies credential-canary containment, and writes a separate `receipts/networked-cortex-certification.json`. It does not claim OS-level isolation for arbitrary non-Node child processes.
+
+## Modular creation forge
+
+The Phase 1 forge accepts one strict candidate, one independently digested creation-policy ceiling, one presentation-only expression overlay, and exactly nine selected module kinds: lineage, archetype, attributes, personality, voice, organs, Godskills, cortex, and embodiment.
+
+```text
+candidate + creation policy + expression + selected modules
+  -> closed semantic parsing and authority firewall
+  -> compatibility and bounded attribute derivation
+  -> strict operational-genome projection
+  -> canonical artifact writes
+  -> independent on-disk verification
+```
+
+The output contains five content artifacts plus the build manifest: `creation-candidate.json`, `creation-policy.json`, `expression-overlay.json`, `module-manifest.json`, `agent-genome.json`, and `creation-build-manifest.json`. The build ID excludes timestamps, host paths, randomness, provider routing, and environment state.
+
+Expression, pronouns, presentation, personality prose, and visual identity remain content-addressed presentation data. They cannot modify authority, effects, adapters, Realm capabilities, retries, credentials, evolution, or Soul state. Lineage and archetype affect compatibility, required organs, required Godskill entrypoints, module identity, and bounded derived attributes, but those attributes do not yet tune runtime cognition.
+
+`npm run certify:creation-forge` requires clean source, runs the full suite under the Node process-tree network guard, compares two fresh byte-identical builds, verifies both historical receipts, and certifies only `GF-001` through `GF-005`, `GF-010`, and `GF-011`.
+
+Phase 1 explicitly excludes genesis transactions, keel binding, cross-agent delegation, governed evolution, a creator interface, live-provider quality, Lunari integration, Soul runtime, and vessel instantiation.
 
 ## Networked cortex host
 
