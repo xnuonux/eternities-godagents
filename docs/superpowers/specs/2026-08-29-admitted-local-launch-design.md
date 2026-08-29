@@ -26,7 +26,10 @@ The admission root must be the canonical `admission` directory produced by `admi
 6. calls `createPersistentVessel`, which re-verifies the genesis receipt, transaction state, journal prefix and head, keel identity and head, immutable creation, and immutable distribution before use;
 7. requires the policy Realm ID to equal the verified distribution Realm contract;
 8. reconciles the request ID against the verified journal: a matching terminal request returns its recorded bounded outcome, a matching interruption is recovered without admitting another cycle, and a conflicting reuse fails closed;
-9. runs one bounded unseen mission using the existing networked cortex, inference budgets, Godskills transport, constitutional arbiter, and Realm gateway.
+9. claims the instance in one machine-local residency registry and rejects a copied admission root;
+10. holds one live-owner launch lock across request projection, recovery, inference, and action;
+11. persists the local reference Realm state and idempotency outcomes beneath the admission-owned vessel directory;
+12. runs one bounded unseen mission using the existing networked cortex, inference budgets, Godskills transport, constitutional arbiter, and Realm gateway.
 
 The process emits one closed canonical success projection or one closed failure code. It never emits a credential, provider body, rejected path, mission text, raw exception, keel row, or receipt contents.
 
@@ -46,5 +49,8 @@ The host policy remains runtime authority, not agent identity. It cannot change 
 - `GAL-006`: policy pin, credential containment, inference budgets, and Realm authority remain unchanged
 - `GAL-007`: one successful fixture launch appends exactly one governed cycle while preserving genesis and keel identity
 - `GAL-008`: no evolution, Inspiration, Lunari, Soul activation, arbitrary path, or background-service surface is added
+- `GAL-009`: copied admissions cannot fork one machine-resident identity
+- `GAL-010`: concurrent launches cannot recover or interleave with a live owner
+- `GAL-011`: local reference Realm state and idempotency survive process-shaped reconstruction
 
 Certification is a later append-only receipt. This implementation slice must first pass focused tests, the complete guarded suite, all historical fixture builds, certification-ledger verification, and independent review.

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
@@ -144,6 +144,7 @@ async function setup(context, suffix) {
   };
   return {
     root, admissionRoot, policyPath, missionPath, env, runtimeFactory,
+    registryRoot: join(root, 'machine-instance-registry'),
     requestId: `operator:${suffix}:001`,
     getRealm: () => realm,
   };
@@ -167,6 +168,28 @@ test('retrying one completed request returns its recorded outcome without anothe
   const replay = await launchAdmittedLocalAgent({ ...fixture, clock: fixedClock });
   assert.deepEqual(replay, first);
   assert.equal(firstRealm.inspect().counter, 1);
+});
+
+test('a live launch lease blocks concurrent recovery or request admission', async (context) => {
+  const fixture = await setup(context, 'concurrent');
+  const originalFactory = fixture.runtimeFactory;
+  let release;
+  let markStarted;
+  const started = new Promise((resolvePromise) => { markStarted = resolvePromise; });
+  const gate = new Promise((resolvePromise) => { release = resolvePromise; });
+  fixture.runtimeFactory = async (input) => {
+    markStarted();
+    await gate;
+    return originalFactory(input);
+  };
+  const first = launchAdmittedLocalAgent({ ...fixture, clock: fixedClock });
+  await started;
+  await assert.rejects(
+    () => launchAdmittedLocalAgent({ ...fixture, clock: fixedClock }),
+    (error) => error instanceof AdmittedLaunchError && error.code === 'launch-busy',
+  );
+  release();
+  assert.equal((await first).status, 'completed');
 });
 
 test('a request ID cannot be reused with changed mission content', async (context) => {
@@ -246,4 +269,29 @@ test('a junctioned admission subtree is rejected before runtime construction', a
     (error) => error instanceof AdmittedLaunchError && error.code === 'admission-invalid',
   );
   assert.equal(fixture.getRealm(), undefined);
+});
+
+test('a copied admission cannot fork one machine-resident persistent identity', async (context) => {
+  const fixture = await setup(context, 'residency');
+  await launchAdmittedLocalAgent({ ...fixture, clock: fixedClock });
+  const copiedRoot = join(fixture.root, 'copied-admission');
+  await cp(fixture.admissionRoot, copiedRoot, { recursive: true });
+  const copiedPolicyPath = join(fixture.root, 'copied-policy.json');
+  const policy = JSON.parse(await readFile(fixture.policyPath, 'utf8'));
+  policy.runtime.distributionDir = relative(fixture.root, join(copiedRoot, 'distribution'));
+  policy.runtime.journalPath = relative(fixture.root, join(copiedRoot, 'vessel', 'journal.jsonl'));
+  policy.runtime.snapshotPath = relative(fixture.root, join(copiedRoot, 'vessel', 'snapshot.json'));
+  await writeFile(copiedPolicyPath, `${canonicalJson(policy)}\n`, 'utf8');
+  fixture.env.GODAGENT_POLICY_SHA256 = sha256Text(canonicalJson(policy));
+  await assert.rejects(
+    () => launchAdmittedLocalAgent({
+      ...fixture,
+      admissionRoot: copiedRoot,
+      policyPath: copiedPolicyPath,
+      requestId: 'operator:residency:copy',
+      runtimeFactory: async () => { throw new Error('copy must fail before runtime'); },
+      clock: fixedClock,
+    }),
+    (error) => error instanceof AdmittedLaunchError && error.code === 'residency-conflict',
+  );
 });

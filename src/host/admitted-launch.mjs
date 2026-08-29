@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 import { createHttpsTransport } from '../cortex/http-transport.mjs';
@@ -8,10 +9,12 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { verifyGenesisAdmission } from '../genesis/verify.mjs';
 import { createLocalKeelBackend } from '../keel/local-reference-backend.mjs';
-import { createFixtureRealm } from '../realm/fixture-realm.mjs';
+import { createPersistentLocalRealm } from '../realm/local-persistent-realm.mjs';
 import { createPersistentVessel } from '../runtime/persistent-vessel.mjs';
 import { createLocalGodskillsTransport } from '../skills/godskills-adapter.mjs';
+import { acquireFileLock } from '../state/file-lock.mjs';
 import { readVerifiedJournal } from '../state/journal.mjs';
+import { claimLocalInstanceResidency } from './local-instance-registry.mjs';
 import { createCredentialResolver, loadHostPolicy } from './policy.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -26,6 +29,7 @@ const ROOT_ENTRIES = Object.freeze(['binding.json', 'creation', 'distribution', 
 const MESSAGES = Object.freeze({
   'admission-invalid': 'admitted launch evidence is invalid',
   'input-invalid': 'admitted launch input is invalid',
+  'launch-busy': 'admitted launch is already active',
   'launch-failed': 'admitted launch failed',
   'mission-invalid': 'admitted launch mission is invalid',
   'policy-integrity': 'admitted launch policy integrity failed',
@@ -33,6 +37,7 @@ const MESSAGES = Object.freeze({
   'recovery-required': 'another interrupted request was recovered',
   'request-aborted': 'admitted launch request is terminally aborted',
   'request-conflict': 'admitted launch request identity conflicts',
+  'residency-conflict': 'admitted launch identity is resident elsewhere',
 });
 
 export class AdmittedLaunchError extends Error {
@@ -156,8 +161,10 @@ function projectRecordedRequest(events, mission, binding) {
   });
 }
 
-async function defaultRuntimeFactory({ policy, policyDigest, policyPath, realmContract, credentialResolver, fetchImpl, clock }) {
-  const realm = createFixtureRealm({ contract: realmContract });
+async function defaultRuntimeFactory({
+  policy, policyDigest, policyPath, realmContract, realmStatePath, credentialResolver, fetchImpl, clock,
+}) {
+  const realm = await createPersistentLocalRealm({ contract: realmContract, statePath: realmStatePath });
   const godskillsTransport = await createLocalGodskillsTransport({ repositoryRoot: policy.runtime.godskillsRepository });
   const cortex = createOpenAICompatibleCortex({
     adapterId: policy.provider.adapterId,
@@ -186,12 +193,22 @@ async function defaultRuntimeFactory({ policy, policyDigest, policyPath, realmCo
   });
 }
 
+function defaultRegistryRoot(env) {
+  const base = process.platform === 'win32'
+    ? env?.LOCALAPPDATA
+    : env?.XDG_STATE_HOME;
+  return base && !/[\0\r\n]/.test(base)
+    ? join(base, 'Eternities', 'Godagents', 'instances')
+    : join(homedir(), '.eternities', 'godagents', 'instances');
+}
+
 export async function launchAdmittedLocalAgent({
   admissionRoot,
   policyPath,
   missionPath,
   requestId,
   env,
+  registryRoot,
   fetchImpl = globalThis.fetch,
   clock = () => new Date().toISOString(),
   runtimeFactory = defaultRuntimeFactory,
@@ -254,12 +271,29 @@ export async function launchAdmittedLocalAgent({
   }
   if (loaded.policy.realmId !== verified.distributionSnapshot.realmContract.realmId) fail('policy-mismatch');
 
+  try {
+    await claimLocalInstanceResidency({
+      registryRoot: registryRoot ?? defaultRegistryRoot(env),
+      binding,
+      admissionRoot: root,
+    });
+  } catch {
+    fail('residency-conflict');
+  }
+
   const mission = Object.freeze({
     requestId,
     text: missionText,
     authority: [...loaded.policy.authority],
     hostContext: structuredClone(loaded.policy.hostContext),
   });
+  let launchLock;
+  try {
+    launchLock = await acquireFileLock({ lockPath: join(root, 'vessel', 'launch.lock') });
+  } catch {
+    fail('launch-busy');
+  }
+  try {
   let journal;
   try {
     journal = await readVerifiedJournal(genesis.journalPath);
@@ -285,6 +319,7 @@ export async function launchAdmittedLocalAgent({
       policyDigest: loaded.digest,
       policyPath: resolvedPolicyPath,
       realmContract: verified.distributionSnapshot.realmContract,
+      realmStatePath: join(root, 'vessel', 'realm-state.json'),
       credentialResolver,
       fetchImpl,
       clock,
@@ -317,5 +352,8 @@ export async function launchAdmittedLocalAgent({
   } catch (error) {
     if (error instanceof AdmittedLaunchError) throw error;
     fail('launch-failed', error);
+  }
+  } finally {
+    await launchLock.release();
   }
 }
