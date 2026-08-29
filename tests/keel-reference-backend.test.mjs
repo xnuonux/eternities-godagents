@@ -169,3 +169,21 @@ test('namespace preparation replaces uncommitted files when no identity commit m
   assert.equal(prepared.recordCount, 1);
   assert.equal(prepared.instanceId, 'agent-a');
 });
+
+test('one backend root refuses a second personal keel for the same persistent instance', async (context) => {
+  const { backend } = await fixture(context);
+  const first = preparation('agent-a', '1');
+  const secondIdentity = identityFor('agent-a', 'a');
+  const second = {
+    ...secondIdentity,
+    instanceId: 'agent-a',
+    bedrock: {
+      genesisId: secondIdentity.genesisId,
+      instanceId: 'agent-a',
+      genomeValueDigest: digest('5'),
+    },
+  };
+  await backend.prepareNamespace(first);
+  await assert.rejects(() => backend.prepareNamespace(second), /instance already owns another keel/);
+  assert.equal((await backend.inspectNamespace({ keelId: first.keelId })).instanceId, 'agent-a');
+});

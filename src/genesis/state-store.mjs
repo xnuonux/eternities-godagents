@@ -1,10 +1,11 @@
-import { mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
+import { acquireFileLock } from '../state/file-lock.mjs';
 
 const zeroDigest = '0'.repeat(64);
 const digestPattern = /^[a-f0-9]{64}$/;
@@ -107,18 +108,11 @@ export function createGenesisStateStore({ transactionDir, clock = () => new Date
 
   async function underLock(operation) {
     await mkdir(root, { recursive: true });
-    let lock;
-    try {
-      lock = await open(lockPath, 'wx');
-    } catch (error) {
-      if (error.code === 'EEXIST') throw new IntegrityError('genesis state is locked');
-      throw error;
-    }
+    const lock = await acquireFileLock({ lockPath });
     try {
       return await operation();
     } finally {
-      await lock.close();
-      await rm(lockPath, { force: true });
+      await lock.release();
     }
   }
 

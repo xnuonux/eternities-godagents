@@ -1,10 +1,11 @@
-import { mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
+import { acquireFileLock } from '../state/file-lock.mjs';
 
 const zeroDigest = '0'.repeat(64);
 const keelIdPattern = /^keel-[a-f0-9]{64}$/;
@@ -125,6 +126,7 @@ export function createLocalKeelBackend({ root, clock = () => new Date().toISOStr
   if (typeof root !== 'string' || root.length === 0) throw new TypeError('keel backend root is required');
   if (typeof clock !== 'function') throw new TypeError('keel backend clock is required');
   const resolvedRoot = resolve(root);
+  const ownershipLockPath = resolve(resolvedRoot, '.ownership.lock');
 
   function namespacePaths(keelId) {
     assertKeelId(keelId);
@@ -143,12 +145,7 @@ export function createLocalKeelBackend({ root, clock = () => new Date().toISOStr
 
   async function acquire(paths) {
     await mkdir(paths.directory, { recursive: true });
-    try {
-      return await open(paths.lock, 'wx');
-    } catch (error) {
-      if (error.code === 'EEXIST') throw new IntegrityError('keel namespace is locked');
-      throw error;
-    }
+    return acquireFileLock({ lockPath: paths.lock });
   }
 
   async function underLock(paths, operation) {
@@ -156,8 +153,29 @@ export function createLocalKeelBackend({ root, clock = () => new Date().toISOStr
     try {
       return await operation();
     } finally {
-      await lock.close();
-      await rm(paths.lock, { force: true });
+      await lock.release();
+    }
+  }
+
+  async function underOwnershipLock(operation) {
+    await mkdir(resolvedRoot, { recursive: true });
+    const lock = await acquireFileLock({ lockPath: ownershipLockPath });
+    try {
+      return await operation();
+    } finally {
+      await lock.release();
+    }
+  }
+
+  async function assertInstanceOwnership(instanceId, requestedKeelId) {
+    const entries = await readdir(resolvedRoot, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory() || !keelIdPattern.test(entry.name) || entry.name === requestedKeelId) continue;
+      const otherIdentityPath = resolve(resolvedRoot, entry.name, 'identity.json');
+      const identity = await readCanonicalJson(otherIdentityPath, 'keel identity');
+      if (identity?.instanceId === instanceId) {
+        throw new IntegrityError('persistent instance already owns another keel');
+      }
     }
   }
 
@@ -213,7 +231,8 @@ export function createLocalKeelBackend({ root, clock = () => new Date().toISOStr
     if (bedrock.genesisId !== genesisId || bedrock.instanceId !== instanceId) {
       throw new IntegrityError('keel identity collision: bedrock identity mismatch');
     }
-    return underLock(paths, async () => {
+    return underOwnershipLock(async () => underLock(paths, async () => {
+      await assertInstanceOwnership(instanceId, keelId);
       const existing = await readCanonicalJson(paths.identity, 'keel identity');
       if (existing) {
         const inspected = await inspectNamespace({ keelId });
@@ -243,7 +262,7 @@ export function createLocalKeelBackend({ root, clock = () => new Date().toISOStr
       await atomicJson(paths.state, stateValue({ status: 'active', genesisId }));
       await atomicJson(paths.identity, identity);
       return inspectNamespace({ keelId });
-    });
+    }));
   }
 
   async function appendGenesis({ keelId, genesisId, rows }) {

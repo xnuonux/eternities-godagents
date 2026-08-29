@@ -1,10 +1,11 @@
-import { mkdir, open, readFile, rm } from 'node:fs/promises';
+import { mkdir, open, readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
+import { acquireFileLock } from './file-lock.mjs';
 
 const zeroDigest = '0'.repeat(64);
 
@@ -78,15 +79,7 @@ export async function readVerifiedJournal(journalPath) {
 export async function appendEvent({ journalPath, event }) {
   await mkdir(dirname(journalPath), { recursive: true });
   const lockPath = `${journalPath}.lock`;
-  let lock;
-  try {
-    lock = await open(lockPath, 'wx');
-  } catch (error) {
-    if (error.code === 'EEXIST') {
-      throw new IntegrityError('journal is locked by another writer');
-    }
-    throw error;
-  }
+  const lock = await acquireFileLock({ lockPath });
 
   try {
     const head = await readVerifiedJournal(journalPath);
@@ -113,7 +106,6 @@ export async function appendEvent({ journalPath, event }) {
     }
     return stored;
   } finally {
-    await lock?.close();
-    await rm(lockPath, { force: true });
+    await lock.release();
   }
 }
