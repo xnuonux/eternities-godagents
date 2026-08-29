@@ -96,10 +96,12 @@ test('visual creator application serves assets and token-gated catalog without a
   assert.match((await catalog.json()).catalogDigest, /^[a-f0-9]{64}$/);
 });
 
-function fakeIncoming(host, url = '/') {
-  const incoming = Readable.from([]);
-  incoming.headers = { host };
-  incoming.method = 'GET';
+function fakeIncoming(host, url = '/', { method = 'GET', headers = {}, body = '' } = {}) {
+  const bytes = Buffer.from(body, 'utf8');
+  const incoming = Readable.from(bytes.length === 0 ? [] : [bytes]);
+  incoming.headers = { host, ...headers };
+  if (bytes.length > 0) incoming.headers['content-length'] = String(bytes.length);
+  incoming.method = method;
   incoming.url = url;
   return incoming;
 }
@@ -123,7 +125,8 @@ function fakeOutgoing() {
 test('guard-compatible HTTP adaptation serves the exact host and rejects host substitution', async (context) => {
   const workspace = await mkdtemp(join(tmpdir(), 'godagent-web-adapter-'));
   context.after(() => rm(workspace, { recursive: true, force: true }));
-  const app = await createCreatorWebApp({ operatorOptions, workspace, sessionToken: createWebSessionToken() });
+  const sessionToken = createWebSessionToken();
+  const app = await createCreatorWebApp({ operatorOptions, workspace, sessionToken });
   const expectedHost = '127.0.0.1:43117';
   const accepted = fakeOutgoing();
   await handleCreatorHttpRequest({ incoming: fakeIncoming(expectedHost), outgoing: accepted, app, expectedHost });
@@ -134,4 +137,44 @@ test('guard-compatible HTTP adaptation serves the exact host and rejects host su
   await handleCreatorHttpRequest({ incoming: fakeIncoming('attacker.invalid'), outgoing: denied, app, expectedHost });
   assert.equal(denied.status, 421);
   assert.equal(JSON.parse(denied.body.toString('utf8')).code, 'host-invalid');
+
+  const post = (path, body) => fakeIncoming(expectedHost, path, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-godagent-local-session': sessionToken,
+    },
+    body: JSON.stringify(body),
+  });
+  const identity = { preset: 'preset:aether-architect@1.0.0', creator: 'creator:dom' };
+  const previewResponse = fakeOutgoing();
+  await handleCreatorHttpRequest({
+    incoming: post('/api/preview-preset', identity), outgoing: previewResponse, app, expectedHost,
+  });
+  assert.equal(previewResponse.status, 200);
+  const preview = JSON.parse(previewResponse.body.toString('utf8'));
+
+  const acknowledgementResponse = fakeOutgoing();
+  await handleCreatorHttpRequest({
+    incoming: post('/api/acknowledge-preview', { ...identity, expectedPreviewDigest: preview.previewDigest }),
+    outgoing: acknowledgementResponse,
+    app,
+    expectedHost,
+  });
+  assert.equal(acknowledgementResponse.status, 200);
+  const acknowledgement = JSON.parse(acknowledgementResponse.body.toString('utf8'));
+
+  const finalizationResponse = fakeOutgoing();
+  await handleCreatorHttpRequest({
+    incoming: post('/api/finalize-preset', {
+      ...identity,
+      expectedPreviewDigest: preview.previewDigest,
+      reviewConfirmation: acknowledgement.reviewConfirmation,
+    }),
+    outgoing: finalizationResponse,
+    app,
+    expectedHost,
+  });
+  assert.equal(finalizationResponse.status, 200);
+  assert.equal(JSON.parse(finalizationResponse.body.toString('utf8')).status, 'finalized');
 });
