@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, open, readFile, rename, rm } from 'node:fs/promises';
+import { mkdir, open, readFile, rename, rm, stat } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
@@ -94,7 +94,30 @@ export async function acquireFileLock({
       if (error.code !== 'EEXIST') throw error;
     }
 
-    const existing = await readOwner(lockPath);
+    let existing;
+    try {
+      existing = await readOwner(lockPath);
+    } catch (error) {
+      if (!(error instanceof IntegrityError) || error.message !== 'resource is locked by malformed owner metadata') {
+        throw error;
+      }
+      let metadata;
+      try {
+        metadata = await stat(lockPath);
+      } catch (statError) {
+        if (statError.code === 'ENOENT') continue;
+        throw statError;
+      }
+      if (now() - metadata.mtimeMs < staleAfterMs) throw error;
+      const stalePath = `${lockPath}.stale-${owner.nonce}`;
+      try {
+        await rename(lockPath, stalePath);
+        await rm(stalePath, { force: true });
+      } catch (reclaimError) {
+        if (reclaimError.code !== 'ENOENT') throw reclaimError;
+      }
+      continue;
+    }
     if (!existing) continue;
     const age = now() - Date.parse(existing.createdAt);
     if (age < staleAfterMs || isProcessAlive(existing.pid)) {

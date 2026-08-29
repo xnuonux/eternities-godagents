@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
@@ -19,6 +19,12 @@ const oldLock = Object.freeze({
   createdAt: '2000-01-01T00:00:00.000Z',
 });
 const bytes = (value) => `${canonicalJson(value)}\n`;
+
+async function writeExpiredMalformedLock(lockPath, content) {
+  await writeFile(lockPath, content, 'utf8');
+  const expired = new Date('2000-01-01T00:00:00.000Z');
+  await utimes(lockPath, expired, expired);
+}
 
 async function workspace(context) {
   const root = await mkdtemp(join(tmpdir(), 'godagent-lock-recovery-'));
@@ -58,6 +64,29 @@ test('file lock never reclaims a live or grace-period owner', async (context) =>
       nonce: () => 'contender-nonce',
     }),
     /locked by a live or recent owner/,
+  );
+});
+
+test('file lock reclaims expired malformed metadata but rejects a recent malformed lock', async (context) => {
+  const root = await workspace(context);
+  const lockPath = join(root, 'resource.lock');
+  await writeExpiredMalformedLock(lockPath, '{"schemaVersion":1');
+  const lock = await acquireFileLock({
+    lockPath,
+    now: () => Date.parse('2026-08-29T10:00:00.000Z'),
+    nonce: () => 'malformed-recovery-nonce',
+  });
+  assert.equal(lock.owner.nonce, 'malformed-recovery-nonce');
+  await lock.release();
+
+  await writeFile(lockPath, '', 'utf8');
+  await assert.rejects(
+    () => acquireFileLock({
+      lockPath,
+      now: () => Date.parse('2026-08-29T10:00:00.000Z'),
+      nonce: () => 'recent-contender-nonce',
+    }),
+    /locked by malformed owner metadata/,
   );
 });
 
@@ -107,6 +136,58 @@ test('state, journal, ownership, and namespace locks recover old dead owners', a
     bedrock: { genesisId: identity.genesisId, keelId: identity.keelId, instanceId: identity.instanceId },
   });
   await writeFile(join(keelRoot, identity.keelId, '.lock'), bytes(oldLock), 'utf8');
+  assert.equal((await backend.prepareNamespace({
+    ...identity,
+    bedrock: { genesisId: identity.genesisId, keelId: identity.keelId, instanceId: identity.instanceId },
+  })).recordCount, 1);
+});
+
+test('state, journal, ownership, and namespace locks recover expired malformed files', async (context) => {
+  const root = await workspace(context);
+  const transactionDir = join(root, 'transaction');
+  await mkdir(transactionDir, { recursive: true });
+  await writeExpiredMalformedLock(join(transactionDir, '.genesis-state.lock'), '');
+  const identity = {
+    ...deriveGenesisIdentity({
+      instanceId: 'agent-malformed',
+      creatorRef: 'creator:dom',
+      creationBuildId: digest('5'),
+      distributionBuildId: digest('6'),
+      genomeValueDigest: digest('7'),
+      genomeContentDigest: digest('8'),
+    }),
+    instanceId: 'agent-malformed',
+  };
+  assert.equal((await createGenesisStateStore({ transactionDir }).initialize(identity)).state, 'prepared');
+
+  const journalPath = join(root, 'malformed-journal.jsonl');
+  await writeExpiredMalformedLock(`${journalPath}.lock`, '{"schemaVersion":1');
+  const event = await appendEvent({
+    journalPath,
+    event: {
+      schemaVersion: 1,
+      instanceId: identity.instanceId,
+      stateEpoch: 0,
+      eventType: 'test.event',
+      sourceClass: 'test',
+      sourceRef: 'test-malformed',
+      causationId: 'test-malformed',
+      correlationId: 'test-malformed',
+      payload: {},
+      recordedAt: '2026-08-29T10:00:00.000Z',
+    },
+  });
+  assert.equal(event.sequence, 1);
+
+  const keelRoot = join(root, 'malformed-keels');
+  await mkdir(keelRoot, { recursive: true });
+  await writeExpiredMalformedLock(join(keelRoot, '.ownership.lock'), '');
+  const backend = createLocalKeelBackend({ root: keelRoot, clock: () => '2026-08-29T10:00:00.000Z' });
+  await backend.prepareNamespace({
+    ...identity,
+    bedrock: { genesisId: identity.genesisId, keelId: identity.keelId, instanceId: identity.instanceId },
+  });
+  await writeExpiredMalformedLock(join(keelRoot, identity.keelId, '.lock'), '{"schemaVersion":1');
   assert.equal((await backend.prepareNamespace({
     ...identity,
     bedrock: { genesisId: identity.genesisId, keelId: identity.keelId, instanceId: identity.instanceId },
