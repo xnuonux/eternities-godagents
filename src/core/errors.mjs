@@ -29,3 +29,11 @@ export class DecisionRequiredError extends Error {
     this.categories = [...categories].sort();
   }
 }
+
+export class UncertainEffectError extends Error {
+  constructor(idempotencyKey) {
+    super('realm effect occurred but transport confirmation was interrupted');
+    this.name = 'UncertainEffectError';
+    this.idempotencyKey = idempotencyKey;
+  }
+}
