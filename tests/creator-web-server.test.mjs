@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { request as httpRequest } from 'node:http';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -11,6 +10,7 @@ import {
   parseCreatorWebArgs,
   startCreatorWebServer,
 } from '../src/creator/web/server.mjs';
+import { createCreatorWebApp } from '../src/creator/web/app.mjs';
 
 const policyDigest = 'c4e3411726fcb32159678b65348e3e14e67f4b011ba73391d19988dee056158b';
 const fixtureRoot = new URL('../fixtures/', import.meta.url);
@@ -29,19 +29,6 @@ const args = [
   '--presets', 'C:/library/presets',
   '--workspace', 'C:/creator-workspace',
 ];
-
-function get(url, headers = {}) {
-  return new Promise((resolvePromise, rejectPromise) => {
-    const request = httpRequest(url, { method: 'GET', headers }, (response) => {
-      let body = '';
-      response.setEncoding('utf8');
-      response.on('data', (chunk) => { body += chunk; });
-      response.on('end', () => resolvePromise({ status: response.statusCode, headers: response.headers, body }));
-    });
-    request.once('error', rejectPromise);
-    request.end();
-  });
-}
 
 test('visual creator server arguments are strict and default to one bounded port', () => {
   assert.deepEqual(parseCreatorWebArgs(args), {
@@ -77,7 +64,7 @@ test('session tokens are random fixed lowercase sha256-width values', () => {
   assert.notEqual(left, right);
 });
 
-test('visual creator server binds loopback, hides its token from launch output, and serves the app', async (context) => {
+test('visual creator server binds loopback and hides its token from launch output', async (context) => {
   const workspace = await mkdtemp(join(tmpdir(), 'godagent-web-server-'));
   context.after(() => rm(workspace, { recursive: true, force: true }));
   const server = await startCreatorWebServer({ operatorOptions, workspace, port: 0 });
@@ -86,16 +73,21 @@ test('visual creator server binds loopback, hides its token from launch output, 
   assert.ok(server.port > 0);
   assert.equal(server.url, `http://127.0.0.1:${server.port}/`);
   assert.doesNotMatch(server.url, /[a-f0-9]{64}/);
+});
 
-  const page = await get(server.url);
+test('visual creator application serves assets and token-gated catalog without a network socket', async () => {
+  const sessionToken = createWebSessionToken();
+  const app = await createCreatorWebApp({ operatorOptions, workspace: 'C:/creator-workspace', sessionToken });
+  const page = await app.handle(new Request('http://127.0.0.1/'));
   assert.equal(page.status, 200);
-  assert.match(page.body, /Godagent Forge/);
-  const runtime = await get(`${server.url}runtime-config.js`);
-  const token = runtime.body.match(/[a-f0-9]{64}/)?.[0];
-  assert.match(token, /^[a-f0-9]{64}$/);
-  const denied = await get(`${server.url}api/catalog`);
+  assert.match(await page.text(), /Godagent Forge/);
+  const runtime = await app.handle(new Request('http://127.0.0.1/runtime-config.js'));
+  assert.match(await runtime.text(), new RegExp(sessionToken));
+  const denied = await app.handle(new Request('http://127.0.0.1/api/catalog'));
   assert.equal(denied.status, 401);
-  const catalog = await get(`${server.url}api/catalog`, { 'x-godagent-local-session': token });
+  const catalog = await app.handle(new Request('http://127.0.0.1/api/catalog', {
+    headers: { 'x-godagent-local-session': sessionToken },
+  }));
   assert.equal(catalog.status, 200);
-  assert.match(JSON.parse(catalog.body).catalogDigest, /^[a-f0-9]{64}$/);
+  assert.match((await catalog.json()).catalogDigest, /^[a-f0-9]{64}$/);
 });
