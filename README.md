@@ -184,7 +184,7 @@ The trusted local workspace is bound to that exact admission. An exact retry rec
 
 `npm run certify:local-admission` issues the separate append-only `local-admission-shell-v1` receipt. It runs the complete no-network suite, executes two fixed-clock admissions from independently compiled creation fixtures, compares every workspace byte and identity, and pins all six preceding receipts. Its exclusions preserve the trusted-local limitation and every non-runtime boundary above.
 
-`npm run verify:certifications` audits the exact seven-file certification ledger. It requires canonical bytes, recomputes each internal receipt digest, verifies certified status and source-commit shape, and checks every declared historical file hash across the versioned receipt formats. It returns one canonical ledger projection and digest. This is an integrity audit, not a substitute for rerunning a receipt at its pinned source commit.
+`npm run verify:certifications` audits the exact seven-file certification ledger. It requires canonical bytes, recomputes each internal receipt digest, verifies certified status, resolves every source commit as a Git commit in this repository, and checks the exact required historical file set and hashes across the versioned receipt formats. It returns one canonical ledger projection and digest. This is an integrity audit, not a substitute for rerunning a receipt at its pinned source commit.
 
 ## Networked cortex host
 

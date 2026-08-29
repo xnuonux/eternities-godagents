@@ -6,8 +6,14 @@ import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
 import { verifyCertificationLedger } from '../src/certification/verify-ledger.mjs';
+import { sha256Value } from '../src/core/digest.mjs';
 
 const sourceReceipts = new URL('../receipts/', import.meta.url);
+const repositoryRoot = new URL('../', import.meta.url);
+
+function verify(receiptDirectory) {
+  return verifyCertificationLedger({ receiptDirectory, repositoryRoot });
+}
 
 async function fixture(context) {
   const root = await mkdtemp(join(tmpdir(), 'godagent-cert-ledger-'));
@@ -18,7 +24,7 @@ async function fixture(context) {
 }
 
 test('certification ledger verifies all seven canonical receipts and declared links', async () => {
-  const result = await verifyCertificationLedger({ receiptDirectory: sourceReceipts });
+  const result = await verify(sourceReceipts);
   assert.equal(result.status, 'verified');
   assert.equal(result.receipts.length, 7);
   assert.deepEqual(result.receipts.map((row) => row.certificationId), [
@@ -51,7 +57,7 @@ test('noncanonical, internally changed, missing, and extra receipts fail closed'
   ].entries()) {
     const directory = await fixture(context, `-${index}`);
     await mutate(directory);
-    await assert.rejects(() => verifyCertificationLedger({ receiptDirectory: directory }));
+    await assert.rejects(() => verify(directory));
   }
 });
 
@@ -61,8 +67,29 @@ test('changed declared historical receipt links fail even with a recomputed oute
   const value = JSON.parse(await readFile(path, 'utf8'));
   value.source.historicalReceiptDigests['receipts/visual-creator-shell-certification.json'] = 'f'.repeat(64);
   const { receiptDigest: _old, ...unsigned } = value;
-  const { sha256Value } = await import('../src/core/digest.mjs');
   value.receiptDigest = sha256Value(unsigned);
   await writeFile(path, `${canonicalJson(value)}\n`, 'utf8');
-  await assert.rejects(() => verifyCertificationLedger({ receiptDirectory: directory }), /historical/);
+  await assert.rejects(() => verify(directory), /historical/);
+});
+
+test('missing required historical links fail even with a recomputed receipt digest', async (context) => {
+  const directory = await fixture(context);
+  const path = join(directory, 'local-admission-shell-certification.json');
+  const value = JSON.parse(await readFile(path, 'utf8'));
+  delete value.source.historicalReceiptDigests['receipts/visual-creator-shell-certification.json'];
+  const { receiptDigest: _old, ...unsigned } = value;
+  value.receiptDigest = sha256Value(unsigned);
+  await writeFile(path, `${canonicalJson(value)}\n`, 'utf8');
+  await assert.rejects(() => verify(directory), /historical receipt set mismatch/);
+});
+
+test('nonexistent source commits fail even with a recomputed receipt digest', async (context) => {
+  const directory = await fixture(context);
+  const path = join(directory, 'local-admission-shell-certification.json');
+  const value = JSON.parse(await readFile(path, 'utf8'));
+  value.source.commit = 'f'.repeat(40);
+  const { receiptDigest: _old, ...unsigned } = value;
+  value.receiptDigest = sha256Value(unsigned);
+  await writeFile(path, `${canonicalJson(value)}\n`, 'utf8');
+  await assert.rejects(() => verify(directory), /source commit does not resolve/);
 });

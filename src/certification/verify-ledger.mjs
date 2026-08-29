@@ -1,6 +1,8 @@
+import { execFile } from 'node:child_process';
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { promisify } from 'node:util';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
@@ -15,8 +17,45 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
+const requiredHistoricalLinks = Object.freeze({
+  'creation-forge-phase1-certification.json': Object.freeze([
+    'receipts/godagent-v0-certification.json',
+    'receipts/networked-cortex-certification.json',
+  ]),
+  'creator-protocol-phase3-certification.json': Object.freeze([
+    'receipts/creation-forge-phase1-certification.json',
+    'receipts/godagent-v0-certification.json',
+    'receipts/networked-cortex-certification.json',
+    'receipts/transactional-genesis-phase2-certification.json',
+  ]),
+  'godagent-v0-certification.json': Object.freeze([]),
+  'local-admission-shell-certification.json': Object.freeze([
+    'receipts/creation-forge-phase1-certification.json',
+    'receipts/creator-protocol-phase3-certification.json',
+    'receipts/godagent-v0-certification.json',
+    'receipts/networked-cortex-certification.json',
+    'receipts/transactional-genesis-phase2-certification.json',
+    'receipts/visual-creator-shell-certification.json',
+  ]),
+  'networked-cortex-certification.json': Object.freeze([
+    'receipts/godagent-v0-certification.json',
+  ]),
+  'transactional-genesis-phase2-certification.json': Object.freeze([
+    'receipts/creation-forge-phase1-certification.json',
+    'receipts/godagent-v0-certification.json',
+    'receipts/networked-cortex-certification.json',
+  ]),
+  'visual-creator-shell-certification.json': Object.freeze([
+    'receipts/creation-forge-phase1-certification.json',
+    'receipts/creator-protocol-phase3-certification.json',
+    'receipts/godagent-v0-certification.json',
+    'receipts/networked-cortex-certification.json',
+    'receipts/transactional-genesis-phase2-certification.json',
+  ]),
+});
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
+const execFileAsync = promisify(execFile);
 
 function localPath(value) {
   return value instanceof URL ? fileURLToPath(value) : resolve(value);
@@ -32,18 +71,32 @@ function declaredLinks(file, receipt) {
     if (!sourceLinks || typeof sourceLinks !== 'object' || Array.isArray(sourceLinks)) {
       throw new Error(`historical receipt map is invalid for ${file}`);
     }
-    return Object.entries(sourceLinks);
+    const links = Object.entries(sourceLinks);
+    if (!sameArray(links.map(([path]) => path).sort(), requiredHistoricalLinks[file])) {
+      throw new Error(`historical receipt set mismatch for ${file}`);
+    }
+    return links;
   }
   if (file === 'networked-cortex-certification.json') {
     const digest = receipt.proof?.historicalReceipt?.sha256;
     if (!DIGEST.test(digest)) throw new Error('historical receipt link is invalid for networked cortex');
-    return [['receipts/godagent-v0-certification.json', digest]];
+    return [[requiredHistoricalLinks[file][0], digest]];
   }
+  if (requiredHistoricalLinks[file].length > 0) throw new Error(`historical receipt set mismatch for ${file}`);
   return [];
 }
 
-export async function verifyCertificationLedger({ receiptDirectory }) {
+async function requireCommit(repositoryRoot, commit, file) {
+  try {
+    await execFileAsync('git', ['-C', repositoryRoot, 'cat-file', '-e', `${commit}^{commit}`], { windowsHide: true });
+  } catch {
+    throw new Error(`certification source commit does not resolve: ${file}`);
+  }
+}
+
+export async function verifyCertificationLedger({ receiptDirectory, repositoryRoot }) {
   const directory = localPath(receiptDirectory);
+  const repository = repositoryRoot === undefined ? resolve(directory, '..') : localPath(repositoryRoot);
   const files = (await readdir(directory)).sort();
   if (!sameArray(files, expectedFiles)) throw new Error('certification receipt set mismatch');
 
@@ -66,6 +119,7 @@ export async function verifyCertificationLedger({ receiptDirectory }) {
     if (certificationId !== registry[file]) throw new Error(`certification identity mismatch: ${file}`);
     const sourceCommit = receipt.source?.commit;
     if (!COMMIT.test(sourceCommit)) throw new Error(`certification source commit is invalid: ${file}`);
+    await requireCommit(repository, sourceCommit, file);
     loaded.set(file, {
       receipt,
       fileSha256: sha256Text(text),
