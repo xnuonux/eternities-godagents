@@ -148,6 +148,7 @@ export async function loadCreatorLibrary({
   const catalog = frozenClone({ ...unsigned, catalogDigest: sha256Value(unsigned) });
   const sourceLoader = Object.freeze({
     catalogDigest: catalog.catalogDigest,
+    resolvePolicy: () => frozenClone(policy),
     resolveModule: resolver(moduleSources),
     resolveExpression: resolver(expressionSources),
     resolvePreset: resolver(presetSources),
@@ -158,4 +159,3 @@ export async function loadCreatorLibrary({
 export async function loadCreatorCatalog(options) {
   return (await loadCreatorLibrary(options)).catalog;
 }
-

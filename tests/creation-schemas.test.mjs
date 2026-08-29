@@ -32,15 +32,15 @@ test('creation fixtures satisfy their strict public schemas', async () => {
   }
 });
 
-test('all nine creation module fixtures satisfy the common module envelope', async () => {
-  const files = (await readdir(fixtureUrl('modules'))).filter((name) => name.endsWith('.json'));
-  assert.equal(files.length, 9);
-
-  for (const kind of moduleKinds) {
-    const module = await readJson(`modules/${kind}.json`);
-    assert.equal(module.moduleKind, kind);
+test('every creation module fixture is valid and the library covers all nine kinds', async () => {
+  const files = (await readdir(fixtureUrl('modules'))).filter((name) => name.endsWith('.json')).sort();
+  const seenKinds = new Set();
+  for (const file of files) {
+    const module = await readJson(`modules/${file}`);
     assert.equal(assertSchema('creation-module', module), module);
+    seenKinds.add(module.moduleKind);
   }
+  assert.deepEqual([...seenKinds].sort(), [...moduleKinds].sort());
 });
 
 test('creation schemas reject unknown fields and active Soul state', async () => {

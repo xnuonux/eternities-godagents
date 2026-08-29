@@ -7,19 +7,16 @@ import {
   validateModuleContract,
 } from './contracts.mjs';
 import { deriveAttributes } from './derive-attributes.mjs';
+import { compatibilityFailure } from './compatibility-error.mjs';
 
-function assertSubset(values, allowedValues, label) {
+function assertSubset(values, allowedValues, code) {
   const allowed = new Set(allowedValues);
-  for (const value of values) {
-    if (!allowed.has(value)) throw new TypeError(`${label} exceeds creation policy`);
-  }
+  for (const value of values) if (!allowed.has(value)) compatibilityFailure(code);
 }
 
-function assertContains(values, requiredValues, label) {
+function assertContains(values, requiredValues, code) {
   const available = new Set(values);
-  for (const value of requiredValues) {
-    if (!available.has(value)) throw new TypeError(label);
-  }
+  for (const value of requiredValues) if (!available.has(value)) compatibilityFailure(code);
 }
 
 export function resolveSelectedModules({ candidate, modulesByRef }) {
@@ -38,15 +35,15 @@ export function assertCreationCompatibility({ candidate, policy, selectedModules
   const moduleKeys = Object.keys(selectedModules).sort(byteCompare);
   const expectedKeys = [...MODULE_KINDS].sort(byteCompare);
   if (moduleKeys.length !== expectedKeys.length || moduleKeys.some((key, index) => key !== expectedKeys[index])) {
-    throw new TypeError('module-ref integrity failed');
+    compatibilityFailure('module-ref-integrity-failed');
   }
   for (const kind of MODULE_KINDS) {
     const module = selectedModules[kind];
     if (module.moduleKind !== kind || moduleRef(module) !== candidate.moduleRefs[kind]) {
-      throw new TypeError(`module-ref integrity failed for ${kind}`);
+      compatibilityFailure('module-ref-integrity-failed');
     }
     if (module.baseModuleRefs.length !== 0) {
-      throw new TypeError('base module inheritance is not supported in Phase 1');
+      compatibilityFailure('module-inheritance-unsupported');
     }
   }
 
@@ -56,54 +53,58 @@ export function assertCreationCompatibility({ candidate, policy, selectedModules
     assertContains(
       providedCompatibilityTags,
       module.compatibility.requiresTags,
-      'compatibility tag is unavailable',
+      'compatibility-tag-unavailable',
     );
   }
 
-  assertSubset(candidate.constitution.allowedEffects, policy.allowedEffects, 'effect');
-  assertSubset(candidate.promptOs.allowedAdapters, policy.allowedPromptAdapters, 'Prompt OS adapter');
+  assertSubset(candidate.constitution.allowedEffects, policy.allowedEffects, 'authority-effect-exceeds-policy');
+  assertSubset(candidate.promptOs.allowedAdapters, policy.allowedPromptAdapters, 'prompt-adapter-exceeds-policy');
   for (const module of Object.values(selectedModules)) {
-    assertSubset(module.capabilities, policy.allowedCapabilities, 'module capability');
+    assertSubset(module.capabilities, policy.allowedCapabilities, 'module-capability-exceeds-policy');
   }
 
   const cortex = selectedModules.cortex.payload;
-  assertSubset(cortex.allowedAdapters, policy.allowedCortexAdapters, 'cortex adapter');
-  assertSubset(cortex.requiredCapabilities, policy.allowedCapabilities, 'cortex capability');
+  assertSubset(cortex.allowedAdapters, policy.allowedCortexAdapters, 'cortex-adapter-exceeds-policy');
+  assertSubset(cortex.requiredCapabilities, policy.allowedCapabilities, 'cortex-capability-exceeds-policy');
 
   const godskills = selectedModules.godskills.payload;
-  assertSubset([godskills.contractId], policy.allowedGodskillsContracts, 'Godskills contract');
-  assertSubset(godskills.entrypointIds, policy.allowedGodskillEntrypoints, 'Godskill entrypoint');
-  assertSubset(candidate.realm.requiredCapabilities, policy.allowedRealmCapabilities, 'Realm capability');
-  assertSubset(selectedModules.embodiment.payload.requiredRealmCapabilities, policy.allowedRealmCapabilities, 'Realm capability');
+  assertSubset([godskills.contractId], policy.allowedGodskillsContracts, 'godskills-contract-exceeds-policy');
+  assertSubset(godskills.entrypointIds, policy.allowedGodskillEntrypoints, 'godskills-entrypoint-exceeds-policy');
+  assertSubset(candidate.realm.requiredCapabilities, policy.allowedRealmCapabilities, 'realm-capability-exceeds-policy');
+  assertSubset(selectedModules.embodiment.payload.requiredRealmCapabilities, policy.allowedRealmCapabilities, 'realm-capability-exceeds-policy');
   if (godskills.maxComposition > policy.maxGodskillsComposition) {
-    throw new TypeError('Godskills composition exceeds creation policy');
+    compatibilityFailure('godskills-composition-exceeds-policy');
   }
 
   const compatibleArchetypeTags = selectedModules.lineage.payload.compatibleArchetypeTags;
-  assertContains(compatibleArchetypeTags, selectedModules.archetype.payload.tags, 'archetype tag is incompatible with lineage');
+  assertContains(compatibleArchetypeTags, selectedModules.archetype.payload.tags, 'lineage-archetype-incompatible');
 
   const organIds = selectedModules.organs.payload.organs.map((organ) => organ.id);
-  assertContains(organIds, selectedModules.lineage.payload.defaultOrganIds, 'organ loadout omits a lineage default');
-  assertContains(organIds, selectedModules.archetype.payload.organIds, 'organ loadout omits an archetype organ');
+  assertContains(organIds, selectedModules.lineage.payload.defaultOrganIds, 'lineage-organ-missing');
+  assertContains(organIds, selectedModules.archetype.payload.organIds, 'archetype-organ-missing');
 
-  assertContains(godskills.entrypointIds, selectedModules.lineage.payload.defaultGodskillEntrypoints, 'Godskill entrypoint omits a lineage default');
-  assertContains(godskills.entrypointIds, selectedModules.archetype.payload.godskillEntrypoints, 'Godskill entrypoint omits an archetype requirement');
+  assertContains(godskills.entrypointIds, selectedModules.lineage.payload.defaultGodskillEntrypoints, 'lineage-godskill-missing');
+  assertContains(godskills.entrypointIds, selectedModules.archetype.payload.godskillEntrypoints, 'archetype-godskill-missing');
 
   const availableCapabilities = [
     ...candidate.promptOs.requiredCapabilities,
     ...Object.values(selectedModules).flatMap((module) => module.capabilities),
   ];
-  assertContains(availableCapabilities, selectedModules.archetype.payload.requiredCapabilityFamilies, 'capability family is unavailable');
-  assertContains(candidate.realm.requiredCapabilities, selectedModules.embodiment.payload.requiredRealmCapabilities, 'Realm capability required by embodiment is unavailable');
+  assertContains(availableCapabilities, selectedModules.archetype.payload.requiredCapabilityFamilies, 'capability-family-unavailable');
+  assertContains(candidate.realm.requiredCapabilities, selectedModules.embodiment.payload.requiredRealmCapabilities, 'embodiment-realm-unavailable');
 
-  deriveAttributes({
-    attributes: selectedModules.attributes.payload.values,
-    lineage: selectedModules.lineage.payload.attributeModifiers,
-    archetype: selectedModules.archetype.payload.attributeModifiers,
-  });
+  try {
+    deriveAttributes({
+      attributes: selectedModules.attributes.payload.values,
+      lineage: selectedModules.lineage.payload.attributeModifiers,
+      archetype: selectedModules.archetype.payload.attributeModifiers,
+    });
+  } catch {
+    compatibilityFailure('attribute-bounds-invalid');
+  }
 
-  if (candidate.evolution.policy !== 'frozen-v0') throw new TypeError('evolution must remain frozen');
-  if (candidate.soulPort.status !== 'dormant') throw new TypeError('Soul port must remain dormant');
+  if (candidate.evolution.policy !== 'frozen-v0') compatibilityFailure('evolution-not-frozen');
+  if (candidate.soulPort.status !== 'dormant') compatibilityFailure('soul-port-not-dormant');
 
   for (const module of Object.values(selectedModules)) validateModuleContract(module, policy);
   const policyDigest = sha256Value(policy);

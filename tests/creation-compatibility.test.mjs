@@ -5,6 +5,7 @@ import {
   assertCreationCompatibility,
   resolveSelectedModules,
 } from '../src/creation/compatibility.mjs';
+import { CreationCompatibilityError } from '../src/creation/compatibility-error.mjs';
 import { deriveAttributes } from '../src/creation/derive-attributes.mjs';
 import { loadCreationSources } from '../src/creation/load.mjs';
 
@@ -135,4 +136,42 @@ test('creation policy remains a ceiling across every authority-bearing surface',
   const realm = clone(sources.candidate);
   realm.realm.requiredCapabilities = ['network.fetch'];
   assert.throws(() => assertCreationCompatibility({ candidate: realm, policy: sources.policy, selectedModules: selected }), /Realm capability exceeds creation policy/);
+});
+
+test('compatibility failures expose closed safe issue codes', () => {
+  const cases = [];
+
+  const lineage = clone(selected);
+  lineage.lineage.payload.compatibleArchetypeTags = ['other'];
+  cases.push(['lineage-archetype-incompatible', lineage, sources.candidate]);
+
+  const organs = clone(selected);
+  organs.lineage.payload.defaultOrganIds = ['missing-organ'];
+  cases.push(['lineage-organ-missing', organs, sources.candidate]);
+
+  const skills = clone(selected);
+  skills.archetype.payload.godskillEntrypoints = ['review'];
+  cases.push(['archetype-godskill-missing', skills, sources.candidate]);
+
+  const capabilities = clone(selected);
+  capabilities.archetype.payload.requiredCapabilityFamilies = ['unavailable'];
+  cases.push(['capability-family-unavailable', capabilities, sources.candidate]);
+
+  const embodimentCandidate = clone(sources.candidate);
+  embodimentCandidate.realm.requiredCapabilities = ['filesystem.read'];
+  cases.push(['embodiment-realm-unavailable', selected, embodimentCandidate]);
+
+  const authority = clone(sources.candidate);
+  authority.constitution.allowedEffects = ['realm.admin'];
+  cases.push(['authority-effect-exceeds-policy', selected, authority]);
+
+  for (const [code, modules, candidate] of cases) {
+    assert.throws(
+      () => assertCreationCompatibility({ candidate, policy: sources.policy, selectedModules: modules }),
+      (error) => error instanceof CreationCompatibilityError
+        && error.code === code
+        && !error.message.includes('missing-organ')
+        && !error.message.includes('filesystem.write'),
+    );
+  }
 });

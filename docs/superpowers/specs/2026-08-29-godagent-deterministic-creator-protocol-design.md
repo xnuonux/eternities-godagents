@@ -85,7 +85,7 @@ The loader receives:
 
 Every JSON file in a declared library is part of the trust evaluation. Unknown entries, duplicate references, malformed contracts, digest mismatch, forbidden module keys, path-shaped references, and invalid presets fail catalog loading rather than disappearing from discovery.
 
-The loader returns the serializable frozen catalog separately from a host-only frozen source resolver. The resolver can return validated module, expression, and preset values by exact canonical reference and catalog digest. Raw source bodies and resolver functions do not enter the catalog projection or catalog identity. Preview and finalization receive the resolver explicitly, so catalog discovery data cannot masquerade as trusted source material.
+The loader returns the serializable frozen catalog separately from a host-only frozen source resolver. The resolver can return the validated policy and validated module, expression, and preset values by exact canonical reference and catalog digest. Raw source bodies and resolver functions do not enter the catalog projection or catalog identity. Preview and finalization receive the resolver explicitly, so catalog discovery data cannot masquerade as trusted source material.
 
 ### Module projection
 

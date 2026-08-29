@@ -83,7 +83,7 @@ test('creator source loader resolves exact frozen clones and cannot enumerate ba
   const { catalog, sourceLoader } = await loadCreatorLibrary(await libraryFixture(context, 'left'));
   assert.equal(sourceLoader.catalogDigest, catalog.catalogDigest);
   assert.deepEqual(Object.keys(sourceLoader).sort(), [
-    'catalogDigest', 'resolveExpression', 'resolveModule', 'resolvePreset',
+    'catalogDigest', 'resolveExpression', 'resolveModule', 'resolvePolicy', 'resolvePreset',
   ]);
   const first = sourceLoader.resolveModule('lineage:synthetic-explorer@1.0.0');
   const second = sourceLoader.resolveModule('lineage:synthetic-explorer@1.0.0');
@@ -92,6 +92,7 @@ test('creator source loader resolves exact frozen clones and cannot enumerate ba
   assert.equal(Object.isFrozen(first), true);
   assert.equal(Object.isFrozen(first.payload), true);
   assert.equal(sourceLoader.resolveExpression('expression:aether-architect@1.0.0').name, 'Aether Architect');
+  assert.equal(sourceLoader.resolvePolicy().policyId, 'creation-ceiling-local-builder-v1');
   assert.equal(sourceLoader.resolvePreset('preset:aether-architect@1.0.0').choices.length, 4);
   assert.throws(() => sourceLoader.resolveModule('lineage:missing@1.0.0'), /creator source reference is unavailable/);
   assert.deepEqual(await loadCreatorCatalog(await libraryFixture(context, 'right')), catalog);
