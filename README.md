@@ -31,6 +31,7 @@ npm run build:networked-fixture
 npm run demo
 npm run creator:local -- <command> <options>
 npm run admit:local -- <options>
+npm run verify:certifications
 npm run certify
 npm run certify:creation-forge
 npm run certify:networked-cortex
@@ -182,6 +183,8 @@ npm run admit:local -- `
 The trusted local workspace is bound to that exact admission. An exact retry recovers interrupted snapshot publication and transactional genesis; changed creation, Prompt OS, Realm, identity, creator, or purpose is refused. Pre-existing and observed reparse-point substitution is rejected, but this local shell is not an OS sandbox against a hostile process concurrently manipulating paths as the same Windows user. Success returns only the creation and distribution build IDs, genesis and keel IDs, and receipt digest. It does not create or start a runnable vessel, call a model, invoke a Realm hand, load host authority, evolve the agent, activate Inspiration, integrate Lunari, or activate Soul.
 
 `npm run certify:local-admission` issues the separate append-only `local-admission-shell-v1` receipt. It runs the complete no-network suite, executes two fixed-clock admissions from independently compiled creation fixtures, compares every workspace byte and identity, and pins all six preceding receipts. Its exclusions preserve the trusted-local limitation and every non-runtime boundary above.
+
+`npm run verify:certifications` audits the exact seven-file certification ledger. It requires canonical bytes, recomputes each internal receipt digest, verifies certified status and source-commit shape, and checks every declared historical file hash across the versioned receipt formats. It returns one canonical ledger projection and digest. This is an integrity audit, not a substitute for rerunning a receipt at its pinned source commit.
 
 ## Networked cortex host
 
