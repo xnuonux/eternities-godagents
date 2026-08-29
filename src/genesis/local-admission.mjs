@@ -104,6 +104,10 @@ function bindingValue(input, inputs) {
   return { ...unsigned, bindingDigest: sha256Value(unsigned) };
 }
 
+function maybePublishCrash(input, point) {
+  if (input.publishCrashAt === point) throw new Error(`injected local publication crash ${point}`);
+}
+
 async function preflight(input, temporaryRoot) {
   const sourceCreation = resolve(input.creationDir);
   const creationSnapshot = join(temporaryRoot, 'creation');
@@ -217,23 +221,42 @@ async function publishAdmission(input, prepared) {
   const admissionRoot = join(workspaceRoot, 'admission');
   const binding = bindingValue(input, prepared.inputs);
   const names = (await readdir(workspaceRoot)).sort(byteCompare);
-  if (names.length > 0) {
+  const pendingName = `.pending-${binding.bindingDigest}`;
+  const pending = join(workspaceRoot, pendingName);
+  if (names.includes('admission')) {
     if (!sameArray(names, ['admission'])) fail('workspace-occupied');
     const canonicalAdmission = await assertDirectory(admissionRoot, workspaceRoot, 'workspace-invalid');
     await verifyPublished(canonicalAdmission, input, binding);
     return canonicalAdmission;
   }
-
-  const pending = await mkdtemp(join(workspaceRoot, '.pending-'));
+  if (names.length > 0 && !sameArray(names, [pendingName])) fail('workspace-occupied');
+  if (names.length === 1) {
+    await assertDirectory(pending, workspaceRoot, 'workspace-invalid');
+    await assertSafeTree(pending);
+    try {
+      await assertAdmissionLayout(pending);
+      await verifyPublished(pending, input, binding);
+      await rename(pending, admissionRoot);
+      return await assertDirectory(admissionRoot, workspaceRoot, 'workspace-invalid');
+    } catch (error) {
+      if (error instanceof LocalAdmissionError && error.code === 'workspace-occupied') throw error;
+      await rm(pending, { recursive: true, force: true });
+    }
+  }
+  await mkdir(pending);
+  maybePublishCrash(input, 'after-pending-created');
   try {
     await Promise.all([
       cp(prepared.creationSnapshot, join(pending, 'creation'), { recursive: true, errorOnExist: true }),
       cp(prepared.distributionSnapshot, join(pending, 'distribution'), { recursive: true, errorOnExist: true }),
     ]);
+    maybePublishCrash(input, 'after-snapshots-copied');
     await writeFile(join(pending, 'binding.json'), `${canonicalJson(binding)}\n`, { encoding: 'utf8', flag: 'wx' });
+    maybePublishCrash(input, 'after-binding-written');
     await verifyPublished(pending, input, binding);
     await rename(pending, admissionRoot);
   } catch (error) {
+    if (input.publishCrashAt !== undefined) throw error;
     await rm(pending, { recursive: true, force: true }).catch(() => {});
     if (error instanceof LocalAdmissionError) throw error;
     fail('workspace-invalid');

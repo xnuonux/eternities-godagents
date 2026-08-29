@@ -178,7 +178,7 @@ npm run admit:local -- `
   --checkpoint-purpose "continue the declared work with Soul dormant"
 ```
 
-The workspace is bound to that exact admission. An exact retry resumes safely; changed creation, Prompt OS, Realm, identity, creator, or purpose is refused. Success returns only the creation and distribution build IDs, genesis and keel IDs, and receipt digest. It does not create or start a runnable vessel, call a model, invoke a Realm hand, load host authority, evolve the agent, activate Inspiration, integrate Lunari, or activate Soul.
+The trusted local workspace is bound to that exact admission. An exact retry recovers interrupted snapshot publication and transactional genesis; changed creation, Prompt OS, Realm, identity, creator, or purpose is refused. Pre-existing and observed reparse-point substitution is rejected, but this local shell is not an OS sandbox against a hostile process concurrently manipulating paths as the same Windows user. Success returns only the creation and distribution build IDs, genesis and keel IDs, and receipt digest. It does not create or start a runnable vessel, call a model, invoke a Realm hand, load host authority, evolve the agent, activate Inspiration, integrate Lunari, or activate Soul.
 
 ## Networked cortex host
 

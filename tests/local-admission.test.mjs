@@ -192,6 +192,23 @@ test('every genesis crash point resumes without duplicate journal or keel rows',
   }
 });
 
+test('every local publication interruption is recovered by an exact retry', async (context) => {
+  for (const [index, publishCrashAt] of [
+    'after-pending-created',
+    'after-snapshots-copied',
+    'after-binding-written',
+  ].entries()) {
+    const { request, workspace } = await setup(context, `-publish-crash-${index}`);
+    await assert.rejects(
+      () => admitLocalCreation({ ...request, publishCrashAt }),
+      new RegExp(publishCrashAt),
+    );
+    const resumed = await admitLocalCreation(request);
+    assert.equal(resumed.status, 'admitted');
+    assert.deepEqual(await readdir(workspace), ['admission']);
+  }
+});
+
 test('local admission has no runtime, provider, host, Realm-action, evolution, or Soul activation import', async () => {
   const source = await readFile(new URL('../src/genesis/local-admission.mjs', import.meta.url), 'utf8');
   for (const forbidden of [

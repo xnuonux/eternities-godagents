@@ -32,3 +32,5 @@ Transactional genesis retains its own crash-safe, exact-idempotent recovery. The
 - only the local reference keel backend is available;
 - successful admission creates no runnable vessel and performs no external effect;
 - evolution remains `frozen-v0` and Soul remains `dormant`.
+
+The shell detects pre-existing and observed symbolic-link or reparse-point substitution and rechecks the completed tree. It is not an OS sandbox and does not claim protection from a hostile process concurrently manipulating the same paths under the same Windows user identity. The dedicated workspace therefore remains a trusted local operator boundary.
