@@ -27,6 +27,7 @@ const schemaFiles = {
   'creator-draft': 'creator-draft.schema.json',
   'creator-preset': 'creator-preset.schema.json',
   'creator-review-seal': 'creator-review-seal.schema.json',
+  'godskills-release-pin': 'godskills-release-pin.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {
