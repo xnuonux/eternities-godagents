@@ -94,11 +94,13 @@ function sourceEnvelopeFor({ mission, observation, genomePolicy, hostEnvelope, s
   });
 }
 
-async function loadPackages(release, selectedIds, entrypoints, eligibility, authority) {
+async function loadPackages(release, selectedIds, entrypoints, eligibility, authority, forbiddenIds) {
   const eligible = new Set(eligibility.eligibleIds);
+  const forbidden = new Set(forbiddenIds);
   const packages = [];
   for (let index = 0; index < selectedIds.length; index += 1) {
     const id = selectedIds[index];
+    if (forbidden.has(id)) throw new Error(`Godskills capability ${id} is forbidden by host`);
     if (!eligible.has(id)) throw new Error(`Godskills capability ${id} is not eligible`);
     const capability = release.capabilitiesById.get(id);
     if (!capability) throw new Error(`Godskills capability ${id} is absent from the portable manifest`);
@@ -187,7 +189,14 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
         });
       }
       const packages = route.status === 'selected'
-        ? await loadPackages(release, route.selectedIds, route.entrypoints, eligibility, authority)
+        ? await loadPackages(
+          release,
+          route.selectedIds,
+          route.entrypoints,
+          eligibility,
+          authority,
+          hostEnvelope.forbiddenCapabilities ?? [],
+        )
         : [];
       const { cortexPackage, stackDigest } = compilePackage({ sourceEnvelopeDigest, release, authority, packages });
       const packageBytes = Buffer.byteLength(canonicalJson(cortexPackage), 'utf8');
@@ -229,7 +238,15 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       }
       const selectedIds = receipt.selected.map(({ id }) => id);
       const entrypoints = selectedIds.map((id) => release.capabilitiesById.get(id)?.entrypoint.path);
-      const packages = await loadPackages(release, selectedIds, entrypoints, eligibility, authority);
+      const forbiddenIds = sorted(hostEnvelope.forbiddenCapabilities ?? []);
+      const packages = await loadPackages(
+        release,
+        selectedIds,
+        entrypoints,
+        eligibility,
+        authority,
+        forbiddenIds,
+      );
       for (let index = 0; index < packages.length; index += 1) {
         if (packages[index].entrypointSha256 !== receipt.selected[index].entrypointSha256
             || packages[index].contractSha256 !== receipt.selected[index].contractSha256) {

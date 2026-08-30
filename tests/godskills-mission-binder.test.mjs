@@ -138,6 +138,10 @@ test('specialization prohibitions and owner hierarchy fail closed', async () => 
   const { adapter } = await adapterFor((value) => routed(value));
   await assert.rejects(adapter.bindMission(input({ genomePolicy: prohibited })), /not eligible/);
 
+  await assert.rejects(adapter.bindMission(input({
+    hostEnvelope: { ...hostEnvelope, forbiddenCapabilities: ['eternities-forge'] },
+  })), /forbidden by host/i);
+
   const operational = await adapterFor((value) => routed(value, ['bounded-service-shutdown']));
   await assert.rejects(operational.adapter.bindMission(input()), /owner selection/);
 });
