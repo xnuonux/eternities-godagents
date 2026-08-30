@@ -11,6 +11,7 @@ import { createLocalKeelBackend } from '../keel/local-reference-backend.mjs';
 import { createPersistentLocalRealm } from '../realm/local-persistent-realm.mjs';
 import { createPersistentVessel } from '../runtime/persistent-vessel.mjs';
 import { createLocalGodskillsTransport } from '../skills/godskills-adapter.mjs';
+import { createGodskillsAdapter } from '../skills/mission-binder.mjs';
 import { acquireFileLock } from '../state/file-lock.mjs';
 import { readVerifiedJournal } from '../state/journal.mjs';
 import { claimLocalInstanceResidency, defaultLocalInstanceRegistryRoot } from './local-instance-registry.mjs';
@@ -164,7 +165,13 @@ async function defaultRuntimeFactory({
   policy, policyDigest, policyPath, realmContract, realmStatePath, credentialResolver, fetchImpl, clock,
 }) {
   const realm = await createPersistentLocalRealm({ contract: realmContract, statePath: realmStatePath });
-  const godskillsTransport = await createLocalGodskillsTransport({ repositoryRoot: policy.runtime.godskillsRepository });
+  const godskillsTransport = await createLocalGodskillsTransport({
+    repositoryRoot: policy.runtime.godskillsRelease.repositoryRoot,
+  });
+  const godskillsAdapter = await createGodskillsAdapter({
+    releasePin: policy.runtime.godskillsRelease,
+    transport: godskillsTransport,
+  });
   const cortex = createOpenAICompatibleCortex({
     adapterId: policy.provider.adapterId,
     profile: policy.provider.profile,
@@ -181,7 +188,7 @@ async function defaultRuntimeFactory({
   return Object.freeze({
     cortex,
     realm,
-    godskillsTransport,
+    godskillsAdapter,
     clock,
     inferencePolicy: {
       ...policy.inference,

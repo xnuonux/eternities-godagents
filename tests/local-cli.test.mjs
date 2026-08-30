@@ -55,7 +55,7 @@ test('local host derives mission authority and context only from validated polic
   });
 
   assert.equal(code, 0);
-  assert.deepEqual(trustedMission.authority, ['realm:write']);
+  assert.deepEqual(trustedMission.authority, ['local-read', 'local-write', 'realm:write']);
   assert.deepEqual(trustedMission.hostContext, validPolicy.hostContext);
   assert.equal(trustedMission.text, 'increment the governed fixture counter once');
   assert.deepEqual(JSON.parse(stdout.read()), {

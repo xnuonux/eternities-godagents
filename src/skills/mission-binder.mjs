@@ -31,15 +31,6 @@ function compileAuthority(mission, hostEnvelope) {
   });
 }
 
-function semanticEffects(release, authority) {
-  const permitted = new Set(authority.permittedEffects);
-  const effects = [];
-  for (const [semantic, concrete] of Object.entries(release.pin.semanticEffectBindings)) {
-    if (concrete.every((effect) => permitted.has(effect))) effects.push(semantic);
-  }
-  return sorted(effects);
-}
-
 function requireSelectedEffects(capability, release, authority) {
   const permitted = new Set(authority.permittedEffects);
   for (const semantic of capability.effectVocabulary ?? []) {
@@ -79,7 +70,7 @@ function routeContext({ release, eligibility, authority, hostEnvelope }) {
     hostEnvelope.maxCompositionSize,
   );
   return {
-    permittedEffects: semanticEffects(release, authority),
+    permittedEffects: authority.permittedEffects,
     availableAuthority: authority.availableAuthority,
     availablePreconditions: authority.availablePreconditions,
     forbiddenCapabilities: sorted([...(hostEnvelope.forbiddenCapabilities ?? []), ...eligibility.prohibitedIds]),

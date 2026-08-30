@@ -13,6 +13,7 @@ import { createFixtureRealm } from '../src/realm/fixture-realm.mjs';
 import { createFixtureCortexA, createFixtureCortexB } from '../src/runtime/fixture-cortex.mjs';
 import { createVessel } from '../src/runtime/vessel.mjs';
 import { createLocalGodskillsTransport } from '../src/skills/godskills-adapter.mjs';
+import { createGodskillsAdapter } from '../src/skills/mission-binder.mjs';
 import { readVerifiedJournal } from '../src/state/journal.mjs';
 
 const CANARY = 'canary-end-to-end-provider-secret';
@@ -103,16 +104,25 @@ async function hostWorkspace(t, name, providerContent) {
     distributionDir: './distribution',
     journalPath: './state/events.jsonl',
     snapshotPath: './state/snapshot.json',
-    godskillsRepository: 'C:/dev/eternities-godskills',
+    godskillsRelease: policy.runtime.godskillsRelease,
   };
   policy.provider.credentialEnv = 'GODAGENT_CONTAINMENT_KEY';
   const policyPath = join(root, 'policy.json');
   const missionPath = join(root, 'mission.txt');
   await writeFile(policyPath, `${JSON.stringify(policy, null, 2)}\n`, 'utf8');
-  await writeFile(missionPath, 'increment the governed fixture counter once\n', 'utf8');
+  await writeFile(
+    missionPath,
+    'resolve conflicting runtime constraints into an implementation-ready system architecture\n',
+    'utf8',
+  );
   const fetchImpl = async (_url, request) => {
     assert.equal(request.headers.authorization, `Bearer ${CANARY}`);
-    return new Response(providerEnvelope(providerContent), {
+    const body = JSON.parse(request.body);
+    const user = JSON.parse(body.messages[1].content);
+    const content = user.methodEnvelopeDigest
+      ? { ...providerContent, methodEnvelopeDigest: user.methodEnvelopeDigest }
+      : providerContent;
+    return new Response(providerEnvelope(content), {
       status: 200,
       headers: { 'content-type': 'application/json' },
     });
@@ -133,7 +143,7 @@ test('end-to-end local host leaves the canary credential out of every durable an
     clock: () => fixedNow,
   });
 
-  assert.equal(code, 0);
+  assert.equal(code, 0, stderr.read());
   assert.equal(stderr.read(), '');
   assert.equal(JSON.parse(stdout.read()).status, 'completed');
   const surfaces = [...await allTextFiles(workspace.root), { path: 'stdout', text: stdout.read() }, { path: 'stderr', text: stderr.read() }];
@@ -193,19 +203,30 @@ test('fixture to networked to fixture cortex migration preserves the vessel and 
   const distributionDir = await createDistribution(root, ['fixture-a', 'openai-compatible-v1', 'fixture-b']);
   const realm = createFixtureRealm({ contract });
   const godskillsTransport = await createLocalGodskillsTransport({ repositoryRoot: 'C:/dev/eternities-godskills' });
+  const policy = JSON.parse(await readFile(fixturePath('host-policy.json'), 'utf8'));
+  const godskillsAdapter = await createGodskillsAdapter({
+    releasePin: policy.runtime.godskillsRelease,
+    transport: godskillsTransport,
+  });
   const common = {
     distributionDir,
     instanceId: 'three-cortex-vessel',
     journalPath: join(root, 'events.jsonl'),
     snapshotPath: join(root, 'snapshot.json'),
     realm,
-    godskillsTransport,
+    godskillsAdapter,
     clock: () => fixedNow,
   };
-  const mission = (id) => ({ requestId: id, text: 'increment once', authority: ['realm:write'], hostContext });
+  const mission = (id) => ({
+    requestId: id,
+    text: 'resolve conflicting runtime constraints into an implementation-ready system architecture',
+    authority: ['local-read', 'local-write', 'realm:write'],
+    hostContext,
+  });
 
   const first = await createVessel({ ...common, cortex: createFixtureCortexA() });
-  await first.runCycle(mission('mission-a'));
+  const firstResult = await first.runCycle(mission('mission-a'));
+  assert.equal(firstResult.status, 'completed', JSON.stringify(firstResult));
   const baseline = first.inspect();
 
   const networked = createOpenAICompatibleCortex({
@@ -216,13 +237,19 @@ test('fixture to networked to fixture cortex migration preserves the vessel and 
     timeoutMs: 5000,
     maxResponseBytes: 16384,
     maxProposalTtlMs: 120000,
-    maxPromptBytes: 8192,
+    maxPromptBytes: 32768,
     maxCompletionTokens: 128,
-    transport: async () => ({
-      status: 200,
-      headers: {},
-      bodyText: providerEnvelope(proposal(1, { sourceStateEpoch: 1 })),
-    }),
+    transport: async ({ body }) => {
+      const user = JSON.parse(JSON.parse(body).messages[1].content);
+      return {
+        status: 200,
+        headers: {},
+        bodyText: providerEnvelope(proposal(1, {
+          sourceStateEpoch: 1,
+          methodEnvelopeDigest: user.methodEnvelopeDigest,
+        })),
+      };
+    },
     resolveCredential: () => CANARY,
   });
   const middle = await createVessel({
@@ -237,10 +264,12 @@ test('fixture to networked to fixture cortex migration preserves the vessel and 
       maxCycleCompletionTokens: 128,
     },
   });
-  await middle.runCycle(mission('mission-networked'));
+  const middleResult = await middle.runCycle(mission('mission-networked'));
+  assert.equal(middleResult.status, 'completed', JSON.stringify(middleResult));
 
   const third = await createVessel({ ...common, cortex: createFixtureCortexB() });
-  await third.runCycle(mission('mission-b'));
+  const thirdResult = await third.runCycle(mission('mission-b'));
+  assert.equal(thirdResult.status, 'completed', JSON.stringify(thirdResult));
   const final = third.inspect();
   const journalText = await readFile(common.journalPath, 'utf8');
 

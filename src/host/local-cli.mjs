@@ -9,6 +9,7 @@ import { sha256Text } from '../core/digest.mjs';
 import { createFixtureRealm } from '../realm/fixture-realm.mjs';
 import { createVessel } from '../runtime/vessel.mjs';
 import { createLocalGodskillsTransport } from '../skills/godskills-adapter.mjs';
+import { createGodskillsAdapter } from '../skills/mission-binder.mjs';
 import { createCredentialResolver, loadHostPolicy } from './policy.mjs';
 
 function parseArguments(argv) {
@@ -48,7 +49,13 @@ export async function executeNetworkedVessel({
   const contract = JSON.parse(await readFile(resolve(distributionDir, 'realm-contract.json'), 'utf8'));
   if (contract.realmId !== policy.realmId) throw new Error('host policy Realm does not match distribution');
   const realm = createFixtureRealm({ contract });
-  const godskillsTransport = await createLocalGodskillsTransport({ repositoryRoot: policy.runtime.godskillsRepository });
+  const godskillsTransport = await createLocalGodskillsTransport({
+    repositoryRoot: policy.runtime.godskillsRelease.repositoryRoot,
+  });
+  const godskillsAdapter = await createGodskillsAdapter({
+    releasePin: policy.runtime.godskillsRelease,
+    transport: godskillsTransport,
+  });
   const cortex = createOpenAICompatibleCortex({
     adapterId: policy.provider.adapterId,
     profile: policy.provider.profile,
@@ -69,7 +76,7 @@ export async function executeNetworkedVessel({
     snapshotPath: resolveRuntimePath(policyPath, policy.runtime.snapshotPath),
     cortex,
     realm,
-    godskillsTransport,
+    godskillsAdapter,
     clock,
     inferencePolicy: {
       ...policy.inference,
@@ -80,7 +87,11 @@ export async function executeNetworkedVessel({
   });
   const cycle = await vessel.runCycle(mission);
   if (cycle.status === 'failed') {
-    return { status: 'failed', instanceId: policy.runtime.instanceId, reasonCode: cycle.inference.reasonCode };
+    return {
+      status: 'failed',
+      instanceId: policy.runtime.instanceId,
+      reasonCode: cycle.inference?.reasonCode ?? cycle.reason ?? 'cycle-failed',
+    };
   }
   return {
     status: 'completed',

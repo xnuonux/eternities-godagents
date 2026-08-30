@@ -102,7 +102,7 @@ test('binds one selected first-party capability into a body-free receipt and bou
   assert.ok(result.cortexPackage.terminationConditions.length > 0);
   assert.equal(JSON.stringify(result.receipt).includes('implement bounded slices'), false);
   assert.equal(JSON.stringify(result.cortexPackage).includes(root), false);
-  assert.deepEqual(request().context.permittedEffects, ['read', 'write']);
+  assert.deepEqual(request().context.permittedEffects, ['local-read', 'local-write']);
   assert.deepEqual(request().context.availableAuthority, ['realm:write']);
 });
 

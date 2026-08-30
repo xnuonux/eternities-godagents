@@ -41,13 +41,13 @@
     "runtime": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["instanceId", "distributionDir", "journalPath", "snapshotPath", "godskillsRepository"],
+      "required": ["instanceId", "distributionDir", "journalPath", "snapshotPath", "godskillsRelease"],
       "properties": {
         "instanceId": { "type": "string", "minLength": 1 },
         "distributionDir": { "type": "string", "minLength": 1 },
         "journalPath": { "type": "string", "minLength": 1 },
         "snapshotPath": { "type": "string", "minLength": 1 },
-        "godskillsRepository": { "type": "string", "minLength": 1 }
+        "godskillsRelease": { "$ref": "#/$defs/godskillsRelease" }
       }
     },
     "realmId": { "type": "string", "minLength": 1 },
@@ -65,6 +65,52 @@
         "minimumEvidenceConfidence": { "enum": ["unverified", "inferred", "verified"] },
         "contextBudget": { "type": "integer", "minimum": 1 },
         "maxCompositionSize": { "type": "integer", "minimum": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "godskillsRelease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapterProtocol", "repositoryRoot", "systemReceipt", "routerReceipt", "compilerReceipt", "portableReceipt", "portableManifest", "semanticEffectBindings", "maximumSelected", "maximumPackageBytes"],
+      "properties": {
+        "adapterProtocol": { "const": "eternities-godskills-adapter-v1" },
+        "repositoryRoot": { "type": "string", "minLength": 1 },
+        "systemReceipt": { "$ref": "#/$defs/artifact" },
+        "routerReceipt": { "$ref": "#/$defs/artifact" },
+        "compilerReceipt": { "$ref": "#/$defs/artifact" },
+        "portableReceipt": { "$ref": "#/$defs/artifact" },
+        "portableManifest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256", "manifestDigest"],
+          "properties": {
+            "path": { "type": "string", "minLength": 1 },
+            "sha256": { "$ref": "#/$defs/digest" },
+            "manifestDigest": { "$ref": "#/$defs/digest" }
+          }
+        },
+        "semanticEffectBindings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["read", "write"],
+          "properties": {
+            "read": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "write": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+          }
+        },
+        "maximumSelected": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "maximumPackageBytes": { "type": "integer", "minimum": 1 }
       }
     }
   }

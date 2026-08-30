@@ -38,7 +38,18 @@ const validPolicy = {
     distributionDir: '../dist/networked-fixture-agent',
     journalPath: '../artifacts/networked-runtime/events.jsonl',
     snapshotPath: '../artifacts/networked-runtime/snapshot.json',
-    godskillsRepository: 'C:/dev/eternities-godskills',
+    godskillsRelease: {
+      adapterProtocol: 'eternities-godskills-adapter-v1',
+      repositoryRoot: 'C:/dev/eternities-godskills',
+      systemReceipt: { path: 'receipts/godskills-system-certification-v3.json', sha256: '228ba0a63d252f0c37178ff3de8c1278d0ea878e9abeb173e7faea699f28fb57' },
+      routerReceipt: { path: 'receipts/agent-native-router-v8.json', sha256: 'b32500d810ba66539334cbe3ae5ef31223dbf712197a061779fc21f75048ebf3' },
+      compilerReceipt: { path: 'receipts/intent-compiler-v3.json', sha256: '1ca40ec9138c1d0583068ee4dc3db58f0b77b07f631a2b38d9c47eb28ccce49a' },
+      portableReceipt: { path: 'receipts/portable-capability-manifest-v1.json', sha256: 'f78f6aded5198e8db1591af49fe97285307427d93396b34c78dd6e5f2466f33d' },
+      portableManifest: { path: 'artifacts/portable-capabilities/manifest.v1.json', sha256: 'ab81495770ceede97522f140260354fbdff54da7b4824ca52046d473c9d5917a', manifestDigest: 'df646600e601dae7208d460135773f5d436b75117c45a3acad85fae6ff91c3c8' },
+      semanticEffectBindings: { read: ['local-read'], write: ['local-write'] },
+      maximumSelected: 3,
+      maximumPackageBytes: 16000
+    },
   },
   realmId: 'fixture-workbench',
   authority: ['realm:write'],
@@ -81,6 +92,10 @@ test('host policy rejects endpoint downgrade, arbitrary model, excessive retry, 
     ['insufficient cycle budget', { ...validPolicy, inference: { ...validPolicy.inference, maxCycleCompletionTokens: 64 } }, /maxCycleCompletionTokens/],
     ['credential value', { ...validPolicy, provider: { ...validPolicy.provider, apiKey: 'canary-policy-secret' } }, /apiKey/],
     ['authority expansion', { ...validPolicy, authority: ['realm:write', 'realm:admin'] }, /authority/],
+    ['legacy bare repository', { ...validPolicy, runtime: { ...validPolicy.runtime, godskillsRelease: undefined, godskillsRepository: 'C:/dev/eternities-godskills' } }, /godskillsRelease|additionalProperties/],
+    ['incomplete release pin', { ...validPolicy, runtime: { ...validPolicy.runtime, godskillsRelease: { adapterProtocol: 'eternities-godskills-adapter-v1' } } }, /repositoryRoot|required/],
+    ['release composition expansion', { ...validPolicy, runtime: { ...validPolicy.runtime, godskillsRelease: { ...validPolicy.runtime.godskillsRelease, maximumSelected: 4 } } }, /maximum 3/],
+    ['package exceeds context', { ...validPolicy, runtime: { ...validPolicy.runtime, godskillsRelease: { ...validPolicy.runtime.godskillsRelease, maximumPackageBytes: 16001 } } }, /package.*context/i],
   ];
 
   for (const [name, policy, pattern] of cases) {

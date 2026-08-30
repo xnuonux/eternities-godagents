@@ -67,6 +67,12 @@ function validateSemantics(policy) {
   if (policy.authority.some((authority) => !hostAuthority.has(authority))) {
     throw new Error('host policy authority expands beyond hostContext');
   }
+  if (policy.runtime.godskillsRelease.maximumSelected > policy.hostContext.maxCompositionSize) {
+    throw new Error('Godskills release composition exceeds host context');
+  }
+  if (policy.runtime.godskillsRelease.maximumPackageBytes > policy.hostContext.contextBudget * 4) {
+    throw new Error('Godskills package exceeds host context budget');
+  }
 }
 
 export async function loadHostPolicy(path) {
