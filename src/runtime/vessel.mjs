@@ -39,6 +39,7 @@ function initialState(instanceId, constitutionDigest, artifactId) {
     inferenceAttemptCount: 0,
     lastInference: null,
     acceptedProposal: null,
+    activeGodskillsBinding: null,
   };
 }
 
@@ -68,8 +69,8 @@ function reduceVessel(state, event) {
       };
     case 'proposal.collected':
       return { ...state, status: 'deliberating' };
-    case 'godskill.routed':
-      return state;
+    case 'godskills.bound':
+      return { ...state, status: 'godskills-bound', activeGodskillsBinding: event.payload.receipt };
     case 'decision.committed':
       return { ...state, status: 'committed', outstandingDecision: event.payload.decision };
     case 'action.invoking':
@@ -97,6 +98,7 @@ function reduceVessel(state, event) {
         inferenceAttemptCount: 0,
         lastInference: null,
         acceptedProposal: null,
+        activeGodskillsBinding: null,
       };
     case 'cycle.aborted':
       return {
@@ -110,6 +112,7 @@ function reduceVessel(state, event) {
         inferenceAttemptCount: 0,
         lastInference: null,
         acceptedProposal: null,
+        activeGodskillsBinding: null,
       };
     default:
       return state;
@@ -155,6 +158,7 @@ export async function createVessel({
   snapshotPath,
   cortex,
   realm,
+  godskillsAdapter = null,
   godskillsTransport,
   clock,
   inferencePolicy = null,
@@ -164,6 +168,11 @@ export async function createVessel({
 }) {
   if (bypassArbiter) throw new Error('arbiter bypass is prohibited by Godagent v0');
   if (disableActionReconciliation) throw new Error('action reconciliation is mandatory in Godagent v0');
+  if (!godskillsAdapter && typeof godskillsTransport !== 'function') throw new TypeError('Godskills adapter is required');
+  if (godskillsAdapter && (typeof godskillsAdapter.bindMission !== 'function'
+      || typeof godskillsAdapter.rehydrateMission !== 'function')) {
+    throw new TypeError('Godskills adapter must bind and rehydrate missions');
+  }
   const distribution = await loadDistribution(distributionDir, verifiedDistribution);
   if (!distribution.genome.cortex.allowedAdapters.includes(cortex.adapterId)) {
     throw new Error(`cortex adapter ${cortex.adapterId} is not allowed by the genome`);
@@ -239,7 +248,7 @@ export async function createVessel({
     if (crashAt === checkpoint) throw new Error(`injected crash after ${checkpoint}`);
   }
 
-  function cortexContext(mission, observation) {
+  function cortexContext(mission, observation, methodEnvelope, methodEnvelopeDigest) {
     const authority = new Set(mission.authority);
     const hostAuthority = new Set(mission.hostContext.availableAuthority);
     const hostEffects = new Set(mission.hostContext.permittedEffects);
@@ -251,6 +260,8 @@ export async function createVessel({
       observation,
       stateEpoch: state.epoch,
       now: clock(),
+      methodEnvelope,
+      methodEnvelopeDigest,
       constraints: {
         allowedHands: distribution.realmContract.hands.map((hand) => hand.id),
         permittedEffects: distribution.genome.constitution.allowedEffects.filter((effect) => hostEffects.has(effect)),
@@ -264,11 +275,11 @@ export async function createVessel({
     };
   }
 
-  async function collectNetworkedProposal(mission, observation, existingAttempts = 0, lastAttempt = null) {
+  async function collectNetworkedProposal(mission, observation, methodEnvelope, methodEnvelopeDigest, existingAttempts = 0, lastAttempt = null) {
     if (!inferencePolicy) throw new Error('networked cortex requires an inference policy');
     return runInference({
       cortex,
-      context: cortexContext(mission, observation),
+      context: cortexContext(mission, observation, methodEnvelope, methodEnvelopeDigest),
       policy: inferencePolicy,
       existingAttempts,
       lastAttempt,
@@ -277,7 +288,7 @@ export async function createVessel({
     });
   }
 
-  async function completeFromProposals(mission, proposals) {
+  async function completeFromProposals(mission, proposals, binding = null) {
     for (const proposal of proposals) {
       await record('proposal.collected', { proposal }, {
         sourceClass: 'cortex-proposal',
@@ -300,21 +311,6 @@ export async function createVessel({
       sourceRef: decision.decisionId,
     });
     injectCrash('decision');
-
-    const route = await routeGodskill({
-      request: { requestId: mission.requestId, text: mission.text },
-      hostContext: mission.hostContext,
-      transport: godskillsTransport,
-    });
-    await record('godskill.routed', {
-      status: route.status,
-      selectedIds: route.selectedIds,
-      entrypoints: route.entrypoints,
-      unresolvedDecisions: route.unresolvedDecisions,
-    }, {
-      sourceClass: 'godskills-router',
-      sourceRef: mission.requestId,
-    });
 
     const action = {
       actionId: `action:${mission.requestId}:${state.epoch}`,
@@ -343,7 +339,125 @@ export async function createVessel({
       sourceClass: 'vessel-runtime',
       sourceRef: mission.requestId,
     });
-    return { status: 'completed', decision, route, receipt };
+    return { status: 'completed', decision, godskills: binding?.receipt ?? state.activeGodskillsBinding, receipt };
+  }
+
+  function legacyPackage(mission, route) {
+    const authorityProjection = {
+      availableAuthority: [...new Set(mission.authority.filter((entry) => mission.hostContext.availableAuthority.includes(entry)))].sort(),
+      permittedEffects: distribution.genome.constitution.allowedEffects.filter((effect) => mission.hostContext.permittedEffects.includes(effect)).sort(),
+      availablePreconditions: mission.hostContext.availablePreconditions.filter((entry) => entry === 'realm-observed').sort(),
+      maximumRisk: mission.hostContext.maximumRisk,
+      minimumEvidenceConfidence: mission.hostContext.minimumEvidenceConfidence,
+      contextBudget: mission.hostContext.contextBudget,
+    };
+    const cortexPackage = {
+      protocolId: 'eternities-godskills-adapter-v1',
+      sourceEnvelopeDigest: sha256Value({ requestId: mission.requestId, text: mission.text, authorityProjection }),
+      releaseDigest: '0'.repeat(64),
+      stackDigest: sha256Value(route.selectedIds),
+      selectedCapabilities: route.selectedIds,
+      methods: [], evidenceRequirements: [], proposalRequirements: [], riskObligations: [],
+      preconditionObligations: [], terminationConditions: [], authorityProjection, selectedPackages: [],
+    };
+    const receipt = {
+      schemaVersion: 1, protocolId: cortexPackage.protocolId, requestId: mission.requestId,
+      sourceEnvelopeDigest: cortexPackage.sourceEnvelopeDigest, releaseDigest: cortexPackage.releaseDigest,
+      routerReceiptDigest: sha256Value(route.routeReceipt), selectionStatus: route.status,
+      selected: [], authorityCeilingDigest: sha256Value(authorityProjection), stackDigest: cortexPackage.stackDigest,
+      packageDigest: sha256Value(cortexPackage),
+    };
+    return { status: route.status === 'selected' ? 'bound' : route.status, receipt, cortexPackage };
+  }
+
+  async function bindGodskills(mission, observation) {
+    if (godskillsAdapter) {
+      return godskillsAdapter.bindMission({
+        mission,
+        observation,
+        genomePolicy: distribution.genome.godskills,
+        hostEnvelope: {
+          ...mission.hostContext,
+          constitutionAllowedEffects: distribution.genome.constitution.allowedEffects,
+          realmHandContractDigest: sha256Value(distribution.realmContract),
+        },
+        sourceStateEpoch: state.epoch,
+      });
+    }
+    const route = await routeGodskill({
+      request: { requestId: mission.requestId, text: mission.text },
+      hostContext: mission.hostContext,
+      transport: godskillsTransport,
+    });
+    if (route.status === 'needs-decision') return { ...route, receipt: null, cortexPackage: null };
+    return legacyPackage(mission, route);
+  }
+
+  async function rehydrateGodskills(mission, observation, receipt) {
+    if (godskillsAdapter) {
+      return godskillsAdapter.rehydrateMission({
+        receipt,
+        mission,
+        observation,
+        genomePolicy: distribution.genome.godskills,
+        hostEnvelope: {
+          ...mission.hostContext,
+          constitutionAllowedEffects: distribution.genome.constitution.allowedEffects,
+          realmHandContractDigest: sha256Value(distribution.realmContract),
+        },
+        sourceStateEpoch: state.epoch,
+      });
+    }
+    const cortexPackage = {
+      protocolId: receipt.protocolId, sourceEnvelopeDigest: receipt.sourceEnvelopeDigest,
+      releaseDigest: receipt.releaseDigest, stackDigest: receipt.stackDigest, selectedCapabilities: [],
+      methods: [], evidenceRequirements: [], proposalRequirements: [], riskObligations: [],
+      preconditionObligations: [], terminationConditions: [], authorityProjection: {}, selectedPackages: [],
+    };
+    return { status: receipt.selectionStatus, receipt, cortexPackage };
+  }
+
+  async function inferAfterBinding(mission, observation, binding, existingAttempts = 0, lastAttempt = null) {
+    if (typeof cortex.prepare === 'function') {
+      const inference = await collectNetworkedProposal(
+        mission, observation, binding.cortexPackage, binding.receipt.packageDigest, existingAttempts, lastAttempt,
+      );
+      if (inference.status === 'failed') {
+        await record('cycle.aborted', { reason: 'cortex-failed', reasonCode: inference.reasonCode }, {
+          sourceClass: 'cortex-failure', sourceRef: inference.attemptId,
+        });
+        return { status: 'failed', inference };
+      }
+      return completeFromProposals(mission, [inference.proposal], binding);
+    }
+    const organ = {
+      id: cortex.adapterId,
+      propose: () => cortex.infer({
+        mission: mission.text, missionId: mission.requestId, observation, stateEpoch: state.epoch,
+        now: clock(), methodEnvelope: binding.cortexPackage, methodEnvelopeDigest: binding.receipt.packageDigest,
+      }),
+    };
+    const proposals = await collectProposals({
+      organs: [organ],
+      state: { epoch: state.epoch, missionId: mission.requestId, now: clock(), preconditions: ['realm-observed'] },
+      context: { observationId: observation.observationId },
+    });
+    return completeFromProposals(mission, proposals, binding);
+  }
+
+  async function beginBoundInference(mission, observation) {
+    const binding = await bindGodskills(mission, observation);
+    if (binding.status === 'needs-decision') {
+      await record('cycle.aborted', { reason: 'godskills-needs-decision', unresolvedDecisions: binding.unresolvedDecisions }, {
+        sourceClass: 'godskills-router', sourceRef: mission.requestId,
+      });
+      return { status: 'failed', reason: 'godskills-needs-decision', unresolvedDecisions: binding.unresolvedDecisions };
+    }
+    await record('godskills.bound', { receipt: binding.receipt }, {
+      sourceClass: 'godskills-adapter', sourceRef: binding.receipt.packageDigest,
+    });
+    injectCrash('godskills-binding');
+    return inferAfterBinding(mission, observation, binding);
   }
 
   async function runCycle(mission) {
@@ -361,39 +475,7 @@ export async function createVessel({
       sourceClass: 'realm-observation',
       sourceRef: observation.observationId,
     });
-    if (typeof cortex.prepare === 'function') {
-      const inference = await collectNetworkedProposal(mission, observation);
-      if (inference.status === 'failed') {
-        await record('cycle.aborted', { reason: 'cortex-failed', reasonCode: inference.reasonCode }, {
-          sourceClass: 'cortex-failure',
-          sourceRef: inference.attemptId,
-        });
-        return { status: 'failed', inference };
-      }
-      return completeFromProposals(mission, [inference.proposal]);
-    }
-
-    const organ = {
-      id: cortex.adapterId,
-      propose: () => cortex.infer({
-        mission: mission.text,
-        missionId: mission.requestId,
-        observation,
-        stateEpoch: state.epoch,
-        now: clock(),
-      }),
-    };
-    const proposals = await collectProposals({
-      organs: [organ],
-      state: {
-        epoch: state.epoch,
-        missionId: mission.requestId,
-        now: clock(),
-        preconditions: ['realm-observed'],
-      },
-      context: { observationId: observation.observationId },
-    });
-    return completeFromProposals(mission, proposals);
+    return beginBoundInference(mission, observation);
   }
 
   async function recover() {
@@ -407,14 +489,23 @@ export async function createVessel({
     if (state.status === 'idle') return inspect();
 
     if (state.status === 'proposal-accepted' && state.acceptedProposal) {
-      await completeFromProposals(state.currentMission, [state.acceptedProposal]);
+      await completeFromProposals(state.currentMission, [state.acceptedProposal], { receipt: state.activeGodskillsBinding });
+      return inspect();
+    }
+
+    if (state.status === 'godskills-bound' && state.activeGodskillsBinding) {
+      const binding = await rehydrateGodskills(state.currentMission, state.lastObservation, state.activeGodskillsBinding);
+      await inferAfterBinding(state.currentMission, state.lastObservation, binding);
       return inspect();
     }
 
     if (state.status === 'inferring' && typeof cortex.prepare === 'function') {
+      const binding = await rehydrateGodskills(state.currentMission, state.lastObservation, state.activeGodskillsBinding);
       const inference = await collectNetworkedProposal(
         state.currentMission,
         state.lastObservation,
+        binding.cortexPackage,
+        binding.receipt.packageDigest,
         state.inferenceAttemptCount,
         state.lastInference,
       );
@@ -424,7 +515,7 @@ export async function createVessel({
           sourceRef: inference.attemptId,
         });
       } else {
-        await completeFromProposals(state.currentMission, [inference.proposal]);
+        await completeFromProposals(state.currentMission, [inference.proposal], binding);
       }
       return inspect();
     }

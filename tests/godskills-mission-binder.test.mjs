@@ -178,3 +178,17 @@ test('no-qualified route binds an empty package while needs-decision remains unr
     cortexPackage: null,
   });
 });
+
+test('rehydrates a durable selected receipt without invoking the router again', async () => {
+  const first = await adapterFor((value) => routed(value, ['eternities-forge']));
+  const bound = await first.adapter.bindMission(input());
+  let routeCalls = 0;
+  const second = await createGodskillsAdapter({
+    releasePin: releasePin(),
+    transport: async () => { routeCalls += 1; throw new Error('router must not run during rehydration'); },
+  });
+  const rehydrated = await second.rehydrateMission({ ...input(), receipt: bound.receipt });
+  assert.equal(routeCalls, 0);
+  assert.equal(rehydrated.receipt.packageDigest, bound.receipt.packageDigest);
+  assert.deepEqual(rehydrated.cortexPackage, bound.cortexPackage);
+});

@@ -90,6 +90,19 @@ function routeContext({ release, eligibility, authority, hostEnvelope }) {
   };
 }
 
+function sourceEnvelopeFor({ mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release }) {
+  return deepFreeze({
+    requestId: mission.requestId,
+    mission: mission.text,
+    observationDigest: sha256Value(observation),
+    sourceStateEpoch,
+    genomePolicyDigest: sha256Value(genomePolicy),
+    authorityCeilingDigest: sha256Value(authority),
+    realmHandContractDigest: hostEnvelope.realmHandContractDigest,
+    releaseDigest: release.releaseDigest,
+  });
+}
+
 async function loadPackages(release, selectedIds, entrypoints, eligibility, authority) {
   const eligible = new Set(eligibility.eligibleIds);
   const packages = [];
@@ -164,15 +177,8 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       const authority = compileAuthority(mission, hostEnvelope);
       const context = routeContext({ release, eligibility, authority, hostEnvelope });
       if (context.permittedEffects.length === 0) throw new Error('Godskills has no permitted semantic effect binding');
-      const sourceEnvelope = deepFreeze({
-        requestId: mission.requestId,
-        mission: mission.text,
-        observationDigest: sha256Value(observation),
-        sourceStateEpoch,
-        genomePolicyDigest: sha256Value(genomePolicy),
-        authorityCeilingDigest: sha256Value(authority),
-        realmHandContractDigest: hostEnvelope.realmHandContractDigest,
-        releaseDigest: release.releaseDigest,
+      const sourceEnvelope = sourceEnvelopeFor({
+        mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
       });
       const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
       const route = await routeGodskill({
@@ -213,6 +219,40 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
         status: route.status === 'selected' ? 'bound' : 'no-qualified-route',
         receipt,
         cortexPackage,
+      });
+    },
+    async rehydrateMission({ receipt, mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch }) {
+      assertSchema('godskills-cycle-receipt', receipt);
+      if (receipt.releaseDigest !== release.releaseDigest) throw new Error('Godskills recovery release digest mismatch');
+      if (receipt.requestId !== mission?.requestId) throw new Error('Godskills recovery request identity mismatch');
+      const eligibility = compileCapabilityEligibility(genomePolicy, release.manifest);
+      const authority = compileAuthority(mission, hostEnvelope);
+      const sourceEnvelope = sourceEnvelopeFor({
+        mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
+      });
+      const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
+      if (receipt.sourceEnvelopeDigest !== sourceEnvelopeDigest
+          || receipt.authorityCeilingDigest !== sourceEnvelope.authorityCeilingDigest) {
+        throw new Error('Godskills recovery source envelope mismatch');
+      }
+      const selectedIds = receipt.selected.map(({ id }) => id);
+      const entrypoints = selectedIds.map((id) => release.capabilitiesById.get(id)?.entrypoint.path);
+      const packages = await loadPackages(release, selectedIds, entrypoints, eligibility, authority);
+      for (let index = 0; index < packages.length; index += 1) {
+        if (packages[index].entrypointSha256 !== receipt.selected[index].entrypointSha256
+            || packages[index].contractSha256 !== receipt.selected[index].contractSha256) {
+          throw new Error('Godskills recovery selected artifact digest mismatch');
+        }
+      }
+      const compiled = compilePackage({ sourceEnvelopeDigest, release, authority, packages });
+      if (compiled.stackDigest !== receipt.stackDigest
+          || sha256Text(canonicalJson(compiled.cortexPackage)) !== receipt.packageDigest) {
+        throw new Error('Godskills recovery package digest mismatch');
+      }
+      return deepFreeze({
+        status: receipt.selectionStatus === 'selected' ? 'bound' : 'no-qualified-route',
+        receipt,
+        cortexPackage: compiled.cortexPackage,
       });
     },
   });
