@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "caseId": "05-creative",
+  "expectedCapability": "eternities-muse",
+  "releasePinOverride": {
+    "maximumPackageBytes": 65536
+  },
+  "bindingInput": {
+    "mission": {
+      "requestId": "crossed-suite-v1-creative",
+      "text": "Direct a consequential visual identity across several design layers. Define one visual language across interface, motion, and accessibility. Turn visual ambition into a testable art-direction system.",
+      "authority": [
+        "local-read",
+        "local-write"
+      ]
+    },
+    "observation": {
+      "product": "Godagent creation and mission surface inside Lunari",
+      "visualEvidence": [
+        "C:/dev/lunari/lunari-deep-landing.html",
+        "C:/dev/lunari/deep-app-desktop.png",
+        "C:/dev/lunari/deep-app-mobile.png",
+        "C:/dev/lunari/shot-luna-d.png",
+        "C:/dev/lunari/shot-luna-m.png",
+        "C:/dev/lunari/crtref-0_3.png",
+        "C:/dev/lunari/crtref-5_0.png"
+      ],
+      "architectureEvidence": "C:/dev/eternities-godagents/docs/architecture.md"
+    },
+    "genomePolicy": {
+      "protocolId": "eternities-godskills-adapter-v1",
+      "profile": "all-rounder",
+      "preferredFamilies": [],
+      "prohibitedFamilies": [],
+      "prohibitedCapabilities": [],
+      "maxComposition": 3
+    },
+    "hostEnvelope": {
+      "permittedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "constitutionAllowedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "availableAuthority": [
+        "local-read",
+        "local-write"
+      ],
+      "availablePreconditions": [],
+      "forbiddenCapabilities": [],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000,
+      "maxCompositionSize": 3,
+      "realmHandContractDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    "sourceStateEpoch": 0
+  },
+  "status": "bound",
+  "receipt": {
+    "schemaVersion": 1,
+    "protocolId": "eternities-godskills-adapter-v1",
+    "requestId": "crossed-suite-v1-creative",
+    "sourceEnvelopeDigest": "3ad8778cd70e628186cdc248fc50562dbba32336a9b01169f9cd65e486588eaf",
+    "releaseDigest": "864e75208c3ba59bbf03dded1a3d8f89110fce031debe0f40facc529ad61c151",
+    "routerReceiptDigest": "256932338d90be67b10bd92ced56989d7cfc6de1b9d9f030be53f06deb9c1c5c",
+    "selectionStatus": "selected",
+    "selected": [
+      {
+        "id": "eternities-muse",
+        "entrypointSha256": "e9af729ad561afb811971e4180512d4a46096f2ce245520b7db0f49c36dd79f8",
+        "contractSha256": "b8fb2a01a595b2b03133a9732e352e07f3d884ad5210684b19b98a72ee5f5134"
+      }
+    ],
+    "authorityCeilingDigest": "14a527f675c7d63cd4eec8aa987a0c6d8ef4c7cc7d4d246dd8a2631ade3d543f",
+    "stackDigest": "ab03c92c1946ccb4be156b7e28f03f953d8e9c078e1e2b5d902388d6132cbf82",
+    "packageDigest": "2f67288cb0869425ea4b2261e853bd528633a71e31e0be329201d90087d483ab"
+  },
+  "methodEnvelope": {
+    "protocolId": "eternities-godskills-adapter-v1",
+    "sourceEnvelopeDigest": "3ad8778cd70e628186cdc248fc50562dbba32336a9b01169f9cd65e486588eaf",
+    "releaseDigest": "864e75208c3ba59bbf03dded1a3d8f89110fce031debe0f40facc529ad61c151",
+    "stackDigest": "ab03c92c1946ccb4be156b7e28f03f953d8e9c078e1e2b5d902388d6132cbf82",
+    "selectedCapabilities": [
+      "eternities-muse"
+    ],
+    "methods": [
+      "3d-scene-budget",
+      "accessibility",
+      "asset-provenance",
+      "audience",
+      "baselines",
+      "bound geometry cameras lighting and render passes to device-aware budgets",
+      "bounded-repair",
+      "budgets",
+      "capture",
+      "carriers",
+      "causal-motion",
+      "chapters",
+      "components",
+      "confidence",
+      "contrast",
+      "derive one coherent visual law",
+      "determinism",
+      "device-coverage",
+      "diagnostics",
+      "emotional-arc",
+      "fixture-evidence",
+      "focus-visibility",
+      "frame-rate-independent-timing",
+      "handoff",
+      "hierarchy",
+      "identity",
+      "invariants",
+      "issue-ledger",
+      "keyboard-operability",
+      "layout",
+      "media-beats",
+      "model semantic motion states with frame-rate-independent timing",
+      "observation",
+      "performance-tier",
+      "proof-limits",
+      "reconstruction",
+      "reduced-motion",
+      "reflow-and-zoom",
+      "rejection",
+      "render-pass-verification",
+      "responsive",
+      "scroll-depth-choreography",
+      "select one dominant visual route",
+      "semantic-motion-state",
+      "semantic-structure",
+      "separate observation inference and proposal",
+      "shader-safety",
+      "signature-moment",
+      "state-coverage",
+      "status-messaging",
+      "temporal-coverage",
+      "tokens",
+      "translate intent into semantic contracts and budgets",
+      "unknowns",
+      "verify the mechanism across its operating envelope",
+      "visual-law"
+    ],
+    "evidenceRequirements": [
+      "contract-digest",
+      "promotion-receipt",
+      "receipt-bound-first-party",
+      "skill-06f3126fb15d16a1",
+      "skill-13f7f2706a7c06b4",
+      "skill-404e0c04f764f867",
+      "skill-4852a463a4c15d89"
+    ],
+    "proposalRequirements": [
+      "bounded specialist handoff",
+      "confidence-labeled visual evidence or art-direction contract",
+      "explicit unknowns, budgets, invariants, and rejection criteria",
+      "One dominant route produces a source-grounded visual contract whose identity, accessibility, performance, uncertainty, delegation, and rejection criteria are explicit enough for implementation or verification.",
+      "token, component, narrative, motion, media, or acceptance system"
+    ],
+    "riskObligations": [
+      "acceptance relies on one attractive frame",
+      "certify legal or universal accessibility conformance without named evidence",
+      "concrete renderer bug or ordinary graphics regression",
+      "direct final-image generation from an approved prompt",
+      "fixed-window narration or subtitle burning",
+      "generic frontend implementation after direction is already settled",
+      "motion or rendering cost has no narrative justification or fallback",
+      "observations and proposals are presented as the same evidence class",
+      "routine copy spacing or component edit",
+      "source capture is incomplete or unauthorized",
+      "the desired effect or audience remains materially ambiguous",
+      "the selected delegate lacks the required artifact or authority"
+    ],
+    "preconditionObligations": [
+      "audience, platform, accessibility, performance, and authority constraints",
+      "available visual, interface, narrative, motion, and media specialists",
+      "visual sources, product intent, brand material, or an implemented artifact"
+    ],
+    "terminationConditions": [
+      "acceptance can fail against stated rejection criteria",
+      "accessibility performance fallbacks and unknowns are explicit",
+      "observed extracted inferred and proposed claims remain distinguishable",
+      "one coherent visual law governs the system",
+      "one dominant route owns the current mission",
+      "the next specialist receives a bounded handoff"
+    ],
+    "authorityProjection": {
+      "availableAuthority": [
+        "local-read",
+        "local-write"
+      ],
+      "permittedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "availablePreconditions": [],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000
+    }
+  },
+  "selectedArtifact": {
+    "id": "eternities-muse",
+    "entrypoint": "C:/dev/eternities-godskills/skills/eternities-muse/SKILL.md",
+    "entrypointSha256": "e9af729ad561afb811971e4180512d4a46096f2ce245520b7db0f49c36dd79f8",
+    "contract": "C:/dev/eternities-godskills/skills/eternities-muse/references/capability-contract.json",
+    "contractSha256": "b8fb2a01a595b2b03133a9732e352e07f3d884ad5210684b19b98a72ee5f5134"
+  }
+}

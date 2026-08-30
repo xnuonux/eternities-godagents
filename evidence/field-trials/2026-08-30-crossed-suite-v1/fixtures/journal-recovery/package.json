@@ -1,0 +1,8 @@
+{
+  "name": "journal-recovery-trial",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "host-profile-trial",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

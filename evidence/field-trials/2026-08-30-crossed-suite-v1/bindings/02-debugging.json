@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "caseId": "02-debugging",
+  "expectedCapability": "eternities-phoenix",
+  "releasePinOverride": {
+    "maximumPackageBytes": 65536
+  },
+  "bindingInput": {
+    "mission": {
+      "requestId": "crossed-suite-v1-debugging",
+      "text": "Debug this reproducible failure from the available evidence. Find the smallest confirmed cause before changing behavior.",
+      "authority": [
+        "local-read"
+      ]
+    },
+    "observation": {
+      "fixture": "fixtures/journal-recovery",
+      "baseline": "four tests with three failures",
+      "assignment": "Diagnose the failure and provide a minimal applicable patch without editing the fixture."
+    },
+    "genomePolicy": {
+      "protocolId": "eternities-godskills-adapter-v1",
+      "profile": "all-rounder",
+      "preferredFamilies": [],
+      "prohibitedFamilies": [],
+      "prohibitedCapabilities": [],
+      "maxComposition": 3
+    },
+    "hostEnvelope": {
+      "permittedEffects": [
+        "local-read"
+      ],
+      "constitutionAllowedEffects": [
+        "local-read"
+      ],
+      "availableAuthority": [
+        "local-read"
+      ],
+      "availablePreconditions": [],
+      "forbiddenCapabilities": [],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000,
+      "maxCompositionSize": 3,
+      "realmHandContractDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "sourceStateEpoch": 0
+  },
+  "status": "bound",
+  "receipt": {
+    "schemaVersion": 1,
+    "protocolId": "eternities-godskills-adapter-v1",
+    "requestId": "crossed-suite-v1-debugging",
+    "sourceEnvelopeDigest": "83285334358dc51044ba0fa9ba3dac2f93b32da19f12097fcefd348fade0067a",
+    "releaseDigest": "864e75208c3ba59bbf03dded1a3d8f89110fce031debe0f40facc529ad61c151",
+    "routerReceiptDigest": "3674b1e7e3f3518d9824290b639cc8e9b7d3cbd987bf865ca6d9664478df04d6",
+    "selectionStatus": "selected",
+    "selected": [
+      {
+        "id": "eternities-phoenix",
+        "entrypointSha256": "8f7d4f0ace48604a9b556747404ac7efb3cd5f64dfabbc1c8add92c0b00a98f1",
+        "contractSha256": "bbcdfff7d94207067d38c96346a1deaf37a8f1bd665f8d5b1010ee6ff516727e"
+      }
+    ],
+    "authorityCeilingDigest": "9bd0bd5c7bbfbfd0d6295b4ebfa7e2df01017d70f7ec1ababfe2abb4f2722d17",
+    "stackDigest": "29e1a1c3aea6b2ea1e68146d328d2a700d48dc7065d204c02e6552cc8ceecc40",
+    "packageDigest": "d089750db70f3457fcbc5d633f0eb657f6d815106a25982d14c1ba6396153f48"
+  },
+  "methodEnvelope": {
+    "protocolId": "eternities-godskills-adapter-v1",
+    "sourceEnvelopeDigest": "83285334358dc51044ba0fa9ba3dac2f93b32da19f12097fcefd348fade0067a",
+    "releaseDigest": "864e75208c3ba59bbf03dded1a3d8f89110fce031debe0f40facc529ad61c151",
+    "stackDigest": "29e1a1c3aea6b2ea1e68146d328d2a700d48dc7065d204c02e6552cc8ceecc40",
+    "selectedCapabilities": [
+      "eternities-phoenix"
+    ],
+    "methods": [
+      "acceptance-checks",
+      "baseline",
+      "boundary-classification",
+      "containment-plan",
+      "establish scope and authority",
+      "evidence-packet",
+      "handoff",
+      "hypothesis-testing",
+      "impact-classification",
+      "logs",
+      "metrics",
+      "plan recovery with rollback",
+      "rank hypotheses and run reversible local checks",
+      "reproduce or document missing reproduction",
+      "reproduction",
+      "rollback-plan",
+      "route specialist boundaries and terminate",
+      "scope",
+      "timeline",
+      "traces",
+      "uncertainty",
+      "verification",
+      "workload-analysis"
+    ],
+    "evidenceRequirements": [
+      "cluster-review-v1",
+      "contract-digest",
+      "promotion-receipt",
+      "skill-0a8894248d762165",
+      "skill-133f5225af6504c2",
+      "skill-1ee9fedf1e9dbc44",
+      "skill-4154217d9a19415d",
+      "skill-4e367ac15eb8e30d",
+      "skill-6006574eb04347a3",
+      "skill-88e5556bb91d8fa2",
+      "skill-b1990e98aab2f845",
+      "skill-c07be47a3d2362f7",
+      "skill-cac368fed7372edd",
+      "skill-d6cda383b52cdd73",
+      "skill-ec6a7338ff8ed22f"
+    ],
+    "proposalRequirements": [
+      "diagnosis and hypothesis matrix",
+      "incident triage or recovery plan",
+      "observability or performance analysis",
+      "One narrow route produces an evidence-linked local artifact, refusal, or handoff with reproduction, rollback, authority, uncertainty, and termination explicit.",
+      "specialist handoff or fail-closed refusal"
+    ],
+    "riskObligations": [
+      "authority or identity gap",
+      "background monitoring or continued execution",
+      "credentials or secrets",
+      "destructive repair",
+      "external systems or network action",
+      "missing reproduction",
+      "missing rollback",
+      "missing, stale, conflicting, or non-reproducible evidence",
+      "production mutation",
+      "specialist, regulated, security, or provider boundary",
+      "unclear authority",
+      "unknown impact or baseline",
+      "unsafe or irreversible requested effect"
+    ],
+    "preconditionObligations": [
+      "authorized objective and scope",
+      "impact, baseline, acceptance condition, authority, and rollback constraints",
+      "supplied logs, traces, metrics, fixtures, reproduction, or incident timeline"
+    ],
+    "terminationConditions": [
+      "no production mutation, destructive repair, credential use, external action, or background loop remains implied",
+      "one route owns one bounded artifact, refusal, or handoff",
+      "reproduction, evidence, claims, uncertainty, authority, rollback, and acceptance remain visible"
+    ],
+    "authorityProjection": {
+      "availableAuthority": [
+        "local-read"
+      ],
+      "permittedEffects": [
+        "local-read"
+      ],
+      "availablePreconditions": [],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000
+    }
+  },
+  "selectedArtifact": {
+    "id": "eternities-phoenix",
+    "entrypoint": "C:/dev/eternities-godskills/skills/eternities-phoenix/SKILL.md",
+    "entrypointSha256": "8f7d4f0ace48604a9b556747404ac7efb3cd5f64dfabbc1c8add92c0b00a98f1",
+    "contract": "C:/dev/eternities-godskills/skills/eternities-phoenix/references/capability-contract.json",
+    "contractSha256": "bbcdfff7d94207067d38c96346a1deaf37a8f1bd665f8d5b1010ee6ff516727e"
+  }
+}

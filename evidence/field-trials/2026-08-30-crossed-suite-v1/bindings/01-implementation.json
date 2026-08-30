@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "caseId": "01-implementation",
+  "expectedCapability": "eternities-forge",
+  "releasePinOverride": {
+    "maximumPackageBytes": 65536
+  },
+  "bindingInput": {
+    "mission": {
+      "requestId": "crossed-suite-v1-implementation",
+      "text": "Deliver a consequential feature across several engineering phases. Carry an approved change through implementation, tests, review, and integration.",
+      "authority": [
+        "local-read",
+        "local-write",
+        "repository-write"
+      ]
+    },
+    "observation": {
+      "fixture": "fixtures/host-profile-seed",
+      "assignment": "Implement the sealed HostProfileV1 contract in an isolated disposable workspace and prove it with the unchanged tests."
+    },
+    "genomePolicy": {
+      "protocolId": "eternities-godskills-adapter-v1",
+      "profile": "all-rounder",
+      "preferredFamilies": [],
+      "prohibitedFamilies": [],
+      "prohibitedCapabilities": [],
+      "maxComposition": 3
+    },
+    "hostEnvelope": {
+      "permittedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "constitutionAllowedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "availableAuthority": [
+        "local-read",
+        "local-write",
+        "repository-write"
+      ],
+      "availablePreconditions": [
+        "repository-present",
+        "settled-outcome"
+      ],
+      "forbiddenCapabilities": [],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000,
+      "maxCompositionSize": 3,
+      "realmHandContractDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "sourceStateEpoch": 0
+  },
+  "status": "bound",
+  "receipt": {
+    "schemaVersion": 1,
+    "protocolId": "eternities-godskills-adapter-v1",
+    "requestId": "crossed-suite-v1-implementation",
+    "sourceEnvelopeDigest": "7b44923209746c6997d79b356576c5adc32e65a303b52a79913908d70ceac2ef",
+    "releaseDigest": "864e75208c3ba59bbf03dded1a3d8f89110fce031debe0f40facc529ad61c151",
+    "routerReceiptDigest": "5f49c3f5705ea7ce2b60918eca8afa356e2eed00c8286990d9b920b5941f0b44",
+    "selectionStatus": "selected",
+    "selected": [
+      {
+        "id": "eternities-forge",
+        "entrypointSha256": "0e5e5e876315bec35fde1c631cc6010b894b9af30cc59fdff8258f8ac580fcc7",
+        "contractSha256": "238584921303ad9b9e0946a5b5222c2b380a715ee38d716a3accfd07cc9d54d2"
+      }
+    ],
+    "authorityCeilingDigest": "3d8152a2f519167dfb86a8317d00b426a836cacc6212df426e28523dc5d90494",
+    "stackDigest": "4250a2bc9090a95c90fa841bf5ba724da7a953af6502ff5db7731edc75473b8f",
+    "packageDigest": "b21cbdcb9d333f0b9121d240651e76d4da214c484bdec5baffebc761a43c71de"
+  },
+  "methodEnvelope": {
+    "protocolId": "eternities-godskills-adapter-v1",
+    "sourceEnvelopeDigest": "7b44923209746c6997d79b356576c5adc32e65a303b52a79913908d70ceac2ef",
+    "releaseDigest": "864e75208c3ba59bbf03dded1a3d8f89110fce031debe0f40facc529ad61c151",
+    "stackDigest": "4250a2bc9090a95c90fa841bf5ba724da7a953af6502ff5db7731edc75473b8f",
+    "selectedCapabilities": [
+      "eternities-forge"
+    ],
+    "methods": [
+      "adversarial-probes",
+      "authority",
+      "baseline",
+      "bind",
+      "bind-closure",
+      "block unsupported completion claims",
+      "bound delegation and handoff",
+      "checkpoint-chain",
+      "classify engineering route",
+      "context-budget",
+      "convergence-ledger",
+      "defect-relocation",
+      "delegate-bounded",
+      "diagnosis",
+      "establish behavior baseline",
+      "evidence",
+      "execute-slices",
+      "freshness",
+      "handoff",
+      "implement bounded slices",
+      "implementation",
+      "integrate-or-defer",
+      "integration",
+      "isolation",
+      "next-action",
+      "plan",
+      "refactor",
+      "regression-proof",
+      "regression-test",
+      "repair",
+      "resolve ambiguity and conflicts",
+      "review",
+      "rollback",
+      "run bounded adversarial structural closure when explicitly requested",
+      "seal attested task continuity at real boundaries",
+      "select process skills",
+      "specification",
+      "structural-repair",
+      "task-scope",
+      "tests",
+      "verification",
+      "verify",
+      "verify claims and integration"
+    ],
+    "evidenceRequirements": [
+      "contract-digest",
+      "promotion-receipt",
+      "receipt-bound-first-party",
+      "skill-0106e66a5f004bb6",
+      "skill-4e367ac15eb8e30d",
+      "skill-b3177aeea9596bb7",
+      "skill-c5d998749ee6b275",
+      "skill-ef1830eb06a36c46"
+    ],
+    "proposalRequirements": [
+      "claim-to-evidence ledger",
+      "explicit integration state",
+      "Requested behavior is implemented, freshly verified against explicit acceptance evidence, reviewed proportional to risk, and left in an explicit integration state.",
+      "review disposition",
+      "verified implementation"
+    ],
+    "riskObligations": [
+      "acceptance behavior is unresolved",
+      "already verified branch awaiting only integration",
+      "architecture only",
+      "closure oracle is invalid or a declared resource budget is exhausted",
+      "integration target cannot be established safely",
+      "required authority is absent",
+      "root cause is unknown",
+      "routine one-file edit",
+      "unexplained bug requiring diagnosis",
+      "verification or review finds a critical regression"
+    ],
+    "preconditionObligations": [
+      "acceptance evidence and risk boundary",
+      "repository and working-tree state",
+      "settled outcome or approved design"
+    ],
+    "terminationConditions": [
+      "acceptance evidence covers every requested behavior",
+      "critical and important review findings are resolved",
+      "fresh relevant verification passes",
+      "integration and rollback state are explicit",
+      "remaining risks and authority gaps are named"
+    ],
+    "authorityProjection": {
+      "availableAuthority": [
+        "local-read",
+        "local-write",
+        "repository-write"
+      ],
+      "permittedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "availablePreconditions": [
+        "repository-present",
+        "settled-outcome"
+      ],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000
+    }
+  },
+  "selectedArtifact": {
+    "id": "eternities-forge",
+    "entrypoint": "C:/dev/eternities-godskills/skills/eternities-forge/SKILL.md",
+    "entrypointSha256": "0e5e5e876315bec35fde1c631cc6010b894b9af30cc59fdff8258f8ac580fcc7",
+    "contract": "C:/dev/eternities-godskills/skills/eternities-forge/references/capability-contract.json",
+    "contractSha256": "238584921303ad9b9e0946a5b5222c2b380a715ee38d716a3accfd07cc9d54d2"
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "01-implementation",
+      "expectedCapability": "eternities-forge",
+      "mission": {
+        "requestId": "crossed-suite-v1-implementation",
+        "text": "Deliver a consequential feature across several engineering phases. Carry an approved change through implementation, tests, review, and integration.",
+        "authority": ["local-read", "local-write", "repository-write"]
+      },
+      "observation": {
+        "fixture": "fixtures/host-profile-seed",
+        "assignment": "Implement the sealed HostProfileV1 contract in an isolated disposable workspace and prove it with the unchanged tests."
+      },
+      "hostEnvelope": {
+        "permittedEffects": ["local-read", "local-write"],
+        "constitutionAllowedEffects": ["local-read", "local-write"],
+        "availableAuthority": ["local-read", "local-write", "repository-write"],
+        "availablePreconditions": ["repository-present", "settled-outcome"],
+        "forbiddenCapabilities": [],
+        "maximumRisk": "moderate",
+        "minimumEvidenceConfidence": "verified",
+        "contextBudget": 16000,
+        "maxCompositionSize": 3,
+        "realmHandContractDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "02-debugging",
+      "expectedCapability": "eternities-phoenix",
+      "mission": {
+        "requestId": "crossed-suite-v1-debugging",
+        "text": "Debug this reproducible failure from the available evidence. Find the smallest confirmed cause before changing behavior.",
+        "authority": ["local-read"]
+      },
+      "observation": {
+        "fixture": "fixtures/journal-recovery",
+        "baseline": "four tests with three failures",
+        "assignment": "Diagnose the failure and provide a minimal applicable patch without editing the fixture."
+      },
+      "hostEnvelope": {
+        "permittedEffects": ["local-read"],
+        "constitutionAllowedEffects": ["local-read"],
+        "availableAuthority": ["local-read"],
+        "availablePreconditions": [],
+        "forbiddenCapabilities": [],
+        "maximumRisk": "moderate",
+        "minimumEvidenceConfidence": "verified",
+        "contextBudget": 16000,
+        "maxCompositionSize": 3,
+        "realmHandContractDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    },
+    {
+      "id": "03-research",
+      "expectedCapability": "eternities-oracle",
+      "mission": {
+        "requestId": "crossed-suite-v1-research",
+        "text": "Investigate a consequential question from exact local repository evidence. Find what the repositories and receipts actually prove.",
+        "authority": ["external-read", "local-read"]
+      },
+      "observation": {
+        "repositories": ["C:/dev/eternities-godagents", "C:/dev/eternities-godskills"],
+        "question": "How ready are the two systems for a live session-scoped Codex, Claude Code, or Lunari host integration, and what is the highest-value next validation?"
+      },
+      "hostEnvelope": {
+        "permittedEffects": ["external-read", "local-read"],
+        "constitutionAllowedEffects": ["external-read", "local-read"],
+        "availableAuthority": ["external-read", "local-read"],
+        "availablePreconditions": [],
+        "forbiddenCapabilities": [],
+        "maximumRisk": "moderate",
+        "minimumEvidenceConfidence": "verified",
+        "contextBudget": 16000,
+        "maxCompositionSize": 3,
+        "realmHandContractDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    },
+    {
+      "id": "04-continuity",
+      "expectedCapability": "eternities-mnemosyne",
+      "mission": {
+        "requestId": "crossed-suite-v1-continuity",
+        "text": "Recover reliable continuity across sessions. Rebuild the smallest trustworthy handoff from conflicting history.",
+        "authority": ["local-read", "local-write"]
+      },
+      "observation": {
+        "sources": ["repository heads", "plans", "architecture", "receipts", "field trials"],
+        "assignment": "Produce a source-ranked handoff under 1500 words without using conversation or memory files."
+      },
+      "hostEnvelope": {
+        "permittedEffects": ["local-read", "local-write"],
+        "constitutionAllowedEffects": ["local-read", "local-write"],
+        "availableAuthority": ["local-read", "local-write"],
+        "availablePreconditions": [],
+        "forbiddenCapabilities": [],
+        "maximumRisk": "moderate",
+        "minimumEvidenceConfidence": "verified",
+        "contextBudget": 16000,
+        "maxCompositionSize": 3,
+        "realmHandContractDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "id": "05-creative",
+      "expectedCapability": "eternities-muse",
+      "mission": {
+        "requestId": "crossed-suite-v1-creative",
+        "text": "Direct a consequential visual identity across several design layers. Define one visual language across interface, motion, and accessibility. Turn visual ambition into a testable art-direction system.",
+        "authority": ["local-read", "local-write"]
+      },
+      "observation": {
+        "product": "Godagent creation and mission surface inside Lunari",
+        "visualEvidence": [
+          "C:/dev/lunari/lunari-deep-landing.html",
+          "C:/dev/lunari/deep-app-desktop.png",
+          "C:/dev/lunari/deep-app-mobile.png",
+          "C:/dev/lunari/shot-luna-d.png",
+          "C:/dev/lunari/shot-luna-m.png",
+          "C:/dev/lunari/crtref-0_3.png",
+          "C:/dev/lunari/crtref-5_0.png"
+        ],
+        "architectureEvidence": "C:/dev/eternities-godagents/docs/architecture.md"
+      },
+      "hostEnvelope": {
+        "permittedEffects": ["local-read", "local-write"],
+        "constitutionAllowedEffects": ["local-read", "local-write"],
+        "availableAuthority": ["local-read", "local-write"],
+        "availablePreconditions": [],
+        "forbiddenCapabilities": [],
+        "maximumRisk": "moderate",
+        "minimumEvidenceConfidence": "verified",
+        "contextBudget": 16000,
+        "maxCompositionSize": 3,
+        "realmHandContractDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      }
+    }
+  ]
+}

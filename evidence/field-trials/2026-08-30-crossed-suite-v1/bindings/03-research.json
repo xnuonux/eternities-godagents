@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "caseId": "03-research",
+  "expectedCapability": "eternities-oracle",
+  "releasePinOverride": {
+    "maximumPackageBytes": 65536
+  },
+  "bindingInput": {
+    "mission": {
+      "requestId": "crossed-suite-v1-research",
+      "text": "Investigate a consequential question from exact local repository evidence. Find what the repositories and receipts actually prove.",
+      "authority": [
+        "external-read",
+        "local-read"
+      ]
+    },
+    "observation": {
+      "repositories": [
+        "C:/dev/eternities-godagents",
+        "C:/dev/eternities-godskills"
+      ],
+      "question": "How ready are the two systems for a live session-scoped Codex, Claude Code, or Lunari host integration, and what is the highest-value next validation?"
+    },
+    "genomePolicy": {
+      "protocolId": "eternities-godskills-adapter-v1",
+      "profile": "all-rounder",
+      "preferredFamilies": [],
+      "prohibitedFamilies": [],
+      "prohibitedCapabilities": [],
+      "maxComposition": 3
+    },
+    "hostEnvelope": {
+      "permittedEffects": [
+        "external-read",
+        "local-read"
+      ],
+      "constitutionAllowedEffects": [
+        "external-read",
+        "local-read"
+      ],
+      "availableAuthority": [
+        "external-read",
+        "local-read"
+      ],
+      "availablePreconditions": [],
+      "forbiddenCapabilities": [],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000,
+      "maxCompositionSize": 3,
+      "realmHandContractDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "sourceStateEpoch": 0
+  },
+  "status": "bound",
+  "receipt": {
+    "schemaVersion": 1,
+    "protocolId": "eternities-godskills-adapter-v1",
+    "requestId": "crossed-suite-v1-research",
+    "sourceEnvelopeDigest": "8dbb9ed2c01c9abe0658043268702c4b19f90d4ce5771ad9ac1a2a67adfff5d2",
+    "releaseDigest": "864e75208c3ba59bbf03dded1a3d8f89110fce031debe0f40facc529ad61c151",
+    "routerReceiptDigest": "70f3d33de1b4052607dc00ed4d70501d980bcee976c2b449e076143562dab73d",
+    "selectionStatus": "selected",
+    "selected": [
+      {
+        "id": "eternities-oracle",
+        "entrypointSha256": "3c9851711492a276eaaac2672207774ea8da793d630a51b21623e2564a624d6c",
+        "contractSha256": "6bcf48f84e7d7c6b8416474bc1f72b6b7e137bcb8837ea23b81638b55be9e935"
+      }
+    ],
+    "authorityCeilingDigest": "aea80e5521113b70c28eba74b1df92646a5e7e104729d3cfe38f86bc09775358",
+    "stackDigest": "c756fee58afe8dad25fa2e19647fd732b45496791e93d6ecde837c19a0e486d3",
+    "packageDigest": "25b42cc9248a20e574c837d0406bbaf84c9798e7a492f640d1baaebd0d17ae8f"
+  },
+  "methodEnvelope": {
+    "protocolId": "eternities-godskills-adapter-v1",
+    "sourceEnvelopeDigest": "8dbb9ed2c01c9abe0658043268702c4b19f90d4ce5771ad9ac1a2a67adfff5d2",
+    "releaseDigest": "864e75208c3ba59bbf03dded1a3d8f89110fce031debe0f40facc529ad61c151",
+    "stackDigest": "c756fee58afe8dad25fa2e19647fd732b45496791e93d6ecde837c19a0e486d3",
+    "selectedCapabilities": [
+      "eternities-oracle"
+    ],
+    "methods": [],
+    "evidenceRequirements": [
+      "contract-digest",
+      "promotion-receipt",
+      "receipt-bound-first-party"
+    ],
+    "proposalRequirements": [
+      "bounded next actions",
+      "reconciled conclusions",
+      "source-labeled findings",
+      "uncertainties and proof limits"
+    ],
+    "riskObligations": [],
+    "preconditionObligations": [
+      "a consequential research question",
+      "authorized local repository roots",
+      "optional current official sources"
+    ],
+    "terminationConditions": [],
+    "authorityProjection": {
+      "availableAuthority": [
+        "external-read",
+        "local-read"
+      ],
+      "permittedEffects": [
+        "external-read",
+        "local-read"
+      ],
+      "availablePreconditions": [],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000
+    }
+  },
+  "selectedArtifact": {
+    "id": "eternities-oracle",
+    "entrypoint": "C:/dev/eternities-godskills/skills/eternities-oracle/SKILL.md",
+    "entrypointSha256": "3c9851711492a276eaaac2672207774ea8da793d630a51b21623e2564a624d6c",
+    "contract": "C:/dev/eternities-godskills/skills/eternities-oracle/references/capability-contract.json",
+    "contractSha256": "6bcf48f84e7d7c6b8416474bc1f72b6b7e137bcb8837ea23b81638b55be9e935"
+  }
+}

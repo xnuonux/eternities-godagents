@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "caseId": "04-continuity",
+  "expectedCapability": "eternities-mnemosyne",
+  "releasePinOverride": {
+    "maximumPackageBytes": 65536
+  },
+  "bindingInput": {
+    "mission": {
+      "requestId": "crossed-suite-v1-continuity",
+      "text": "Recover reliable continuity across sessions. Rebuild the smallest trustworthy handoff from conflicting history.",
+      "authority": [
+        "local-read",
+        "local-write"
+      ]
+    },
+    "observation": {
+      "sources": [
+        "repository heads",
+        "plans",
+        "architecture",
+        "receipts",
+        "field trials"
+      ],
+      "assignment": "Produce a source-ranked handoff under 1500 words without using conversation or memory files."
+    },
+    "genomePolicy": {
+      "protocolId": "eternities-godskills-adapter-v1",
+      "profile": "all-rounder",
+      "preferredFamilies": [],
+      "prohibitedFamilies": [],
+      "prohibitedCapabilities": [],
+      "maxComposition": 3
+    },
+    "hostEnvelope": {
+      "permittedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "constitutionAllowedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "availableAuthority": [
+        "local-read",
+        "local-write"
+      ],
+      "availablePreconditions": [],
+      "forbiddenCapabilities": [],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000,
+      "maxCompositionSize": 3,
+      "realmHandContractDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    "sourceStateEpoch": 0
+  },
+  "status": "bound",
+  "receipt": {
+    "schemaVersion": 1,
+    "protocolId": "eternities-godskills-adapter-v1",
+    "requestId": "crossed-suite-v1-continuity",
+    "sourceEnvelopeDigest": "a58a26989fd081513e980bb922c1176b3f6333c0f55a8b10cd9251d4c7786d28",
+    "releaseDigest": "864e75208c3ba59bbf03dded1a3d8f89110fce031debe0f40facc529ad61c151",
+    "routerReceiptDigest": "464b5c630faf04b45ed8663b25b20e8ae6c2526e929a41d9e6e5f68ab54a4e15",
+    "selectionStatus": "selected",
+    "selected": [
+      {
+        "id": "eternities-mnemosyne",
+        "entrypointSha256": "69e1bae6e496f6bf5dac6492be32cf3b4d1504d8ce86a5c6f7da8a9a0fbe2078",
+        "contractSha256": "69bbed128a0955fae85849d100079a16b3efa13162e7e9c1ed0bab93e8bd522d"
+      }
+    ],
+    "authorityCeilingDigest": "14a527f675c7d63cd4eec8aa987a0c6d8ef4c7cc7d4d246dd8a2631ade3d543f",
+    "stackDigest": "2e7d544cc693123c145483dcb0b4da9ad2849391b804f212433087da154ff62d",
+    "packageDigest": "a4ba6bcbd805f80da3baa24796ee7175d71312a73b0c8ed43ba1782142a96f03"
+  },
+  "methodEnvelope": {
+    "protocolId": "eternities-godskills-adapter-v1",
+    "sourceEnvelopeDigest": "a58a26989fd081513e980bb922c1176b3f6333c0f55a8b10cd9251d4c7786d28",
+    "releaseDigest": "864e75208c3ba59bbf03dded1a3d8f89110fce031debe0f40facc529ad61c151",
+    "stackDigest": "2e7d544cc693123c145483dcb0b4da9ad2849391b804f212433087da154ff62d",
+    "selectedCapabilities": [
+      "eternities-mnemosyne"
+    ],
+    "methods": [
+      "attest task-scoped checkpoints",
+      "authority",
+      "bind identity and scope",
+      "checkpoint",
+      "compression",
+      "conflict",
+      "context-budget",
+      "coverage",
+      "evidence-pointer",
+      "failure-preservation",
+      "freshness",
+      "identity",
+      "invalidation",
+      "inventory",
+      "leakage",
+      "measure context and verify recovery",
+      "measurement",
+      "next-action",
+      "precision",
+      "privacy",
+      "provenance",
+      "recoverability",
+      "resolve freshness and conflicts",
+      "retention",
+      "retrieval",
+      "retrieve smallest sufficient evidence",
+      "revision-chain",
+      "scope",
+      "separate active durable evidence and archive layers",
+      "signature",
+      "storage",
+      "task-scope",
+      "tiering",
+      "validate parent-bound continuity chains",
+      "verification"
+    ],
+    "evidenceRequirements": [
+      "contract-digest",
+      "promotion-receipt",
+      "receipt-bound-first-party",
+      "skill-24af7808245a94e6",
+      "skill-76f8b29612e172ef",
+      "skill-894528a07f1094ec",
+      "skill-8b767405ee033077",
+      "skill-b45e69e1294102fe"
+    ],
+    "proposalRequirements": [
+      "continuity packet or context budget",
+      "explicit next action and unresolved state",
+      "memory contract or audit",
+      "source and freshness map",
+      "The selected route produces a scope-bound, freshness-aware, provenance-linked result that preserves unresolved conflict and terminates without replaying unnecessary history."
+    ],
+    "riskObligations": [
+      "compression would discard an unresolved failure or authority limit",
+      "exact installed boundary or debugging workflow",
+      "fresh self-contained task",
+      "memory writes exceed granted scope",
+      "retrieval coverage or freshness is unknown",
+      "routine turn or ordinary status check",
+      "simple factual recall",
+      "sources conflict without an authority rule",
+      "task identity cannot be established"
+    ],
+    "preconditionObligations": [
+      "available checkpoints, history, sources, or retrieval results",
+      "context budget and authority boundaries",
+      "task, session, or memory-system scope"
+    ],
+    "terminationConditions": [
+      "conflicts unknowns and authority limits remain visible",
+      "consequential claims retain provenance and freshness state",
+      "task or memory identity and scope are explicit",
+      "the next consumer can proceed without replaying the raw archive",
+      "the result fits the stated context budget"
+    ],
+    "authorityProjection": {
+      "availableAuthority": [
+        "local-read",
+        "local-write"
+      ],
+      "permittedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "availablePreconditions": [],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000
+    }
+  },
+  "selectedArtifact": {
+    "id": "eternities-mnemosyne",
+    "entrypoint": "C:/dev/eternities-godskills/skills/eternities-mnemosyne/SKILL.md",
+    "entrypointSha256": "69e1bae6e496f6bf5dac6492be32cf3b4d1504d8ce86a5c6f7da8a9a0fbe2078",
+    "contract": "C:/dev/eternities-godskills/skills/eternities-mnemosyne/references/capability-contract.json",
+    "contractSha256": "69bbed128a0955fae85849d100079a16b3efa13162e7e9c1ed0bab93e8bd522d"
+  }
+}
