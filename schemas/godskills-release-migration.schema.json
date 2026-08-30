@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "receiptId", "status", "protocolCompatibility", "fromReleaseDigest", "toReleaseDigest", "genomePolicyDigest", "identity", "manifestDelta", "selectedContractCompatibility", "verificationEvidence", "activationBoundary", "rollbackPin", "evolutionReasons", "receiptDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "receiptId": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["compatible-operational-migration", "governed-evolution-required"] },
+    "protocolCompatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "compatible"],
+      "properties": {
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 },
+        "compatible": { "type": "boolean" }
+      }
+    },
+    "fromReleaseDigest": { "$ref": "#/$defs/digest" },
+    "toReleaseDigest": { "$ref": "#/$defs/digest" },
+    "genomePolicyDigest": { "$ref": "#/$defs/digest" },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instanceId", "genomeDigest", "genesisId", "keelId", "constitutionDigest"],
+      "properties": {
+        "instanceId": { "type": "string", "minLength": 1 },
+        "genomeDigest": { "$ref": "#/$defs/digest" },
+        "genesisId": { "$ref": "#/$defs/digest" },
+        "keelId": { "type": "string", "minLength": 69, "maxLength": 69 },
+        "constitutionDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "manifestDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["addedCapabilityIds", "removedCapabilityIds", "changedContractIds", "changedEntrypointIds"],
+      "properties": {
+        "addedCapabilityIds": { "$ref": "#/$defs/strings" },
+        "removedCapabilityIds": { "$ref": "#/$defs/strings" },
+        "changedContractIds": { "$ref": "#/$defs/strings" },
+        "changedEntrypointIds": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "selectedContractCompatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredCapabilityIds", "allRequiredPresent", "changedRequiredContractIds"],
+      "properties": {
+        "requiredCapabilityIds": { "$ref": "#/$defs/strings" },
+        "allRequiredPresent": { "type": "boolean" },
+        "changedRequiredContractIds": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "verificationEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fromVerified", "toVerified", "fromCapabilityCount", "toCapabilityCount"],
+      "properties": {
+        "fromVerified": { "const": true },
+        "toVerified": { "const": true },
+        "fromCapabilityCount": { "type": "integer", "minimum": 0 },
+        "toCapabilityCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "activationBoundary": { "const": "next-admitted-mission" },
+    "rollbackPin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapterProtocol", "releaseDigest"],
+      "properties": {
+        "adapterProtocol": { "type": "string", "minLength": 1 },
+        "releaseDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "evolutionReasons": { "$ref": "#/$defs/strings" },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "strings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}
