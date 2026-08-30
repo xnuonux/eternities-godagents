@@ -19,6 +19,7 @@ const proposalFields = new Set([
   'expiresAt',
   'priority',
 ]);
+const boundProposalFields = new Set([...proposalFields, 'methodEnvelopeDigest']);
 
 function subsetOf(values, allowed) {
   return Array.isArray(values) && values.every((value) => allowed.includes(value));
@@ -42,6 +43,20 @@ function sanitizedUsage(envelope) {
 }
 
 function requestFor({ modelId, context, maxCompletionTokens }) {
+  const bound = context.methodEnvelope !== undefined;
+  const user = {
+    mission: context.mission,
+    missionId: context.missionId,
+    observation: context.observation,
+    sourceStateEpoch: context.stateEpoch,
+    now: context.now,
+    constraints: context.constraints,
+    requiredProposalFields: [...(bound ? boundProposalFields : proposalFields)],
+  };
+  if (bound) {
+    user.methodEnvelope = context.methodEnvelope;
+    user.methodEnvelopeDigest = context.methodEnvelopeDigest;
+  }
   return {
     model: modelId,
     n: 1,
@@ -55,15 +70,7 @@ function requestFor({ modelId, context, maxCompletionTokens }) {
       },
       {
         role: 'user',
-        content: canonicalJson({
-          mission: context.mission,
-          missionId: context.missionId,
-          observation: context.observation,
-          sourceStateEpoch: context.stateEpoch,
-          now: context.now,
-          constraints: context.constraints,
-          requiredProposalFields: [...proposalFields],
-        }),
+        content: canonicalJson(user),
       },
     ],
   };
@@ -95,8 +102,11 @@ function parseProviderProposal({ bodyText, modelId, context, attempt, adapterId,
   } catch {
     return { failure: 'invalid-response' };
   }
+  const bound = context.methodEnvelope !== undefined;
+  const allowedFields = bound ? boundProposalFields : proposalFields;
   if (!content || typeof content !== 'object' || Array.isArray(content)
-    || Object.keys(content).some((key) => !proposalFields.has(key))) {
+    || Object.keys(content).some((key) => !allowedFields.has(key))
+    || (bound && !Object.hasOwn(content, 'methodEnvelopeDigest'))) {
     return { failure: 'schema-rejected' };
   }
   try {
@@ -106,6 +116,9 @@ function parseProviderProposal({ bodyText, modelId, context, attempt, adapterId,
   }
 
   const constraints = context.constraints ?? {};
+  if (bound && content.methodEnvelopeDigest !== context.methodEnvelopeDigest) {
+    return { failure: 'semantic-rejected' };
+  }
   const expiresAt = Date.parse(content.expiresAt);
   const now = Date.parse(context.now);
   const handContract = constraints.handContracts?.[content.intent?.handId];
