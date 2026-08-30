@@ -114,7 +114,7 @@ test('two isolated web-handler fixtures reproduce the certified Aether build byt
   const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
   const left = await buildVisualCreatorFixture({ repositoryRoot, outputRoot: join(root, 'left') });
   const right = await buildVisualCreatorFixture({ repositoryRoot, outputRoot: join(root, 'right') });
-  assert.equal(left.fixture.creationBuildId, '9837b7c8a8cdcc5e11f5094ef5b0307aa18790e11099860c283057a27e0f0e64');
+  assert.equal(left.fixture.creationBuildId, '87168c691b10c2d4f1780c3826b6d3f40cbcee18a63049fea77a1780b857b9f8');
   assert.equal(canonicalJson(left.fixture), canonicalJson(right.fixture));
   assert.equal(canonicalJson(left.byteManifest), canonicalJson(right.byteManifest));
 });

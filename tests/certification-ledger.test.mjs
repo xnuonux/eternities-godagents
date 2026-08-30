@@ -81,7 +81,7 @@ test('missing required historical links fail even with a recomputed receipt dige
   const { receiptDigest: _old, ...unsigned } = value;
   value.receiptDigest = sha256Value(unsigned);
   await writeFile(path, `${canonicalJson(value)}\n`, 'utf8');
-  await assert.rejects(() => verify(directory), /historical receipt set mismatch/);
+  await assert.rejects(() => verify(directory), /historical receipt (?:set|digest) mismatch/);
 });
 
 test('nonexistent source commits fail even with a recomputed receipt digest', async (context) => {

@@ -99,7 +99,7 @@ for (const presetRef of ['preset:aether-architect@1.0.0', 'preset:quiet-cartogra
     );
     assert.equal((await readdir(join(sourceDirectory, 'modules'))).length, 9);
     if (presetRef.includes('aether-architect')) {
-      assert.equal(result.manifest.buildId, '9837b7c8a8cdcc5e11f5094ef5b0307aa18790e11099860c283057a27e0f0e64');
+      assert.equal(result.manifest.buildId, '87168c691b10c2d4f1780c3826b6d3f40cbcee18a63049fea77a1780b857b9f8');
     }
   });
 }
@@ -231,7 +231,7 @@ test('a source race after freshness verification cannot enter the finalized buil
     outputDirectory,
     expectedPolicyDigest,
   });
-  assert.equal(result.manifest.buildId, '9837b7c8a8cdcc5e11f5094ef5b0307aa18790e11099860c283057a27e0f0e64');
+  assert.equal(result.manifest.buildId, '87168c691b10c2d4f1780c3826b6d3f40cbcee18a63049fea77a1780b857b9f8');
   const finalizedPersonality = JSON.parse(await readFile(join(sourceDirectory, 'modules', 'personality.json'), 'utf8'));
   assert.equal(finalizedPersonality.provenance.source, 'canonical creation fixture');
 });

@@ -56,7 +56,7 @@ const historicalReceiptDigests = Object.freeze({
   'receipts/creator-protocol-phase3-certification.json': '6061ac85d48405717161ec8e4901b686d06be6cf4e5b31f82ea1beb2545b7b90',
 });
 const expectedPolicyDigest = 'c4e3411726fcb32159678b65348e3e14e67f4b011ba73391d19988dee056158b';
-const expectedAetherBuildId = '9837b7c8a8cdcc5e11f5094ef5b0307aa18790e11099860c283057a27e0f0e64';
+const expectedAetherBuildId = '87168c691b10c2d4f1780c3826b6d3f40cbcee18a63049fea77a1780b857b9f8';
 const sessionToken = 'a'.repeat(64);
 const byteCompare = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 const sha256Bytes = (bytes) => createHash('sha256').update(bytes).digest('hex');

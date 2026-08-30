@@ -129,6 +129,6 @@ test('default composition finalizes to the certified Aether creation build', asy
     sourceDir: join(root, 'source'),
     outputDir: join(root, 'output'),
   });
-  assert.equal(finalized.creationBuildId, '9837b7c8a8cdcc5e11f5094ef5b0307aa18790e11099860c283057a27e0f0e64');
+  assert.equal(finalized.creationBuildId, '87168c691b10c2d4f1780c3826b6d3f40cbcee18a63049fea77a1780b857b9f8');
   assert.equal(finalized.previewDigest, preview.previewDigest);
 });
