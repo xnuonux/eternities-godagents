@@ -1,10 +1,11 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { userInfo } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
+import { publishFileExclusive } from '../state/atomic-publication.mjs';
 import { acquireFileLock } from '../state/file-lock.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -66,15 +67,8 @@ export async function claimLocalInstanceResidency({ registryRoot, binding, admis
   const lock = await acquireFileLock({ lockPath: join(root, `${key}.lock`) });
   try {
     const expected = recordValue({ binding, admissionRoot });
-    let text;
-    try {
-      text = await readFile(recordPath, 'utf8');
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-      await writeFile(recordPath, jsonBytes(expected), { encoding: 'utf8', flag: 'wx' });
-      return Object.freeze(expected);
-    }
-    const actual = validateRecord(text);
+    await publishFileExclusive({ destinationPath: recordPath, content: jsonBytes(expected) });
+    const actual = validateRecord(await readFile(recordPath, 'utf8'));
     if (actual.instanceId !== expected.instanceId
         || actual.genesisId !== expected.genesisId
         || actual.keelId !== expected.keelId

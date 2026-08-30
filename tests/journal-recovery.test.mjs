@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { appendFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, appendFile, link, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -144,4 +144,28 @@ test('a modified snapshot fails before replay', async (t) => {
     }),
     (error) => error instanceof IntegrityError && /snapshot digest mismatch/.test(error.message),
   );
+});
+
+test('snapshot publication cannot follow a planted pending hard link', async (t) => {
+  const { root, journalPath, snapshotPath } = await workspace(t);
+  await appendEvent({ journalPath, event: baseEvent(1) });
+  const head = await readVerifiedJournal(journalPath);
+  const protectedPath = join(root, 'protected.txt');
+  await writeFile(protectedPath, 'protected-content', 'utf8');
+  await link(protectedPath, `${snapshotPath}.writing`);
+
+  await writeSnapshot({
+    snapshotPath,
+    projection: { instanceId: 'instance-1', counter: 1 },
+    journalHead: head,
+  });
+
+  assert.equal(await readFile(protectedPath, 'utf8'), 'protected-content');
+  await assert.rejects(() => access(`${snapshotPath}.writing`), { code: 'ENOENT' });
+  assert.equal((await restoreState({
+    journalPath,
+    snapshotPath,
+    reduce: reduceCounter,
+    initialState: { instanceId: 'instance-1', counter: 0 },
+  })).state.counter, 1);
 });

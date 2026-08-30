@@ -1,10 +1,11 @@
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { IntegrityError, AuthorityError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
+import { publishFileExclusive, replaceFileAtomically } from '../state/atomic-publication.mjs';
 import { acquireFileLock } from '../state/file-lock.mjs';
 
 const jsonBytes = (value) => `${canonicalJson(value)}\n`;
@@ -45,10 +46,7 @@ async function readState(statePath) {
 }
 
 async function atomicState(statePath, value) {
-  const temporary = `${statePath}.writing`;
-  await rm(temporary, { force: true });
-  await writeFile(temporary, jsonBytes(value), { encoding: 'utf8', flag: 'wx' });
-  await rename(temporary, statePath);
+  await replaceFileAtomically({ destinationPath: statePath, content: jsonBytes(value) });
 }
 
 export async function createPersistentLocalRealm({ contract, statePath }) {
@@ -57,13 +55,14 @@ export async function createPersistentLocalRealm({ contract, statePath }) {
     throw new TypeError('local Realm state path is invalid');
   }
   await mkdir(dirname(statePath), { recursive: true });
-  try {
-    await writeFile(statePath, jsonBytes(stateValue()), { encoding: 'utf8', flag: 'wx' });
-  } catch (error) {
-    if (error.code !== 'EEXIST') throw error;
-  }
-  await readState(statePath);
   const lockPath = `${statePath}.lock`;
+  const initializationLock = await acquireFileLock({ lockPath });
+  try {
+    await publishFileExclusive({ destinationPath: statePath, content: jsonBytes(stateValue()) });
+    await readState(statePath);
+  } finally {
+    await initializationLock.release();
+  }
 
   async function withLock(work) {
     const lock = await acquireFileLock({ lockPath });

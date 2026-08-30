@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
@@ -134,6 +134,23 @@ test('quarantined namespace refuses future writes', async (context) => {
     () => backend.appendGenesis({ keelId: first.keelId, genesisId: first.genesisId, rows: genesisRows }),
     /quarantined/,
   );
+});
+
+test('keel state transition recovers an abandoned pending publication', async (context) => {
+  const { root, backend } = await fixture(context);
+  const first = preparation('agent-pending-state');
+  await backend.prepareNamespace(first);
+  const pendingPath = join(root, first.keelId, 'state.json.writing');
+  await writeFile(pendingPath, '{"schemaVersion":1', 'utf8');
+
+  await backend.quarantineNamespace({
+    keelId: first.keelId,
+    genesisId: first.genesisId,
+    reasonDigest: digest('c'),
+  });
+
+  await assert.rejects(() => access(pendingPath), { code: 'ENOENT' });
+  assert.equal((await backend.inspectNamespace({ keelId: first.keelId })).status, 'quarantined');
 });
 
 test('exclusive lock conflict is loud and does not mutate the chain', async (context) => {

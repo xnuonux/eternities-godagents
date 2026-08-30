@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
@@ -35,4 +35,26 @@ test('changed or noncanonical local Realm state fails closed', async (context) =
     await import('node:fs/promises').then(({ writeFile }) => writeFile(statePath, text.replace('"counter":0', '"counter":9'), 'utf8'));
     await createPersistentLocalRealm({ contract, statePath });
   }, /Realm state/);
+});
+
+test('Realm initialization recovers an abandoned pending publication without replacing committed state', async (context) => {
+  const root = await mkdtemp(join(tmpdir(), 'godagent-realm-publication-'));
+  context.after(() => rm(root, { recursive: true, force: true }));
+  const statePath = join(root, 'realm-state.json');
+  const pendingPath = `${statePath}.writing`;
+  await writeFile(pendingPath, '{"schemaVersion":1', 'utf8');
+
+  const first = await createPersistentLocalRealm({ contract, statePath });
+  await assert.rejects(() => access(pendingPath), { code: 'ENOENT' });
+  await first.invoke({
+    handId: 'counter.increment',
+    payload: { amount: 3 },
+    idempotencyKey: 'publication-recovery:decision-1',
+  });
+  await writeFile(pendingPath, '', 'utf8');
+
+  const second = await createPersistentLocalRealm({ contract, statePath });
+  await assert.rejects(() => access(pendingPath), { code: 'ENOENT' });
+  assert.equal((await second.observe()).counter, 3);
+  assert.equal((await second.inspect()).idempotencyCount, 1);
 });

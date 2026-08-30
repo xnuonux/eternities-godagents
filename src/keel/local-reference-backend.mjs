@@ -1,10 +1,11 @@
-import { mkdir, open, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
+import { replaceFileAtomically } from '../state/atomic-publication.mjs';
 import { acquireFileLock } from '../state/file-lock.mjs';
 
 const zeroDigest = '0'.repeat(64);
@@ -59,9 +60,7 @@ async function readCanonicalJson(path, label, absent = null) {
 }
 
 async function atomicJson(path, value) {
-  const temporary = `${path}.writing`;
-  await writeFile(temporary, jsonBytes(value), { encoding: 'utf8', flag: 'wx' });
-  await rename(temporary, path);
+  await replaceFileAtomically({ destinationPath: path, content: jsonBytes(value) });
 }
 
 function stateValue({ status, genesisId, reasonDigest = null }) {

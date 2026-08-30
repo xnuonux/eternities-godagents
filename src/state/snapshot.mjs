@@ -1,9 +1,10 @@
-import { mkdir, rename, writeFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
+import { replaceFileAtomically } from './atomic-publication.mjs';
 
 export async function writeSnapshot({ snapshotPath, projection, journalHead }) {
   if (!journalHead.instanceId || journalHead.lastSequence < 1) {
@@ -22,8 +23,9 @@ export async function writeSnapshot({ snapshotPath, projection, journalHead }) {
   };
   const snapshot = { ...unsigned, snapshotDigest: sha256Value(unsigned) };
   await mkdir(dirname(snapshotPath), { recursive: true });
-  const temporaryPath = `${snapshotPath}.writing`;
-  await writeFile(temporaryPath, `${canonicalJson(snapshot)}\n`, 'utf8');
-  await rename(temporaryPath, snapshotPath);
+  await replaceFileAtomically({
+    destinationPath: snapshotPath,
+    content: `${canonicalJson(snapshot)}\n`,
+  });
   return snapshot;
 }
