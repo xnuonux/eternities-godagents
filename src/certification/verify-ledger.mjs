@@ -11,6 +11,7 @@ const registry = Object.freeze({
   'creation-forge-phase1-certification.json': 'creation-forge-phase1',
   'creator-protocol-phase3-certification.json': 'creator-protocol-phase3',
   'godagent-v0-certification.json': 'godagent-v0',
+  'godskills-v3-integration.json': 'godskills-v3-mission-binding',
   'local-admission-shell-certification.json': 'local-admission-shell-v1',
   'networked-cortex-certification.json': 'networked-cortex-v1',
   'transactional-genesis-phase2-certification.json': 'transactional-genesis-phase2',
@@ -29,6 +30,15 @@ const requiredHistoricalLinks = Object.freeze({
     'receipts/transactional-genesis-phase2-certification.json',
   ]),
   'godagent-v0-certification.json': Object.freeze([]),
+  'godskills-v3-integration.json': Object.freeze([
+    'receipts/creation-forge-phase1-certification.json',
+    'receipts/creator-protocol-phase3-certification.json',
+    'receipts/godagent-v0-certification.json',
+    'receipts/local-admission-shell-certification.json',
+    'receipts/networked-cortex-certification.json',
+    'receipts/transactional-genesis-phase2-certification.json',
+    'receipts/visual-creator-shell-certification.json',
+  ]),
   'local-admission-shell-certification.json': Object.freeze([
     'receipts/creation-forge-phase1-certification.json',
     'receipts/creator-protocol-phase3-certification.json',

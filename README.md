@@ -28,6 +28,7 @@ npm run build:creation-fixture
 npm run build:creator-fixture
 npm run build:genesis-fixture
 npm run build:networked-fixture
+npm run build:godskills-v3-integration
 npm run demo
 npm run creator:local -- <command> <options>
 npm run admit:local -- <options>
@@ -46,6 +47,10 @@ npm run certify:local-admission
 `npm run certify` requires a clean worktree. It reruns the complete suite, rebuilds the fixture distribution twice in a verified temporary directory, compares exact artifacts, and writes `receipts/godagent-v0-certification.json`.
 
 `npm run certify:networked-cortex` preserves the historical v0 receipt, runs the complete suite under a fail-closed Node-process-tree network guard, verifies credential-canary containment, and writes a separate `receipts/networked-cortex-certification.json`. It does not claim OS-level isolation for arbitrary non-Node child processes.
+
+## Godskills System v3 mission binding
+
+The [mission-binding design](docs/superpowers/specs/2026-08-30-godskills-v3-mission-binding-design.md) defines the provider-neutral boundary that verifies one exact Godskills System v3 release, routes after mission and host authority are known, and binds at most three selected first-party capability packages before cortex inference. The runtime stores a body-free cycle receipt, rehydrates the same package without rerouting after interruption, and treats release upgrades as operational dependency migrations only when the capability envelope does not expand. The deterministic [integration receipt](receipts/godskills-v3-integration.json) certifies `GSV3-001` through `GSV3-014` and records its explicit proof limits.
 
 ## Modular creation forge
 

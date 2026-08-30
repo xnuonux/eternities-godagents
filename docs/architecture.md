@@ -2,6 +2,8 @@
 
 The implementation authority is [ADR-0002](C:/dev/eternities-canon/.worktrees/godagents-inspiration-covenant/architecture/ADR-0002-godagent-v0-runtime-and-foundry.md). The certified v0 local single-agent proof remains intact. The post-v0 networked-cortex boundary is specified in [the networked cortex and local host design](superpowers/specs/2026-08-29-networked-cortex-host-design.md).
 
+The [Godskills System v3 mission-binding design](superpowers/specs/2026-08-30-godskills-v3-mission-binding-design.md) adds a separate operational capability boundary. A host-pinned release is verified before mission use, capability policy remains genome-owned, and each mission receives only its receipt-bound selected stack before cortex inference. Godskills can shape method, evidence, proposal requirements, risk obligations, preconditions, and termination conditions, but cannot grant authority or alter identity, constitution, Realm hands, evolution, credentials, budgets, or personal-keel ownership. Compatible release changes use body-free migration receipts; capability-envelope expansion requires governed evolution. The exact integrated proof is the [Godskills v3 receipt](../receipts/godskills-v3-integration.json).
+
 The model proposes. The constitutional arbiter commits. The Realm Contract governs effects. The journal preserves causal continuity. The Soul port remains dormant.
 
 ## Implemented components
