@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "high",
+  "setupCommit": "4908cea0848b8887c5f4a8f7e554d85fb5eb4101",
+  "subjects": {
+    "implementation": {
+      "godagent": "01a05205-1025-7d22-9d1c-768f18721104",
+      "control": "01a05205-10fb-7893-9c1d-65cb93859159"
+    },
+    "debugging": {
+      "godagent": "01a05205-11b4-7f01-ae9b-f1a426006e82",
+      "control": "01a05205-1261-7953-b159-2de456136501"
+    },
+    "research": {
+      "godagent": "01a05208-650d-7010-9560-be0c59260f11",
+      "control": "01a05208-6567-7af3-a17a-995e3d26bc2c"
+    },
+    "continuity": {
+      "godagent": "01a05208-65c8-71f0-9abb-aa6f28dc34da",
+      "control": "01a05208-6623-7d03-972d-b609a0d237cd"
+    },
+    "creative": {
+      "godagent": "01a0520c-7441-7363-b490-7dc30af8b38e",
+      "control": "01a0520c-749c-78a1-acf4-95c0b1dbb043"
+    }
+  },
+  "artifacts": [
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\01-implementation\\control-host-profile.mjs",
+      "bytes": 3315,
+      "words": 0,
+      "sha256": "a5bcf91b81e2a1f97a234702ceba8739d8dd9c823fac2bedebf995cddf398f6b"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\01-implementation\\control.md",
+      "bytes": 3153,
+      "words": 0,
+      "sha256": "cc90620fa736ba678bf24642470e5754941a9673709bc8846ab40f47cd051914"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\01-implementation\\godagent-host-profile.mjs",
+      "bytes": 3063,
+      "words": 0,
+      "sha256": "d97752177a3ad975ac3571d1fb33bb6ffb06df6b3a3fecbf5cef3e03f72568c6"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\01-implementation\\godagent.md",
+      "bytes": 5394,
+      "words": 0,
+      "sha256": "c60820ab701492cdcbe3cfdd5adeeba35e6c40a35dc43a8ad88dbc7e73ece2bc"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\02-debugging\\control.md",
+      "bytes": 3482,
+      "words": 0,
+      "sha256": "633ffea72e16bb3577bb03ffed600a46e0232dd655c0eaf09ec08acb31d11855"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\02-debugging\\control.patch",
+      "bytes": 1668,
+      "words": 0,
+      "sha256": "d820208b72d59c17eb2fab25e9df8ce9b62d3919ed7ed73fb6b55467687343af"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\02-debugging\\godagent.md",
+      "bytes": 6181,
+      "words": 0,
+      "sha256": "b15b9997b828bdd167ff05e4a9ea413e2ee017582c4e1ef64366a838f0d9e62a"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\02-debugging\\godagent.patch",
+      "bytes": 1604,
+      "words": 0,
+      "sha256": "54324a90c6656f3aa4a9f28a882aabd6e55954167de11747503611221cf5d174"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\03-research\\control.md",
+      "bytes": 9855,
+      "words": 0,
+      "sha256": "e5102c0e91961538ef65c18b3f22797bd5bb9e8d15c42a7dd06700d90c5171a1"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\03-research\\godagent.md",
+      "bytes": 12402,
+      "words": 0,
+      "sha256": "e774bdf7d4800662b8c805121f55577a70eebf2b9c43cf4e39cc085296d39c25"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\04-continuity\\control.md",
+      "bytes": 6699,
+      "words": 0,
+      "sha256": "34579bb45eee1cf49e10b062ca417f338cdfab58aa9aa835aea38cf100af766c"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\04-continuity\\godagent.md",
+      "bytes": 8840,
+      "words": 0,
+      "sha256": "12905e8ad20faac2c9f84fac338f7b81be3272f74210671d54d7b9fb8d548828"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\05-creative\\control.md",
+      "bytes": 17185,
+      "words": 0,
+      "sha256": "0066d2d9ba3fc35814cba5e7bd11910349db24d775db5a03a82106fc8233371a"
+    },
+    {
+      "path": "C:\\dev\\eternities-godagents\\evidence\\field-trials\\2026-08-30-crossed-suite-v1\\results\\05-creative\\godagent.md",
+      "bytes": 22110,
+      "words": 0,
+      "sha256": "cfb7af7c05e7a211544655ea3b4445e9d280e3bcfb485924f1487c0a2ca607d6"
+    }
+  ]
+}

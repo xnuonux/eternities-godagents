@@ -122,15 +122,28 @@ export function buildGodskillsV3IntegrationReceipt(input) {
   return Object.freeze({ ...unsigned, receiptDigest: sha256Value(unsigned) });
 }
 
-async function digestManifest(root, paths) {
+async function readFileAtCommit(root, sourceCommit, path) {
+  const { stdout } = await execFileAsync('git', ['-C', root, 'show', `${sourceCommit}:${path}`], {
+    encoding: 'utf8',
+    maxBuffer: 16 * 1024 * 1024,
+    windowsHide: true,
+  });
+  return stdout;
+}
+
+async function digestManifestAtCommit(root, sourceCommit, paths) {
   const rows = [];
-  for (const path of paths) rows.push({ path, sha256: sha256Text(await readFile(join(root, path))) });
+  for (const path of paths) {
+    rows.push({ path, sha256: sha256Text(await readFileAtCommit(root, sourceCommit, path)) });
+  }
   return sha256Value(rows);
 }
 
-async function historicalReceiptDigests(root) {
+async function historicalReceiptDigestsAtCommit(root, sourceCommit) {
   const entries = [];
-  for (const path of historicalReceiptPaths) entries.push([path, sha256Text(await readFile(join(root, path)))]);
+  for (const path of historicalReceiptPaths) {
+    entries.push([path, sha256Text(await readFileAtCommit(root, sourceCommit, path))]);
+  }
   return Object.fromEntries(entries);
 }
 
@@ -144,9 +157,9 @@ export async function rebuildGodskillsV3IntegrationReceipt({
   if (!/^[a-f0-9]{40}$/.test(sourceCommit ?? '')) throw new TypeError('source commit is invalid');
   await execFileAsync('git', ['-C', root, 'cat-file', '-e', `${sourceCommit}^{commit}`], { windowsHide: true });
   const [spec, plan, policyText] = await Promise.all([
-    readFile(join(root, 'docs/superpowers/specs/2026-08-30-godskills-v3-mission-binding-design.md'), 'utf8'),
-    readFile(join(root, 'docs/superpowers/plans/2026-08-30-godskills-v3-mission-binding.md'), 'utf8'),
-    readFile(join(root, 'fixtures/host-policy.json'), 'utf8'),
+    readFileAtCommit(root, sourceCommit, 'docs/superpowers/specs/2026-08-30-godskills-v3-mission-binding-design.md'),
+    readFileAtCommit(root, sourceCommit, 'docs/superpowers/plans/2026-08-30-godskills-v3-mission-binding.md'),
+    readFileAtCommit(root, sourceCommit, 'fixtures/host-policy.json'),
   ]);
   const hostPolicy = JSON.parse(policyText);
   const releasePin = { ...hostPolicy.runtime.godskillsRelease, repositoryRoot: resolve(godskillsRoot) };
@@ -180,9 +193,9 @@ export async function rebuildGodskillsV3IntegrationReceipt({
       commit: sourceCommit,
       specificationDigest: sha256Text(spec),
       planDigest: sha256Text(plan),
-      implementationManifestDigest: await digestManifest(root, implementationFiles),
-      testManifestDigest: await digestManifest(root, testFiles),
-      historicalReceiptDigests: await historicalReceiptDigests(root),
+      implementationManifestDigest: await digestManifestAtCommit(root, sourceCommit, implementationFiles),
+      testManifestDigest: await digestManifestAtCommit(root, sourceCommit, testFiles),
+      historicalReceiptDigests: await historicalReceiptDigestsAtCommit(root, sourceCommit),
     },
     release,
     testRuns,

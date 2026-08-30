@@ -1,0 +1,44 @@
+# Continuity packet: Godagents and Godskills
+
+**Scope and freshness.** This packet reconstructs `C:\dev\eternities-godagents` and `C:\dev\eternities-godskills` as observed on 2026-08-30 from their working trees, Git heads, committed plans/architecture, receipts, and the two local field-trial directories. It is a read-only handoff, not a grant of authority or an instruction to execute recovered work. Output budget: 1,500 words; this packet is approximately 1,080 words.
+
+**Method binding verified.** The selected `eternities-mnemosyne` entrypoint hashes to `69e1bae6e496f6bf5dac6492be32cf3b4d1504d8ce86a5c6f7da8a9a0fbe2078` and its capability contract hashes to `69bbed128a0955fae85849d100079a16b3efa13162e7e9c1ed0bab93e8bd522d`, matching the round binding. The route used is continuity recovery. The method supplies provenance and compression discipline only; current repository evidence and the user/host authority remain sovereign.
+
+## Source rank and evidence map
+
+1. **Verified current artifacts and Git heads.** Godagents is at `4908cea0848b8887c5f4a8f7e554d85fb5eb4101` (`2026-08-30T04:33:56-05:00`, “freeze crossed godagent terra suite”). Godskills is at `fdd2426a8dd39986ffde8c589597b3e00ccdf320` (`2026-08-30T02:49:25-05:00`, “close starred skill wave three”). Godskills has no reported working-tree changes. Godagents has untracked trial-workspace material and the crossed-suite `results` tree; those outputs are not product implementation.
+2. **Certified receipts, checked against current files.** The Godskills attested-continuity receipt is certified and records the exact continuity module, test, Mnemosyne entrypoint, and contract hashes. Current hashes still match all four artifacts. [attested-task-continuity.json](C:/dev/eternities-godskills/receipts/promotions/attested-task-continuity.json:1) The Godagents Godskills-v3 receipt is certified, reports 52 focused Godagents tests, 324 full Godagents tests, and 9 Godskills source tests, while explicitly excluding multi-host distributed activation and live-model quality. [godskills-v3-integration.json](C:/dev/eternities-godagents/receipts/godskills-v3-integration.json:1)
+3. **Architecture and committed plans.** These explain design intent and verified boundaries, but do not override present source or receipts. The older Terra field-trial result is historical design evidence, not an accepted implementation decision.
+4. **Field-trial material.** The previous Terra trial was scored narrowly for the Godagent method, 44 to 43, but its evaluation itself says one run is not causal proof and gates host work on local evidence. [evaluation.md](C:/dev/eternities-godagents/evidence/field-trials/2026-08-30-terra-architect-v1/evaluation.md:3) The current crossed suite is a committed, five-round fixture intended to test bounded differences, not universal model superiority or production safety. [design.md](C:/dev/eternities-godagents/evidence/field-trials/2026-08-30-crossed-suite-v1/design.md:3)
+
+## Durable, verified state
+
+### Godskills
+
+- **Verified:** Attested task continuity is implemented as a portable, first-party primitive. It uses one append-only chain per task, parent-bound monotonic revisions, host-configured Ed25519 trust roots, authority narrowing, evidence pointers rather than fetched bodies, and recovery of only the newest verified packet. [continuity-packets.mjs](C:/dev/eternities-godskills/src/continuity-packets.mjs:126) [continuity-packets.mjs](C:/dev/eternities-godskills/src/continuity-packets.mjs:277)
+- **Verified:** The original plan’s required proof surfaces were implemented and certified: signing, append continuity, task isolation, freshness/budget refusal, and context economy. [2026-08-28-attested-task-continuity.md](C:/dev/eternities-godskills/docs/superpowers/plans/2026-08-28-attested-task-continuity.md:1) [attested-task-continuity.json](C:/dev/eternities-godskills/receipts/promotions/attested-task-continuity.json:1)
+- **Durable boundary:** This subsystem does not install hooks, prompt reinjection, slash-command dependence, host activation, or automatic execution. [2026-08-28-attested-task-continuity-design.md](C:/dev/eternities-godskills/docs/superpowers/specs/2026-08-28-attested-task-continuity-design.md:13)
+- **Unknown / proof limit:** Host key custody, arbitrary-agent recovery, host activation, production operation, and measured production context savings remain unproven. The receipt’s context comparison is synthetic. [attested-task-continuity.json](C:/dev/eternities-godskills/receipts/promotions/attested-task-continuity.json:1)
+
+### Godagents
+
+- **Verified:** The current system treats the model as proposal-only. Constitutional arbitration and the Realm contract govern effects; the journal supplies causal continuity. [architecture.md](C:/dev/eternities-godagents/docs/architecture.md:7) [architecture.md](C:/dev/eternities-godagents/docs/architecture.md:124)
+- **Verified:** Godskills is an operational capability boundary: a host-pinned release is verified before mission use; selected stacks may shape method and requirements but cannot grant authority, identity, credentials, budgets, or personal-keel ownership. [architecture.md](C:/dev/eternities-godagents/docs/architecture.md:5)
+- **Verified:** The certified v3 integration asserts ordered binding before cortex, zero authority expansions and unselected body loads, exact package reuse in recovery, and preserved unbound operation. Its cited source commit `090351…` is an ancestor of the current Godagents head. [godskills-v3-integration.json](C:/dev/eternities-godagents/receipts/godskills-v3-integration.json:1)
+- **Verified limitation:** The current admitted-launch boundary is a one-mission-per-process local host path with an OpenAI-compatible cortex extension. The architecture explicitly does **not** certify Lunari integration, hosted durability, live-provider quality, or cross-machine residency. [architecture.md](C:/dev/eternities-godagents/docs/architecture.md:84) [architecture.md](C:/dev/eternities-godagents/docs/architecture.md:108)
+
+## Current task state and conflict handling
+
+**Verified current task state:** Godagents’ newest commit adds and freezes the crossed-suite fixture, including five receipt-bound missions. Round 04 requests a source-ranked continuity handoff and assigns `eternities-mnemosyne`. [04-continuity.md](C:/dev/eternities-godagents/evidence/field-trials/2026-08-30-crossed-suite-v1/missions/04-continuity.md:1) [04-continuity.json](C:/dev/eternities-godagents/evidence/field-trials/2026-08-30-crossed-suite-v1/bindings/04-continuity.json:1) This is evaluation infrastructure, not a new runtime capability.
+
+**Stale / not promoted:** The previous Terra architecture result proposed a session-scoped native-host bridge with `HostProfile`, a `HostCortexAdapter`, and native Codex, Claude Code, and Lunari drivers. It correctly preserves the existing policy/binding/realm path, but it is a proposed field-trial result, not a merged source change. [godagent-result.md](C:/dev/eternities-godagents/evidence/field-trials/2026-08-30-terra-architect-v1/godagent-result.md:1)
+
+**No conflict after authority ranking:** The proposed bridge does not conflict with the present architecture because it has not been implemented. It does conflict with any inference that native Codex, Claude Code, or Lunari support is already available. The source architecture and v3 receipt take priority and keep that integration outside certified scope.
+
+## Exact next gate
+
+Do not implement a native-host driver yet. First produce host-specific, local evidence for each intended host that it can provide all three hard prerequisites without mutating shared instructions: (1) a session-local bounded input path, (2) an effective-authority observation from the host rather than a profile assertion, and (3) an idempotent completion/delivery status. If any prerequisite is absent, record the host profile as disabled and stop. If all are evidenced, open a bounded implementation plan for the proposed `HostProfile` and adapter seam, retain the current OpenAI-compatible path, and verify that policy/release digest mismatch, uncertain delivery, and authority expansion fail closed before any real host launch.
+
+Separately, complete and score all disjoint crossed-suite results before making any comparative claim. The suite rubric requires round-level losses, time/output accounting, valid local citations, and no paired-result inspection; a single earlier 44–43 result is insufficient. [rubric.md](C:/dev/eternities-godagents/evidence/field-trials/2026-08-30-crossed-suite-v1/rubric.md:3)
+
+**Authority limits carried forward:** local read/write only for this trial result; no canonical repository mutation, network, commit, delegated work, host activation, or inferred authority from Godskills or continuity packets.

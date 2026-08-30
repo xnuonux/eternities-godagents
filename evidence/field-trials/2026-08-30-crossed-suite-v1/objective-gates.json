@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "setupCommit": "4908cea0848b8887c5f4a8f7e554d85fb5eb4101",
+  "implementation": {
+    "sealedBaseline": { "tests": 7, "pass": 1, "fail": 6 },
+    "godagent": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "sealedTestsUnchanged": true,
+      "preservedSourceSha256": "d97752177a3ad975ac3571d1fb33bb6ffb06df6b3a3fecbf5cef3e03f72568c6",
+      "unreportedWorkspaceFiles": []
+    },
+    "control": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "sealedTestsUnchanged": true,
+      "preservedSourceSha256": "a5bcf91b81e2a1f97a234702ceba8739d8dd9c823fac2bedebf995cddf398f6b",
+      "unreportedWorkspaceFiles": ["pnpm-lock.yaml", "node_modules/.package-map.json", "node_modules/.pnpm-workspace-state-v1.json"]
+    }
+  },
+  "debugging": {
+    "sealedBaseline": { "tests": 4, "pass": 1, "fail": 3 },
+    "godagent": {
+      "patchSha256": "54324a90c6656f3aa4a9f28a882aabd6e55954167de11747503611221cf5d174",
+      "gitApplyChangedFiles": 1,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    "control": {
+      "patchSha256": "d820208b72d59c17eb2fab25e9df8ce9b62d3919ed7ed73fb6b55467687343af",
+      "gitApplyChangedFiles": 0,
+      "gitApplyDisposition": "skipped patch src/journal-recovery.mjs",
+      "tests": 4,
+      "pass": 1,
+      "fail": 3,
+      "note": "The semantic edit is close to the correct repair, but the submitted patch format was skipped by the evaluator command the control itself prescribed."
+    }
+  },
+  "research": {
+    "godagent": { "citations": 37, "invalidCitations": 0, "words": 1277 },
+    "control": { "citations": 41, "invalidCitations": 0, "words": 928 }
+  },
+  "continuity": {
+    "maximumWords": 1500,
+    "godagent": { "words": 873, "withinBudget": true },
+    "control": { "words": 861, "withinBudget": true }
+  },
+  "creative": {
+    "namedEvidenceFiles": 8,
+    "evidenceHashesUnchanged": true,
+    "godagent": { "words": 3005 },
+    "control": { "words": 2518 }
+  },
+  "writeBoundary": {
+    "canonicalGodagentsSourceChangedBySubjects": false,
+    "namedLunariEvidenceChanged": false,
+    "temporaryWorkspacesRemovedAfterPreservation": true
+  }
+}
