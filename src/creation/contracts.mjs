@@ -12,7 +12,7 @@ export const PAYLOAD_KEYS = Object.freeze({
   personality: Object.freeze(['dimensions']),
   voice: Object.freeze(['tone', 'register', 'vocabularyProfile', 'pacing']),
   organs: Object.freeze(['organs']),
-  godskills: Object.freeze(['contractId', 'maxComposition', 'entrypointIds']),
+  godskills: Object.freeze(['protocolId', 'profile', 'preferredFamilies', 'prohibitedFamilies', 'prohibitedCapabilities', 'maxComposition', 'entrypointIds']),
   cortex: Object.freeze(['allowedAdapters', 'requiredCapabilities']),
   embodiment: Object.freeze(['tags', 'requiredRealmCapabilities', 'presentationSurfaces']),
 });
@@ -179,8 +179,12 @@ function validatePayload(kind, payload) {
     return { organs };
   }
   if (kind === 'godskills') return {
-    contractId: assertIdentifier(payload.contractId, 'godskills contractId'),
-    maxComposition: assertInteger(payload.maxComposition, 1, 32, 'godskills maxComposition'),
+    protocolId: payload.protocolId === 'eternities-godskills-adapter-v1' ? payload.protocolId : (() => { throw new TypeError('unsupported godskills protocolId'); })(),
+    profile: ['all-rounder', 'specialist'].includes(payload.profile) ? payload.profile : (() => { throw new TypeError('invalid godskills profile'); })(),
+    preferredFamilies: sortedIdentifiers(payload.preferredFamilies, 'godskills preferredFamilies'),
+    prohibitedFamilies: sortedIdentifiers(payload.prohibitedFamilies, 'godskills prohibitedFamilies'),
+    prohibitedCapabilities: sortedIdentifiers(payload.prohibitedCapabilities, 'godskills prohibitedCapabilities', { capability: true }),
+    maxComposition: assertInteger(payload.maxComposition, 1, 3, 'godskills maxComposition'),
     entrypointIds: sortedIdentifiers(payload.entrypointIds, 'godskills entrypointIds'),
   };
   if (kind === 'cortex') return {

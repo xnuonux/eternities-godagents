@@ -39,7 +39,11 @@
     "foreignHistoryPolicy": "provenance-only"
   },
   "godskills": {
-    "contractId": "eternities-portable-router-v1",
+    "protocolId": "eternities-godskills-adapter-v1",
+    "profile": "all-rounder",
+    "preferredFamilies": [],
+    "prohibitedFamilies": [],
+    "prohibitedCapabilities": [],
     "maxComposition": 3
   },
   "realm": {

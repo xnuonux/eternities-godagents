@@ -38,7 +38,11 @@ export function projectGenome({ candidate, selectedModules, derivedAttributes })
       .sort((left, right) => byteCompare(left.id, right.id)),
     memory: structuredClone(candidate.memory),
     godskills: {
-      contractId: selectedModules.godskills.payload.contractId,
+      protocolId: selectedModules.godskills.payload.protocolId,
+      profile: selectedModules.godskills.payload.profile,
+      preferredFamilies: [...selectedModules.godskills.payload.preferredFamilies].sort(byteCompare),
+      prohibitedFamilies: [...selectedModules.godskills.payload.prohibitedFamilies].sort(byteCompare),
+      prohibitedCapabilities: [...selectedModules.godskills.payload.prohibitedCapabilities].sort(byteCompare),
       maxComposition: selectedModules.godskills.payload.maxComposition,
     },
     realm: {

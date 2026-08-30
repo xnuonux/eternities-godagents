@@ -41,7 +41,11 @@ test('creation projects exactly into the strict v0 operational genome', () => {
     requiredCapabilities: ['cortex.proposals'],
   });
   assert.deepEqual(genome.godskills, {
-    contractId: 'eternities-portable-router-v1',
+    protocolId: 'eternities-godskills-adapter-v1',
+    profile: 'all-rounder',
+    preferredFamilies: [],
+    prohibitedFamilies: [],
+    prohibitedCapabilities: [],
     maxComposition: 3,
   });
   assert.equal(genome.soulPort.status, 'dormant');

@@ -90,10 +90,14 @@
     "godskills": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["contractId", "maxComposition"],
+      "required": ["protocolId", "profile", "preferredFamilies", "prohibitedFamilies", "prohibitedCapabilities", "maxComposition"],
       "properties": {
-        "contractId": { "const": "eternities-portable-router-v1" },
-        "maxComposition": { "type": "integer", "minimum": 1 }
+        "protocolId": { "const": "eternities-godskills-adapter-v1" },
+        "profile": { "enum": ["all-rounder", "specialist"] },
+        "preferredFamilies": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "prohibitedFamilies": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "prohibitedCapabilities": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "maxComposition": { "type": "integer", "minimum": 1, "maximum": 3 }
       }
     },
     "realm": {

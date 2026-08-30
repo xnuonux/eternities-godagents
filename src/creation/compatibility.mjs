@@ -68,7 +68,10 @@ export function assertCreationCompatibility({ candidate, policy, selectedModules
   assertSubset(cortex.requiredCapabilities, policy.allowedCapabilities, 'cortex-capability-exceeds-policy');
 
   const godskills = selectedModules.godskills.payload;
-  assertSubset([godskills.contractId], policy.allowedGodskillsContracts, 'godskills-contract-exceeds-policy');
+  const godskillsContract = godskills.protocolId === 'eternities-godskills-adapter-v1'
+    ? 'eternities-portable-router-v1'
+    : godskills.protocolId;
+  assertSubset([godskillsContract], policy.allowedGodskillsContracts, 'godskills-contract-exceeds-policy');
   assertSubset(godskills.entrypointIds, policy.allowedGodskillEntrypoints, 'godskills-entrypoint-exceeds-policy');
   assertSubset(candidate.realm.requiredCapabilities, policy.allowedRealmCapabilities, 'realm-capability-exceeds-policy');
   assertSubset(selectedModules.embodiment.payload.requiredRealmCapabilities, policy.allowedRealmCapabilities, 'realm-capability-exceeds-policy');

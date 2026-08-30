@@ -126,8 +126,12 @@ test('creation policy remains a ceiling across every authority-bearing surface',
   assert.throws(() => assertCreationCompatibility({ candidate: sources.candidate, policy: sources.policy, selectedModules: cortexCapability }), /cortex capability exceeds creation policy/);
 
   const contract = clone(selected);
-  contract.godskills.payload.contractId = 'other-router';
+  contract.godskills.payload.protocolId = 'other-protocol';
   assert.throws(() => assertCreationCompatibility({ candidate: sources.candidate, policy: sources.policy, selectedModules: contract }), /Godskills contract exceeds creation policy/);
+
+  const noGodskillsContract = clone(sources.policy);
+  noGodskillsContract.allowedGodskillsContracts = [];
+  assert.throws(() => assertCreationCompatibility({ candidate: sources.candidate, policy: noGodskillsContract, selectedModules: selected }), /Godskills contract exceeds creation policy/);
 
   const entrypoint = clone(selected);
   entrypoint.godskills.payload.entrypointIds = ['brainstorm', 'plan', 'publish'];
