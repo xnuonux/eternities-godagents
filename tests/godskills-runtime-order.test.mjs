@@ -178,3 +178,54 @@ test('recovery after durable binding rehydrates the exact package without rerout
   assert.equal(godskillsAdapter.rehydrateCount, 1);
   assert.equal(realm.inspect().counter, 1);
 });
+
+test('bound vessels reject a bare transport while explicit unbound operation stays unchanged', async (t) => {
+  const rejectedRuntime = await paths(t, 'bare-transport');
+  await assert.rejects(() => createVessel({
+    ...rejectedRuntime,
+    instanceId: 'bare-transport',
+    cortex: cortex(() => false),
+    realm: createFixtureRealm({ contract: realmContract }),
+    godskillsTransport: async () => ({}),
+    clock: () => now,
+    inferencePolicy,
+  }), /verified Godskills adapter/i);
+
+  const runtime = await paths(t, 'unbound');
+  let observedEnvelope = 'not-called';
+  const unboundCortex = {
+    adapterId: 'ordered-cortex',
+    prepare(context, attempt) {
+      observedEnvelope = context.methodEnvelope;
+      const metadata = {
+        attemptId: attempt.attemptId, ordinal: attempt.ordinal, adapterId: 'ordered-cortex',
+        profile: 'fixture', modelId: 'fixture', requestDigest: '1'.repeat(64),
+      };
+      return {
+        metadata,
+        async execute() {
+          return acceptedProposal({
+            schemaVersion: 1, proposalId: `${attempt.attemptId}:proposal`, organId: 'ordered-cortex', organVersion: '1',
+            sourceStateEpoch: context.stateEpoch, claim: 'advance once', evidenceRefs: [context.observation.observationId],
+            intent: { effect: 'local-write', handId: 'counter.increment', amount: 1 },
+            expectedOutcome: { counter: context.observation.counter + 1 }, cost: 1, risk: 'low', uncertainty: 'fixture',
+            requiredAuthority: ['realm:write'], preconditions: ['realm-observed'], expiresAt: '2026-08-30T08:01:00.000Z', priority: 10,
+          }, { ...metadata, responseDigest: '2'.repeat(64), usage: { inputTokens: 1, outputTokens: 1 } });
+        },
+      };
+    },
+  };
+  const vessel = await createVessel({
+    ...runtime,
+    instanceId: 'explicit-unbound',
+    cortex: unboundCortex,
+    realm: createFixtureRealm({ contract: realmContract }),
+    godskillsAdapter: false,
+    clock: () => now,
+    inferencePolicy,
+  });
+  assert.equal((await vessel.runCycle(mission('mission-unbound'))).status, 'completed');
+  assert.equal(observedEnvelope, undefined);
+  const journal = await readVerifiedJournal(runtime.journalPath);
+  assert.equal(journal.events.some(({ eventType }) => eventType === 'godskills.bound'), false);
+});

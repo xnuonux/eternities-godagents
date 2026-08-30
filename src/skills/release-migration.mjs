@@ -99,7 +99,16 @@ export function planGodskillsReleaseMigration({ from, to, genomePolicy, identity
   const sharedIds = fromIds.filter((id) => toMap.has(id));
   const changedContractIds = sharedIds.filter((id) => fromMap.get(id).contract?.sha256 !== toMap.get(id).contract?.sha256);
   const changedEntrypointIds = sharedIds.filter((id) => fromMap.get(id).entrypoint?.sha256 !== toMap.get(id).entrypoint?.sha256);
-  const requiredCapabilityIds = sorted(genomePolicy.requiredCapabilityIds ?? []);
+  if (!Object.hasOwn(genomePolicy, 'requiredCapabilityIds')
+      || !Array.isArray(genomePolicy.requiredCapabilityIds)
+      || genomePolicy.requiredCapabilityIds.some((id) => typeof id !== 'string' || id.length === 0)) {
+    throw new TypeError('required capability ids must be declared for migration');
+  }
+  const requiredCapabilityIds = sorted(genomePolicy.requiredCapabilityIds);
+  if (requiredCapabilityIds.length !== genomePolicy.requiredCapabilityIds.length
+      || requiredCapabilityIds.some((id) => !fromMap.has(id))) {
+    throw new TypeError('required capability ids are invalid for the current release');
+  }
   const removedRequired = requiredCapabilityIds.filter((id) => !toMap.has(id));
   if (removedRequired.length > 0) {
     throw new Error(`Godskills required capability was removed: ${removedRequired.join(', ')}`);

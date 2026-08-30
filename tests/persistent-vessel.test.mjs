@@ -170,7 +170,7 @@ async function fixture(context, suffix) {
   const runtime = {
     cortex: allowedCortex('first cortex'),
     realm,
-    godskillsTransport: noQualifiedTransport,
+    godskillsAdapter: false,
     clock,
   };
   return { root, request, runtime, realm, keelRoot };

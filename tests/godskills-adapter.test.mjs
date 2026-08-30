@@ -143,6 +143,26 @@ test('compiler result cannot add authority or effects beyond verified host conte
   }
 });
 
+test('compiler and route receipts cannot expand preconditions risk evidence or context ceilings', async () => {
+  const preconditions = result();
+  preconditions.compilerReceipt.envelope.availablePreconditions.push('production-ready');
+  const risk = result();
+  risk.routeReceipt.requestFeatures.maximumRisk = 'high';
+  const evidence = result();
+  evidence.compilerReceipt.envelope.minimumEvidenceConfidence = 'low';
+  const context = result();
+  context.routeReceipt.requestFeatures.contextBudget = 4001;
+  const composition = result();
+  composition.compilerReceipt.envelope.maxCompositionSize = 4;
+
+  for (const invalid of [preconditions, risk, evidence, context, composition]) {
+    await assert.rejects(
+      () => routeGodskill({ request: mission, hostContext, transport: async () => invalid }),
+      AuthorityError,
+    );
+  }
+});
+
 test('local file transport remains compatible with the certified Godskills router', async () => {
   const transport = await createLocalGodskillsTransport({
     repositoryRoot: 'C:\\dev\\eternities-godskills',

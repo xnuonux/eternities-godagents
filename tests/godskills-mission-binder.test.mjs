@@ -63,6 +63,12 @@ function routed(request, selectedIds = ['eternities-forge'], status = 'selected'
       envelope: {
         availableAuthority: [...request.context.availableAuthority],
         permittedEffects: [...request.context.permittedEffects],
+        availablePreconditions: [...request.context.availablePreconditions],
+        forbiddenCapabilities: [...request.context.forbiddenCapabilities],
+        maximumRisk: request.context.maximumRisk,
+        minimumEvidenceConfidence: request.context.minimumEvidenceConfidence,
+        contextBudget: request.context.contextBudget,
+        maxCompositionSize: request.context.maxCompositionSize,
       },
     },
     routeReceipt: {
@@ -71,7 +77,12 @@ function routed(request, selectedIds = ['eternities-forge'], status = 'selected'
       selectionKind: selectedIds.length > 1 ? 'composition' : selectedIds.length === 1 ? 'single' : 'none',
       selectedIds,
       selectedEntrypoints,
-      requestFeatures: { permittedEffects: [...request.context.permittedEffects] },
+      requestFeatures: {
+        permittedEffects: [...request.context.permittedEffects],
+        maximumRisk: request.context.maximumRisk,
+        minimumEvidenceConfidence: request.context.minimumEvidenceConfidence,
+        contextBudget: request.context.contextBudget,
+      },
       unresolvedDecisions: status === 'needs-decision' ? ['effect'] : [],
     },
   };
@@ -104,6 +115,7 @@ test('binds one selected first-party capability into a body-free receipt and bou
   assert.equal(JSON.stringify(result.cortexPackage).includes(root), false);
   assert.deepEqual(request().context.permittedEffects, ['local-read', 'local-write']);
   assert.deepEqual(request().context.availableAuthority, ['realm:write']);
+  assert.equal(request().requestId, `${input().mission.requestId}:${result.receipt.sourceEnvelopeDigest}`);
 });
 
 test('opens only the selected entrypoint and contract after release verification', async () => {

@@ -172,8 +172,9 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
         mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
       });
       const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
+      const routingRequestId = `${mission.requestId}:${sourceEnvelopeDigest}`;
       const route = await routeGodskill({
-        request: { requestId: mission.requestId, text: mission.text },
+        request: { requestId: routingRequestId, text: mission.text },
         hostContext: context,
         transport,
       });

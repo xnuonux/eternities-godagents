@@ -123,6 +123,9 @@ test('release expansion is classified as governed evolution rather than dependen
 
 test('genome policy or identity mutation cannot be smuggled through an operational migration', () => {
   assert.throws(() => planGodskillsReleaseMigration(inputs({
+    genomePolicy: { before: basePolicy, after: structuredClone(basePolicy) },
+  })), /required capability/i);
+  assert.throws(() => planGodskillsReleaseMigration(inputs({
     genomePolicy: {
       before: basePolicy,
       after: { ...basePolicy, prohibitedCapabilities: ['eternities-forge'] },

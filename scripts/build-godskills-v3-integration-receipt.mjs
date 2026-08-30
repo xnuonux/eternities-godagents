@@ -76,6 +76,7 @@ const proofLimits = Object.freeze([
   'hostile-same-user-os-filesystem-isolation',
   'model-quality-on-unseen-missions',
   'multi-host-distributed-activation',
+  'natural-language-skill-requirement-semantic-fulfillment',
   'soul-or-inspiration-activation',
 ]);
 

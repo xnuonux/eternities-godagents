@@ -7,7 +7,11 @@ function assertRuntime(runtime) {
   if (!runtime || typeof runtime !== 'object') throw new TypeError('persistent vessel runtime is required');
   if (!runtime.cortex || typeof runtime.cortex.adapterId !== 'string') throw new TypeError('runtime cortex is required');
   if (!runtime.realm || typeof runtime.realm.observe !== 'function') throw new TypeError('runtime Realm is required');
-  if (!runtime.godskillsAdapter && typeof runtime.godskillsTransport !== 'function') throw new TypeError('Godskills adapter is required');
+  if (runtime.godskillsAdapter !== false && (!runtime.godskillsAdapter
+      || typeof runtime.godskillsAdapter.bindMission !== 'function'
+      || typeof runtime.godskillsAdapter.rehydrateMission !== 'function')) {
+    throw new TypeError('verified Godskills adapter or explicit unbound mode is required');
+  }
   if (typeof runtime.clock !== 'function') throw new TypeError('runtime clock is required');
 }
 
@@ -37,8 +41,7 @@ export async function createPersistentVessel({ genesis, runtime, keelAdapter }) 
     snapshotPath: genesis.snapshotPath,
     cortex: runtime.cortex,
     realm: runtime.realm,
-    godskillsAdapter: runtime.godskillsAdapter ?? null,
-    godskillsTransport: runtime.godskillsTransport,
+    godskillsAdapter: runtime.godskillsAdapter,
     clock: runtime.clock,
     inferencePolicy: runtime.inferencePolicy ?? null,
   });

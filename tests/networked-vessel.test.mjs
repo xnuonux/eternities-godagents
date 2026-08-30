@@ -154,7 +154,7 @@ async function vesselOptions(t, name, cortex, realm, extra = {}) {
     instanceId: `instance-${name}`,
     cortex,
     realm,
-    godskillsTransport: noQualifiedTransport,
+    godskillsAdapter: false,
     clock: () => fixedNow,
     inferencePolicy,
     ...extra,

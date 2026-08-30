@@ -8,6 +8,8 @@ import { AuthorityError } from '../core/errors.mjs';
 
 const statuses = new Set(['selected', 'needs-decision', 'no-qualified-route']);
 const entrypointPattern = /^skills\/([a-z0-9-]+)\/SKILL\.md$/;
+const riskRank = new Map(['low', 'moderate', 'high', 'critical'].map((value, index) => [value, index]));
+const evidenceRank = new Map(['verified', 'high', 'medium', 'low'].map((value, index) => [value, index]));
 
 const uniqueSorted = (values) => [...new Set(values)].sort((left, right) => left.localeCompare(right));
 
@@ -33,6 +35,12 @@ function requireSubset(actual, available, kind) {
   }
 }
 
+function requireNoScalarExpansion(actual, ceiling, ranks, kind) {
+  if (!ranks.has(actual) || !ranks.has(ceiling) || ranks.get(actual) > ranks.get(ceiling)) {
+    throw new AuthorityError(`Godskills compiler attempted to expand ${kind}`);
+  }
+}
+
 function validateRouteResult(result, requestId, context) {
   if (!result || typeof result !== 'object' || !result.compilerReceipt || !result.routeReceipt) {
     throw new Error('route receipt result is incomplete');
@@ -47,7 +55,16 @@ function validateRouteResult(result, requestId, context) {
   }
   requireSubset(compilerReceipt.envelope.availableAuthority, context.availableAuthority, 'authority');
   requireSubset(compilerReceipt.envelope.permittedEffects, context.permittedEffects, 'effects');
+  requireSubset(compilerReceipt.envelope.availablePreconditions, context.availablePreconditions, 'preconditions');
+  requireSubset(context.forbiddenCapabilities, compilerReceipt.envelope.forbiddenCapabilities, 'forbidden capability policy');
+  requireNoScalarExpansion(compilerReceipt.envelope.maximumRisk, context.maximumRisk, riskRank, 'risk');
+  requireNoScalarExpansion(compilerReceipt.envelope.minimumEvidenceConfidence, context.minimumEvidenceConfidence, evidenceRank, 'evidence floor');
+  if (compilerReceipt.envelope.contextBudget > context.contextBudget) throw new AuthorityError('Godskills compiler attempted to expand context');
+  if (compilerReceipt.envelope.maxCompositionSize > context.maxCompositionSize) throw new AuthorityError('Godskills compiler attempted to expand composition');
   requireSubset(routeReceipt.requestFeatures?.permittedEffects ?? [], context.permittedEffects, 'effects');
+  requireNoScalarExpansion(routeReceipt.requestFeatures?.maximumRisk, context.maximumRisk, riskRank, 'risk');
+  requireNoScalarExpansion(routeReceipt.requestFeatures?.minimumEvidenceConfidence, context.minimumEvidenceConfidence, evidenceRank, 'evidence floor');
+  if (routeReceipt.requestFeatures?.contextBudget > context.contextBudget) throw new AuthorityError('Godskills route attempted to expand context');
 
   if (!statuses.has(routeReceipt.status)) throw new Error('route receipt status is unknown');
   if (!Array.isArray(routeReceipt.selectedIds) || !Array.isArray(routeReceipt.selectedEntrypoints)

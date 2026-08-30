@@ -140,7 +140,7 @@ async function setup(context, suffix) {
   let realm;
   const runtimeFactory = async ({ realmContract, clock }) => {
     realm = createFixtureRealm({ contract: realmContract });
-    return { cortex: cortex(), realm, godskillsTransport: noQualifiedGodskills, clock };
+    return { cortex: cortex(), realm, godskillsAdapter: false, clock };
   };
   return {
     root, admissionRoot, policyPath, missionPath, env, runtimeFactory,

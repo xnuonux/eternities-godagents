@@ -95,7 +95,7 @@ async function vesselOptions(t, { cortex, realm, crashAt = null, suffix = '' }) 
     ...(await workspace(t, suffix)),
     cortex,
     realm,
-    godskillsTransport: noQualifiedTransport,
+    godskillsAdapter: false,
     clock: () => fixedNow,
     crashAt,
   };
@@ -137,7 +137,7 @@ test('cortex replacement preserves instance and constitution continuity', async 
     instanceId: 'godagent-fixture-1',
     ...paths,
     realm,
-    godskillsTransport: noQualifiedTransport,
+    godskillsAdapter: false,
     clock: () => fixedNow,
   };
   const first = await createVessel({ ...common, cortex: createFixtureCortexA() });

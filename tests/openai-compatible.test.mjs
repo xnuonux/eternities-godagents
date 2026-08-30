@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { createHttpsTransport } from '../src/cortex/http-transport.mjs';
+import { sha256Value } from '../src/core/digest.mjs';
 import { createOpenAICompatibleCortex } from '../src/cortex/openai-compatible.mjs';
 
 const CANARY = 'canary-provider-secret-29';
@@ -49,10 +50,7 @@ const validProposalContent = Object.freeze({
   priority: 10,
 });
 
-const boundContext = Object.freeze({
-  ...context,
-  methodEnvelopeDigest: 'f'.repeat(64),
-  methodEnvelope: {
+const methodEnvelope = Object.freeze({
     protocolId: 'eternities-godskills-adapter-v1',
     sourceEnvelopeDigest: 'a'.repeat(64),
     releaseDigest: 'b'.repeat(64),
@@ -63,7 +61,11 @@ const boundContext = Object.freeze({
     proposalRequirements: ['verified implementation'],
     terminationConditions: ['fresh relevant verification passes'],
     selectedPackages: [{ id: 'eternities-forge', entrypoint: 'selected first-party text' }],
-  },
+});
+const boundContext = Object.freeze({
+  ...context,
+  methodEnvelopeDigest: sha256Value(methodEnvelope),
+  methodEnvelope,
 });
 
 function providerBody(content = validProposalContent, overrides = {}) {
@@ -135,7 +137,7 @@ test('bound requests carry the exact selected method envelope and require its di
   let captured;
   const accepted = await createCortex(async (request) => {
     captured = request;
-    return response(providerBody({ ...validProposalContent, methodEnvelopeDigest: 'f'.repeat(64) }));
+    return response(providerBody({ ...validProposalContent, methodEnvelopeDigest: boundContext.methodEnvelopeDigest }));
   }).infer(boundContext, { attemptId: 'attempt-bound', ordinal: 1 });
 
   const requestBody = JSON.parse(captured.body);
@@ -153,6 +155,15 @@ test('bound requests carry the exact selected method envelope and require its di
   const wrong = await createCortex(async () => response(providerBody({ ...validProposalContent, methodEnvelopeDigest: '0'.repeat(64) })))
     .infer(boundContext, { attemptId: 'attempt-wrong-binding', ordinal: 1 });
   assert.equal(wrong.reasonCode, 'semantic-rejected');
+
+  let called = false;
+  const mismatchedContext = { ...boundContext, methodEnvelopeDigest: '0'.repeat(64) };
+  const mismatched = await createCortex(async () => {
+    called = true;
+    return response();
+  }).infer(mismatchedContext, { attemptId: 'attempt-mismatched-context', ordinal: 1 });
+  assert.equal(mismatched.reasonCode, 'schema-rejected');
+  assert.equal(called, false);
 });
 
 test('adapter rejects malformed and ambiguous provider responses without a proposal', async () => {

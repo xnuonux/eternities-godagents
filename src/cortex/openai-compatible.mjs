@@ -199,6 +199,8 @@ export function createOpenAICompatibleCortex({
   if (endpointUrl.protocol !== 'https:') throw new Error('network cortex endpoint requires HTTPS');
 
   function prepare(context, attempt) {
+    const methodEnvelopeValid = context.methodEnvelope === undefined
+      || sha256Value(context.methodEnvelope) === context.methodEnvelopeDigest;
     const requestBody = requestFor({ modelId, context, maxCompletionTokens });
     const body = canonicalJson(requestBody);
     const requestDigest = sha256Text(body);
@@ -215,6 +217,7 @@ export function createOpenAICompatibleCortex({
     return Object.freeze({
       metadata,
       async execute() {
+        if (!methodEnvelopeValid) return failedInference('schema-rejected', metadata);
         if (promptOverBudget) return failedInference('budget-exhausted', metadata);
         let credential;
         try {
