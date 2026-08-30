@@ -159,7 +159,6 @@ export async function verifyGodskillsRelease(releasePin, { artifactCache = new M
   if (manifest.releaseEvidence?.topLevelSystem?.path !== releasePin.systemReceipt.path
       || manifest.releaseEvidence?.topLevelSystem?.sha256 !== roots.systemReceipt.digest) throw new Error('portable manifest system binding mismatch');
 
-  await verifyArtifactSet(reader, system.artifacts, 'system');
   await verifyArtifactSet(reader, router.artifacts, 'router');
   await verifyArtifactSet(reader, compiler.checkpoints, 'compiler checkpoint');
   if (compiler.artifacts?.arena) await reader.read(compiler.artifacts.arena, 'compiler arena');
@@ -168,10 +167,6 @@ export async function verifyGodskillsRelease(releasePin, { artifactCache = new M
     if (!expected) throw new Error(`compiler artifact ${name} is unpinned`);
     await reader.read({ path, sha256: expected }, `compiler artifact ${name}`, { canonical: true });
   }
-  for (const [name, reference] of Object.entries(manifest.releaseEvidence ?? {})) {
-    await reader.read(reference, `manifest release evidence ${name}`);
-  }
-
   const pin = frozen(structuredClone(releasePin));
   const rootDigests = frozen(Object.fromEntries(Object.entries(roots).map(([name, value]) => [name, value.digest])));
   const releaseDigest = sha256(canonicalJson({ pin, roots: rootDigests }));
@@ -185,6 +180,7 @@ export async function verifyGodskillsRelease(releasePin, { artifactCache = new M
     capabilitiesById,
     routerArtifacts: frozen(structuredClone(router.artifacts)),
     compilerArtifacts: frozen(structuredClone(compiler.artifacts)),
+    readSelectedArtifact: async (reference, label) => reader.read(reference, label),
   });
   artifactCache.set(releaseDigest, verified);
   return verified;

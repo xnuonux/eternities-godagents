@@ -86,6 +86,7 @@ test('verifies the exact certified release without reading any capability body',
   assert.match(verified.releaseDigest, /^[a-f0-9]{64}$/);
   assert.equal(Object.isFrozen(verified), true);
   assert.equal(tracked.reads.some((path) => /\/skills\//.test(path)), false);
+  assert.equal(tracked.reads.some((path) => /quarry|third-party/i.test(path)), false);
 });
 
 test('rejects root digest drift and unsupported adapter protocols', async () => {

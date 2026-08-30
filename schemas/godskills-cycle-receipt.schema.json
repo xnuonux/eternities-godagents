@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "requestId", "sourceEnvelopeDigest", "releaseDigest", "routerReceiptDigest", "selectionStatus", "selected", "authorityCeilingDigest", "stackDigest", "packageDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-godskills-adapter-v1" },
+    "requestId": { "type": "string", "minLength": 1 },
+    "sourceEnvelopeDigest": { "$ref": "#/$defs/digest" },
+    "releaseDigest": { "$ref": "#/$defs/digest" },
+    "routerReceiptDigest": { "$ref": "#/$defs/digest" },
+    "selectionStatus": { "enum": ["selected", "no-qualified-route"] },
+    "selected": { "type": "array", "maxItems": 3, "items": { "$ref": "#/$defs/selection" } },
+    "authorityCeilingDigest": { "$ref": "#/$defs/digest" },
+    "stackDigest": { "$ref": "#/$defs/digest" },
+    "packageDigest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "entrypointSha256", "contractSha256"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "entrypointSha256": { "$ref": "#/$defs/digest" },
+        "contractSha256": { "$ref": "#/$defs/digest" }
+      }
+    }
+  }
+}

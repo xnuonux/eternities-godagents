@@ -1,0 +1,180 @@
+import assert from 'node:assert/strict';
+import { readFile, realpath } from 'node:fs/promises';
+import test from 'node:test';
+
+import { createGodskillsAdapter } from '../src/skills/mission-binder.mjs';
+
+const root = 'C:/dev/eternities-godskills';
+
+function releasePin(overrides = {}) {
+  return {
+    adapterProtocol: 'eternities-godskills-adapter-v1',
+    repositoryRoot: root,
+    systemReceipt: { path: 'receipts/godskills-system-certification-v3.json', sha256: '228ba0a63d252f0c37178ff3de8c1278d0ea878e9abeb173e7faea699f28fb57' },
+    routerReceipt: { path: 'receipts/agent-native-router-v8.json', sha256: 'b32500d810ba66539334cbe3ae5ef31223dbf712197a061779fc21f75048ebf3' },
+    compilerReceipt: { path: 'receipts/intent-compiler-v3.json', sha256: '1ca40ec9138c1d0583068ee4dc3db58f0b77b07f631a2b38d9c47eb28ccce49a' },
+    portableReceipt: { path: 'receipts/portable-capability-manifest-v1.json', sha256: 'f78f6aded5198e8db1591af49fe97285307427d93396b34c78dd6e5f2466f33d' },
+    portableManifest: { path: 'artifacts/portable-capabilities/manifest.v1.json', sha256: 'ab81495770ceede97522f140260354fbdff54da7b4824ca52046d473c9d5917a', manifestDigest: 'df646600e601dae7208d460135773f5d436b75117c45a3acad85fae6ff91c3c8' },
+    semanticEffectBindings: { read: ['local-read'], write: ['local-write'] },
+    maximumSelected: 3,
+    maximumPackageBytes: 32768,
+    ...overrides,
+  };
+}
+
+const genomePolicy = Object.freeze({
+  protocolId: 'eternities-godskills-adapter-v1',
+  profile: 'all-rounder',
+  preferredFamilies: [],
+  prohibitedFamilies: [],
+  prohibitedCapabilities: [],
+  maxComposition: 3,
+});
+
+const hostEnvelope = Object.freeze({
+  permittedEffects: ['local-read', 'local-write'],
+  constitutionAllowedEffects: ['local-read', 'local-write'],
+  availableAuthority: ['realm:write'],
+  availablePreconditions: ['realm-observed'],
+  forbiddenCapabilities: [],
+  maximumRisk: 'moderate',
+  minimumEvidenceConfidence: 'verified',
+  contextBudget: 16000,
+  maxCompositionSize: 3,
+  realmHandContractDigest: 'a'.repeat(64),
+});
+
+function input(overrides = {}) {
+  return {
+    mission: { requestId: 'mission-1', text: 'implement and verify a consequential feature', authority: ['realm:write'] },
+    observation: { observationId: 'observation-1', counter: 0 },
+    genomePolicy,
+    hostEnvelope,
+    sourceStateEpoch: 0,
+    ...overrides,
+  };
+}
+
+function routed(request, selectedIds = ['eternities-forge'], status = 'selected') {
+  const selectedEntrypoints = selectedIds.map((id) => `skills/${id}/SKILL.md`);
+  return {
+    compilerReceipt: {
+      requestId: request.requestId,
+      envelope: {
+        availableAuthority: [...request.context.availableAuthority],
+        permittedEffects: [...request.context.permittedEffects],
+      },
+    },
+    routeReceipt: {
+      requestId: request.requestId,
+      status,
+      selectionKind: selectedIds.length > 1 ? 'composition' : selectedIds.length === 1 ? 'single' : 'none',
+      selectedIds,
+      selectedEntrypoints,
+      requestFeatures: { permittedEffects: [...request.context.permittedEffects] },
+      unresolvedDecisions: status === 'needs-decision' ? ['effect'] : [],
+    },
+  };
+}
+
+async function adapterFor(selector, options = {}) {
+  let observedRequest;
+  const adapter = await createGodskillsAdapter({
+    releasePin: options.releasePin ?? releasePin(),
+    io: options.io,
+    transport: async (request) => {
+      observedRequest = request;
+      return selector(request);
+    },
+  });
+  return { adapter, request: () => observedRequest };
+}
+
+test('binds one selected first-party capability into a body-free receipt and bounded cortex package', async () => {
+  const { adapter, request } = await adapterFor((value) => routed(value));
+  const result = await adapter.bindMission(input());
+
+  assert.equal(result.status, 'bound');
+  assert.deepEqual(result.cortexPackage.selectedCapabilities, ['eternities-forge']);
+  assert.match(result.cortexPackage.selectedPackages[0].entrypoint, /name:\s*eternities-forge/);
+  assert.equal(result.cortexPackage.selectedPackages[0].contract.name, 'eternities-forge');
+  assert.ok(result.cortexPackage.methods.includes('implement bounded slices'));
+  assert.ok(result.cortexPackage.terminationConditions.length > 0);
+  assert.equal(JSON.stringify(result.receipt).includes('implement bounded slices'), false);
+  assert.equal(JSON.stringify(result.cortexPackage).includes(root), false);
+  assert.deepEqual(request().context.permittedEffects, ['read', 'write']);
+  assert.deepEqual(request().context.availableAuthority, ['realm:write']);
+});
+
+test('opens only the selected entrypoint and contract after release verification', async () => {
+  const reads = [];
+  const io = {
+    async readFile(path) { reads.push(String(path).replaceAll('\\', '/')); return readFile(path); },
+    realpath,
+  };
+  const { adapter } = await adapterFor((value) => routed(value), { io });
+  reads.length = 0;
+  await adapter.bindMission(input());
+  assert.deepEqual(reads.sort(), [
+    `${root}/skills/eternities-forge/SKILL.md`,
+    `${root}/skills/eternities-forge/references/capability-contract.json`,
+  ]);
+});
+
+test('specialization prohibitions and owner hierarchy fail closed', async () => {
+  const prohibited = { ...genomePolicy, prohibitedCapabilities: ['eternities-forge'] };
+  const { adapter } = await adapterFor((value) => routed(value));
+  await assert.rejects(adapter.bindMission(input({ genomePolicy: prohibited })), /not eligible/);
+
+  const operational = await adapterFor((value) => routed(value, ['bounded-service-shutdown']));
+  await assert.rejects(operational.adapter.bindMission(input()), /owner selection/);
+});
+
+test('semantic effects can only narrow through explicit concrete host bindings', async () => {
+  const { adapter } = await adapterFor((value) => routed(value));
+  await assert.rejects(adapter.bindMission(input({
+    hostEnvelope: { ...hostEnvelope, permittedEffects: ['local-read'], constitutionAllowedEffects: ['local-read'] },
+  })), /effect binding.*local-write|concrete effect/);
+
+  const unmapped = await adapterFor((value) => routed(value), {
+    releasePin: releasePin({ semanticEffectBindings: { read: ['local-read'], write: ['external-write'] } }),
+  });
+  await assert.rejects(unmapped.adapter.bindMission(input()), /effect binding.*external-write|concrete effect/);
+});
+
+test('composition and package budgets fail before a cortex package is admitted', async () => {
+  const overflow = await adapterFor((value) => routed(value, ['eternities-forge', 'eternities-oracle', 'eternities-architect', 'eternities-aegis']));
+  await assert.rejects(overflow.adapter.bindMission(input()), /maximum composition/);
+
+  const tiny = await adapterFor((value) => routed(value), { releasePin: releasePin({ maximumPackageBytes: 128 }) });
+  await assert.rejects(tiny.adapter.bindMission(input()), /package byte ceiling/);
+});
+
+test('different selected contracts shape method evidence proposal and termination inputs without changing authority', async () => {
+  const forge = await adapterFor((value) => routed(value, ['eternities-forge']));
+  const oracle = await adapterFor((value) => routed(value, ['eternities-oracle']));
+  const first = await forge.adapter.bindMission(input());
+  const second = await oracle.adapter.bindMission(input());
+  assert.notDeepEqual(first.cortexPackage.methods, second.cortexPackage.methods);
+  assert.notDeepEqual(first.cortexPackage.evidenceRequirements, second.cortexPackage.evidenceRequirements);
+  assert.notDeepEqual(first.cortexPackage.proposalRequirements, second.cortexPackage.proposalRequirements);
+  assert.notDeepEqual(first.cortexPackage.terminationConditions, second.cortexPackage.terminationConditions);
+  assert.deepEqual(first.cortexPackage.authorityProjection, second.cortexPackage.authorityProjection);
+});
+
+test('no-qualified route binds an empty package while needs-decision remains unresolved', async () => {
+  const none = await adapterFor((value) => routed(value, [], 'no-qualified-route'));
+  const empty = await none.adapter.bindMission(input());
+  assert.equal(empty.status, 'no-qualified-route');
+  assert.deepEqual(empty.cortexPackage.selectedPackages, []);
+  assert.match(empty.receipt.packageDigest, /^[a-f0-9]{64}$/);
+
+  const decision = await adapterFor((value) => routed(value, [], 'needs-decision'));
+  const unresolved = await decision.adapter.bindMission(input());
+  assert.deepEqual(unresolved, {
+    status: 'needs-decision',
+    unresolvedDecisions: ['effect'],
+    receipt: null,
+    cortexPackage: null,
+  });
+});
