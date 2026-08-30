@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "protocolId": "eternities-godskills-adapter-v1",
+  "requestId": "terra-field-trial-v1",
+  "bindingInput": {
+    "mission": {
+      "requestId": "terra-field-trial-v1",
+      "text": "Design a consequential software system. Make and record a durable architecture decision. Turn these constraints into an implementation-ready technical design.",
+      "authority": [
+        "local-read",
+        "local-write",
+        "realm:write"
+      ]
+    },
+    "observation": {
+      "observationId": "field-trial-baseline",
+      "problem": "Define a provider-neutral host profile and launcher that lets one all-rounder Eternities Godagent consume the certified Godskills release across Codex, Claude Code, and Lunari without replacing shared global instructions or expanding authority.",
+      "requirements": [
+        "inspect current eternities-godagents and eternities-godskills repositories",
+        "compare at least two viable approaches",
+        "choose one with evidence and tradeoffs",
+        "define interfaces and failure and recovery behavior",
+        "define rollout and exact verification",
+        "state explicit non-goals"
+      ],
+      "output": "one concise architecture decision and implementation plan"
+    },
+    "genomePolicy": {
+      "protocolId": "eternities-godskills-adapter-v1",
+      "profile": "all-rounder",
+      "preferredFamilies": [],
+      "prohibitedFamilies": [],
+      "prohibitedCapabilities": [],
+      "maxComposition": 3
+    },
+    "hostEnvelope": {
+      "permittedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "constitutionAllowedEffects": [
+        "local-read",
+        "local-write"
+      ],
+      "availableAuthority": [
+        "local-read",
+        "local-write",
+        "realm:write"
+      ],
+      "availablePreconditions": [
+        "realm-observed",
+        "realm-present"
+      ],
+      "forbiddenCapabilities": [],
+      "maximumRisk": "moderate",
+      "minimumEvidenceConfidence": "verified",
+      "contextBudget": 16000,
+      "maxCompositionSize": 3,
+      "realmHandContractDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "sourceStateEpoch": 0
+  },
+  "selectionStatus": "selected",
+  "selectedCapabilities": [
+    "eternities-architect"
+  ],
+  "sourceEnvelopeDigest": "a7a66768638272a87e419ee819704c7556a5d2ca540cb25afd5483a6365bfd3b",
+  "releaseDigest": "0befe0bb74a9f25fa82d418cda954e63346e82c2c2870661a859ead22e8794b4",
+  "routerReceiptDigest": "fbe4f02b35126ea105cafff5586b0bb1240fad1acffff30b44c6379bb0ea3181",
+  "authorityCeilingDigest": "fc36041dd000e7a119b7ebfd3a0605811ff38687ffcf8008da5931d51b58b949",
+  "stackDigest": "d26fd7ef3b0cf29b3af540d0ef915d90ba29727959943a3cea7d2a8236978216",
+  "packageDigest": "1dd76261b10b826e77258388133bb623ce4edd1750f0705445a01e9519e08ddf",
+  "selected": [
+    {
+      "id": "eternities-architect",
+      "entrypoint": "C:\\dev\\eternities-godskills\\skills\\eternities-architect\\SKILL.md",
+      "entrypointSha256": "3edb67a8aa6ef6717cd1abb3aa0658215ab76ec9009895d29bd6068612ee7a05",
+      "contract": "C:\\dev\\eternities-godskills\\skills\\eternities-architect\\references\\capability-contract.json",
+      "contractSha256": "1011c45e7350d9bedc8ffeb0bddd0e88e26a8a79c12244e61af3ff703331fe90"
+    }
+  ],
+  "authorityProjection": {
+    "availableAuthority": [
+      "local-read",
+      "local-write",
+      "realm:write"
+    ],
+    "permittedEffects": [
+      "local-read",
+      "local-write"
+    ],
+    "availablePreconditions": [
+      "realm-observed",
+      "realm-present"
+    ],
+    "maximumRisk": "moderate",
+    "minimumEvidenceConfidence": "verified",
+    "contextBudget": 16000
+  },
+  "terminationConditions": [
+    "interfaces, failure behavior, and acceptance conditions are explicit",
+    "the chosen design traces to requirements and evidence",
+    "the implementation handoff does not require renewed architecture discovery",
+    "unresolved decisions and revisit triggers are named"
+  ]
+}
