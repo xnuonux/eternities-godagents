@@ -637,7 +637,7 @@ function runTests(files, cwd, evidenceNames = []) {
       const passed = summary('pass');
       const failed = summary('fail');
       const skipped = summary('skipped');
-      const names = [...output.matchAll(/(?:^|\n)# Subtest: ([^\r\n]+)/g)].map((match) => match[1]);
+      const names = [...output.matchAll(/(?:^|\n)\s*# Subtest: ([^\r\n]+)/g)].map((match) => match[1]);
       const missing = evidenceNames.filter((name) => !names.includes(name));
       if (code !== 0 || !Number.isInteger(tests) || tests < 1 || passed !== tests
           || failed !== 0 || skipped !== 0 || names.length !== tests || missing.length > 0) {
