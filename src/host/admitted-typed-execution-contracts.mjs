@@ -1,5 +1,6 @@
 import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { canonicalJson } from '../core/canonical-json.mjs';
+import { sha256Value } from '../core/digest.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
 import { verifyIdentityBoundMissionVesselRequest } from '../runtime/identity-bound-mission-vessel-contracts.mjs';
 import { verifyRecoverableTypedCompositionTopology } from '../skills/recoverable-typed-composition-contracts.mjs';
@@ -59,6 +60,48 @@ export function verifyAdmittedTypedExecutionHostRequest(input) {
   const declared = value.topology.missionInputs.map(({ artifactId }) => artifactId).sort();
   if (canonicalJson(Object.keys(value.missionInputs).sort()) !== canonicalJson(declared)) {
     throw new TypeError('admitted typed execution mission input set differs from topology');
+  }
+  return deepFreeze(value);
+}
+
+export function buildAdmittedTypedExecutionHostCompletion({
+  missionId,
+  policyDigest,
+  admissionBindingDigest,
+  candidateDigest,
+  compilationDigest,
+  executionDigest,
+} = {}) {
+  const unsigned = {
+    schemaVersion: 1,
+    protocolId: 'eternities-admitted-sealed-typed-execution-host-completion-v1',
+    status: 'completed',
+    missionId,
+    policyDigest,
+    admissionBindingDigest,
+    candidateDigest,
+    compilationDigest,
+    executionDigest,
+    authorityExpanded: false,
+  };
+  return verifyAdmittedTypedExecutionHostCompletion({
+    ...unsigned,
+    receiptDigest: sha256Value(unsigned),
+  });
+}
+
+export function verifyAdmittedTypedExecutionHostCompletion(input) {
+  const value = clone(input);
+  assertNoCredentialFields(value);
+  assertSchema('admitted-typed-execution-host-completion', value);
+  exactKeys(value, [
+    'schemaVersion', 'protocolId', 'status', 'missionId', 'policyDigest',
+    'admissionBindingDigest', 'candidateDigest', 'compilationDigest',
+    'executionDigest', 'authorityExpanded', 'receiptDigest',
+  ], 'admitted typed execution host completion');
+  const { receiptDigest, ...unsigned } = value;
+  if (receiptDigest !== sha256Value(unsigned)) {
+    throw new TypeError('admitted typed execution host completion digest mismatch');
   }
   return deepFreeze(value);
 }
