@@ -9,6 +9,55 @@ import { verifyGodskillsRelease } from '../src/skills/release-verifier.mjs';
 const root = 'C:/dev/eternities-godskills';
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 
+function activationPin(overrides = {}) {
+  return {
+    protocolId: 'eternities-godskills-activation-v1',
+    executableReceipt: {
+      path: 'receipts/adaptive-activation-executable-v1.json',
+      sha256: '98ebeb63db38b67608cf71b1b511b807cfe2d96e17e9b1bc54e7dbb536f8403f',
+      receiptDigest: 'c5a086bb131ff7e1a9508f02b95796ae9066627be3e8e1f8b7e57421220e9bd7',
+    },
+    parentReceipt: {
+      path: 'receipts/adaptive-activation-v1.json',
+      sha256: '6c6d689ecf9df14823407a917e89a5848776fb50eca3b7acc0d70056ae305f70',
+      receiptDigest: 'a28a0af7e588f2abbbe1d51a15775dfbeb8d565109d0a176711bfa73b520440f',
+    },
+    entrypoint: {
+      path: 'scripts/activation.mjs',
+      sha256: 'e19ceef6a781d1d82a82fb17c519755526dc17fa979474b99f291d6eaa17788a',
+    },
+    compiler: {
+      path: 'src/adaptive-activation.mjs',
+      sha256: '9844aee1147f7129f3e37067424ccebb88ff478de1b7a9a9fb7306d5f2fdbd82',
+    },
+    dependencies: [
+      { path: 'scripts/build-adaptive-activation-executable-receipt.mjs', sha256: 'd35fa44632711c64c1e23f84f80fc0edfb5adbed4261ef88b7d9c32de2d96486' },
+      { path: 'src/adaptive-activation-protocol.mjs', sha256: 'e697fe37d18a76de22ca4fdcd8ade6089bceddb20baad971e895bc49c9b0172e' },
+      { path: 'src/io.mjs', sha256: '48dca2b203947e12ca3d5500b70a25066a8166d86bc2284aaeed6abf622a5c37' },
+      { path: 'src/static-module-closure.mjs', sha256: '3bb0d825e6838b901315e685f9e5b02c94dac316ccb7788f54cd6fd18cd6a6ab' },
+    ],
+    schemas: {
+      request: { path: 'schemas/adaptive-activation-request.v1.schema.json', sha256: 'bcadd846b96809733837183e12dba6f8d094409aa7c16e5676fa63357e3c2cde' },
+      result: { path: 'schemas/adaptive-activation-result.v1.schema.json', sha256: '0a069a5eb121e625aa4ea529cbb48783e266e4c7c7f36f93ee24749303dd4391' },
+    },
+    policy: {
+      path: 'policies/adaptive-activation.v1.json',
+      sha256: 'b87bbfaddecb42417e57202173220bf240204d27b7de5fffc9e609eb18138939',
+      logicalDigest: 'bf9e6878399b4edeb4ff6bb77d234fdf646b53fd62ba6e1448b4374246d4c41d',
+    },
+    evidence: {
+      path: 'artifacts/adaptive-activation/evidence.v1.json',
+      sha256: 'b55a5cb4f7ff039cc7f4027c165b2f151bad723d9030913076a4225342fbe8c5',
+      logicalDigest: '9a14d4296158c65c3929938c5c54b5f7f4b6a5ffeb5b0a827b3f8b25814f5e07',
+    },
+    contract: {
+      path: 'artifacts/adaptive-activation/neutral-contract.json',
+      sha256: 'feade348d3fd31afd5103eb296181f68000186d3193a995e4b77c25a06e57c92',
+    },
+    ...overrides,
+  };
+}
+
 function releasePin(overrides = {}) {
   return {
     adapterProtocol: 'eternities-godskills-adapter-v1',
@@ -73,6 +122,27 @@ async function replacedManifest(mutator) {
       portableManifest: { ...releasePin().portableManifest, sha256: sha256(manifestBytes), manifestDigest: manifest.manifestDigest },
     }),
     replacements: new Map([[manifestPath, manifestBytes], [receiptPath, receiptBytes]]),
+  };
+}
+
+async function replacedActivationReceipt(mutator, activationMutator = (value) => value) {
+  const receiptPath = `${root}/receipts/adaptive-activation-executable-v1.json`;
+  const receipt = JSON.parse(await readFile(receiptPath));
+  mutator(receipt);
+  const unsigned = structuredClone(receipt);
+  delete unsigned.receiptDigest;
+  receipt.receiptDigest = sha256(canonicalJson(unsigned));
+  const receiptBytes = jsonBytes(receipt);
+  const activation = activationMutator(activationPin({
+    executableReceipt: {
+      ...activationPin().executableReceipt,
+      sha256: sha256(receiptBytes),
+      receiptDigest: receipt.receiptDigest,
+    },
+  }));
+  return {
+    pin: releasePin({ activation }),
+    replacements: new Map([[receiptPath, receiptBytes]]),
   };
 }
 
@@ -167,4 +237,163 @@ test('release digest is canonical and independent from object insertion order', 
   const second = await verifyGodskillsRelease(reversed);
   assert.equal(first.releaseDigest, second.releaseDigest);
   assert.equal(first.releaseDigest, sha256(canonicalJson({ pin: first.pin, roots: first.rootDigests })));
+});
+
+test('verifies an optional complete activation trust root while preserving legacy compatibility', async () => {
+  const legacy = await verifyGodskillsRelease(releasePin());
+  assert.equal(legacy.activation, undefined);
+
+  const tracked = trackedIo();
+  const verified = await verifyGodskillsRelease(releasePin({ activation: activationPin() }), { io: tracked.io });
+  assert.equal(verified.activation.protocolId, 'eternities-godskills-activation-v1');
+  assert.equal(verified.activation.trustRootDigest, activationPin().executableReceipt.receiptDigest);
+  assert.equal(verified.activation.entrypoint.path, 'scripts/activation.mjs');
+  assert.equal(verified.activation.entrypoint.absolutePath, `${root}/scripts/activation.mjs`);
+  assert.equal(verified.activation.policy.logicalDigest, activationPin().policy.logicalDigest);
+  assert.equal(verified.activation.evidence.logicalDigest, activationPin().evidence.logicalDigest);
+  assert.deepEqual(verified.activation.dependencies.map(({ path }) => path), activationPin().dependencies.map(({ path }) => path));
+  assert.equal(Object.isFrozen(verified.activation), true);
+  assert.equal(Object.isFrozen(verified.activation.dependencies), true);
+  assert.equal(tracked.reads.some((path) => /\/skills\//.test(path)), false);
+  assert.equal(tracked.reads.some((path) => /quarry|third-party/i.test(path)), false);
+});
+
+test('rejects incomplete, unknown, duplicate, and unordered activation pin structure', async () => {
+  const incomplete = activationPin();
+  delete incomplete.policy;
+  await assert.rejects(verifyGodskillsRelease(releasePin({ activation: incomplete })), /activation.*policy|required/i);
+
+  await assert.rejects(
+    verifyGodskillsRelease(releasePin({ activation: activationPin({ unexpected: true }) })),
+    /activation.*unexpected|additionalProperties/i,
+  );
+
+  const duplicate = activationPin();
+  duplicate.dependencies[1] = structuredClone(duplicate.dependencies[0]);
+  await assert.rejects(verifyGodskillsRelease(releasePin({ activation: duplicate })), /dependencies.*unique|duplicate/i);
+
+  const unordered = activationPin();
+  unordered.dependencies.reverse();
+  await assert.rejects(verifyGodskillsRelease(releasePin({ activation: unordered })), /dependencies.*order|sorted|canonical/i);
+});
+
+test('requires the activation pin and executable receipt to describe exactly the same artifact set', async () => {
+  const extra = await replacedActivationReceipt((receipt) => {
+    receipt.artifacts.push({ role: 'dependency', path: 'README.md', sha256: '0'.repeat(64), bytes: 1 });
+    receipt.artifacts.sort((left, right) => left.path.localeCompare(right.path));
+    receipt.dependencyClosure.localModules.push('README.md');
+    receipt.dependencyClosure.localModules.sort();
+  });
+  await assert.rejects(
+    verifyGodskillsRelease(extra.pin, { io: trackedIo(extra.replacements).io }),
+    /artifact set|dependency closure|artifacts.*ordered|extra/i,
+  );
+
+  const missing = await replacedActivationReceipt((receipt) => {
+    receipt.artifacts = receipt.artifacts.filter(({ path }) => path !== 'src/io.mjs');
+    receipt.dependencyClosure.localModules = receipt.dependencyClosure.localModules.filter((path) => path !== 'src/io.mjs');
+  });
+  await assert.rejects(
+    verifyGodskillsRelease(missing.pin, { io: trackedIo(missing.replacements).io }),
+    /artifact set|dependency closure|missing/i,
+  );
+});
+
+test('rejects substituted activation artifacts and logical digest drift', async () => {
+  const substitutions = [
+    ['parentReceipt', (pin) => { pin.parentReceipt.sha256 = '0'.repeat(64); }],
+    ['entrypoint', (pin) => { pin.entrypoint.sha256 = '0'.repeat(64); }],
+    ['compiler', (pin) => { pin.compiler.sha256 = '0'.repeat(64); }],
+    ['dependency', (pin) => { pin.dependencies[0].sha256 = '0'.repeat(64); }],
+    ['request schema', (pin) => { pin.schemas.request.sha256 = '0'.repeat(64); }],
+    ['result schema', (pin) => { pin.schemas.result.sha256 = '0'.repeat(64); }],
+    ['policy', (pin) => { pin.policy.sha256 = '0'.repeat(64); }],
+    ['evidence', (pin) => { pin.evidence.sha256 = '0'.repeat(64); }],
+    ['contract', (pin) => { pin.contract.sha256 = '0'.repeat(64); }],
+  ];
+  for (const [name, mutate] of substitutions) {
+    const pin = activationPin();
+    mutate(pin);
+    await assert.rejects(
+      verifyGodskillsRelease(releasePin({ activation: pin })),
+      /digest mismatch|receipt.*binding|artifact sets do not match/i,
+      name,
+    );
+  }
+
+  for (const field of ['policy', 'evidence']) {
+    const pin = activationPin();
+    pin[field].logicalDigest = '0'.repeat(64);
+    await assert.rejects(
+      verifyGodskillsRelease(releasePin({ activation: pin })),
+      new RegExp(`${field}.*logical|logical.*${field}`, 'i'),
+    );
+  }
+});
+
+test('rejects stale receipt digests, unsupported protocol, and wrong executable status', async () => {
+  const receiptPath = `${root}/receipts/adaptive-activation-executable-v1.json`;
+  const stale = JSON.parse(await readFile(receiptPath));
+  stale.receiptDigest = '0'.repeat(64);
+  const staleBytes = jsonBytes(stale);
+  const stalePin = activationPin({
+    executableReceipt: {
+      ...activationPin().executableReceipt,
+      sha256: sha256(staleBytes),
+      receiptDigest: stale.receiptDigest,
+    },
+  });
+  await assert.rejects(
+    verifyGodskillsRelease(releasePin({ activation: stalePin }), {
+      io: trackedIo(new Map([[receiptPath, staleBytes]])).io,
+    }),
+    /receipt digest mismatch/i,
+  );
+
+  const unsupported = await replacedActivationReceipt((receipt) => { receipt.protocolId = 'unsupported-v2'; });
+  await assert.rejects(
+    verifyGodskillsRelease(unsupported.pin, { io: trackedIo(unsupported.replacements).io }),
+    /protocol/i,
+  );
+
+  const status = await replacedActivationReceipt((receipt) => { receipt.status = 'experimental'; });
+  await assert.rejects(
+    verifyGodskillsRelease(status.pin, { io: trackedIo(status.replacements).io }),
+    /status|verified-build/i,
+  );
+});
+
+test('rejects lexical and post-realpath activation escapes', async () => {
+  for (const malformed of [
+    '../activation.mjs',
+    'scripts//activation.mjs',
+    'scripts/./activation.mjs',
+    'scripts/activation.mjs?changed',
+    'scripts/activation.mjs\n',
+  ]) {
+    const lexical = activationPin();
+    lexical.entrypoint.path = malformed;
+    await assert.rejects(
+      verifyGodskillsRelease(releasePin({ activation: lexical })),
+      /repository-relative|escaped repository root/i,
+      malformed,
+    );
+  }
+
+  const target = `${root}/scripts/activation.mjs`;
+  const tracked = trackedIo(new Map(), (path) => path === target ? 'C:/outside/activation.mjs' : realpath(path));
+  await assert.rejects(
+    verifyGodskillsRelease(releasePin({ activation: activationPin() }), { io: tracked.io }),
+    /escaped repository root/i,
+  );
+});
+
+test('keeps legacy and adaptive verification isolated in a shared artifact cache', async () => {
+  const artifactCache = new Map();
+  const legacy = await verifyGodskillsRelease(releasePin(), { artifactCache });
+  const adaptive = await verifyGodskillsRelease(releasePin({ activation: activationPin() }), { artifactCache });
+  assert.notEqual(legacy.releaseDigest, adaptive.releaseDigest);
+  assert.equal(legacy.activation, undefined);
+  assert.equal(adaptive.activation.trustRootDigest, activationPin().executableReceipt.receiptDigest);
+  assert.equal(artifactCache.size, 2);
 });

@@ -20,6 +20,7 @@
         "manifestDigest": { "$ref": "#/$defs/digest" }
       }
     },
+    "activation": { "$ref": "#/$defs/activation" },
     "semanticEffectBindings": {
       "type": "object",
       "additionalProperties": false,
@@ -41,6 +42,56 @@
       "properties": {
         "path": { "type": "string", "minLength": 1 },
         "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "receiptArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "receiptDigest"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "receiptDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "logicalArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "logicalDigest"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "logicalDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocolId", "executableReceipt", "parentReceipt", "entrypoint", "compiler", "dependencies", "schemas", "policy", "evidence", "contract"],
+      "properties": {
+        "protocolId": { "const": "eternities-godskills-activation-v1" },
+        "executableReceipt": { "$ref": "#/$defs/receiptArtifact" },
+        "parentReceipt": { "$ref": "#/$defs/receiptArtifact" },
+        "entrypoint": { "$ref": "#/$defs/artifact" },
+        "compiler": { "$ref": "#/$defs/artifact" },
+        "dependencies": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/artifact" }
+        },
+        "schemas": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["request", "result"],
+          "properties": {
+            "request": { "$ref": "#/$defs/artifact" },
+            "result": { "$ref": "#/$defs/artifact" }
+          }
+        },
+        "policy": { "$ref": "#/$defs/logicalArtifact" },
+        "evidence": { "$ref": "#/$defs/logicalArtifact" },
+        "contract": { "$ref": "#/$defs/artifact" }
       }
     }
   }

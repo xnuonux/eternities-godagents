@@ -20,6 +20,9 @@ const compilerArtifactPaths = Object.freeze({
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 const canonicalText = (value) => value.replaceAll('\r\n', '\n');
 const normalized = (value) => String(value).replaceAll('\\', '/').toLowerCase();
+const portablePath = (value) => String(value).replaceAll('\\', '/');
+const digestPattern = /^[a-f0-9]{64}$/;
+const activationProtocol = 'eternities-godskills-activation-v1';
 
 function frozen(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -30,8 +33,10 @@ function frozen(value) {
 }
 
 function assertRelativePath(path) {
+  const parts = typeof path === 'string' ? path.split('/') : [];
   if (typeof path !== 'string' || path.length === 0 || isAbsolute(path)
-      || path.includes('\\') || path.split('/').includes('..')) {
+      || path.includes('\\') || /[\0\r\n?#]/.test(path)
+      || parts.some((part) => part === '' || part === '.' || part === '..')) {
     throw new Error('Godskills artifact path must be repository-relative');
   }
 }
@@ -46,7 +51,7 @@ async function artifactReader(repositoryRoot, io) {
   const root = await io.realpath(resolve(repositoryRoot));
   return {
     root,
-    async read(reference, label, { canonical = false } = {}) {
+    async readBound(reference, label, { canonical = false } = {}) {
       assertRelativePath(reference.path);
       const lexical = resolve(root, reference.path);
       assertContained(root, lexical);
@@ -56,7 +61,10 @@ async function artifactReader(repositoryRoot, io) {
       const digest = sha256(canonical ? canonicalText(bytes.toString('utf8')) : bytes);
       if (digest !== reference.sha256) throw new Error(`${label} digest mismatch`);
       if (reference.bytes !== undefined && bytes.length !== reference.bytes) throw new Error(`${label} byte count mismatch`);
-      return bytes;
+      return { bytes, actual };
+    },
+    async read(reference, label, options) {
+      return (await this.readBound(reference, label, options)).bytes;
     },
   };
 }
@@ -72,6 +80,176 @@ function parseJson(bytes, label) {
 function requireIdentity(value, { idField = 'id', id, status }, label) {
   if (value?.schemaVersion !== 1 || value?.[idField] !== id) throw new Error(`${label} identity mismatch`);
   if (value.status !== status) throw new Error(`${label} is not certified`);
+}
+
+function exactKeys(value, expected, label) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${label} must be an object`);
+  const actual = Object.keys(value).sort();
+  const wanted = [...expected].sort();
+  if (canonicalJson(actual) !== canonicalJson(wanted)) throw new Error(`${label} fields are invalid`);
+}
+
+function requireDigest(value, label) {
+  if (typeof value !== 'string' || !digestPattern.test(value)) throw new Error(`${label} is not a SHA-256 digest`);
+}
+
+function assertCanonicalReferences(references, label) {
+  if (!Array.isArray(references) || references.length === 0) throw new Error(`${label} are required`);
+  const paths = references.map(({ path }) => path);
+  if (new Set(paths).size !== paths.length) throw new Error(`${label} contain a duplicate path`);
+  const sorted = [...paths].sort();
+  if (canonicalJson(paths) !== canonicalJson(sorted)) throw new Error(`${label} must use canonical path order`);
+  for (const reference of references) {
+    assertRelativePath(reference.path);
+    requireDigest(reference.sha256, `${label} digest`);
+  }
+}
+
+function verifyLogicalReceipt(value, expectedDigest, label) {
+  requireDigest(value?.receiptDigest, `${label} receipt digest`);
+  const unsigned = structuredClone(value);
+  delete unsigned.receiptDigest;
+  if (sha256(canonicalJson(unsigned)) !== value.receiptDigest) throw new Error(`${label} receipt digest mismatch`);
+  if (value.receiptDigest !== expectedDigest) throw new Error(`${label} logical receipt pin mismatch`);
+}
+
+function activationPinRows(pin) {
+  return [
+    { role: 'entrypoint', ...pin.entrypoint },
+    { role: 'compiler', ...pin.compiler },
+    ...pin.dependencies.map((reference) => ({ role: 'dependency', ...reference })),
+    { role: 'request-schema', ...pin.schemas.request },
+    { role: 'result-schema', ...pin.schemas.result },
+    { role: 'policy', ...pin.policy },
+    { role: 'evidence', ...pin.evidence },
+    { role: 'contract', ...pin.contract },
+  ].sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+}
+
+function comparableArtifact({ role, path, sha256: digest }) {
+  return { role, path, sha256: digest };
+}
+
+async function verifyActivationRoot(reader, pin) {
+  if (pin.protocolId !== activationProtocol) throw new Error('activation protocol is unsupported');
+  assertCanonicalReferences(pin.dependencies, 'activation dependencies');
+  for (const [label, reference] of [
+    ['activation executable receipt', pin.executableReceipt],
+    ['activation parent receipt', pin.parentReceipt],
+    ['activation entrypoint', pin.entrypoint],
+    ['activation compiler', pin.compiler],
+    ['activation request schema', pin.schemas.request],
+    ['activation result schema', pin.schemas.result],
+    ['activation policy', pin.policy],
+    ['activation evidence', pin.evidence],
+    ['activation contract', pin.contract],
+  ]) {
+    assertRelativePath(reference.path);
+    requireDigest(reference.sha256, `${label} file digest`);
+  }
+  requireDigest(pin.executableReceipt.receiptDigest, 'activation executable receipt logical digest');
+  requireDigest(pin.parentReceipt.receiptDigest, 'activation parent receipt logical digest');
+  requireDigest(pin.policy.logicalDigest, 'activation policy logical digest');
+  requireDigest(pin.evidence.logicalDigest, 'activation evidence logical digest');
+
+  const executableBytes = await reader.read(pin.executableReceipt, 'activation executable receipt');
+  const receipt = parseJson(executableBytes, 'activation executable receipt');
+  exactKeys(receipt, [
+    'schemaVersion', 'id', 'status', 'protocolId', 'parentReceipt',
+    'dependencyClosure', 'artifacts', 'proofLimits', 'receiptDigest',
+  ], 'activation executable receipt');
+  if (receipt.schemaVersion !== 1 || receipt.id !== 'adaptive-activation-executable-v1') {
+    throw new Error('activation executable receipt identity mismatch');
+  }
+  if (receipt.status !== 'verified-build') throw new Error('activation executable receipt status must be verified-build');
+  if (receipt.protocolId !== pin.protocolId) throw new Error('activation executable receipt protocol mismatch');
+  verifyLogicalReceipt(receipt, pin.executableReceipt.receiptDigest, 'activation executable');
+  if (!Array.isArray(receipt.proofLimits)
+      || receipt.proofLimits.length === 0
+      || receipt.proofLimits.some((value) => typeof value !== 'string' || value.length === 0)
+      || new Set(receipt.proofLimits).size !== receipt.proofLimits.length) {
+    throw new Error('activation executable receipt proof limits are invalid');
+  }
+
+  exactKeys(receipt.parentReceipt, ['path', 'sha256', 'bytes', 'receiptDigest'], 'activation parent binding');
+  if (receipt.parentReceipt.path !== pin.parentReceipt.path
+      || receipt.parentReceipt.sha256 !== pin.parentReceipt.sha256
+      || receipt.parentReceipt.receiptDigest !== pin.parentReceipt.receiptDigest) {
+    throw new Error('activation parent receipt binding mismatch');
+  }
+  const parentBytes = await reader.read(pin.parentReceipt, 'activation parent receipt');
+  if (parentBytes.length !== receipt.parentReceipt.bytes) throw new Error('activation parent receipt byte count mismatch');
+  const parent = parseJson(parentBytes, 'activation parent receipt');
+  requireIdentity(parent, { id: 'adaptive-activation-v1', status: 'experimental' }, 'activation parent receipt');
+  verifyLogicalReceipt(parent, pin.parentReceipt.receiptDigest, 'activation parent');
+
+  exactKeys(receipt.dependencyClosure, ['roots', 'localModules', 'complete'], 'activation dependency closure');
+  if (receipt.dependencyClosure.complete !== true) throw new Error('activation dependency closure is incomplete');
+  const expectedRoots = [pin.entrypoint.path, pin.compiler.path].sort();
+  if (canonicalJson(receipt.dependencyClosure.roots) !== canonicalJson(expectedRoots)) {
+    throw new Error('activation dependency closure roots mismatch');
+  }
+  if (!Array.isArray(receipt.artifacts) || receipt.artifacts.length === 0) {
+    throw new Error('activation executable receipt artifact set is missing');
+  }
+  const receiptPaths = receipt.artifacts.map(({ path }) => path);
+  if (new Set(receiptPaths).size !== receiptPaths.length
+      || canonicalJson(receiptPaths) !== canonicalJson([...receiptPaths].sort())) {
+    throw new Error('activation executable receipt artifacts must be unique and canonically ordered');
+  }
+  const pinRows = activationPinRows(pin);
+  if (canonicalJson(receipt.artifacts.map(comparableArtifact))
+      !== canonicalJson(pinRows.map(comparableArtifact))) {
+    throw new Error('activation pin and executable receipt artifact sets do not match');
+  }
+  const modulePaths = receipt.artifacts
+    .filter(({ role }) => ['entrypoint', 'compiler', 'dependency'].includes(role))
+    .map(({ path }) => path)
+    .sort();
+  if (canonicalJson(receipt.dependencyClosure.localModules) !== canonicalJson(modulePaths)) {
+    throw new Error('activation dependency closure does not match executable artifacts');
+  }
+
+  let entrypointActual;
+  for (let index = 0; index < receipt.artifacts.length; index += 1) {
+    const row = receipt.artifacts[index];
+    const reference = pinRows[index];
+    const expectsLogical = ['request-schema', 'result-schema', 'policy', 'evidence', 'contract'].includes(row.role);
+    exactKeys(row, expectsLogical
+      ? ['role', 'path', 'sha256', 'bytes', 'logicalDigest']
+      : ['role', 'path', 'sha256', 'bytes'], `activation ${row.role} receipt artifact`);
+    if (!Number.isInteger(row.bytes) || row.bytes < 1) throw new Error(`activation ${row.role} byte count is invalid`);
+    const bound = await reader.readBound(reference, `activation ${row.role}`);
+    if (bound.bytes.length !== row.bytes) throw new Error(`activation ${row.role} byte count mismatch`);
+    if (row.role === 'entrypoint') entrypointActual = bound.actual;
+    if (expectsLogical) {
+      const value = parseJson(bound.bytes, `activation ${row.role}`);
+      const logical = sha256(canonicalJson(value));
+      if (logical !== row.logicalDigest) throw new Error(`activation ${row.role} logical digest mismatch`);
+      if (row.role === 'policy' && logical !== pin.policy.logicalDigest) {
+        throw new Error('activation policy logical pin mismatch');
+      }
+      if (row.role === 'evidence' && logical !== pin.evidence.logicalDigest) {
+        throw new Error('activation evidence logical pin mismatch');
+      }
+    }
+  }
+
+  return frozen({
+    protocolId: pin.protocolId,
+    trustRootDigest: receipt.receiptDigest,
+    root: portablePath(reader.root),
+    executableReceipt: structuredClone(pin.executableReceipt),
+    parentReceipt: structuredClone(pin.parentReceipt),
+    entrypoint: { ...structuredClone(pin.entrypoint), absolutePath: portablePath(entrypointActual) },
+    compiler: structuredClone(pin.compiler),
+    dependencies: structuredClone(pin.dependencies),
+    schemas: structuredClone(pin.schemas),
+    policy: structuredClone(pin.policy),
+    evidence: structuredClone(pin.evidence),
+    contract: structuredClone(pin.contract),
+    proofLimits: structuredClone(receipt.proofLimits),
+  });
 }
 
 async function verifyArtifactSet(reader, artifacts, label) {
@@ -167,8 +345,14 @@ export async function verifyGodskillsRelease(releasePin, { artifactCache = new M
     if (!expected) throw new Error(`compiler artifact ${name} is unpinned`);
     await reader.read({ path, sha256: expected }, `compiler artifact ${name}`, { canonical: true });
   }
+  const activation = releasePin.activation
+    ? await verifyActivationRoot(reader, releasePin.activation)
+    : undefined;
   const pin = frozen(structuredClone(releasePin));
-  const rootDigests = frozen(Object.fromEntries(Object.entries(roots).map(([name, value]) => [name, value.digest])));
+  const rootDigests = frozen({
+    ...Object.fromEntries(Object.entries(roots).map(([name, value]) => [name, value.digest])),
+    ...(activation ? { activationReceipt: activation.executableReceipt.sha256 } : {}),
+  });
   const releaseDigest = sha256(canonicalJson({ pin, roots: rootDigests }));
   if (artifactCache.has(releaseDigest)) return artifactCache.get(releaseDigest);
   const verified = frozen({
@@ -180,6 +364,7 @@ export async function verifyGodskillsRelease(releasePin, { artifactCache = new M
     capabilitiesById,
     routerArtifacts: frozen(structuredClone(router.artifacts)),
     compilerArtifacts: frozen(structuredClone(compiler.artifacts)),
+    ...(activation ? { activation } : {}),
     readSelectedArtifact: async (reference, label) => reader.read(reference, label),
   });
   artifactCache.set(releaseDigest, verified);
