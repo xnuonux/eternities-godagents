@@ -1,0 +1,20 @@
+{
+  "$defs": { "digest": { "pattern": "^[a-f0-9]{64}$", "type": "string" } },
+  "$id": "urn:eternities:recoverable-typed-composition:pending:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authorityExpanded": { "const": false },
+    "dispatchDigest": { "$ref": "#/$defs/digest" },
+    "intentDigest": { "$ref": "#/$defs/digest" },
+    "missionId": { "maxLength": 256, "minLength": 1, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$", "type": "string" },
+    "operationId": { "$ref": "#/$defs/digest" },
+    "pendingDigest": { "$ref": "#/$defs/digest" },
+    "phase": { "enum": ["route", "activation"] },
+    "protocolId": { "const": "eternities-recoverable-typed-composition-pending-v1" },
+    "schemaVersion": { "const": 1 },
+    "status": { "const": "pending" }
+  },
+  "required": ["schemaVersion", "protocolId", "status", "missionId", "intentDigest", "phase", "operationId", "dispatchDigest", "authorityExpanded", "pendingDigest"],
+  "type": "object"
+}

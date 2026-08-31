@@ -1,0 +1,49 @@
+{
+  "$defs": {
+    "digest": { "pattern": "^[a-f0-9]{64}$", "type": "string" },
+    "emptyAuthority": {
+      "additionalProperties": false,
+      "properties": {
+        "authorityExpanded": { "const": false },
+        "continuityAdmission": { "const": false },
+        "evolution": { "const": false },
+        "identityOwnership": { "const": false },
+        "personalKeelWrite": { "const": false },
+        "realmEffects": { "const": false },
+        "soul": { "const": false }
+      },
+      "required": ["authorityExpanded", "realmEffects", "continuityAdmission", "personalKeelWrite", "identityOwnership", "evolution", "soul"],
+      "type": "object"
+    }
+  },
+  "$id": "urn:eternities:recoverable-typed-composition:intent:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority": { "$ref": "#/$defs/emptyAuthority" },
+    "bindingInput": { "type": "object" },
+    "bindingInputDigest": { "$ref": "#/$defs/digest" },
+    "composition": {
+      "additionalProperties": false,
+      "properties": {
+        "activationTrustRootDigest": { "$ref": "#/$defs/digest" },
+        "capabilityLayerReceiptDigest": { "$ref": "#/$defs/digest" },
+        "policyDigest": { "$ref": "#/$defs/digest" },
+        "registryDigest": { "$ref": "#/$defs/digest" },
+        "sourceCommit": { "pattern": "^[a-f0-9]{40}$", "type": "string" },
+        "trustRootDigest": { "$ref": "#/$defs/digest" }
+      },
+      "required": ["sourceCommit", "trustRootDigest", "policyDigest", "capabilityLayerReceiptDigest", "activationTrustRootDigest", "registryDigest"],
+      "type": "object"
+    },
+    "godskillsReleaseDigest": { "$ref": "#/$defs/digest" },
+    "intentDigest": { "$ref": "#/$defs/digest" },
+    "missionId": { "maxLength": 256, "minLength": 1, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$", "type": "string" },
+    "protocolId": { "const": "eternities-recoverable-typed-composition-intent-v1" },
+    "schemaVersion": { "const": 1 },
+    "topology": { "type": "object" },
+    "topologyDigest": { "$ref": "#/$defs/digest" }
+  },
+  "required": ["schemaVersion", "protocolId", "missionId", "godskillsReleaseDigest", "composition", "bindingInput", "bindingInputDigest", "topology", "topologyDigest", "authority", "intentDigest"],
+  "type": "object"
+}

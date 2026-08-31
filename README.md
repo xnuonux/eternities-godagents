@@ -329,6 +329,14 @@ The deterministic chain kills one process after routing, another after activatio
 
 This certifies the local composition against injected transports that promise terminal lookup and atomic deduplication by dispatch digest. It does not certify those transport implementations, live providers, routing quality, model quality, credentials, model selection, hostile same-user isolation, a concrete OpenAI, Anthropic, Codex, Claude Code, local-model, or MCP adapter, Realm action, continuity admission, Lunari integration, Inspiration, or Soul.
 
+### Recoverable typed-composition compiler v1
+
+The [recoverable typed-composition design](docs/superpowers/specs/2026-08-31-recoverable-typed-composition-compiler-v1-design.md) joins the separately certified recoverable Godskills admission and typed-composition consumer without weakening either boundary. A host declares one complete typed topology before routing, but cannot supply policy roots, activation roots, activation-result identity, or per-capability decision digests. Structurally impossible graphs reject before external work. The compiler obtains one recoverable Godskills binding, inserts only its exact certified roots and decisions, then compiles a process-local private method.
+
+Intent and compact result records are canonical, bounded, immutable, and body-free. Reconstruction after process death rehydrates the durable Godskills result and recompiles the exact method without another route or activation execution. Same-process calls for one mission serialize; forged and cross-compiler handles cannot execute. No existing vessel or host adopts this optional compiler by default.
+
+`npm run certify:recoverable-typed-composition` reproduces the crash-recovery and typed Muse-to-Forge fixture, runs focused and complete tests, and issues the thirtieth append-only receipt. The proof still trusts the injected route and activation transports, keeps graph execution in process, and grants no provider, credential, Realm, continuity, keel, identity-evolution, Lunari, Inspiration, or Soul authority.
+
 ### Sealed local Godskills transport v1
 
 The [sealed local transport design](docs/superpowers/specs/2026-08-31-sealed-local-godskills-transport-v1-design.md) supplies a concrete local implementation for the route and activation sides of recoverable admission. It verifies the exact pushed Godskills release and routing executable closure before construction, fixes routing mode from that release, and invokes both entrypoints as hidden shell-free child processes with a minimal environment plus an in-child scrub.

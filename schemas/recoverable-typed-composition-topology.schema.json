@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "authority": {
+      "additionalProperties": false,
+      "properties": {
+        "availableAuthority": { "items": { "maxLength": 256, "minLength": 1, "type": "string" }, "maxItems": 64, "type": "array", "uniqueItems": true },
+        "availablePreconditions": { "items": { "maxLength": 256, "minLength": 1, "type": "string" }, "maxItems": 64, "type": "array", "uniqueItems": true },
+        "contextBudget": { "maximum": 65536, "minimum": 1, "type": "integer" },
+        "maximumRisk": { "enum": ["low", "moderate", "high"] },
+        "minimumEvidenceConfidence": { "enum": ["unverified", "inferred", "verified"] },
+        "permittedEffects": { "items": { "maxLength": 256, "minLength": 1, "type": "string" }, "maxItems": 64, "type": "array", "uniqueItems": true }
+      },
+      "required": ["availableAuthority", "permittedEffects", "availablePreconditions", "maximumRisk", "minimumEvidenceConfidence", "contextBudget"],
+      "type": "object"
+    },
+    "consumer": {
+      "additionalProperties": false,
+      "properties": {
+        "nodeId": { "maxLength": 256, "minLength": 1, "type": "string" },
+        "slotId": { "maxLength": 256, "minLength": 1, "type": "string" }
+      },
+      "required": ["nodeId", "slotId"],
+      "type": "object"
+    },
+    "producer": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "inputId": { "maxLength": 256, "minLength": 1, "type": "string" },
+            "kind": { "const": "mission-input" }
+          },
+          "required": ["kind", "inputId"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "node-output" },
+            "nodeId": { "maxLength": 256, "minLength": 1, "type": "string" },
+            "slotId": { "maxLength": 256, "minLength": 1, "type": "string" }
+          },
+          "required": ["kind", "nodeId", "slotId"],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$id": "urn:eternities:recoverable-typed-composition:topology:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authorityProjection": { "$ref": "#/$defs/authority" },
+    "links": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "artifactId": { "maxLength": 256, "minLength": 1, "type": "string" },
+          "consumer": { "$ref": "#/$defs/consumer" },
+          "producer": { "$ref": "#/$defs/producer" }
+        },
+        "required": ["artifactId", "producer", "consumer"],
+        "type": "object"
+      },
+      "maxItems": 24,
+      "type": "array"
+    },
+    "maximumContextBytes": { "maximum": 65536, "minimum": 1, "type": "integer" },
+    "missionId": { "maxLength": 256, "minLength": 1, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$", "type": "string" },
+    "missionInputs": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "artifactId": { "maxLength": 256, "minLength": 1, "type": "string" },
+          "jsonKind": { "enum": ["array", "object"] },
+          "typeId": { "maxLength": 256, "minLength": 1, "type": "string" }
+        },
+        "required": ["artifactId", "typeId", "jsonKind"],
+        "type": "object"
+      },
+      "maxItems": 12,
+      "type": "array"
+    },
+    "missionOutputs": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "nodeId": { "maxLength": 256, "minLength": 1, "type": "string" },
+          "outputId": { "maxLength": 256, "minLength": 1, "type": "string" },
+          "slotId": { "maxLength": 256, "minLength": 1, "type": "string" }
+        },
+        "required": ["outputId", "nodeId", "slotId"],
+        "type": "object"
+      },
+      "maxItems": 12,
+      "type": "array"
+    },
+    "nodes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilityId": { "maxLength": 256, "minLength": 1, "type": "string" },
+          "nodeId": { "maxLength": 256, "minLength": 1, "type": "string" },
+          "phase": { "maxLength": 256, "minLength": 1, "type": "string" }
+        },
+        "required": ["nodeId", "phase", "capabilityId"],
+        "type": "object"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "type": "array"
+    },
+    "protocolId": { "const": "eternities-recoverable-typed-composition-topology-v1" },
+    "schemaVersion": { "const": 1 }
+  },
+  "required": ["schemaVersion", "protocolId", "missionId", "authorityProjection", "maximumContextBytes", "missionInputs", "nodes", "links", "missionOutputs"],
+  "type": "object"
+}

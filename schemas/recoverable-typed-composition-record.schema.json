@@ -1,0 +1,25 @@
+{
+  "$defs": { "digest": { "pattern": "^[a-f0-9]{64}$", "type": "string" } },
+  "$id": "urn:eternities:recoverable-typed-composition:record:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "activationResultDigest": { "$ref": "#/$defs/digest" },
+    "authorityExpanded": { "const": false },
+    "bindingDigest": { "$ref": "#/$defs/digest" },
+    "bindingReceiptDigest": { "$ref": "#/$defs/digest" },
+    "compilationDigest": { "$ref": "#/$defs/digest" },
+    "compositionTrustRootDigest": { "$ref": "#/$defs/digest" },
+    "godskillsReleaseDigest": { "$ref": "#/$defs/digest" },
+    "intentDigest": { "$ref": "#/$defs/digest" },
+    "methodDigest": { "$ref": "#/$defs/digest" },
+    "missionId": { "maxLength": 256, "minLength": 1, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$", "type": "string" },
+    "planDigest": { "$ref": "#/$defs/digest" },
+    "protocolId": { "const": "eternities-recoverable-typed-composition-record-v1" },
+    "registryDigest": { "$ref": "#/$defs/digest" },
+    "schemaVersion": { "const": 1 },
+    "status": { "const": "compiled" }
+  },
+  "required": ["schemaVersion", "protocolId", "status", "missionId", "intentDigest", "godskillsReleaseDigest", "compositionTrustRootDigest", "registryDigest", "bindingDigest", "bindingReceiptDigest", "activationResultDigest", "planDigest", "methodDigest", "authorityExpanded", "compilationDigest"],
+  "type": "object"
+}
