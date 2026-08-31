@@ -39,6 +39,7 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 | cortex binding compiler | derives one inert, content-addressed identity candidate and bounded model projection from a verified admission without task mutation, authority, or continuity writes |
 | cortex binding registry | serializes task and personal-keel ownership, issues credential-free active and lifecycle receipts, re-verifies renewal sources, records revocation and expiry, and shares the admitted-launch writer lock |
 | Codex bound-turn host | reserves or identifies one task, acquires a per-turn binding lease, dispatches one sealed task-scoped envelope through a trusted transport, verifies exact response bytes, and chains host receipts without transcript replay |
+| recoverable Codex turn journal | preserves one bounded digest-chained transaction per operation, separates untrusted response blobs from trusted metadata, and reconstructs the next legal recovery action without performing it |
 
 ## Cortex binding phase 1 boundary
 
@@ -65,6 +66,14 @@ The phase-3 host accepts a strict mission-shaped turn request with no identity, 
 The sealed envelope binds the operation, parent receipt, transport descriptor, active binding, and exact compact model projection under one canonical digest. Fixed host rules identify the cortex as proposal-only and deny self-admission, continuity admission, and Realm effects. The trusted transport receipt binds that digest and the exact UTF-8 response bytes. The final host receipt additionally binds the reservation for create, task and actor identity, active and released lifecycle receipts, replaceable cortex id, and zero admitted authority. Model output remains untrusted text beside the receipt.
 
 Version 1 closes its writer lease after every accepted or rejected dispatch. A later turn can therefore carry a different mission and cortex while preserving the actor through verified sources and the parent receipt chain. This avoids misrepresenting the phase-2 mission-specific candidate as a permanent multi-mission session. The current public Codex app task controls cannot satisfy the suspended-reservation and trusted execution-receipt contract, so live app wiring remains excluded rather than approximated with prompt echoes, task titles, current directories, or global instruction edits.
+
+## Recoverable Codex turn journal boundary
+
+The journal owns no external capability. It atomically records a closed transaction vocabulary under one operation-id slot and semantically replays the complete chain on every read. The opening event binds operation, turn, request, parent, task-transport descriptor, cortex, and optional existing task. A create task can enter only through a verified suspended-reservation receipt. Each ordinal attempt then binds one phase-2 active receipt and exact phase-3 dispatch.
+
+An uncertain prepared dispatch remains distinguishable from a verified completion. Completion requires the phase-3 transport receipt, a trusted execution witness over the exact dispatch and response, and execution times contained by the active binding lease. The response itself is an untrusted content-addressed blob outside journal metadata. Acceptance additionally requires the exact released lifecycle receipt and phase-3 host receipt to agree on task, actor, binding, parent, envelope, transport, cortex, and response.
+
+The recovery projection names only the next legal host action. It cannot execute that action, admit continuity, select a skill, write a personal keel, invoke a Realm hand, or establish that the current public Codex task controls implement the future reconciliation contract.
 
 ## Phase 1 creation boundary
 

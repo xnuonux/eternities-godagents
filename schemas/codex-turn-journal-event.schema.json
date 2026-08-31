@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sequence", "previousDigest", "eventType", "transactionId", "recordedAt", "payload", "contentDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sequence": { "type": "integer", "minimum": 1, "maximum": 256 },
+    "previousDigest": { "$ref": "#/$defs/digest" },
+    "eventType": {
+      "enum": ["turn.opened", "task.reserved", "attempt.prepared", "transport.completed", "binding.closed", "attempt.abandoned", "task.cancelled", "turn.accepted", "turn.quarantined"]
+    },
+    "transactionId": { "$ref": "#/$defs/digest" },
+    "recordedAt": { "type": "string", "minLength": 20, "maxLength": 32 },
+    "payload": { "type": "object" },
+    "contentDigest": { "$ref": "#/$defs/digest" }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "transactionId", "operationSlotId", "events", "headDigest", "stateDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-godagent-codex-turn-journal-v1" },
+    "transactionId": { "$ref": "#/$defs/digest" },
+    "operationSlotId": { "$ref": "#/$defs/digest" },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/event" }
+    },
+    "headDigest": { "$ref": "#/$defs/digest" },
+    "stateDigest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "sequence", "previousDigest", "eventType", "transactionId", "recordedAt", "payload", "contentDigest"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "sequence": { "type": "integer", "minimum": 1, "maximum": 256 },
+        "previousDigest": { "$ref": "#/$defs/digest" },
+        "eventType": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "transactionId": { "$ref": "#/$defs/digest" },
+        "recordedAt": { "type": "string", "minLength": 20, "maxLength": 32 },
+        "payload": { "type": "object" },
+        "contentDigest": { "$ref": "#/$defs/digest" }
+      }
+    }
+  }
+}

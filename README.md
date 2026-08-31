@@ -250,6 +250,14 @@ The transport must return a host-generated receipt over the exact task, turn, in
 
 The current public Codex app controls do not expose suspended task reservation or a trusted envelope-bound execution receipt, so this repository does not claim a live app integration. The certified boundary is an injected provider-neutral task transport contract. Prompt echoes, task titles, working directories, and global `AGENTS.md` edits are explicitly not binding proof.
 
+### Recoverable Codex turn journal v1
+
+The recoverable journal adds the inert durable substrate that phase 3 deliberately lacked. One operation id owns one content-addressed transaction slot. Its bounded, canonical event chain records exact reservation, binding-attempt, dispatch, transport-execution, response, lifecycle, cancellation, quarantine, and accepted-turn evidence. Repeating the same transition is idempotent; changed evidence under the same operation id fails closed.
+
+Model output is stored outside trusted metadata as an exact content-addressed UTF-8 blob. Terminal recovery rereads that blob and cross-checks its byte count and digest against the task transport receipt, a trusted execution-time witness, and the final host receipt. A completed transport cannot be abandoned and silently dispatched again. An undispatched attempt can be replaced only after its binding has a verified terminal lifecycle receipt.
+
+This journal is intentionally inert. It does not yet reconcile or call a live task transport, acquire or recover a binding, admit continuity content, activate Godskills, invoke Realm effects, or integrate Lunari. The next coordinator milestone must consume the frozen journal contract without weakening its receipt chain.
+
 ### Admitted local launch
 
 `launch:local` is the safe bridge from that inert admission to one networked mission. The host policy must name the exact admission-owned distribution, journal, snapshot, and instance. On first launch, an OS-account-local residency registry binds the identity to that canonical admission root so an ordinary copied tree cannot fork its history. Its location is derived from the operating-system account profile rather than launch environment variables. The launcher rejects changed bindings or runtime paths, verifies the transactional genesis receipt, journal, creation, distribution, and personal keel before runtime construction, then verifies them again through the persistent-vessel wake before the cycle. Its local reference Realm persists counter state and idempotency receipts beneath the admission-owned vessel directory instead of losing them at process exit.

@@ -363,7 +363,8 @@ function transportUnsigned({ dispatch, responseText }) {
   };
 }
 
-export function buildCodexTaskTransportReceipt({ dispatch, responseText }) {
+export function verifyCodexTaskDispatch(value) {
+  const dispatch = clone(value);
   exactKeys(dispatch, [
     'schemaVersion', 'protocolId', 'operation', 'operationId', 'turnId', 'task',
     'instructionChannel', 'bindingReceiptDigest', 'envelope', 'envelopeDigest',
@@ -387,6 +388,11 @@ export function buildCodexTaskTransportReceipt({ dispatch, responseText }) {
       || dispatch.maxResponseBytes > 4_194_304) {
     throw new IntegrityError('task dispatch response ceiling is invalid');
   }
+  return deepFreeze(dispatch);
+}
+
+export function buildCodexTaskTransportReceipt({ dispatch: inputDispatch, responseText }) {
+  const dispatch = verifyCodexTaskDispatch(inputDispatch);
   const unsigned = transportUnsigned({ dispatch, responseText });
   const receipt = { ...unsigned, receiptDigest: sha256Value(unsigned) };
   assertSchema('codex-task-transport-receipt', receipt);
@@ -409,7 +415,8 @@ export function verifyCodexTaskTransportReceipt(value) {
   return deepFreeze(receipt);
 }
 
-function verifyTransportResult(value, dispatch) {
+export function verifyCodexTaskTransportResult(value, inputDispatch) {
+  const dispatch = verifyCodexTaskDispatch(inputDispatch);
   exactKeys(value, ['responseText', 'receipt'], 'task transport result');
   if (typeof value.responseText !== 'string') throw new IntegrityError('task transport response must be text');
   const receipt = verifyCodexTaskTransportReceipt(value.receipt);
@@ -593,7 +600,10 @@ export function createCodexBoundTurnHost({
         maxResponseBytes: request.maxResponseBytes,
       });
       onDispatchStart();
-      const transportResult = verifyTransportResult(await taskTransport.dispatchTurn(dispatch), dispatch);
+      const transportResult = verifyCodexTaskTransportResult(
+        await taskTransport.dispatchTurn(dispatch),
+        dispatch,
+      );
       const lifecycleReceipt = verifyCortexBindingLifecycleReceipt(await handle.release());
       handle = null;
       const receipt = hostReceipt({

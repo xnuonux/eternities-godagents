@@ -42,6 +42,9 @@ const schemaFiles = {
   'codex-bound-turn-envelope': 'codex-bound-turn-envelope.schema.json',
   'codex-task-transport-receipt': 'codex-task-transport-receipt.schema.json',
   'codex-bound-turn-receipt': 'codex-bound-turn-receipt.schema.json',
+  'codex-task-execution-receipt': 'codex-task-execution-receipt.schema.json',
+  'codex-turn-journal-event': 'codex-turn-journal-event.schema.json',
+  'codex-turn-journal-state': 'codex-turn-journal-state.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {
