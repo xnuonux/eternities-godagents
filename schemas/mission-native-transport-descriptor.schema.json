@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64, "maxLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "transportId", "terminalReconciliation", "atomicDeduplication", "maximumCompletionBytes", "authority", "descriptorDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-native-transport-v1" },
+    "transportId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "terminalReconciliation": { "const": "by-dispatch-digest" },
+    "atomicDeduplication": { "const": true },
+    "maximumCompletionBytes": { "type": "integer", "minimum": 256, "maximum": 16777216 },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authorityExpanded", "realmEffects", "continuityAdmission", "personalKeelWrite", "identityOwnership", "evolution", "soul"],
+      "properties": {
+        "authorityExpanded": { "const": false },
+        "realmEffects": { "const": false },
+        "continuityAdmission": { "const": false },
+        "personalKeelWrite": { "const": false },
+        "identityOwnership": { "const": false },
+        "evolution": { "const": false },
+        "soul": { "const": false }
+      }
+    },
+    "descriptorDigest": { "$ref": "#/$defs/digest" }
+  }
+}

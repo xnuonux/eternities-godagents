@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64, "maxLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "requestDigest", "executorDescriptorDigest", "materializerDigest", "transportDescriptorDigest", "packageDigest", "maxCompletionTokens", "package", "authority", "dispatchDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-native-dispatch-v1" },
+    "requestDigest": { "$ref": "#/$defs/digest" },
+    "executorDescriptorDigest": { "$ref": "#/$defs/digest" },
+    "materializerDigest": { "$ref": "#/$defs/digest" },
+    "transportDescriptorDigest": { "$ref": "#/$defs/digest" },
+    "packageDigest": { "$ref": "#/$defs/digest" },
+    "maxCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+    "package": { "type": "object" },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authorityExpanded", "realmEffects", "continuityAdmission", "personalKeelWrite", "identityOwnership", "evolution", "soul"],
+      "properties": {
+        "authorityExpanded": { "const": false },
+        "realmEffects": { "const": false },
+        "continuityAdmission": { "const": false },
+        "personalKeelWrite": { "const": false },
+        "identityOwnership": { "const": false },
+        "evolution": { "const": false },
+        "soul": { "const": false }
+      }
+    },
+    "dispatchDigest": { "$ref": "#/$defs/digest" }
+  }
+}

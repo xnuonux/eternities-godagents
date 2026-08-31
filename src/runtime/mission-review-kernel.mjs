@@ -197,6 +197,7 @@ function preparedFor(evidence, phase, round) {
 function contextFor(evidence, phase, round) {
   if (phase === 'native') {
     return deepFreeze({
+      admission: clone(evidence.admission),
       mission: clone(evidence.admission.mission),
       godskillsBinding: evidence.admission.godskills === null ? null : {
         receipt: clone(evidence.admission.godskills.receipt),

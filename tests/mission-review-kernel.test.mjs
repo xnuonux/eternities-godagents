@@ -147,6 +147,50 @@ test('native-only mission completes once and terminal replay calls no executor',
   assert.deepEqual(nativeExecutor.calls, []);
 });
 
+test('native reconciliation receives the exact immutable admission and compatible projections', async (t) => {
+  const supplied = input({ missionId: 'mission-kernel-native-reconcile-context', review: true });
+  const nativeExecutor = scriptedExecutor({
+    phase: 'native',
+    artifact: { schemaVersion: 1, artifactType: 'native', content: 'native context result' },
+  });
+  let reconciledContext;
+  const originalReconcile = nativeExecutor.reconcile.bind(nativeExecutor);
+  nativeExecutor.reconcile = async (request, context) => {
+    reconciledContext = context;
+    return originalReconcile(request);
+  };
+  const reviewExecutor = scriptedExecutor({
+    phase: 'review',
+    artifact(request) {
+      return {
+        schemaVersion: 1,
+        artifactType: 'review',
+        subjectDigest: request.inputs.find(({ role }) => role === 'subject').artifactDigest,
+        recommendation: 'accept',
+        findings: [],
+        summary: 'native context accepted',
+      };
+    },
+  });
+  const revisionExecutor = scriptedExecutor({
+    phase: 'revision',
+    artifact: { schemaVersion: 1, artifactType: 'revision' },
+  });
+  const { kernel } = await kernelFixture(t, { nativeExecutor, reviewExecutor, revisionExecutor });
+  await kernel.run(supplied);
+
+  assert.equal(reconciledContext.admission.mission.missionId, supplied.mission.missionId);
+  assert.deepEqual(reconciledContext.mission, reconciledContext.admission.mission);
+  assert.deepEqual(reconciledContext.godskillsBinding, {
+    receipt: reconciledContext.admission.godskills.receipt,
+    cortexPackage: reconciledContext.admission.godskills.cortexPackage,
+  });
+  assert.equal(Object.isFrozen(reconciledContext), true);
+  assert.equal(Object.isFrozen(reconciledContext.admission), true);
+  assert.equal(Object.isFrozen(reconciledContext.mission), true);
+  assert.equal(Object.isFrozen(reconciledContext.godskillsBinding), true);
+});
+
 test('review executes only after native artifact commit and can accept it', async (t) => {
   const events = [];
   const nativeExecutor = scriptedExecutor({
