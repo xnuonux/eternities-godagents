@@ -15,6 +15,12 @@ import { validAnthropicMessagesPhasePolicy } from './helpers/anthropic-messages-
 import { validOpenAICompatiblePhasePolicy } from './helpers/openai-compatible-phase-policy-fixture.mjs';
 import { nativeDispatch } from './helpers/openai-compatible-phase-operation-fixture.mjs';
 import { runProviderPhaseHostConformance } from './helpers/provider-phase-host-conformance.mjs';
+import { buildProviderPhaseResponseWitness } from '../src/transports/provider-phase-resolution.mjs';
+import {
+  signProviderResolutionDecision,
+  unsignedProviderResolutionDecision,
+  validProviderPhaseResolutionPolicy,
+} from './helpers/provider-phase-resolution-fixture.mjs';
 
 const PHASES = ['native', 'review', 'revision'];
 
@@ -136,13 +142,16 @@ test('both registered families expose one common credential-free host surface', 
   for (const family of Object.keys(FAMILIES)) {
     const state = await setup(t, family);
     assert.deepEqual(Object.keys(state.host).sort(), [
-      'assertCredentialAbsent', 'describe', 'native', 'review', 'revision',
+      'assertCredentialAbsent', 'createOperatorResolutionController', 'describe',
+      'native', 'review', 'revision',
     ]);
     const description = verifyProviderPhaseHostDescription(state.host.describe());
     assert.equal(description.family, family);
     assert.equal(description.policyDigest, state.policyDigest);
     assert.deepEqual(Object.keys(description.descriptors), ['native', 'review', 'revision']);
     assert.equal(canonicalJson(description).includes(state.secret), false);
+    assert.equal(description.capabilities.signedAmbiguityResolutionAvailable, true);
+    assert.equal(typeof state.host.createOperatorResolutionController, 'function');
     assert.equal(state.providerCalls, 0);
   }
 });
@@ -190,4 +199,62 @@ test('description verification rejects cross-family descriptor substitution afte
   forged.descriptionDigest = sha256Value(unsigned);
 
   assert.throws(() => verifyProviderPhaseHostDescription(forged), /descriptor/i);
+});
+
+test('Anthropic host resolves one ambiguous native phase through its explicit signed controller', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'godagents-provider-phase-sdk-resolution-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const policy = validAnthropicMessagesPhasePolicy();
+  const policyPath = join(root, 'policy.json');
+  const policyDigest = sha256Text(canonicalJson(policy));
+  await writeFile(policyPath, `${canonicalJson(policy)}\n`, 'utf8');
+  let providerCalls = 0;
+  const host = await createProviderPhaseHost({
+    family: 'anthropic-messages-v1',
+    policyPath,
+    env: {
+      GODAGENT_ANTHROPIC_PHASE_TRANSPORT_POLICY_SHA256: policyDigest,
+      [policy.provider.credentialEnv]: 'provider-phase-host-resolution-secret',
+    },
+    runtimeRoot: join(root, 'operations'),
+    clock: () => '2026-08-31T20:02:00.000Z',
+    fetchImpl: async () => {
+      providerCalls += 1;
+      throw new Error('fixture ambiguous native outcome');
+    },
+  });
+  const dispatch = await nativeDispatch(t, host.describe().descriptors.native);
+  await assert.rejects(host.native.execute(dispatch), (error) => error.code === 'provider-ambiguous');
+
+  const resolutionPolicy = validProviderPhaseResolutionPolicy({ transportPolicyDigest: policyDigest });
+  const resolutionPolicyPath = join(root, 'resolution-policy.json');
+  const resolutionPolicyDigest = sha256Text(canonicalJson(resolutionPolicy));
+  await writeFile(resolutionPolicyPath, `${canonicalJson(resolutionPolicy)}\n`, 'utf8');
+  const controller = await host.createOperatorResolutionController({
+    policyPath: resolutionPolicyPath,
+    env: { GODAGENT_PROVIDER_PHASE_RESOLUTION_POLICY_SHA256: resolutionPolicyDigest },
+  });
+  const inspected = await controller.inspect({ phase: 'native', dispatch });
+  const body = FAMILIES['anthropic-messages-v1'].response(policy.provider.modelId, 'native');
+  const response = {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+    bodyText: JSON.stringify(body),
+  };
+  const witness = buildProviderPhaseResponseWitness(response);
+  const signedDecision = signProviderResolutionDecision(unsignedProviderResolutionDecision({
+    policyDigest: resolutionPolicyDigest,
+    phase: 'native',
+    dispatchDigest: inspected.operation.dispatchDigest,
+    requestDigest: inspected.operation.requestDigest,
+    attemptId: inspected.operation.attemptId,
+    disposition: 'adopt-response',
+    responseWitnessDigest: witness.witnessDigest,
+  }));
+  const resolved = await controller.resolve({
+    phase: 'native', dispatch, signedDecision, response,
+  });
+  assert.equal(resolved.status, 'completed');
+  assert.equal(resolved.completion.artifact.content, 'one portable sdk native artifact');
+  assert.equal(providerCalls, 1);
 });

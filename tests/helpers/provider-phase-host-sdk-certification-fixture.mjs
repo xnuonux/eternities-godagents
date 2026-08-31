@@ -157,8 +157,7 @@ export async function buildDeterministicProviderPhaseHostSdkFixture() {
       credentialLeaks,
       explicitCapabilityDifferences: values[0].capabilities.providerEvidenceProfile
         !== values[1].capabilities.providerEvidenceProfile
-        && values[0].capabilities.signedAmbiguityResolutionAvailable
-        !== values[1].capabilities.signedAmbiguityResolutionAvailable,
+        && values[0].capabilities.wireProfile !== values[1].capabilities.wireProfile,
       commonSurfaceParity: surfaces.every((surface) => canonicalJson(surface) === canonicalJson(surfaces[0])),
     };
     const unsigned = {

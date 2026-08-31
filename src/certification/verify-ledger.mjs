@@ -29,6 +29,7 @@ const registry = Object.freeze({
   'local-admission-shell-certification.json': 'local-admission-shell-v1',
   'networked-cortex-certification.json': 'networked-cortex-v1',
   'provider-neutral-phase-protocol-v1.json': 'provider-neutral-phase-protocol-v1',
+  'provider-neutral-phase-resolution-v1.json': 'provider-neutral-phase-resolution-v1',
   'provider-phase-host-sdk-v1.json': 'provider-phase-host-sdk-v1',
   'recoverable-godskills-admission-v1.json': 'recoverable-godskills-admission-v1',
   'recoverable-mission-native-executor-v1.json': 'recoverable-mission-native-executor-v1',
@@ -54,6 +55,7 @@ const requiredHistoricalLinks = Object.freeze({
       'durable-anthropic-messages-phase-transport-v1.json',
       'provider-phase-host-sdk-v1.json',
       'provider-neutral-phase-protocol-v1.json',
+      'provider-neutral-phase-resolution-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
   'receipt-bound-typed-executor-bundle-v1.json': Object.freeze(expectedFiles
@@ -61,6 +63,7 @@ const requiredHistoricalLinks = Object.freeze({
       'durable-anthropic-messages-phase-transport-v1.json',
       'provider-phase-host-sdk-v1.json',
       'provider-neutral-phase-protocol-v1.json',
+      'provider-neutral-phase-resolution-v1.json',
       'receipt-bound-typed-executor-bundle-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
@@ -68,10 +71,14 @@ const requiredHistoricalLinks = Object.freeze({
     .filter((file) => ![
       'durable-anthropic-messages-phase-transport-v1.json',
       'provider-phase-host-sdk-v1.json',
+      'provider-neutral-phase-resolution-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
   'provider-phase-host-sdk-v1.json': Object.freeze(expectedFiles
-    .filter((file) => file !== 'provider-phase-host-sdk-v1.json')
+    .filter((file) => !['provider-phase-host-sdk-v1.json', 'provider-neutral-phase-resolution-v1.json'].includes(file))
+    .map((file) => `receipts/${file}`)),
+  'provider-neutral-phase-resolution-v1.json': Object.freeze(expectedFiles
+    .filter((file) => file !== 'provider-neutral-phase-resolution-v1.json')
     .map((file) => `receipts/${file}`)),
   'admitted-sealed-identity-host-v1.json': Object.freeze([
     'receipts/codex-bound-turn-v1.json',
@@ -854,6 +861,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(providerPhaseSdk.receipt)) {
       throw new Error('provider phase host sdk certification differs from exact source reconstruction');
+    }
+  }
+
+  const providerNeutralResolution = loaded.get('provider-neutral-phase-resolution-v1.json');
+  if (providerNeutralResolution) {
+    const { buildProviderNeutralPhaseResolutionReceiptFromSource } = await import(
+      '../../scripts/build-provider-neutral-phase-resolution-v1-receipt.mjs'
+    );
+    const rebuilt = await buildProviderNeutralPhaseResolutionReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: providerNeutralResolution.receipt.source.commit,
+      testRuns: providerNeutralResolution.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(providerNeutralResolution.receipt)) {
+      throw new Error('provider-neutral phase resolution certification differs from exact source reconstruction');
     }
   }
 

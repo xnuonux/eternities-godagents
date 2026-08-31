@@ -16,6 +16,7 @@ import {
   loadAnthropicMessagesPhaseTransportPolicy,
 } from './anthropic-messages-phase-policy.mjs';
 import { createDurablePhaseOperationSuite, DurablePhaseOperationError } from './durable-phase-operation.mjs';
+import { loadProviderPhaseResolutionPolicy } from './provider-phase-resolution.mjs';
 
 const PROVIDER_USAGE_KEYS = [
   'uncachedInputTokens',
@@ -130,6 +131,19 @@ export async function createAnthropicMessagesPhaseTransportSuite({
     return clone(value);
   }
 
+  async function createOperatorResolutionController({
+    policyPath: resolutionPolicyPath,
+    env: resolutionEnv,
+  } = {}) {
+    const loadedResolutionPolicy = await loadProviderPhaseResolutionPolicy({
+      path: resolutionPolicyPath,
+      env: resolutionEnv,
+      transportPolicyDigest: loaded.digest,
+      maximumProviderResponseBytes: loaded.policy.provider.maximumResponseBytes,
+    });
+    return phases.createOperatorResolutionController(loadedResolutionPolicy);
+  }
+
   return deepFreeze({
     policyDigest: loaded.digest,
     descriptors,
@@ -137,5 +151,6 @@ export async function createAnthropicMessagesPhaseTransportSuite({
     review: phases.review,
     revision: phases.revision,
     assertCredentialAbsent,
+    createOperatorResolutionController,
   });
 }

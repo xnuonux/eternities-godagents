@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "policyId", "transportPolicyDigest", "authority", "maximumDecisionLifetimeMs", "maximumAdoptedResponseBytes"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-provider-phase-resolution-policy-v1" },
+    "policyId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "transportPolicyDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "keyId", "publicKeySpki"],
+      "properties": {
+        "algorithm": { "const": "Ed25519" },
+        "keyId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "publicKeySpki": { "type": "string", "minLength": 40, "maxLength": 512, "pattern": "^[A-Za-z0-9+/]+={0,2}$" }
+      }
+    },
+    "maximumDecisionLifetimeMs": { "type": "integer", "minimum": 1000, "maximum": 86400000 },
+    "maximumAdoptedResponseBytes": { "type": "integer", "minimum": 256, "maximum": 4194304 }
+  }
+}

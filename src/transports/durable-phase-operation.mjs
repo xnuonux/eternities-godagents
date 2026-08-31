@@ -9,6 +9,12 @@ import { verifyMissionRevisionTransportCompletion } from '../runtime/mission-rev
 import { verifyGodskillsReviewTransportCompletion } from '../skills/review-transport-contracts.mjs';
 import { publishFileExclusive } from '../state/atomic-publication.mjs';
 import { acquireFileLock } from '../state/file-lock.mjs';
+import {
+  buildProviderPhaseResponseWitness,
+  ProviderPhaseResolutionError,
+  verifyProviderPhaseResolutionDecision,
+  verifyProviderPhaseResponseWitness,
+} from './provider-phase-resolution.mjs';
 
 const MESSAGES = Object.freeze({
   'credential-in-input': 'Durable phase transport input contains its credential',
@@ -19,23 +25,32 @@ const MESSAGES = Object.freeze({
   'response-over-budget': 'Durable phase provider response exceeded its byte ceiling',
   'response-invalid': 'Durable phase provider response is invalid',
   'credential-reflected': 'Durable phase provider response reflected its credential',
+  'operator-abandoned': 'Durable phase operation was abandoned by its operator',
+  'resolution-not-pending': 'Durable phase operation is not pending resolution',
 });
 
 const DIGEST = /^[a-f0-9]{64}$/;
+const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+const NONCE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const PHASES = ['native', 'review', 'revision'];
 const PREPARED_PROTOCOL = 'eternities-durable-phase-prepared-v1';
 const ATTEMPT_PROTOCOL = 'eternities-durable-phase-attempt-v1';
 const EVIDENCE_PROTOCOL = 'eternities-provider-phase-evidence-v1';
 const FAILURE_PROTOCOL = 'eternities-durable-phase-failure-v1';
+const RESOLUTION_PROTOCOL = 'eternities-provider-phase-resolution-record-v1';
+const RESOLUTION_DECISION_PROTOCOL = 'eternities-provider-phase-resolution-decision-v1';
+const RESOLUTION_DISPOSITIONS = new Set(['adopt-response', 'abandon']);
 const FAILURE_REASONS = new Set([
   'provider-rejected',
   'response-over-budget',
   'response-invalid',
   'credential-reflected',
+  'operator-abandoned',
 ]);
 const OPERATION_FILES = new Set([
   'prepared.json',
   'attempt.json',
+  'resolution.json',
   'provider-evidence.json',
   'completion.json',
   'failure.json',
@@ -247,6 +262,108 @@ function verifyFailure(value, { phase, dispatch, request, attempt }) {
   return value;
 }
 
+function resolutionRecord({
+  phase,
+  dispatch,
+  request,
+  attempt,
+  loadedPolicy,
+  verifiedDecision,
+  responseWitness,
+  acceptedAt,
+}) {
+  return withRecordDigest({
+    schemaVersion: 1,
+    protocolId: RESOLUTION_PROTOCOL,
+    status: 'accepted',
+    phase,
+    dispatchDigest: dispatch.dispatchDigest,
+    requestDigest: request.requestDigest,
+    attemptId: attempt.attemptId,
+    resolutionPolicyDigest: loadedPolicy.digest,
+    decisionDigest: verifiedDecision.decision.decisionDigest,
+    disposition: verifiedDecision.decision.disposition,
+    signedDecision: clone(verifiedDecision),
+    responseWitness: responseWitness === null ? null : clone(responseWitness),
+    acceptedAt,
+  });
+}
+
+function verifyResolutionRecord(value, {
+  phase,
+  dispatch,
+  request,
+  attempt,
+  loadedPolicy,
+} = {}) {
+  exactKeys(value, [
+    'schemaVersion', 'protocolId', 'status', 'phase', 'dispatchDigest',
+    'requestDigest', 'attemptId', 'resolutionPolicyDigest', 'decisionDigest',
+    'disposition', 'signedDecision', 'responseWitness', 'acceptedAt', 'recordDigest',
+  ], 'provider phase resolution record');
+  const { recordDigest, ...unsigned } = value;
+  requireDigest(recordDigest, 'provider phase resolution record');
+  exactKeys(value.signedDecision, ['decision', 'signature'], 'provider phase signed decision');
+  exactKeys(value.signedDecision.decision, [
+    'schemaVersion', 'protocolId', 'policyDigest', 'keyId', 'phase',
+    'dispatchDigest', 'requestDigest', 'attemptId', 'disposition',
+    'responseWitnessDigest', 'issuedAt', 'expiresAt', 'nonce', 'decisionDigest',
+  ], 'provider phase resolution decision');
+  const decision = value.signedDecision.decision;
+  const { decisionDigest, ...decisionUnsigned } = decision;
+  const acceptedAt = Date.parse(value.acceptedAt);
+  const issuedAt = Date.parse(decision.issuedAt);
+  const expiresAt = Date.parse(decision.expiresAt);
+  const witness = value.responseWitness === null
+    ? null
+    : verifyProviderPhaseResponseWitness(value.responseWitness);
+  if (value.schemaVersion !== 1 || value.protocolId !== RESOLUTION_PROTOCOL
+      || value.status !== 'accepted' || value.phase !== phase
+      || value.dispatchDigest !== dispatch.dispatchDigest
+      || value.requestDigest !== request.requestDigest || value.attemptId !== attempt.attemptId
+      || !DIGEST.test(value.resolutionPolicyDigest) || value.decisionDigest !== decisionDigest
+      || value.disposition !== decision.disposition
+      || decision.schemaVersion !== 1 || decision.protocolId !== RESOLUTION_DECISION_PROTOCOL
+      || !IDENTIFIER.test(decision.keyId) || !NONCE.test(decision.nonce)
+      || !RESOLUTION_DISPOSITIONS.has(decision.disposition)
+      || !DIGEST.test(decision.policyDigest) || !DIGEST.test(decision.dispatchDigest)
+      || !DIGEST.test(decision.requestDigest) || !DIGEST.test(decision.attemptId)
+      || !DIGEST.test(decisionDigest)
+      || decision.policyDigest !== value.resolutionPolicyDigest
+      || decision.phase !== phase || decision.dispatchDigest !== dispatch.dispatchDigest
+      || decision.requestDigest !== request.requestDigest || decision.attemptId !== attempt.attemptId
+      || decisionDigest !== sha256Value(decisionUnsigned)
+      || !Number.isFinite(acceptedAt) || new Date(acceptedAt).toISOString() !== value.acceptedAt
+      || !Number.isFinite(issuedAt) || new Date(issuedAt).toISOString() !== decision.issuedAt
+      || !Number.isFinite(expiresAt) || new Date(expiresAt).toISOString() !== decision.expiresAt
+      || expiresAt <= issuedAt || acceptedAt < issuedAt || acceptedAt > expiresAt
+      || (decision.disposition === 'adopt-response'
+        ? !witness || decision.responseWitnessDigest !== witness.witnessDigest
+        : witness !== null || decision.responseWitnessDigest !== null)
+      || typeof value.signedDecision.signature !== 'string'
+      || Buffer.from(value.signedDecision.signature, 'base64').toString('base64')
+        !== value.signedDecision.signature
+      || Buffer.from(value.signedDecision.signature, 'base64').length !== 64
+      || sha256Value(unsigned) !== recordDigest) {
+    throw new IntegrityError('provider phase resolution record binding is invalid');
+  }
+  if (loadedPolicy) {
+    verifyProviderPhaseResolutionDecision({
+      signedDecision: value.signedDecision,
+      loadedPolicy,
+      operation: {
+        phase,
+        dispatchDigest: dispatch.dispatchDigest,
+        requestDigest: request.requestDigest,
+        attemptId: attempt.attemptId,
+      },
+      responseWitnessDigest: witness?.witnessDigest ?? null,
+      now: acceptedAt,
+    });
+  }
+  return value;
+}
+
 function verifyCompletion(phase, completion, dispatch, descriptor) {
   if (phase === 'native') return verifyIdentityBoundNativeCompletion(completion, { dispatch, transportDescriptor: descriptor });
   if (phase === 'review') return verifyGodskillsReviewTransportCompletion(completion, { dispatch, transportDescriptor: descriptor });
@@ -261,6 +378,7 @@ function operationPaths(root, phase, dispatchDigest) {
     operationRoot,
     prepared: join(operationRoot, 'prepared.json'),
     attempt: join(operationRoot, 'attempt.json'),
+    resolution: join(operationRoot, 'resolution.json'),
     evidence: join(operationRoot, 'provider-evidence.json'),
     completion: join(operationRoot, 'completion.json'),
     failure: join(operationRoot, 'failure.json'),
@@ -291,7 +409,8 @@ async function publishRecord(path, value) {
 
 async function inspectOperation({
   paths, phase, policyDigest, dispatch, descriptor, request, expectedPrepared,
-  verifyProviderEvidence, ignoreLock = false,
+  verifyProviderEvidence, ignoreLock = false, returnFailure = false,
+  loadedResolutionPolicy,
 }) {
   if (!await operationExists(paths)) return { status: 'absent' };
   const entries = await readdir(paths.operationRoot);
@@ -304,34 +423,51 @@ async function inspectOperation({
 
   const prepared = await readCanonical(paths.prepared, 'durable phase prepared record');
   const attempt = await readCanonical(paths.attempt, 'durable phase attempt record');
+  const resolution = await readCanonical(paths.resolution, 'provider phase resolution record');
   const evidence = await readCanonical(paths.evidence, 'durable phase provider evidence record');
   const completion = await readCanonical(paths.completion, 'durable phase completion record');
   const failure = await readCanonical(paths.failure, 'durable phase failure record');
   if (completion && failure) throw new IntegrityError('durable phase operation has contradictory terminal records');
-  if ((attempt || evidence || completion || failure) && !prepared) throw new IntegrityError('durable phase operation lacks its prepared record');
-  if ((evidence || completion || failure) && !attempt) throw new IntegrityError('durable phase operation lacks its attempt record');
+  if ((attempt || resolution || evidence || completion || failure) && !prepared) throw new IntegrityError('durable phase operation lacks its prepared record');
+  if ((resolution || evidence || completion || failure) && !attempt) throw new IntegrityError('durable phase operation lacks its attempt record');
   if (completion && !evidence) throw new IntegrityError('durable phase completion lacks provider evidence');
   if (failure && evidence) throw new IntegrityError('durable phase failure contradicts provider evidence');
   if (prepared) verifyPrepared(prepared, expectedPrepared);
   if (attempt) verifyAttempt(attempt, { phase, dispatch, request });
+  if (resolution) verifyResolutionRecord(resolution, {
+    phase,
+    dispatch,
+    request,
+    attempt,
+    ...(loadedResolutionPolicy ? { loadedPolicy: loadedResolutionPolicy } : {}),
+  });
   if (evidence && !completion) {
     verifyProviderEvidenceRecord(evidence, {
       phase, policyDigest, dispatch, request, attempt, completion: null, verifyProviderEvidence,
     });
   }
   if (completion) {
+    if (resolution && resolution.disposition !== 'adopt-response') {
+      throw new IntegrityError('durable phase completion contradicts its operator resolution');
+    }
     verifyCompletion(phase, completion, dispatch, descriptor);
     verifyProviderEvidenceRecord(evidence, {
       phase, policyDigest, dispatch, request, attempt, completion, verifyProviderEvidence,
     });
-    return { status: 'completed', completion, evidence, prepared, attempt };
+    return { status: 'completed', completion, evidence, prepared, attempt, resolution };
   }
   if (failure) {
+    if ((resolution && (resolution.disposition !== 'abandon'
+        || failure.reasonCode !== 'operator-abandoned'))
+        || (!resolution && failure.reasonCode === 'operator-abandoned')) {
+      throw new IntegrityError('durable phase failure contradicts its operator resolution');
+    }
     verifyFailure(failure, { phase, dispatch, request, attempt });
+    if (returnFailure) return { status: 'failed', failure, prepared, attempt, resolution };
     fail(failure.reasonCode);
   }
-  if (attempt || evidence || writing.length > 0 || (lock && !ignoreLock)) {
-    return { status: 'pending', prepared, attempt, evidence };
+  if (attempt || resolution || evidence || writing.length > 0 || (lock && !ignoreLock)) {
+    return { status: 'pending', prepared, attempt, resolution, evidence };
   }
   return { status: 'absent', prepared };
 }
@@ -395,7 +531,249 @@ export async function createDurablePhaseOperationSuite({
       fail(reasonCode);
     }
 
-    return Object.freeze({
+    function operationProjection(state) {
+      return deepFreeze({
+        phase,
+        dispatchDigest: state.attempt.dispatchDigest,
+        requestDigest: state.attempt.requestDigest,
+        attemptId: state.attempt.attemptId,
+      });
+    }
+
+    function resolutionResult(state) {
+      const common = {
+        decisionDigest: state.resolution.decisionDigest,
+        resolutionRecordDigest: state.resolution.recordDigest,
+      };
+      if (state.status === 'completed') {
+        return deepFreeze({ status: 'completed', ...common, completion: clone(state.completion) });
+      }
+      return deepFreeze({ status: 'abandoned', ...common, reasonCode: state.failure.reasonCode });
+    }
+
+    async function acquireOperationLock(paths) {
+      try {
+        return await acquireFileLock({ ...lockOptions, lockPath: paths.lock });
+      } catch (error) {
+        if (error instanceof IntegrityError
+            && error.message === 'resource is locked by a live or recent owner') {
+          fail('operation-pending', error);
+        }
+        fail('operation-integrity', error);
+      }
+    }
+
+    async function inspectForResolution(dispatch, loadedPolicy) {
+      const { request, expectedPrepared, paths } = prepare(dispatch);
+      try {
+        const state = await inspectOperation({
+          paths, phase, policyDigest, dispatch, descriptor, request, expectedPrepared,
+          verifyProviderEvidence, returnFailure: true, loadedResolutionPolicy: loadedPolicy,
+        });
+        if (state.status === 'pending' && state.attempt) {
+          return deepFreeze({
+            status: 'pending',
+            operation: operationProjection(state),
+            resolutionAccepted: Boolean(state.resolution),
+          });
+        }
+        if ((state.status === 'completed' || state.status === 'failed') && state.resolution) {
+          return resolutionResult(state);
+        }
+        if (state.status === 'failed') {
+          return deepFreeze({ status: 'failed', reasonCode: state.failure.reasonCode });
+        }
+        return Object.freeze({ status: state.status });
+      } catch (error) {
+        if (error instanceof DurablePhaseOperationError
+            || error instanceof ProviderPhaseResolutionError
+            || error?.code?.startsWith('response-') || error?.code === 'credential-reflected'
+            || error?.code === 'dispatch-invalid' || error?.code === 'request-over-budget') throw error;
+        fail('operation-integrity', error);
+      }
+    }
+
+    async function resolveOperation({ dispatch, signedDecision, response, loadedPolicy }) {
+      const { request, expectedPrepared, paths } = prepare(dispatch);
+      try {
+        if (!await operationExists(paths)) fail('resolution-not-pending');
+      } catch (error) {
+        if (error instanceof DurablePhaseOperationError) throw error;
+        fail('operation-integrity', error);
+      }
+      const lock = await acquireOperationLock(paths);
+      try {
+        let state = await inspectOperation({
+          paths, phase, policyDigest, dispatch, descriptor, request, expectedPrepared,
+          verifyProviderEvidence, ignoreLock: true, returnFailure: true,
+          loadedResolutionPolicy: loadedPolicy,
+        });
+        if (!state.attempt) fail('resolution-not-pending');
+        const operation = operationProjection(state);
+        const responseWitness = response === undefined
+          ? null
+          : buildProviderPhaseResponseWitness(response);
+        if (responseWitness
+            && responseWitness.bodyBytes > loadedPolicy.policy.maximumAdoptedResponseBytes) {
+          throw new ProviderPhaseResolutionError('decision-invalid');
+        }
+
+        if (state.status === 'completed' || state.status === 'failed') {
+          if (!state.resolution) fail('resolution-not-pending');
+          verifyProviderPhaseResolutionDecision({
+            signedDecision,
+            loadedPolicy,
+            operation,
+            responseWitnessDigest: responseWitness?.witnessDigest ?? null,
+            now: Date.parse(state.resolution.acceptedAt),
+          });
+          if (canonicalJson(state.resolution.signedDecision) !== canonicalJson(signedDecision)
+              || canonicalJson(state.resolution.responseWitness) !== canonicalJson(responseWitness)) {
+            throw new IntegrityError('provider phase resolution collision');
+          }
+          return resolutionResult(state);
+        }
+
+        let acceptedAt;
+        let verifiedDecision;
+        let record;
+        if (state.resolution) {
+          acceptedAt = state.resolution.acceptedAt;
+          verifyResolutionRecord(state.resolution, {
+            phase, dispatch, request, attempt: state.attempt, loadedPolicy,
+          });
+          verifiedDecision = verifyProviderPhaseResolutionDecision({
+            signedDecision,
+            loadedPolicy,
+            operation,
+            responseWitnessDigest: responseWitness?.witnessDigest ?? null,
+            now: Date.parse(acceptedAt),
+          });
+          if (canonicalJson(state.resolution.signedDecision) !== canonicalJson(verifiedDecision)
+              || canonicalJson(state.resolution.responseWitness) !== canonicalJson(responseWitness)) {
+            throw new IntegrityError('provider phase resolution collision');
+          }
+          record = state.resolution;
+        } else {
+          acceptedAt = isoNow(clock, 'provider phase resolution');
+          verifiedDecision = verifyProviderPhaseResolutionDecision({
+            signedDecision,
+            loadedPolicy,
+            operation,
+            responseWitnessDigest: responseWitness?.witnessDigest ?? null,
+            now: Date.parse(acceptedAt),
+          });
+          record = resolutionRecord({
+            phase, dispatch, request, attempt: state.attempt, loadedPolicy,
+            verifiedDecision, responseWitness, acceptedAt,
+          });
+        }
+
+        let completion = null;
+        let providerEvidence = null;
+        let evidence = null;
+        if (record.disposition === 'adopt-response') {
+          if (!responseWitness || response.status < 200 || response.status >= 300) {
+            throw new ProviderPhaseResolutionError('decision-invalid');
+          }
+          const credential = credentialResolver.resolve();
+          assertSecretAbsent(dispatch, request, credential);
+          const inspected = inspectResponse({
+            phase, dispatch, descriptor, policy, response, credential,
+            startedAt: state.attempt.startedAt, completedAt: acceptedAt,
+          });
+          completion = inspected?.completion;
+          providerEvidence = inspected?.providerUsage;
+          verifyCompletion(phase, completion, dispatch, descriptor);
+          verifyProviderEvidence(providerEvidence);
+          evidence = providerEvidenceRecord({
+            phase, policyDigest, dispatch, request, attempt: state.attempt,
+            completion, providerEvidence,
+          });
+        }
+
+        if (state.evidence) {
+          if (record.disposition !== 'adopt-response') {
+            throw new IntegrityError('provider phase abandonment contradicts existing provider evidence');
+          }
+          verifyProviderEvidenceRecord(state.evidence, {
+            phase, policyDigest, dispatch, request, attempt: state.attempt,
+            completion, verifyProviderEvidence,
+          });
+          if (canonicalJson(state.evidence) !== canonicalJson(evidence)) {
+            throw new IntegrityError('provider phase resolution collides with existing provider evidence');
+          }
+        }
+
+        if (!state.resolution) {
+          if (!await publishRecord(paths.resolution, record)) {
+            const stored = await readCanonical(paths.resolution, 'provider phase resolution record');
+            verifyResolutionRecord(stored, {
+              phase, dispatch, request, attempt: state.attempt, loadedPolicy,
+            });
+            if (canonicalJson(stored) !== canonicalJson(record)) {
+              throw new IntegrityError('provider phase resolution changed under one operation');
+            }
+            record = stored;
+          }
+        }
+        await checkpoint('after-provider-phase-resolution-persisted', phase, dispatch.dispatchDigest);
+
+        if (record.disposition === 'abandon') {
+          const failure = failureRecord({
+            phase, dispatch, request, attempt: state.attempt, reasonCode: 'operator-abandoned',
+            response: null, failedAt: acceptedAt,
+          });
+          if (!await publishRecord(paths.failure, failure)) {
+            const stored = await readCanonical(paths.failure, 'durable phase failure record');
+            verifyFailure(stored, { phase, dispatch, request, attempt: state.attempt });
+            if (canonicalJson(stored) !== canonicalJson(failure)) {
+              throw new IntegrityError('durable phase failure changed under one resolution');
+            }
+          }
+        } else {
+          if (!await publishRecord(paths.evidence, evidence)) {
+            const stored = await readCanonical(paths.evidence, 'durable phase provider evidence record');
+            verifyProviderEvidenceRecord(stored, {
+              phase, policyDigest, dispatch, request, attempt: state.attempt,
+              completion, verifyProviderEvidence,
+            });
+            if (canonicalJson(stored) !== canonicalJson(evidence)) {
+              throw new IntegrityError('durable phase provider evidence changed under one resolution');
+            }
+          }
+          await checkpoint('after-provider-phase-resolution-provider-evidence-persisted', phase, dispatch.dispatchDigest);
+          if (!await publishRecord(paths.completion, completion)) {
+            const stored = await readCanonical(paths.completion, 'durable phase completion record');
+            verifyCompletion(phase, stored, dispatch, descriptor);
+            if (canonicalJson(stored) !== canonicalJson(completion)) {
+              throw new IntegrityError('durable phase completion changed under one resolution');
+            }
+          }
+        }
+        await checkpoint('after-provider-phase-resolution-terminal-persisted', phase, dispatch.dispatchDigest);
+        state = await inspectOperation({
+          paths, phase, policyDigest, dispatch, descriptor, request, expectedPrepared,
+          verifyProviderEvidence, ignoreLock: true, returnFailure: true,
+          loadedResolutionPolicy: loadedPolicy,
+        });
+        return resolutionResult(state);
+      } catch (error) {
+        if (error instanceof DurablePhaseOperationError
+            || error instanceof ProviderPhaseResolutionError
+            || error?.code?.startsWith('response-') || error?.code === 'credential-reflected'
+            || error?.code === 'dispatch-invalid' || error?.code === 'request-over-budget') throw error;
+        fail('operation-integrity', error);
+      } finally {
+        try {
+          await lock.release();
+        } catch (error) {
+          throw new DurablePhaseOperationError('operation-integrity', error);
+        }
+      }
+    }
+
+    const adapter = Object.freeze({
       descriptor() {
         return clone(descriptor);
       },
@@ -523,8 +901,40 @@ export async function createDurablePhaseOperationSuite({
         }
       },
     });
+    return Object.freeze({
+      adapter,
+      operator: Object.freeze({ inspect: inspectForResolution, resolve: resolveOperation }),
+    });
   }
 
-  const adapters = Object.fromEntries(PHASES.map((phase) => [phase, phaseAdapter(phase)]));
-  return deepFreeze(adapters);
+  const phases = Object.fromEntries(PHASES.map((phase) => [phase, phaseAdapter(phase)]));
+  return deepFreeze({
+    native: phases.native.adapter,
+    review: phases.review.adapter,
+    revision: phases.revision.adapter,
+    createOperatorResolutionController(loadedPolicy) {
+      if (!loadedPolicy || typeof loadedPolicy !== 'object') {
+        throw new TypeError('provider phase resolution policy is required');
+      }
+      function port(phase) {
+        if (!Object.hasOwn(phases, phase)) {
+          throw new TypeError('provider phase resolution phase is invalid');
+        }
+        return phases[phase].operator;
+      }
+      return deepFreeze({
+        policyDigest: loadedPolicy.digest,
+        authorityKeyId: loadedPolicy.policy.authority.keyId,
+        async inspect({ phase, dispatch } = {}) {
+          return port(phase).inspect(dispatch, loadedPolicy);
+        },
+        async resolve({ phase, dispatch, signedDecision, response } = {}) {
+          return port(phase).resolve({
+            dispatch, signedDecision, loadedPolicy,
+            ...(response === undefined ? {} : { response }),
+          });
+        },
+      });
+    },
+  });
 }

@@ -44,7 +44,7 @@ const FAMILIES = Object.freeze({
       localDispatchSemantics: 'at-most-once',
       providerEvidenceProfile: 'completion-bound-sidecar',
       credentialPreflight: true,
-      signedAmbiguityResolutionAvailable: false,
+      signedAmbiguityResolutionAvailable: true,
     }),
   }),
 });
@@ -136,6 +136,9 @@ export async function createProviderPhaseHost(options = {}) {
     },
     assertCredentialAbsent(value) {
       return suite.assertCredentialAbsent(value);
+    },
+    createOperatorResolutionController(options) {
+      return suite.createOperatorResolutionController(options);
     },
     native: suite.native,
     review: suite.review,
