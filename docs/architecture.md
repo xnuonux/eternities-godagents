@@ -137,7 +137,17 @@ The native wrapper preserves the certified mission-native transport surface whil
 
 The deterministic proof uses the actual pinned Godskills release and adaptive activation adapter. Review mode exposes no selected Godskill body before native inference. It interrupts after the inner native transport completes, reconstructs every process-local component, rehydrates without routing, classification, or activation, recovers the same dispatch without redispatch, and finishes real review, revision, and final review. Terminal replay performs no external phase or activation work. Realm action, continuity admission, personal-keel writes, identity ownership, evolution, Inspiration, and Soul remain absent.
 
-This boundary still trusts each injected transport's terminal lookup and atomic deduplication promise. It does not qualify live providers or output quality, and it does not close the narrow crash window after a first external activation result but before immutable vessel publication. A future activation outbox must close that window without weakening the current request-digest idempotency requirement.
+This boundary still trusts each injected transport's terminal lookup and atomic deduplication promise. It does not qualify live providers or output quality. Its original narrow crash window after a first external activation result but before immutable vessel publication is closed by the recoverable Godskills admission boundary below.
+
+## Recoverable Godskills admission boundary
+
+The recoverable admission layer wraps the pinned Godskills adapter while leaving routing policy, activation policy, selected-package materialization, and semantic receipt validation under that adapter's control. Before either external stage can run, one mission id publishes an immutable binding intent containing the complete binding input and release identity. Changed input or release data collides before any transport call.
+
+Routing and activation each use a strict authority-empty descriptor, immutable content-addressed dispatch, and strict completion. The operation record is published before transport use. Reconstruction first checks a locally published completion and then asks the injected transport for the exact dispatch digest. Only an exact `absent` answer permits one execution. `completed` recovers, `pending` returns a closed wait projection, and `ambiguous` fails. The transport remains responsible for truthful terminal lookup and atomic deduplication.
+
+After both recovered results pass the existing Godskills validators, one immutable final binding record is published. Exact replay performs no routing, classification, or activation, although semantic rehydration may read a selected method body when the pinned activation mode requires it. An interrupted activation that reclassifies differently collides with its already published request and fails before another external call. Pending admission creates no vessel record and invokes no native cognition.
+
+The deterministic end-to-end proof interrupts after route execution, after activation execution, and after native execution in successive reconstructed processes. Route, activation, and native cognition each execute exactly once. The recovered vessel then performs real deferred review, revision, and final review, and terminal replay makes zero external calls. This closes duplicate pre-publication Godskills work without adding credentials, provider routing, Realm effects, continuity authority, personal-keel writes, identity mutation, evolution, Inspiration, or Soul.
 
 ## Phase 1 creation boundary
 

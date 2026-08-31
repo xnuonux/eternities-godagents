@@ -66,7 +66,7 @@ function usage(completionTokens) {
   };
 }
 
-function vesselRequest() {
+export function vesselRequest() {
   const binding = cortexBindingRequest({
     missionId: 'mission-identity-bound-vessel-certification',
     taskId: 'task-identity-bound-vessel-certification',
@@ -108,7 +108,7 @@ function vesselRequest() {
   };
 }
 
-function routed(request, counters) {
+export function routed(request, counters) {
   counters.route += 1;
   return {
     compilerReceipt: {
@@ -141,7 +141,7 @@ function routed(request, counters) {
   };
 }
 
-function activationResult(request) {
+export function activationResult(request) {
   const decisions = request.selected.map(({ selectedId }) => {
     const unsigned = {
       schemaVersion: 1,
@@ -218,7 +218,7 @@ async function realGodskillsAdapter(root, counters, { forbidExternal = false } =
   });
 }
 
-function identityTransport() {
+export function identityTransport() {
   const descriptor = buildIdentityBoundNativeTransportDescriptor({
     transportId: 'identity-bound-vessel-certification-native-v1',
     maximumDispatchBytes: 262_144,
@@ -264,7 +264,7 @@ function identityTransport() {
   };
 }
 
-function reviewTransport() {
+export function reviewTransport() {
   const descriptor = buildGodskillsReviewTransportDescriptor({
     transportId: 'identity-bound-vessel-certification-review-v1',
     maximumCompletionBytes: 16_384,
@@ -325,7 +325,7 @@ function reviewTransport() {
   };
 }
 
-function revisionTransport() {
+export function revisionTransport() {
   const descriptor = buildMissionRevisionTransportDescriptor({
     transportId: 'identity-bound-vessel-certification-revision-v1',
     maximumCompletionBytes: 16_384,
@@ -372,7 +372,7 @@ function revisionTransport() {
   };
 }
 
-async function executors(root, review, revision) {
+export async function executors(root, review, revision) {
   const reviewExecutor = await createDeferredGodskillsReviewExecutor({
     releasePin: pinnedGodskillsReviewRelease(root),
     maximumMaterializedBytes: 65_536,

@@ -19,6 +19,7 @@ import { createMissionNativeExecutor } from './mission-native-executor.mjs';
 import { buildMissionAdmission } from './mission-phase-contracts.mjs';
 import { createMissionReviewJournal } from './mission-review-journal.mjs';
 import { createResumableMissionReviewKernel } from './mission-review-kernel.mjs';
+import { verifyRecoverableGodskillsPending } from '../skills/recoverable-godskills-contracts.mjs';
 
 const PROTOCOL_ID = 'eternities-identity-bound-mission-vessel-v1';
 
@@ -109,6 +110,9 @@ function godskillsInput(request, candidate) {
 
 function routeBinding(value, expectedReleaseDigest) {
   object(value, 'Godskills mission binding result');
+  if (value.status === 'pending') {
+    return deepFreeze(clone(verifyRecoverableGodskillsPending(value)));
+  }
   if (value.status === 'needs-decision') {
     if (!Array.isArray(value.unresolvedDecisions)) {
       fail('godskills-result-invalid', 'Godskills decision result is invalid');
@@ -268,7 +272,7 @@ export function createIdentityBoundMissionVessel({
       }
 
       const bound = routeBinding(await godskillsAdapter.bindMission(input), godskillsAdapter.releaseDigest);
-      if (bound.status === 'needs-decision') return bound;
+      if (bound.status === 'needs-decision' || bound.status === 'pending') return bound;
       const missionAdmission = buildKernelAdmission(request, bound, clockIso(clock));
       const record = buildIdentityBoundMissionVesselAdmission({
         request,
@@ -304,7 +308,9 @@ export function createIdentityBoundMissionVessel({
       fail('authority-empty', 'identity-bound vessel has no permitted effect ceiling for Godskills routing');
     }
     const vesselAdmission = await admit(request, candidate);
-    if (vesselAdmission.status === 'needs-decision') return vesselAdmission;
+    if (vesselAdmission.status === 'needs-decision' || vesselAdmission.status === 'pending') {
+      return vesselAdmission;
+    }
 
     const identityTransport = await createIdentityBoundMissionNativeTransport({
       candidate,
