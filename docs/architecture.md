@@ -165,6 +165,14 @@ The real local router selects Forge and Muse for the retained topology. Route an
 
 This is an additive programmatic construction boundary. The activation classifier and typed node executors remain trusted inputs, per-node graph progress is not durably journaled, same-user hostile-process isolation and exactly-once external effects remain unproved, and no existing host, CLI, provider, Realm, continuity, evolution, Lunari, Inspiration, or Soul path adopts it by default.
 
+## Recoverable typed execution journal boundary
+
+The additive execution journal verifies the exact certified Godskills stepper release and its historical typed-composition parent before importing either runtime. Its adapter privately owns the registry, compiled method provenance, and stepper handles. Durable state contains only one execution intent and a contiguous digest-linked chain of output envelopes already accepted by the current Godskills step.
+
+Recovery does not trust those records directly. It creates a fresh private execution, compares each record to the newly emitted step identity, and commits the stored output through Godskills again. The first absent ordinal is the only node eligible for execution. Changed, malformed, noncanonical, gapped, aliased, symlinked, or replay-incompatible state fails before another executor runs.
+
+This closes repetition after a node output is durably published. It deliberately preserves the pre-publication ambiguity window: process death after an executor returns but before publication may repeat that node. The boundary is therefore at-least-once across that interval and does not claim external exactly-once effects, executor idempotency, provider reconciliation, hostile same-user isolation, or default host adoption.
+
 ## Sealed local Godskills process boundary
 
 The optional local process adapter replaces the recoverable admission layer's assumed route and activation transports with the exact pushed Godskills executables. Construction first verifies the historical Godskills release and the additive routing executable receipt, including every declared local module, routing artifact, parent receipt, and entrypoint byte. The verified objects carry in-process provenance brands, so callers cannot assemble lookalike trust roots.

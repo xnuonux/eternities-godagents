@@ -345,6 +345,14 @@ The deterministic proof runs the real local router and activation executable, na
 
 `npm run certify:sealed-local-typed-composition` reproduces that process-recovery fixture, runs focused and complete tests, and issues the thirty-first append-only receipt. Typed node executors and the activation classifier remain caller-trusted, graph execution remains in process rather than durably journaled per node, and no provider, credential, Realm, continuity, keel, identity-evolution, Lunari, Inspiration, or Soul authority is added.
 
+### Recoverable typed execution journal v1
+
+The [recoverable typed execution journal design](docs/superpowers/specs/2026-08-31-recoverable-typed-execution-journal-v1-design.md) consumes the separately certified Godskills stepper without changing the historical typed-composition compiler. An exact sidecar verifies the stepper receipt, parent receipt, fixture, complete source closure, and runtime module before import. The adapter retains the registry and execution handles behind private provenance brands.
+
+One execution identity owns a bounded canonical intent and a contiguous digest-linked sequence of accepted node outputs. Godskills validates each output against the current private step before publication. Reconstruction creates a fresh execution, replays every durable output through newly emitted steps, and resumes at the first absent record. The deterministic fixture kills the first process after Muse is durable, then proves recovery invokes only Forge and reproduces the historical completion and execution digests.
+
+This is deterministic local prefix recovery, not external exactly-once execution. A process death after an executor returns but before the validated record is published may repeat that node. Executors, live providers, side-effect reconciliation, hostile same-user isolation, default host adoption, Realm, continuity, keel, evolution, Lunari, Inspiration, and Soul remain outside the certified boundary.
+
 ### Sealed local Godskills transport v1
 
 The [sealed local transport design](docs/superpowers/specs/2026-08-31-sealed-local-godskills-transport-v1-design.md) supplies a concrete local implementation for the route and activation sides of recoverable admission. It verifies the exact pushed Godskills release and routing executable closure before construction, fixes routing mode from that release, and invokes both entrypoints as hidden shell-free child processes with a minimal environment plus an in-child scrub.
