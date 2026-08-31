@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maximumCompletionBytes", "maximumCompletionTokens"],
+      "properties": {
+        "maximumCompletionBytes": { "type": "integer", "minimum": 256, "maximum": 16777216 },
+        "maximumCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 1000000 }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "policyId", "provider", "phases"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-anthropic-messages-phase-transport-policy-v1" },
+    "policyId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "endpointOrigin", "endpointPath", "apiVersion", "modelId", "credentialEnv", "timeoutMs", "maximumRequestBytes", "maximumResponseBytes"],
+      "properties": {
+        "profile": { "const": "anthropic-messages-json-schema" },
+        "endpointOrigin": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "endpointPath": { "const": "/v1/messages" },
+        "apiVersion": { "type": "string", "minLength": 10, "maxLength": 10 },
+        "modelId": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "credentialEnv": { "type": "string", "minLength": 3, "maxLength": 64 },
+        "timeoutMs": { "type": "integer", "minimum": 100, "maximum": 120000 },
+        "maximumRequestBytes": { "type": "integer", "minimum": 1024, "maximum": 16777216 },
+        "maximumResponseBytes": { "type": "integer", "minimum": 256, "maximum": 4194304 }
+      }
+    },
+    "phases": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["native", "review", "revision"],
+      "properties": {
+        "native": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maximumDispatchBytes", "maximumCompletionBytes", "maximumCompletionTokens"],
+          "properties": {
+            "maximumDispatchBytes": { "type": "integer", "minimum": 1024, "maximum": 16777216 },
+            "maximumCompletionBytes": { "type": "integer", "minimum": 256, "maximum": 16777216 },
+            "maximumCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 1000000 }
+          }
+        },
+        "review": { "$ref": "#/$defs/completion" },
+        "revision": { "$ref": "#/$defs/completion" }
+      }
+    }
+  }
+}
