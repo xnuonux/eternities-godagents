@@ -83,7 +83,7 @@ function missionOuterDispatch(admission) {
   });
 }
 
-async function nativeDispatch(context, transportDescriptor) {
+export async function nativeDispatch(context, transportDescriptor) {
   const admitted = await setupAdmittedIdentity(context, 'openai-compatible-phase-resolution');
   const bindingRequest = cortexBindingRequest();
   const candidate = await compileCortexBindingCandidate({ admission: admitted.admission, request: bindingRequest });
