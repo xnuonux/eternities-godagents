@@ -30,10 +30,12 @@ runner hook.
 
 The verifier uses native filesystem operations. On a quiescent filesystem it
 rejects absolute, non-canonical, escaping, observed symbolic-link, duplicate,
-missing, or changed receipt and module paths. It reads each module once,
-verifies its exact bytes, strips comments for lexical inspection, and rejects
-static, dynamic, re-export, or CommonJS import syntax. Receipt-certified
-executor source remains trusted code inside the Node process.
+missing, or changed receipt and module paths. It reads each module once and
+verifies its exact bytes. A pinned standards-compliant ECMAScript parser then
+requires one exported asynchronous `execute(input)` declaration as the entire
+program and rejects import expressions or CommonJS loading calls anywhere in
+its syntax tree. Receipt-certified executor source remains trusted code inside
+the Node process.
 
 Verification is inert. The launcher first binds the complete descriptor set to
 the externally pinned policy and verifies that policy against the admitted

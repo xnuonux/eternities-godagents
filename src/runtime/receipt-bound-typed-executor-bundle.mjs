@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
+import { parse } from 'acorn';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
@@ -109,90 +110,38 @@ function expectedExecutorId(bundleId, capabilityId, moduleSha256) {
   });
 }
 
-function stripComments(source) {
-  let result = '';
-  let index = 0;
-  let quote = null;
-  while (index < source.length) {
-    const current = source[index];
-    const next = source[index + 1];
-    if (quote !== null) {
-      result += current;
-      if (current === '\\') {
-        index += 1;
-        if (index < source.length) result += source[index];
-      } else if (current === quote) {
-        quote = null;
-      }
-      index += 1;
-      continue;
-    }
-    if (current === '"' || current === "'" || current === '`') {
-      quote = current;
-      result += current;
-      index += 1;
-      continue;
-    }
-    if (current === '/' && next === '/') {
-      result += '  ';
-      index += 2;
-      while (index < source.length && source[index] !== '\n') {
-        result += ' ';
-        index += 1;
-      }
-      continue;
-    }
-    if (current === '/' && next === '*') {
-      result += '  ';
-      index += 2;
-      while (index < source.length && !(source[index] === '*' && source[index + 1] === '/')) {
-        result += source[index] === '\n' ? '\n' : ' ';
-        index += 1;
-      }
-      if (index >= source.length) throw new Error('executor module contains an unterminated comment');
-      result += '  ';
-      index += 2;
-      continue;
-    }
-    result += current;
-    index += 1;
-  }
-  return result;
-}
-
 function assertClosedModuleSource(bytes, label) {
-  const source = stripComments(bytes.toString('utf8'));
-  if (/\bimport(?:\s|\()/m.test(source)
-      || /\bexport\s+(?:\*|\{)[\s\S]*?\bfrom\s*["']/m.test(source)
-      || /\b(?:require|module\.require)\s*\(/m.test(source)) {
-    throw new Error(`${label} dependencies are forbidden`);
+  let program;
+  try {
+    program = parse(bytes.toString('utf8'), { ecmaVersion: 'latest', sourceType: 'module' });
+  } catch (error) {
+    throw new Error(`${label} is not valid ECMAScript`, { cause: error });
   }
-  const header = source.match(/^\s*export\s+async\s+function\s+execute\s*\(\s*input\s*\)\s*\{/);
-  if (!header) throw new Error(`${label} must contain only one async execute declaration`);
-  let depth = 1;
-  let quote = null;
-  let closingIndex = -1;
-  for (let index = header[0].length; index < source.length; index += 1) {
-    const current = source[index];
-    if (quote !== null) {
-      if (current === '\\') index += 1;
-      else if (current === quote) quote = null;
-      continue;
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (node.type === 'ImportDeclaration' || node.type === 'ImportExpression'
+        || (node.type === 'ExportNamedDeclaration' && node.source !== null)
+        || node.type === 'ExportAllDeclaration'
+        || (node.type === 'CallExpression' && (
+          (node.callee?.type === 'Identifier' && node.callee.name === 'require')
+          || (node.callee?.type === 'MemberExpression' && node.callee.computed === false
+            && node.callee.object?.type === 'Identifier' && node.callee.object.name === 'module'
+            && node.callee.property?.type === 'Identifier' && node.callee.property.name === 'require')
+        ))) throw new Error(`${label} dependencies are forbidden`);
+    for (const child of Object.values(node)) {
+      if (Array.isArray(child)) child.forEach(visit);
+      else if (child && typeof child === 'object') visit(child);
     }
-    if (current === '"' || current === "'" || current === '`') {
-      quote = current;
-      continue;
-    }
-    if (current === '{') depth += 1;
-    else if (current === '}') {
-      depth -= 1;
-      if (depth === 0) {
-        closingIndex = index;
-        break;
-      }
-    }
-  }
-  if (closingIndex < 0 || !/^\s*;?\s*$/.test(source.slice(closingIndex + 1))) {
+  };
+  visit(program);
+  const exported = program.body[0];
+  const declaration = exported?.declaration;
+  if (program.body.length !== 1 || exported.type !== 'ExportNamedDeclaration'
+      || exported.source !== null || exported.specifiers.length !== 0
+      || declaration?.type !== 'FunctionDeclaration' || declaration.id?.name !== 'execute'
+      || declaration.async !== true || declaration.generator !== false
+      || declaration.params.length !== 1 || declaration.params[0]?.type !== 'Identifier'
+      || declaration.params[0].name !== 'input') {
     throw new Error(`${label} must contain only one async execute declaration`);
   }
 }

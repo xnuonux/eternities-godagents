@@ -66,6 +66,7 @@ const historicalReceiptPaths = Object.freeze([
 ]);
 
 const implementationFiles = Object.freeze([
+  '.gitignore',
   'README.md',
   'docs/architecture.md',
   planPath,
@@ -73,6 +74,7 @@ const implementationFiles = Object.freeze([
   specificationPath,
   fixturePath,
   'package.json',
+  'package-lock.json',
   'scripts/build-receipt-bound-typed-executor-bundle-v1-fixture.mjs',
   'scripts/build-receipt-bound-typed-executor-bundle-v1-receipt.mjs',
   'src/certification/verify-ledger.mjs',
@@ -98,6 +100,10 @@ const focusedTestFiles = Object.freeze([
   'tests/sealed-local-typed-execution-runner.test.mjs',
   'tests/sealed-local-typed-execution-runner-certification.test.mjs',
 ]);
+const reviewedSourcePaths = Object.freeze([...new Set([
+  ...implementationFiles.filter((path) => path !== reviewPath),
+  ...testFiles,
+])].sort());
 
 const releaseOnlyPaths = Object.freeze([certificationPath, receiptPath]);
 const requirements = Object.freeze([
@@ -176,10 +182,16 @@ function verifyReceiptSource(value) {
   Object.values(value.historicalReceiptDigests).forEach((digest) => requireDigest(digest, 'historical receipt digest'));
   verifyManifest(value.implementationManifest, implementationFiles, 'receipt-bound executor implementation manifest');
   verifyManifest(value.testManifest, testFiles, 'receipt-bound executor test manifest');
+  const implementationByPath = new Map(
+    value.implementationManifest.entries.map((entry) => [entry.path, entry]),
+  );
   for (const [reference, path] of [[value.specification, specificationPath], [value.plan, planPath]]) {
     exactKeys(reference, ['path', 'sha256'], 'receipt-bound executor source reference');
     if (reference.path !== path) throw new Error('receipt-bound executor source reference path changed');
     requireDigest(reference.sha256, 'receipt-bound executor source reference digest');
+    if (reference.sha256 !== implementationByPath.get(path)?.sha256) {
+      throw new Error('receipt-bound executor source reference differs from implementation manifest');
+    }
   }
   exactKeys(value.review, ['path', 'fileSha256', 'value'], 'receipt-bound executor review reference');
   if (value.review.path !== reviewPath) throw new Error('receipt-bound executor review path changed');
@@ -195,9 +207,7 @@ function verifyReceiptSource(value) {
       || review.reviewedParentCommit !== sourceBaseCommit || review.disposition !== 'approved'
       || review.unresolvedCriticalDefects !== 0 || review.unresolvedImportantDefects !== 0
       || review.unresolvedMinorDefects !== 0 || !Array.isArray(review.notes)
-      || !Array.isArray(review.reviewedPaths)
-      || canonicalJson(review.reviewedPaths) !== canonicalJson([...review.reviewedPaths].sort())
-      || new Set(review.reviewedPaths).size !== review.reviewedPaths.length) {
+      || canonicalJson(review.reviewedPaths) !== canonicalJson(reviewedSourcePaths)) {
     throw new Error('receipt-bound executor embedded review is invalid');
   }
   requireDigest(review.reviewedDiffSha256, 'receipt-bound executor reviewed diff digest');

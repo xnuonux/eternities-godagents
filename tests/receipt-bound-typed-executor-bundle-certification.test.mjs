@@ -59,6 +59,14 @@ test('receipt-bound executor certification reproduces from its exact source comm
     /manifest|digest|binding/,
   );
 
+  const changedPlan = structuredClone(receipt);
+  changedPlan.source.plan.sha256 = '0'.repeat(64);
+  changedPlan.receiptDigest = sha256Value((({ receiptDigest, ...value }) => value)(changedPlan));
+  assert.throws(
+    () => verifyReceiptBoundTypedExecutorBundleReceipt(changedPlan),
+    /differs from implementation manifest/,
+  );
+
   const changedReview = structuredClone(receipt);
   changedReview.source.review.value.unresolvedImportantDefects = 1;
   changedReview.source.review.fileSha256 = sha256Text(
@@ -67,6 +75,19 @@ test('receipt-bound executor certification reproduces from its exact source comm
   changedReview.receiptDigest = sha256Value((({ receiptDigest, ...value }) => value)(changedReview));
   assert.throws(
     () => verifyReceiptBoundTypedExecutorBundleReceipt(changedReview),
+    /review is invalid/,
+  );
+
+  const changedReviewPaths = structuredClone(receipt);
+  changedReviewPaths.source.review.value.reviewedPaths.pop();
+  changedReviewPaths.source.review.fileSha256 = sha256Text(
+    `${canonicalJson(changedReviewPaths.source.review.value)}\n`,
+  );
+  changedReviewPaths.receiptDigest = sha256Value(
+    (({ receiptDigest, ...value }) => value)(changedReviewPaths),
+  );
+  assert.throws(
+    () => verifyReceiptBoundTypedExecutorBundleReceipt(changedReviewPaths),
     /review is invalid/,
   );
 

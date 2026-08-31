@@ -3,3 +3,4 @@ artifacts/creation-fixture/
 artifacts/genesis-fixture/
 artifacts/creator-fixture/
 .worktrees/
+node_modules/

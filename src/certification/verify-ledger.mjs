@@ -773,6 +773,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     }
   }
 
+  const receiptBound = loaded.get('receipt-bound-typed-executor-bundle-v1.json');
+  if (receiptBound) {
+    const { buildReceiptBoundTypedExecutorBundleReceiptFromSource } = await import(
+      '../../scripts/build-receipt-bound-typed-executor-bundle-v1-receipt.mjs'
+    );
+    const rebuilt = await buildReceiptBoundTypedExecutorBundleReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: receiptBound.receipt.source.commit,
+      testRuns: receiptBound.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(receiptBound.receipt)) {
+      throw new Error('receipt-bound typed executor certification differs from exact source reconstruction');
+    }
+  }
+
   const receipts = [...loaded.values()].map(({ row }) => row);
   const unsigned = { schemaVersion: 1, status: 'verified', receipts };
   return Object.freeze({ ...unsigned, ledgerDigest: sha256Value(unsigned) });

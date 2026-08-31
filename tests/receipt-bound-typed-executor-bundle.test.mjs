@@ -217,7 +217,7 @@ test('rejects changed module exports and noncanonical receipt paths', async (t) 
 
 test('comment-separated dynamic imports fail syntactic closure before module evaluation', async (t) => {
   const fixture = await bundleFixture(t);
-  const source = `export async function execute() { return import/* bypass */('node:path'); }\n`;
+  const source = `export async function execute(input) { return import/* bypass */('node:path'); }\n`;
   const row = fixture.receipt.executors[0];
   row.module.sha256 = sha256Text(source);
   row.module.bytes = Buffer.byteLength(source);
@@ -272,7 +272,9 @@ test('an observed symbolic-link bundle root is rejected before receipt loading',
 test('top-level module behavior is rejected inertly before any evaluation', async (t) => {
   const fixture = await bundleFixture(t);
   const marker = `__receiptBoundTopLevel_${Date.now()}`;
-  const source = `globalThis[${JSON.stringify(marker)}] = true;\n${moduleSources['eternities-forge']}`;
+  const source = `export async function execute(input) { const expression = /{/; return input; }
+{ globalThis[${JSON.stringify(marker)}] = true; /}/; }
+`;
   const row = fixture.receipt.executors[0];
   row.module.sha256 = sha256Text(source);
   row.module.bytes = Buffer.byteLength(source);
