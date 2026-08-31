@@ -8,6 +8,8 @@ import { verifyGodskillsRelease } from './release-verifier.mjs';
 
 const PROTOCOL_ID = 'eternities-godskills-routing-executable-v1';
 const DIGEST = /^[a-f0-9]{64}$/;
+const CAPABILITY_ID = /^[a-z0-9][a-z0-9-]*$/;
+const RISK_CLASSES = new Set(['low', 'moderate', 'high']);
 const MODES = Object.freeze([
   Object.freeze({ mode: 'default', entrypoint: 'scripts/intent.mjs' }),
   Object.freeze({ mode: 'specialist', entrypoint: 'scripts/intent-preference.mjs' }),
@@ -185,10 +187,47 @@ async function verifyModules(reader, receipt, pin) {
   return { entrypoint, paths };
 }
 
-async function verifyRoutingArtifacts(reader, rows) {
+function buildActivationClassificationEvidence(cards, cardsLogicalDigest, release) {
+  if (!Array.isArray(cards) || cards.length < 1 || cards.length > 32) {
+    throw new Error('Godskills routing classification cards are invalid');
+  }
+  const projections = cards.map((card) => {
+    if (!card || typeof card !== 'object' || Array.isArray(card)
+        || typeof card.id !== 'string' || !CAPABILITY_ID.test(card.id)
+        || typeof card.family !== 'string' || card.family.length === 0 || /[\0\r\n]/.test(card.family)
+        || !RISK_CLASSES.has(card.riskClass)) {
+      throw new Error('Godskills routing classification card projection is invalid');
+    }
+    return { id: card.id, family: card.family, riskClass: card.riskClass };
+  });
+  const ids = projections.map(({ id }) => id);
+  if (new Set(ids).size !== ids.length
+      || canonicalJson(ids) !== canonicalJson([...ids].sort())) {
+    throw new Error('Godskills routing classification card identities must be unique and ordered');
+  }
+  const capabilities = release.capabilitiesById;
+  const releaseIds = [...capabilities.values()]
+    .filter(({ tier }) => tier === 'godskill')
+    .map(({ id }) => id)
+    .sort();
+  if (canonicalJson(ids) !== canonicalJson(releaseIds)
+      || projections.some(({ id }) => {
+        const capability = capabilities.get(id);
+        return capability?.tier !== 'godskill' || capability.ownerGodskillId !== id;
+      })) {
+    throw new Error('Godskills routing classification cards differ from the verified portable release');
+  }
+  return deepFreeze({
+    cardsLogicalDigest,
+    cards: projections,
+  });
+}
+
+async function verifyRoutingArtifacts(reader, rows, release) {
   if (!Array.isArray(rows) || rows.length !== ROUTING_ARTIFACTS.length) {
     throw new Error('Godskills routing artifacts are incomplete');
   }
+  let classificationEvidence;
   for (let index = 0; index < ROUTING_ARTIFACTS.length; index += 1) {
     const expected = ROUTING_ARTIFACTS[index];
     const row = rows[index];
@@ -201,7 +240,12 @@ async function verifyRoutingArtifacts(reader, rows) {
     const { bytes } = await reader.read(row, `Godskills routing artifact ${row.role}`);
     const parsed = expected.format === 'json' ? parseJson(bytes, row.path) : parseJsonl(bytes, row.path);
     if (sha256Value(parsed) !== row.logicalDigest) throw new Error('Godskills routing artifact logical digest mismatch');
+    if (row.role === 'cards') {
+      classificationEvidence = buildActivationClassificationEvidence(parsed, row.logicalDigest, release);
+    }
   }
+  if (!classificationEvidence) throw new Error('Godskills routing classification evidence is absent');
+  return classificationEvidence;
 }
 
 async function verifyParents(reader, rows, release) {
@@ -288,7 +332,11 @@ export async function verifyGodskillsRoutingExecutable({
     throw new Error('Godskills routing executable proof limits are invalid');
   }
   const modules = await verifyModules(reader, receipt, pin);
-  await verifyRoutingArtifacts(reader, receipt.routingArtifacts);
+  const activationClassificationEvidence = await verifyRoutingArtifacts(
+    reader,
+    receipt.routingArtifacts,
+    release,
+  );
   await verifyParents(reader, receipt.parents, release);
 
   const verified = deepFreeze({
@@ -302,6 +350,7 @@ export async function verifyGodskillsRoutingExecutable({
       modes: MODES.map(({ mode }) => mode),
       localModules: [...modules.paths],
       routingArtifacts: structuredClone(receipt.routingArtifacts),
+      activationClassificationEvidence,
       parents: structuredClone(receipt.parents),
       proofLimits: structuredClone(receipt.proofLimits),
     },
