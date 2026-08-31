@@ -19,6 +19,7 @@ const registry = Object.freeze({
   'creator-protocol-phase3-certification.json': 'creator-protocol-phase3',
   'deferred-godskills-review-executor-v1.json': 'deferred-godskills-review-executor-v1',
   'deferred-godskills-review-materializer-v1.json': 'deferred-godskills-review-materializer-v1',
+  'durable-anthropic-messages-phase-transport-v1.json': 'durable-anthropic-messages-phase-transport-v1',
   'godagent-v0-certification.json': 'godagent-v0',
   'godskills-adaptive-activation-v1.json': 'godskills-adaptive-activation-v1',
   'godskills-specialist-preference-v1.json': 'godskills-specialist-preference-v1',
@@ -48,13 +49,20 @@ const registry = Object.freeze({
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
 const requiredHistoricalLinks = Object.freeze({
   'provider-neutral-phase-protocol-v1.json': Object.freeze(expectedFiles
-    .filter((file) => file !== 'provider-neutral-phase-protocol-v1.json')
+    .filter((file) => ![
+      'durable-anthropic-messages-phase-transport-v1.json',
+      'provider-neutral-phase-protocol-v1.json',
+    ].includes(file))
     .map((file) => `receipts/${file}`)),
   'receipt-bound-typed-executor-bundle-v1.json': Object.freeze(expectedFiles
     .filter((file) => ![
+      'durable-anthropic-messages-phase-transport-v1.json',
       'provider-neutral-phase-protocol-v1.json',
       'receipt-bound-typed-executor-bundle-v1.json',
     ].includes(file))
+    .map((file) => `receipts/${file}`)),
+  'durable-anthropic-messages-phase-transport-v1.json': Object.freeze(expectedFiles
+    .filter((file) => file !== 'durable-anthropic-messages-phase-transport-v1.json')
     .map((file) => `receipts/${file}`)),
   'admitted-sealed-identity-host-v1.json': Object.freeze([
     'receipts/codex-bound-turn-v1.json',
@@ -807,6 +815,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(providerNeutral.receipt)) {
       throw new Error('provider-neutral phase protocol certification differs from exact source reconstruction');
+    }
+  }
+
+  const durableAnthropic = loaded.get('durable-anthropic-messages-phase-transport-v1.json');
+  if (durableAnthropic) {
+    const { buildDurableAnthropicMessagesPhaseTransportReceiptFromSource } = await import(
+      '../../scripts/build-durable-anthropic-messages-phase-transport-v1-receipt.mjs'
+    );
+    const rebuilt = await buildDurableAnthropicMessagesPhaseTransportReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: durableAnthropic.receipt.source.commit,
+      testRuns: durableAnthropic.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(durableAnthropic.receipt)) {
+      throw new Error('durable Anthropic phase transport certification differs from exact source reconstruction');
     }
   }
 

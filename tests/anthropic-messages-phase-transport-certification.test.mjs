@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
 import { sha256Value } from '../src/core/digest.mjs';
+import {
+  buildDurableAnthropicMessagesPhaseTransportReceiptFromSource,
+  verifyDurableAnthropicMessagesPhaseTransportReceipt,
+} from '../scripts/build-durable-anthropic-messages-phase-transport-v1-receipt.mjs';
 import { buildDeterministicAnthropicMessagesPhaseTransportFixture } from './helpers/anthropic-messages-phase-transport-certification-fixture.mjs';
 
 test('durable Anthropic transport fixture reproduces three phases and credential-free replay', async () => {
@@ -37,4 +42,41 @@ test('durable Anthropic transport fixture reproduces three phases and credential
   const unsigned = structuredClone(first);
   delete unsigned.fixtureDigest;
   assert.equal(first.fixtureDigest, sha256Value(unsigned));
+});
+
+test('durable Anthropic receipt reconstructs from its exact source commit', async () => {
+  const receipt = JSON.parse(await readFile(
+    new URL('../receipts/durable-anthropic-messages-phase-transport-v1.json', import.meta.url),
+    'utf8',
+  ));
+  verifyDurableAnthropicMessagesPhaseTransportReceipt(receipt);
+  const rebuilt = await buildDurableAnthropicMessagesPhaseTransportReceiptFromSource({
+    repositoryRoot: new URL('../', import.meta.url),
+    sourceCommit: receipt.source.commit,
+    testRuns: receipt.testRuns,
+  });
+  assert.equal(canonicalJson(rebuilt), canonicalJson(receipt));
+});
+
+test('durable Anthropic receipt rejects forged nested fixture and source references', async () => {
+  const receipt = JSON.parse(await readFile(
+    new URL('../receipts/durable-anthropic-messages-phase-transport-v1.json', import.meta.url),
+    'utf8',
+  ));
+  const forge = (mutate) => {
+    const value = structuredClone(receipt);
+    mutate(value);
+    const { receiptDigest: _old, ...unsigned } = value;
+    value.receiptDigest = sha256Value(unsigned);
+    return value;
+  };
+  assert.throws(() => verifyDurableAnthropicMessagesPhaseTransportReceipt(forge((value) => {
+    value.fixture.value.assertions.replayProviderCalls = 1;
+    const { fixtureDigest: _old, ...unsigned } = value.fixture.value;
+    value.fixture.value.fixtureDigest = sha256Value(unsigned);
+    value.fixture.logicalDigest = value.fixture.value.fixtureDigest;
+  })), /fixture/i);
+  assert.throws(() => verifyDurableAnthropicMessagesPhaseTransportReceipt(forge((value) => {
+    value.source.specification.sha256 = 'f'.repeat(64);
+  })), /specification/i);
 });

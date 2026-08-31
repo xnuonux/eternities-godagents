@@ -55,6 +55,7 @@
     "certify:receipt-bound-executors": "node scripts/build-receipt-bound-typed-executor-bundle-v1-receipt.mjs",
     "build:provider-neutral-phase-fixture": "node scripts/build-provider-neutral-phase-protocol-v1-fixture.mjs",
     "certify:provider-neutral-phase-protocol": "node scripts/build-provider-neutral-phase-protocol-v1-receipt.mjs",
-    "build:durable-anthropic-phase-fixture": "node scripts/build-durable-anthropic-messages-phase-transport-v1-fixture.mjs"
+    "build:durable-anthropic-phase-fixture": "node scripts/build-durable-anthropic-messages-phase-transport-v1-fixture.mjs",
+    "certify:durable-anthropic-phase-transport": "node scripts/build-durable-anthropic-messages-phase-transport-v1-receipt.mjs"
   }
 }
