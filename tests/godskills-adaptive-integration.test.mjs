@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
@@ -10,7 +14,10 @@ import {
   adaptiveBoundaryEvidence,
   buildGodskillsAdaptiveIntegrationReceipt,
   rebuildGodskillsAdaptiveIntegrationReceipt,
+  resolveCertificationSourceCommit,
 } from '../scripts/build-godskills-adaptive-integration-receipt.mjs';
+
+const execFileAsync = promisify(execFile);
 
 const requirementIds = Object.freeze(Array.from({ length: 16 }, (_, index) =>
   `GSA-${String(index + 1).padStart(3, '0')}`));
@@ -149,6 +156,34 @@ test('rebuild rejects stale source commits before producing evidence', async () 
     }),
     /commit/i,
   );
+});
+
+test('certifier retains an immutable source only when every later commit changes the receipt alone', async (context) => {
+  const root = await mkdtemp(join(tmpdir(), 'godagents-adaptive-source-'));
+  context.after(() => rm(root, { recursive: true, force: true }));
+  const git = (...args) => execFileAsync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
+  await git('init', '--object-format=sha1');
+  await writeFile(join(root, 'implementation.txt'), 'source\n', 'utf8');
+  await git('add', 'implementation.txt');
+  await git('-c', 'user.name=Godagents Test', '-c', 'user.email=test@invalid.example', 'commit', '-m', 'source');
+  const sourceCommit = (await git('rev-parse', 'HEAD')).stdout.trim();
+  const receiptPath = join(root, 'receipts', 'godskills-adaptive-activation-v1.json');
+  await mkdir(join(root, 'receipts'));
+  await writeFile(receiptPath, `${canonicalJson({ source: { commit: sourceCommit } })}\n`, 'utf8');
+  await git('add', 'receipts/godskills-adaptive-activation-v1.json');
+  await git('-c', 'user.name=Godagents Test', '-c', 'user.email=test@invalid.example', 'commit', '-m', 'receipt');
+  const receiptCommit = (await git('rev-parse', 'HEAD')).stdout.trim();
+  assert.equal(await resolveCertificationSourceCommit({
+    repositoryRoot: root, headCommit: receiptCommit, receiptPath,
+  }), sourceCommit);
+
+  await writeFile(join(root, 'implementation.txt'), 'changed\n', 'utf8');
+  await git('add', 'implementation.txt');
+  await git('-c', 'user.name=Godagents Test', '-c', 'user.email=test@invalid.example', 'commit', '-m', 'changed-source');
+  const changedCommit = (await git('rev-parse', 'HEAD')).stdout.trim();
+  assert.equal(await resolveCertificationSourceCommit({
+    repositoryRoot: root, headCommit: changedCommit, receiptPath,
+  }), changedCommit);
 });
 
 const checkedReceiptUrl = new URL('../receipts/godskills-adaptive-activation-v1.json', import.meta.url);

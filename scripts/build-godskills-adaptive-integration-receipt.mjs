@@ -16,6 +16,7 @@ const requirementIds = Object.freeze(Array.from({ length: 16 }, (_, index) =>
   `GSA-${String(index + 1).padStart(3, '0')}`));
 const specificationPath = 'docs/superpowers/specs/2026-08-31-trusted-adaptive-activation-adapter-design.md';
 const planPath = 'docs/superpowers/plans/2026-08-31-trusted-adaptive-activation-adapter-v1.md';
+const certificationReceiptPath = 'receipts/godskills-adaptive-activation-v1.json';
 const implementationFiles = Object.freeze([
   'README.md',
   'docs/architecture.md',
@@ -530,20 +531,71 @@ function runTests(files, cwd, evidenceNames = []) {
   });
 }
 
-async function clean(root, label) {
-  const status = (await execFileAsync('git', ['-C', root, 'status', '--porcelain'], {
-    encoding: 'utf8', windowsHide: true,
-  })).stdout.trim();
-  if (status !== '') throw new Error(`${label} worktree must be clean`);
+async function dirtyPaths(root) {
+  const outputs = await Promise.all([
+    execFileAsync('git', ['-C', root, 'diff', '--name-only'], { encoding: 'utf8', windowsHide: true }),
+    execFileAsync('git', ['-C', root, 'diff', '--cached', '--name-only'], { encoding: 'utf8', windowsHide: true }),
+    execFileAsync('git', ['-C', root, 'ls-files', '--others', '--exclude-standard'], { encoding: 'utf8', windowsHide: true }),
+  ]);
+  return [...new Set(outputs.flatMap(({ stdout }) => stdout.split(/\r?\n/).filter(Boolean)))].sort();
+}
+
+async function clean(root, label, allowedPaths = []) {
+  const unexpected = (await dirtyPaths(root)).filter((path) => !allowedPaths.includes(path));
+  if (unexpected.length > 0) throw new Error(`${label} worktree must be clean`);
+}
+
+export async function resolveCertificationSourceCommit({ repositoryRoot, headCommit, receiptPath }) {
+  const root = resolve(repositoryRoot);
+  requireCommit(headCommit, 'Godagents head');
+  let text;
+  try {
+    text = await readFile(receiptPath, 'utf8');
+  } catch (error) {
+    if (error?.code === 'ENOENT') return headCommit;
+    throw error;
+  }
+  let receipt;
+  try {
+    receipt = JSON.parse(text);
+  } catch {
+    throw new Error('existing adaptive certification receipt is invalid JSON');
+  }
+  if (text !== `${canonicalJson(receipt)}\n`) {
+    throw new Error('existing adaptive certification receipt is not canonical');
+  }
+  const sourceCommit = receipt.source?.commit;
+  await assertCommit(root, sourceCommit, 'existing adaptive certification source');
+  try {
+    await execFileAsync('git', ['-C', root, 'merge-base', '--is-ancestor', sourceCommit, headCommit], {
+      windowsHide: true,
+    });
+  } catch {
+    throw new Error('existing adaptive certification source is not an ancestor of HEAD');
+  }
+  const changed = (await execFileAsync(
+    'git', ['-C', root, 'diff', '--name-only', '--no-renames', `${sourceCommit}..${headCommit}`],
+    { encoding: 'utf8', windowsHide: true },
+  )).stdout.split(/\r?\n/).filter(Boolean);
+  return changed.every((path) => path === certificationReceiptPath) ? sourceCommit : headCommit;
 }
 
 async function main() {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const skillsRoot = resolve('C:/dev/eternities-godskills');
-  await Promise.all([clean(root, 'Godagents source'), clean(skillsRoot, 'Godskills source')]);
-  const sourceCommit = (await execFileAsync('git', ['-C', root, 'rev-parse', 'HEAD'], {
+  const outputPath = join(root, ...certificationReceiptPath.split('/'));
+  await Promise.all([
+    clean(root, 'Godagents source', [certificationReceiptPath]),
+    clean(skillsRoot, 'Godskills source'),
+  ]);
+  const headCommit = (await execFileAsync('git', ['-C', root, 'rev-parse', 'HEAD'], {
     encoding: 'utf8', windowsHide: true,
   })).stdout.trim();
+  const sourceCommit = await resolveCertificationSourceCommit({
+    repositoryRoot: root,
+    headCommit,
+    receiptPath: outputPath,
+  });
   const godskillsCommit = (await execFileAsync('git', ['-C', skillsRoot, 'rev-parse', 'origin/main'], {
     encoding: 'utf8', windowsHide: true,
   })).stdout.trim();
@@ -551,7 +603,6 @@ async function main() {
     runTests(focusedGodskillsTests, skillsRoot),
     runTests([], skillsRoot),
   ]);
-  const outputPath = join(root, 'receipts', 'godskills-adaptive-activation-v1.json');
   const preliminaryRuns = {
     godskillsFocused,
     godskillsFull,
