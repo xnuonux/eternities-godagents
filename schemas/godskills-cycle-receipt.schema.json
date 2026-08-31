@@ -15,7 +15,8 @@
     "authorityCeilingDigest": { "$ref": "#/$defs/digest" },
     "stackDigest": { "$ref": "#/$defs/digest" },
     "packageDigest": { "$ref": "#/$defs/digest" },
-    "activation": { "$ref": "#/$defs/activation" }
+    "activation": { "$ref": "#/$defs/activation" },
+    "preference": { "$ref": "#/$defs/preference" }
   },
   "$defs": {
     "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
@@ -27,6 +28,23 @@
         "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
         "entrypointSha256": { "$ref": "#/$defs/digest" },
         "contractSha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "preference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocolId", "trustRootDigest", "suppliedIds", "qualifiedIds", "selectedIds", "baselineSelectedIds", "semanticCandidateIds", "applied", "reason", "preferenceDigest"],
+      "properties": {
+        "protocolId": { "const": "eternities-godskills-specialist-preference-v1" },
+        "trustRootDigest": { "$ref": "#/$defs/digest" },
+        "suppliedIds": { "$ref": "#/$defs/preferenceSet" },
+        "qualifiedIds": { "$ref": "#/$defs/preferenceSet" },
+        "selectedIds": { "$ref": "#/$defs/selectedIdSet" },
+        "baselineSelectedIds": { "$ref": "#/$defs/selectedIdSet" },
+        "semanticCandidateIds": { "$ref": "#/$defs/preferenceSet" },
+        "applied": { "type": "boolean" },
+        "reason": { "enum": ["equal-quality-tie-break", "selected-without-effect", "stronger-nonpreferred-selection", "preference-not-route-capable", "preference-not-semantic-candidate", "no-qualified-preference", "no-selection", "unresolved-decision"] },
+        "preferenceDigest": { "$ref": "#/$defs/digest" }
       }
     },
     "activation": {
@@ -107,6 +125,8 @@
       }
     },
     "stringSet": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "preferenceSet": { "type": "array", "maxItems": 32, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" } },
+    "selectedIdSet": { "type": "array", "maxItems": 3, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" } },
     "taskClass": { "enum": ["creative-generation", "debugging-recovery", "implementation", "research", "continuity", "verification", "general"] },
     "consequenceClass": { "enum": ["low", "consequential", "critical"] }
   }

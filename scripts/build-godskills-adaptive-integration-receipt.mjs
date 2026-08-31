@@ -1,7 +1,7 @@
 import { execFile, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
@@ -348,6 +348,31 @@ async function gitText(root, commit, path) {
   return stdout;
 }
 
+async function gitBytes(root, commit, path) {
+  const { stdout } = await execFileAsync('git', ['-C', root, 'show', `${commit}:${path}`], {
+    maxBuffer: 16 * 1024 * 1024,
+    windowsHide: true,
+  });
+  return Buffer.isBuffer(stdout) ? stdout : Buffer.from(stdout);
+}
+
+function gitObjectIo(root, commit) {
+  const repositoryRoot = resolve(root);
+  return {
+    async realpath(path) {
+      return resolve(path);
+    },
+    async readFile(path) {
+      const target = resolve(path);
+      const repositoryRelative = relative(repositoryRoot, target);
+      if (repositoryRelative === '' || repositoryRelative.startsWith('..') || isAbsolute(repositoryRelative)) {
+        throw new Error('historical Godskills artifact escaped repository root');
+      }
+      return gitBytes(repositoryRoot, commit, repositoryRelative.replaceAll('\\', '/'));
+    },
+  };
+}
+
 async function assertCommit(root, commit, label) {
   requireCommit(commit, label);
   try {
@@ -431,13 +456,6 @@ export async function rebuildGodskillsAdaptiveIntegrationReceipt({
     assertCommit(root, sourceCommit, 'Godagents source'),
     assertCommit(skillsRoot, godskillsCommit, 'Godskills source'),
   ]);
-  const [godskillsHead, godskillsOrigin] = await Promise.all([
-    execFileAsync('git', ['-C', skillsRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8', windowsHide: true }),
-    execFileAsync('git', ['-C', skillsRoot, 'rev-parse', 'origin/main'], { encoding: 'utf8', windowsHide: true }),
-  ]);
-  if (godskillsHead.stdout.trim() !== godskillsCommit || godskillsOrigin.stdout.trim() !== godskillsCommit) {
-    throw new Error('Godskills commit is not the exact pushed main checkout');
-  }
   const [specification, plan, policyText, executableText] = await Promise.all([
     gitText(root, sourceCommit, specificationPath),
     gitText(root, sourceCommit, planPath),
@@ -460,7 +478,9 @@ export async function rebuildGodskillsAdaptiveIntegrationReceipt({
   const executableFileSha256 = sha256Bytes(Buffer.from(executableText, 'utf8'));
   const releasePin = releasePinFromExecutable(basePin, executable, executableFileSha256);
   releasePin.repositoryRoot = skillsRoot;
-  const verified = await verifyGodskillsRelease(releasePin);
+  const verified = await verifyGodskillsRelease(releasePin, {
+    io: gitObjectIo(skillsRoot, godskillsCommit),
+  });
   const portablePin = structuredClone(verified.pin);
   delete portablePin.repositoryRoot;
   const parentText = await gitText(skillsRoot, godskillsCommit, executable.parentReceipt.path);

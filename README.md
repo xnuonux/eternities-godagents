@@ -67,6 +67,25 @@ Adaptive decisions and their trust-root, policy, and evidence digests enter the 
 
 The local CLI does not synthesize classifier or transport configuration from ambient environment variables, and release pins without an activation root preserve the historical System v3 behavior. The deterministic [adaptive integration receipt](receipts/godskills-adaptive-activation-v1.json) binds the exact pushed Godskills executable release and certifies `GSA-001` through `GSA-016`. Its boundary metrics are derived from exact named passing tests and remain fixture-backed assertions, not production runtime telemetry. The receipt retains explicit limits around production observation, executed review, model-quality improvement, unseen missions and models, public SDK readiness, specialist-routing quality, and Lunari readiness. This repository does not infer activation quality from a skill name or routing success.
 
+### specialist preference routing
+
+An optional separately certified preference root lets a specialist genome use
+its existing preferred families as a final deterministic tie-break. Godagents
+derives the exact ids from the verified portable manifest and forwards them
+only through the pinned `eternities-godskills-specialist-preference-v1`
+executable. the signal cannot remove a non-preferred capability or alter any
+authority, effect, precondition, risk, evidence, context, composition, or
+activation boundary.
+
+All-rounders emit no preference field. old release pins execute the historical
+router unchanged. specialist cycles bind the exact preference root, supplied
+ids, route disposition, and selected identity into their source and cycle
+receipts. recovery validates that committed binding and reconstructs the same
+package without routing again. the deterministic
+[specialist preference receipt](receipts/godskills-specialist-preference-v1.json)
+certifies `GSP-001` through `GSP-012`; it proves mechanism and compatibility,
+not specialist quality superiority on unseen work.
+
 ## Modular creation forge
 
 The Phase 1 forge accepts one strict candidate, one independently pinned creation-policy ceiling, one presentation-only expression overlay, and exactly nine selected module kinds: lineage, archetype, attributes, personality, voice, organs, Godskills, cortex, and embodiment. The compiler and verifier both require the expected policy SHA-256 from a trust path separate from the policy file; calculating a digest after accepting an arbitrary policy is not sufficient.

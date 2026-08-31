@@ -102,6 +102,15 @@ const validActivationPin = {
   contract: { path: 'artifacts/adaptive-activation/neutral-contract.json', sha256: 'feade348d3fd31afd5103eb296181f68000186d3193a995e4b77c25a06e57c92' },
 };
 
+const validPreferencePin = {
+  protocolId: 'eternities-godskills-specialist-preference-v1',
+  releaseReceipt: {
+    path: 'receipts/specialist-preference-routing-v1.json',
+    sha256: '3b5164b41aa498ad637def561ff38df76d22a8f95b694a8c37f29ffa363718e7',
+    receiptDigest: '992f1efb07de413af42b8da869b0c6b3184a8bd010903a30ecc5735296654080',
+  },
+};
+
 async function writePolicy(t, policy, name = 'policy.json') {
   const root = await mkdtemp(join(tmpdir(), 'godagent-policy-'));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -141,6 +150,30 @@ test('host policy accepts a complete optional activation root and rejects partia
   unknown.runtime.godskillsRelease.activation.activationMode = 'method';
   await assert.rejects(
     loadHostPolicy(await writePolicy(t, unknown, 'unknown-activation.json')),
+    /activationMode|additionalProperties/i,
+  );
+});
+
+test('host policy accepts one complete preference root and rejects partial or unknown roots', async (t) => {
+  const preferencePolicy = structuredClone(validPolicy);
+  preferencePolicy.runtime.godskillsRelease.preference = structuredClone(validPreferencePin);
+  const preferencePath = await writePolicy(t, preferencePolicy, 'preference-policy.json');
+  const loaded = await loadHostPolicy(preferencePath);
+  assert.equal(loaded.policy.runtime.godskillsRelease.preference.protocolId,
+    'eternities-godskills-specialist-preference-v1');
+  assert.equal(Object.isFrozen(loaded.policy.runtime.godskillsRelease.preference), true);
+
+  const partial = structuredClone(preferencePolicy);
+  delete partial.runtime.godskillsRelease.preference.releaseReceipt.receiptDigest;
+  await assert.rejects(
+    loadHostPolicy(await writePolicy(t, partial, 'partial-preference.json')),
+    /receiptDigest|required/i,
+  );
+
+  const unknown = structuredClone(preferencePolicy);
+  unknown.runtime.godskillsRelease.preference.activationMode = 'method';
+  await assert.rejects(
+    loadHostPolicy(await writePolicy(t, unknown, 'unknown-preference.json')),
     /activationMode|additionalProperties/i,
   );
 });

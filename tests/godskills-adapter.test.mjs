@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { AuthorityError } from '../src/core/errors.mjs';
+import { sha256Value } from '../src/core/digest.mjs';
 import { createLocalGodskillsTransport, routeGodskill } from '../src/skills/godskills-adapter.mjs';
+
+const preferenceProtocol = 'eternities-godskills-specialist-preference-v1';
 
 const hostContext = {
   permittedEffects: ['local-read', 'local-write'],
@@ -67,6 +70,32 @@ function result(overrides = {}) {
     },
     routeReceipt,
   };
+}
+
+function preferenceResult(preferredCapabilities = ['eternities-forge']) {
+  const value = result();
+  value.compilerReceipt.envelope.preferredCapabilities = [...preferredCapabilities];
+  value.compilerReceipt.requestDigest = sha256Value({
+    schemaVersion: 1,
+    requestId: mission.requestId,
+    text: mission.text,
+    context: { ...hostContext, preferredCapabilities: [...preferredCapabilities] },
+  });
+  value.routeReceipt.requestDigest = sha256Value(value.compilerReceipt.envelope);
+  value.routeReceipt.requestFeatures.preferredCapabilities = [...preferredCapabilities];
+  value.routeReceipt.decisionPolicy =
+    'coverage>card-count>extra-capabilities>effects>context>dependencies>evidence>preference>id';
+  value.routeReceipt.preference = {
+    protocolId: preferenceProtocol,
+    suppliedIds: [...preferredCapabilities],
+    qualifiedIds: [...preferredCapabilities],
+    selectedIds: ['eternities-forge'],
+    baselineSelectedIds: ['eternities-forge'],
+    semanticCandidateIds: ['eternities-forge'],
+    applied: false,
+    reason: 'selected-without-effect',
+  };
+  return value;
 }
 
 const mission = {
@@ -176,4 +205,101 @@ test('local file transport remains compatible with the certified Godskills route
   } else {
     assert.deepEqual(routed.entrypoints, []);
   }
+});
+
+test('preference routing forwards and verifies one exact derived capability set', async () => {
+  let receivedRequest;
+  const routed = await routeGodskill({
+    request: mission,
+    hostContext,
+    preference: {
+      protocolId: preferenceProtocol,
+      preferredCapabilities: ['eternities-forge'],
+    },
+    transport: async (request) => {
+      receivedRequest = request;
+      return preferenceResult();
+    },
+  });
+  assert.deepEqual(receivedRequest.context.preferredCapabilities, ['eternities-forge']);
+  assert.equal(routed.routeReceipt.preference.protocolId, preferenceProtocol);
+  assert.deepEqual(routed.routeReceipt.preference.suppliedIds, ['eternities-forge']);
+});
+
+test('preference routing rejects missing, added, reordered, and contradictory echoes', async () => {
+  const preference = {
+    protocolId: preferenceProtocol,
+    preferredCapabilities: ['eternities-forge'],
+  };
+  const invalid = [
+    () => {
+      const value = preferenceResult();
+      delete value.compilerReceipt.envelope.preferredCapabilities;
+      return value;
+    },
+    () => {
+      const value = preferenceResult();
+      value.routeReceipt.requestFeatures.preferredCapabilities = ['eternities-aegis'];
+      return value;
+    },
+    () => {
+      const value = preferenceResult();
+      value.routeReceipt.preference.suppliedIds = ['eternities-aegis'];
+      return value;
+    },
+    () => {
+      const value = preferenceResult();
+      value.routeReceipt.preference.semanticCandidateIds = ['eternities-aegis'];
+      return value;
+    },
+    () => {
+      const value = preferenceResult();
+      value.routeReceipt.preference.applied = true;
+      value.routeReceipt.preference.reason = 'equal-quality-tie-break';
+      return value;
+    },
+    () => {
+      const value = preferenceResult();
+      value.routeReceipt.preference.reason = 'no-selection';
+      return value;
+    },
+    () => {
+      const value = preferenceResult();
+      value.routeReceipt.preference.reason = 'unresolved-decision';
+      return value;
+    },
+  ];
+  for (const build of invalid) {
+    await assert.rejects(
+      routeGodskill({ request: mission, hostContext, preference, transport: async () => build() }),
+      /preference|request digest|semantic/i,
+    );
+  }
+
+  await assert.rejects(
+    routeGodskill({
+      request: mission,
+      hostContext,
+      transport: async () => preferenceResult(),
+    }),
+    /unexpected preference|preference.*root|preference/i,
+  );
+});
+
+test('local preference transport executes the separately pinned CLI', async () => {
+  const transport = await createLocalGodskillsTransport({
+    repositoryRoot: 'C:\\dev\\eternities-godskills',
+    preferenceProtocol,
+  });
+  const routed = await routeGodskill({
+    request: mission,
+    hostContext,
+    preference: {
+      protocolId: preferenceProtocol,
+      preferredCapabilities: ['eternities-forge'],
+    },
+    transport,
+  });
+  assert.equal(routed.routeReceipt.preference.protocolId, preferenceProtocol);
+  assert.deepEqual(routed.routeReceipt.preference.suppliedIds, ['eternities-forge']);
 });

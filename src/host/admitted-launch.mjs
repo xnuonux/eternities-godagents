@@ -168,6 +168,7 @@ async function defaultRuntimeFactory({
   const realm = await createPersistentLocalRealm({ contract: realmContract, statePath: realmStatePath });
   const godskillsTransport = await createLocalGodskillsTransport({
     repositoryRoot: policy.runtime.godskillsRelease.repositoryRoot,
+    preferenceProtocol: policy.runtime.godskillsRelease.preference?.protocolId ?? null,
   });
   const godskillsAdapter = await createGodskillsAdapter({
     releasePin: policy.runtime.godskillsRelease,

@@ -100,6 +100,7 @@
             "manifestDigest": { "$ref": "#/$defs/digest" }
           }
         },
+        "preference": { "$ref": "#/$defs/preference" },
         "activation": { "$ref": "#/$defs/activation" },
         "semanticEffectBindings": {
           "type": "object",
@@ -132,6 +133,15 @@
         "path": { "type": "string", "minLength": 1 },
         "sha256": { "$ref": "#/$defs/digest" },
         "logicalDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "preference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocolId", "releaseReceipt"],
+      "properties": {
+        "protocolId": { "const": "eternities-godskills-specialist-preference-v1" },
+        "releaseReceipt": { "$ref": "#/$defs/receiptArtifact" }
       }
     },
     "activation": {

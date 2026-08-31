@@ -23,6 +23,38 @@ const normalized = (value) => String(value).replaceAll('\\', '/').toLowerCase();
 const portablePath = (value) => String(value).replaceAll('\\', '/');
 const digestPattern = /^[a-f0-9]{64}$/;
 const activationProtocol = 'eternities-godskills-activation-v1';
+const preferenceProtocol = 'eternities-godskills-specialist-preference-v1';
+const preferenceModules = Object.freeze([
+  'scripts/intent-preference.mjs',
+  'src/intent-compiler.mjs',
+  'src/intent-contracts.mjs',
+  'src/intent-runtime.mjs',
+  'src/io.mjs',
+  'src/quarry-atlas.mjs',
+  'src/router.mjs',
+  'src/routing-contracts.mjs',
+  'src/routing-index.mjs',
+  'src/specialist-preference-contracts.mjs',
+  'src/specialist-preference-router.mjs',
+  'src/specialist-preference-routing-index.mjs',
+  'src/specialist-preference-runtime.mjs',
+]);
+const preferenceSources = Object.freeze([
+  'docs/superpowers/plans/2026-08-31-specialist-preference-routing-v1.md',
+  'docs/superpowers/specs/2026-08-31-specialist-preference-routing-v1-design.md',
+  'scripts/build-specialist-preference-routing-v1.mjs',
+  ...preferenceModules,
+  'scripts/intent.mjs',
+  'tests/specialist-preference-routing-receipt.test.mjs',
+  'tests/specialist-preference-routing.test.mjs',
+].sort());
+const preferenceRoutingArtifacts = Object.freeze([
+  'artifacts/routing/cards.jsonl',
+  'artifacts/routing/family-map.json',
+]);
+const preferenceOutputs = Object.freeze([
+  'artifacts/specialist-preference-routing-v1/fixture.json',
+]);
 
 function frozen(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -252,6 +284,152 @@ async function verifyActivationRoot(reader, pin) {
   });
 }
 
+function exactPreferenceRow(row, label, { logical = false } = {}) {
+  exactKeys(row, logical
+    ? ['path', 'sha256', 'bytes', 'logicalDigest']
+    : ['path', 'sha256', 'bytes'], label);
+  assertRelativePath(row.path);
+  requireDigest(row.sha256, `${label} file digest`);
+  if (!Number.isInteger(row.bytes) || row.bytes < 1) throw new Error(`${label} byte count is invalid`);
+  if (logical) requireDigest(row.logicalDigest, `${label} logical digest`);
+}
+
+function assertPreferenceRows(rows, label, { maximum, logical = false } = {}) {
+  if (!Array.isArray(rows) || rows.length === 0 || rows.length > maximum) {
+    throw new Error(`${label} must contain between 1 and ${maximum} rows`);
+  }
+  const paths = rows.map(({ path }) => path);
+  if (new Set(paths).size !== paths.length
+      || canonicalJson(paths) !== canonicalJson([...paths].sort())) {
+    throw new Error(`${label} must be unique and canonically ordered`);
+  }
+  rows.forEach((row, index) => exactPreferenceRow(row, `${label}[${index}]`, { logical }));
+}
+
+async function verifyPreferenceRoot(reader, pin, releasePin, roots) {
+  if (pin.protocolId !== preferenceProtocol) throw new Error('preference protocol is unsupported');
+  assertRelativePath(pin.releaseReceipt.path);
+  requireDigest(pin.releaseReceipt.sha256, 'preference receipt file digest');
+  requireDigest(pin.releaseReceipt.receiptDigest, 'preference receipt logical digest');
+  const receiptBytes = await reader.read(pin.releaseReceipt, 'preference release receipt');
+  const receipt = parseJson(receiptBytes, 'preference release receipt');
+  exactKeys(receipt, [
+    'schemaVersion', 'id', 'status', 'protocolId', 'authorityExpanded', 'parents',
+    'dependencyClosure', 'inputs', 'outputs', 'computedGates', 'proofLimits',
+    'receiptDigest',
+  ], 'preference release receipt');
+  requireIdentity(receipt, {
+    id: 'specialist-preference-routing-v1',
+    status: 'verified-structural-protocol',
+  }, 'preference release receipt');
+  if (receipt.protocolId !== pin.protocolId) throw new Error('preference receipt protocol mismatch');
+  verifyLogicalReceipt(receipt, pin.releaseReceipt.receiptDigest, 'preference release');
+  if (receipt.authorityExpanded !== false) throw new Error('preference release expands authority');
+
+  exactKeys(receipt.computedGates, [
+    'authorityExpansions', 'equalQualityTieBreakApplied', 'legacyShapePreserved',
+    'preferenceOnlyDependencyBlocked', 'rejectedPreferenceNotQualified',
+    'shortlistOverflowRejected', 'strongerNonpreferredPreserved',
+    'unknownPreferenceRejected', 'unresolvedDecisionPreserved',
+  ], 'preference release gates');
+  for (const [name, value] of Object.entries(receipt.computedGates)) {
+    if (name === 'authorityExpansions' ? value !== 0 : value !== true) {
+      throw new Error(`preference release gate failed: ${name}`);
+    }
+  }
+  if (!Array.isArray(receipt.proofLimits)
+      || !receipt.proofLimits.includes('no-specialist-quality-superiority-claim')
+      || !receipt.proofLimits.includes('no-eligibility-or-authority-change')) {
+    throw new Error('preference release proof limits are incomplete');
+  }
+
+  if (!Array.isArray(receipt.parents) || receipt.parents.length !== 4) {
+    throw new Error('preference release must bind exactly four parents');
+  }
+  const expectedParents = [
+    ['compilerReceipt', releasePin.compilerReceipt],
+    ['systemReceipt', releasePin.systemReceipt],
+    ['routerReceipt', releasePin.routerReceipt],
+    ['portableReceipt', releasePin.portableReceipt],
+  ].map(([name, reference]) => ({
+    path: reference.path,
+    sha256: roots[name].digest,
+    bytes: roots[name].bytes.length,
+  })).sort((left, right) => left.path.localeCompare(right.path));
+  if (canonicalJson(receipt.parents) !== canonicalJson(expectedParents)) {
+    throw new Error('preference release parent bindings do not match the verified release');
+  }
+
+  exactKeys(receipt.dependencyClosure, ['roots', 'localModules', 'complete'], 'preference dependency closure');
+  if (receipt.dependencyClosure.complete !== true
+      || canonicalJson(receipt.dependencyClosure.roots) !== canonicalJson(['scripts/intent-preference.mjs'])) {
+    throw new Error('preference dependency closure root is invalid');
+  }
+  if (!Array.isArray(receipt.dependencyClosure.localModules)
+      || receipt.dependencyClosure.localModules.length === 0
+      || receipt.dependencyClosure.localModules.length > 32
+      || new Set(receipt.dependencyClosure.localModules).size !== receipt.dependencyClosure.localModules.length
+      || canonicalJson(receipt.dependencyClosure.localModules)
+        !== canonicalJson([...receipt.dependencyClosure.localModules].sort())) {
+    throw new Error('preference dependency closure modules are invalid');
+  }
+  if (canonicalJson(receipt.dependencyClosure.localModules) !== canonicalJson(preferenceModules)) {
+    throw new Error('preference dependency closure is incomplete or changed');
+  }
+
+  exactKeys(receipt.inputs, ['sources', 'routingArtifacts'], 'preference release inputs');
+  assertPreferenceRows(receipt.inputs.sources, 'preference sources', { maximum: 64 });
+  assertPreferenceRows(receipt.inputs.routingArtifacts, 'preference routing artifacts', { maximum: 4 });
+  assertPreferenceRows(receipt.outputs, 'preference outputs', { maximum: 4, logical: true });
+  for (const [rows, expected, label] of [
+    [receipt.inputs.sources, preferenceSources, 'sources'],
+    [receipt.inputs.routingArtifacts, preferenceRoutingArtifacts, 'routing artifacts'],
+    [receipt.outputs, preferenceOutputs, 'outputs'],
+  ]) {
+    if (canonicalJson(rows.map(({ path }) => path)) !== canonicalJson(expected)) {
+      throw new Error(`preference ${label} are incomplete or changed`);
+    }
+  }
+  const sourcesByPath = new Map(receipt.inputs.sources.map((row) => [row.path, row]));
+  for (const modulePath of receipt.dependencyClosure.localModules) {
+    if (!sourcesByPath.has(modulePath)) {
+      throw new Error(`preference dependency is absent from source bindings: ${modulePath}`);
+    }
+  }
+
+  let entrypointActual;
+  for (const row of receipt.inputs.sources) {
+    const bound = await reader.readBound(row, `preference source ${row.path}`);
+    if (row.path === 'scripts/intent-preference.mjs') entrypointActual = bound.actual;
+  }
+  for (const row of receipt.inputs.routingArtifacts) {
+    await reader.readBound(row, `preference routing artifact ${row.path}`);
+  }
+  for (const row of receipt.outputs) {
+    const bound = await reader.readBound(row, `preference output ${row.path}`);
+    const value = parseJson(bound.bytes, `preference output ${row.path}`);
+    if (sha256(canonicalJson(value)) !== row.logicalDigest) {
+      throw new Error(`preference output logical digest mismatch: ${row.path}`);
+    }
+  }
+  if (!entrypointActual) throw new Error('preference entrypoint is absent from source bindings');
+
+  return frozen({
+    protocolId: pin.protocolId,
+    trustRootDigest: receipt.receiptDigest,
+    root: portablePath(reader.root),
+    releaseReceipt: structuredClone(pin.releaseReceipt),
+    entrypoint: {
+      path: 'scripts/intent-preference.mjs',
+      sha256: sourcesByPath.get('scripts/intent-preference.mjs').sha256,
+      absolutePath: portablePath(entrypointActual),
+    },
+    localModules: structuredClone(receipt.dependencyClosure.localModules),
+    authorityExpanded: false,
+    proofLimits: structuredClone(receipt.proofLimits),
+  });
+}
+
 async function verifyArtifactSet(reader, artifacts, label) {
   for (const [name, reference] of Object.entries(artifacts ?? {})) {
     if (!reference?.path || !reference?.sha256) continue;
@@ -345,12 +523,16 @@ export async function verifyGodskillsRelease(releasePin, { artifactCache = new M
     if (!expected) throw new Error(`compiler artifact ${name} is unpinned`);
     await reader.read({ path, sha256: expected }, `compiler artifact ${name}`, { canonical: true });
   }
+  const preference = releasePin.preference
+    ? await verifyPreferenceRoot(reader, releasePin.preference, releasePin, roots)
+    : undefined;
   const activation = releasePin.activation
     ? await verifyActivationRoot(reader, releasePin.activation)
     : undefined;
   const pin = frozen(structuredClone(releasePin));
   const rootDigests = frozen({
     ...Object.fromEntries(Object.entries(roots).map(([name, value]) => [name, value.digest])),
+    ...(preference ? { preferenceReceipt: preference.releaseReceipt.sha256 } : {}),
     ...(activation ? { activationReceipt: activation.executableReceipt.sha256 } : {}),
   });
   const releaseDigest = sha256(canonicalJson({ pin, roots: rootDigests }));
@@ -364,6 +546,7 @@ export async function verifyGodskillsRelease(releasePin, { artifactCache = new M
     capabilitiesById,
     routerArtifacts: frozen(structuredClone(router.artifacts)),
     compilerArtifacts: frozen(structuredClone(compiler.artifacts)),
+    ...(preference ? { preference } : {}),
     ...(activation ? { activation } : {}),
     readSelectedArtifact: async (reference, label) => reader.read(reference, label),
   });

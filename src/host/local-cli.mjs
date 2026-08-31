@@ -82,6 +82,7 @@ export async function executeNetworkedVessel({
   const realm = createFixtureRealm({ contract });
   const godskillsTransport = await createLocalGodskillsTransport({
     repositoryRoot: policy.runtime.godskillsRelease.repositoryRoot,
+    preferenceProtocol: policy.runtime.godskillsRelease.preference?.protocolId ?? null,
   });
   const godskillsAdapter = await createGodskillsAdapter({
     releasePin: policy.runtime.godskillsRelease,

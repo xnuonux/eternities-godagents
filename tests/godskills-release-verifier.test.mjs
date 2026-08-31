@@ -58,6 +58,18 @@ function activationPin(overrides = {}) {
   };
 }
 
+function preferencePin(overrides = {}) {
+  return {
+    protocolId: 'eternities-godskills-specialist-preference-v1',
+    releaseReceipt: {
+      path: 'receipts/specialist-preference-routing-v1.json',
+      sha256: '3b5164b41aa498ad637def561ff38df76d22a8f95b694a8c37f29ffa363718e7',
+      receiptDigest: '992f1efb07de413af42b8da869b0c6b3184a8bd010903a30ecc5735296654080',
+    },
+    ...overrides,
+  };
+}
+
 function releasePin(overrides = {}) {
   return {
     adapterProtocol: 'eternities-godskills-adapter-v1',
@@ -142,6 +154,28 @@ async function replacedActivationReceipt(mutator, activationMutator = (value) =>
   }));
   return {
     pin: releasePin({ activation }),
+    replacements: new Map([[receiptPath, receiptBytes]]),
+  };
+}
+
+async function replacedPreferenceReceipt(mutator) {
+  const receiptPath = `${root}/receipts/specialist-preference-routing-v1.json`;
+  const receipt = JSON.parse(await readFile(receiptPath));
+  mutator(receipt);
+  const unsigned = structuredClone(receipt);
+  delete unsigned.receiptDigest;
+  receipt.receiptDigest = sha256(canonicalJson(unsigned));
+  const receiptBytes = jsonBytes(receipt);
+  return {
+    pin: releasePin({
+      preference: preferencePin({
+        releaseReceipt: {
+          ...preferencePin().releaseReceipt,
+          sha256: sha256(receiptBytes),
+          receiptDigest: receipt.receiptDigest,
+        },
+      }),
+    }),
     replacements: new Map([[receiptPath, receiptBytes]]),
   };
 }
@@ -256,6 +290,67 @@ test('verifies an optional complete activation trust root while preserving legac
   assert.equal(Object.isFrozen(verified.activation.dependencies), true);
   assert.equal(tracked.reads.some((path) => /\/skills\//.test(path)), false);
   assert.equal(tracked.reads.some((path) => /quarry|third-party/i.test(path)), false);
+});
+
+test('verifies an optional exact specialist preference root while preserving legacy compatibility', async () => {
+  const legacy = await verifyGodskillsRelease(releasePin());
+  assert.equal(legacy.preference, undefined);
+
+  const tracked = trackedIo();
+  const verified = await verifyGodskillsRelease(
+    releasePin({ preference: preferencePin() }),
+    { io: tracked.io },
+  );
+  assert.equal(verified.preference.protocolId, preferencePin().protocolId);
+  assert.equal(verified.preference.trustRootDigest, preferencePin().releaseReceipt.receiptDigest);
+  assert.equal(verified.preference.entrypoint.path, 'scripts/intent-preference.mjs');
+  assert.equal(verified.preference.entrypoint.absolutePath, `${root}/scripts/intent-preference.mjs`);
+  assert.equal(verified.preference.localModules.length, 13);
+  assert.equal(verified.preference.authorityExpanded, false);
+  assert.equal(verified.rootDigests.preferenceReceipt, preferencePin().releaseReceipt.sha256);
+  assert.equal(Object.isFrozen(verified.preference), true);
+  assert.equal(tracked.reads.some((path) => /\/skills\//.test(path)), false);
+});
+
+test('rejects specialist preference receipt pin, protocol, and logical digest drift', async () => {
+  await assert.rejects(
+    verifyGodskillsRelease(releasePin({
+      preference: preferencePin({
+        releaseReceipt: { ...preferencePin().releaseReceipt, sha256: '0'.repeat(64) },
+      }),
+    })),
+    /preference.*digest mismatch|receipt.*digest mismatch/i,
+  );
+  await assert.rejects(
+    verifyGodskillsRelease(releasePin({
+      preference: preferencePin({
+        releaseReceipt: { ...preferencePin().releaseReceipt, receiptDigest: '0'.repeat(64) },
+      }),
+    })),
+    /preference.*logical|logical.*preference|receipt.*pin mismatch/i,
+  );
+  await assert.rejects(
+    verifyGodskillsRelease(releasePin({
+      preference: preferencePin({ protocolId: 'unsupported-preference-v2' }),
+    })),
+    /preference.*protocol|const/i,
+  );
+});
+
+test('rejects recomputed preference receipts that alter authority, closure, parents, or outputs', async () => {
+  const cases = [
+    (receipt) => { receipt.authorityExpanded = true; },
+    (receipt) => { receipt.dependencyClosure.localModules.pop(); },
+    (receipt) => { receipt.parents[0].sha256 = 'f'.repeat(64); },
+    (receipt) => { receipt.outputs.pop(); },
+  ];
+  for (const mutate of cases) {
+    const changed = await replacedPreferenceReceipt(mutate);
+    await assert.rejects(
+      verifyGodskillsRelease(changed.pin, { io: trackedIo(changed.replacements).io }),
+      /preference|authority|dependency|parent|output/i,
+    );
+  }
 });
 
 test('rejects incomplete, unknown, duplicate, and unordered activation pin structure', async () => {

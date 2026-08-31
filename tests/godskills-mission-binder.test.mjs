@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, realpath } from 'node:fs/promises';
 import test from 'node:test';
 
+import { sha256Value } from '../src/core/digest.mjs';
 import { createGodskillsAdapter } from '../src/skills/mission-binder.mjs';
 
 const root = 'C:/dev/eternities-godskills';
@@ -22,6 +23,17 @@ function releasePin(overrides = {}) {
   };
 }
 
+function preferencePin() {
+  return {
+    protocolId: 'eternities-godskills-specialist-preference-v1',
+    releaseReceipt: {
+      path: 'receipts/specialist-preference-routing-v1.json',
+      sha256: '3b5164b41aa498ad637def561ff38df76d22a8f95b694a8c37f29ffa363718e7',
+      receiptDigest: '992f1efb07de413af42b8da869b0c6b3184a8bd010903a30ecc5735296654080',
+    },
+  };
+}
+
 const genomePolicy = Object.freeze({
   protocolId: 'eternities-godskills-adapter-v1',
   profile: 'all-rounder',
@@ -29,6 +41,12 @@ const genomePolicy = Object.freeze({
   prohibitedFamilies: [],
   prohibitedCapabilities: [],
   maxComposition: 3,
+});
+
+const specialistGenomePolicy = Object.freeze({
+  ...genomePolicy,
+  profile: 'specialist',
+  preferredFamilies: ['eternities-forge'],
 });
 
 const hostEnvelope = Object.freeze({
@@ -57,35 +75,57 @@ function input(overrides = {}) {
 
 function routed(request, selectedIds = ['eternities-forge'], status = 'selected') {
   const selectedEntrypoints = selectedIds.map((id) => `skills/${id}/SKILL.md`);
-  return {
-    compilerReceipt: {
-      requestId: request.requestId,
-      envelope: {
-        availableAuthority: [...request.context.availableAuthority],
-        permittedEffects: [...request.context.permittedEffects],
-        availablePreconditions: [...request.context.availablePreconditions],
-        forbiddenCapabilities: [...request.context.forbiddenCapabilities],
-        maximumRisk: request.context.maximumRisk,
-        minimumEvidenceConfidence: request.context.minimumEvidenceConfidence,
-        contextBudget: request.context.contextBudget,
-        maxCompositionSize: request.context.maxCompositionSize,
-      },
-    },
-    routeReceipt: {
-      requestId: request.requestId,
-      status,
-      selectionKind: selectedIds.length > 1 ? 'composition' : selectedIds.length === 1 ? 'single' : 'none',
-      selectedIds,
-      selectedEntrypoints,
-      requestFeatures: {
-        permittedEffects: [...request.context.permittedEffects],
-        maximumRisk: request.context.maximumRisk,
-        minimumEvidenceConfidence: request.context.minimumEvidenceConfidence,
-        contextBudget: request.context.contextBudget,
-      },
-      unresolvedDecisions: status === 'needs-decision' ? ['effect'] : [],
-    },
+  const envelope = {
+    availableAuthority: [...request.context.availableAuthority],
+    permittedEffects: [...request.context.permittedEffects],
+    availablePreconditions: [...request.context.availablePreconditions],
+    forbiddenCapabilities: [...request.context.forbiddenCapabilities],
+    maximumRisk: request.context.maximumRisk,
+    minimumEvidenceConfidence: request.context.minimumEvidenceConfidence,
+    contextBudget: request.context.contextBudget,
+    maxCompositionSize: request.context.maxCompositionSize,
   };
+  const requestFeatures = {
+    permittedEffects: [...request.context.permittedEffects],
+    maximumRisk: request.context.maximumRisk,
+    minimumEvidenceConfidence: request.context.minimumEvidenceConfidence,
+    contextBudget: request.context.contextBudget,
+  };
+  const compilerReceipt = { requestId: request.requestId, envelope };
+  const routeReceipt = {
+    requestId: request.requestId,
+    status,
+    selectionKind: selectedIds.length > 1 ? 'composition' : selectedIds.length === 1 ? 'single' : 'none',
+    selectedIds,
+    selectedEntrypoints,
+    requestFeatures,
+    unresolvedDecisions: status === 'needs-decision' ? ['effect'] : [],
+  };
+  if (request.context.preferredCapabilities !== undefined) {
+    const suppliedIds = [...request.context.preferredCapabilities];
+    const semanticCandidateIds = [...selectedIds].sort();
+    envelope.preferredCapabilities = suppliedIds;
+    requestFeatures.preferredCapabilities = suppliedIds;
+    compilerReceipt.requestDigest = sha256Value(request);
+    routeReceipt.requestDigest = sha256Value(envelope);
+    routeReceipt.decisionPolicy = 'coverage>card-count>extra-capabilities>effects>context>dependencies>evidence>preference>id';
+    routeReceipt.candidateIds = [...new Set([...suppliedIds, ...selectedIds])].sort();
+    routeReceipt.preference = {
+      protocolId: 'eternities-godskills-specialist-preference-v1',
+      suppliedIds,
+      qualifiedIds: suppliedIds,
+      selectedIds: [...selectedIds],
+      baselineSelectedIds: [...selectedIds],
+      semanticCandidateIds,
+      applied: false,
+      reason: status === 'needs-decision'
+        ? 'unresolved-decision'
+        : status === 'no-qualified-route'
+          ? 'no-selection'
+          : 'selected-without-effect',
+    };
+  }
+  return { compilerReceipt, routeReceipt };
 }
 
 async function adapterFor(selector, options = {}) {
@@ -207,4 +247,77 @@ test('rehydrates a durable selected receipt without invoking the router again', 
   assert.equal(routeCalls, 0);
   assert.equal(rehydrated.receipt.packageDigest, bound.receipt.packageDigest);
   assert.deepEqual(rehydrated.cortexPackage, bound.cortexPackage);
+});
+
+test('specialist preference is derived from verified eligibility and durably bound to the cycle', async () => {
+  const { adapter, request } = await adapterFor((value) => routed(value), {
+    releasePin: releasePin({ preference: preferencePin() }),
+  });
+  const bound = await adapter.bindMission(input({ genomePolicy: specialistGenomePolicy }));
+  const forwarded = request().context.preferredCapabilities;
+
+  assert.ok(forwarded.length >= 1);
+  assert.ok(forwarded.includes('eternities-forge'));
+  assert.deepEqual(forwarded, [...forwarded].sort());
+  assert.deepEqual(bound.receipt.preference.suppliedIds, forwarded);
+  assert.deepEqual(bound.receipt.preference.selectedIds, ['eternities-forge']);
+  assert.equal(bound.receipt.preference.trustRootDigest, preferencePin().releaseReceipt.receiptDigest);
+  const { preferenceDigest, ...body } = bound.receipt.preference;
+  assert.equal(preferenceDigest, sha256Value(body));
+});
+
+test('all-rounder and legacy release paths never activate specialist preference', async () => {
+  const allRounder = { ...genomePolicy, preferredFamilies: ['eternities-forge'] };
+  const rooted = await adapterFor((value) => routed(value), {
+    releasePin: releasePin({ preference: preferencePin() }),
+  });
+  const rootedResult = await rooted.adapter.bindMission(input({ genomePolicy: allRounder }));
+  assert.equal(rooted.request().context.preferredCapabilities, undefined);
+  assert.equal(rootedResult.receipt.preference, undefined);
+
+  const legacy = await adapterFor((value) => routed(value));
+  const legacyResult = await legacy.adapter.bindMission(input({ genomePolicy: specialistGenomePolicy }));
+  assert.equal(legacy.request().context.preferredCapabilities, undefined);
+  assert.equal(legacyResult.receipt.preference, undefined);
+});
+
+test('specialist recovery replays no route and rejects changed preference identity', async () => {
+  const release = releasePin({ preference: preferencePin() });
+  const first = await adapterFor((value) => routed(value), { releasePin: release });
+  const bound = await first.adapter.bindMission(input({ genomePolicy: specialistGenomePolicy }));
+  let routeCalls = 0;
+  const second = await createGodskillsAdapter({
+    releasePin: release,
+    transport: async () => { routeCalls += 1; throw new Error('router must not run during rehydration'); },
+  });
+  const rehydrated = await second.rehydrateMission({
+    ...input({ genomePolicy: specialistGenomePolicy }),
+    receipt: bound.receipt,
+  });
+  assert.equal(routeCalls, 0);
+  assert.deepEqual(rehydrated.receipt, bound.receipt);
+  assert.deepEqual(rehydrated.cortexPackage, bound.cortexPackage);
+
+  await assert.rejects(second.rehydrateMission({
+    ...input({
+      genomePolicy: { ...specialistGenomePolicy, preferredFamilies: ['eternities-oracle'] },
+    }),
+    receipt: bound.receipt,
+  }), /preference|source envelope/i);
+
+  const tampered = structuredClone(bound.receipt);
+  tampered.preference.suppliedIds = ['eternities-aegis'];
+  await assert.rejects(second.rehydrateMission({
+    ...input({ genomePolicy: specialistGenomePolicy }),
+    receipt: tampered,
+  }), /preference/i);
+
+  const contradictory = structuredClone(bound.receipt);
+  contradictory.preference.reason = 'no-selection';
+  const { preferenceDigest: _oldDigest, ...contradictoryBody } = contradictory.preference;
+  contradictory.preference.preferenceDigest = sha256Value(contradictoryBody);
+  await assert.rejects(second.rehydrateMission({
+    ...input({ genomePolicy: specialistGenomePolicy }),
+    receipt: contradictory,
+  }), /preference/i);
 });

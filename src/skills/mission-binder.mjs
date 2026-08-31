@@ -8,6 +8,16 @@ import { routeGodskill } from './godskills-adapter.mjs';
 import { verifyGodskillsRelease } from './release-verifier.mjs';
 
 const sorted = (values) => [...new Set(values ?? [])].sort((left, right) => left.localeCompare(right));
+const preferenceReasons = new Set([
+  'equal-quality-tie-break',
+  'selected-without-effect',
+  'stronger-nonpreferred-selection',
+  'preference-not-route-capable',
+  'preference-not-semantic-candidate',
+  'no-qualified-preference',
+  'no-selection',
+  'unresolved-decision',
+]);
 
 function deepFreeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -20,6 +30,100 @@ function deepFreeze(value) {
 function intersection(left, right) {
   const allowed = new Set(right);
   return sorted(left.filter((value) => allowed.has(value)));
+}
+
+function equalArrays(left, right) {
+  return Array.isArray(left) && Array.isArray(right)
+    && left.length === right.length
+    && left.every((value, index) => value === right[index]);
+}
+
+function deriveSpecialistPreference(release, genomePolicy, eligibility) {
+  if (!release.preference || genomePolicy.profile !== 'specialist' || eligibility.preferredIds.length === 0) {
+    return null;
+  }
+  return deepFreeze({
+    protocolId: release.preference.protocolId,
+    trustRootDigest: release.preference.trustRootDigest,
+    preferredCapabilities: [...eligibility.preferredIds],
+  });
+}
+
+function preferenceRequest(preference) {
+  return preference === null ? null : {
+    protocolId: preference.protocolId,
+    preferredCapabilities: [...preference.preferredCapabilities],
+  };
+}
+
+function bindPreference(preference, routeReceipt) {
+  if (preference === null) return null;
+  const routed = routeReceipt.preference;
+  if (!routed) throw new Error('Godskills specialist route lacks its preference receipt');
+  const body = {
+    protocolId: preference.protocolId,
+    trustRootDigest: preference.trustRootDigest,
+    suppliedIds: [...routed.suppliedIds],
+    qualifiedIds: [...routed.qualifiedIds],
+    selectedIds: [...routed.selectedIds],
+    baselineSelectedIds: [...routed.baselineSelectedIds],
+    semanticCandidateIds: [...routed.semanticCandidateIds],
+    applied: routed.applied,
+    reason: routed.reason,
+  };
+  return deepFreeze({ ...body, preferenceDigest: sha256Value(body) });
+}
+
+function validateRecoveryPreference(binding, preference, selectedIds, selectionStatus) {
+  if (preference === null) {
+    if (binding !== undefined) throw new Error('Godskills recovery has an unexpected specialist preference binding');
+    return;
+  }
+  if (!binding) throw new Error('Godskills recovery lacks its specialist preference binding');
+  const { preferenceDigest, ...body } = binding;
+  if (preferenceDigest !== sha256Value(body)) throw new Error('Godskills recovery preference digest mismatch');
+  if (binding.protocolId !== preference.protocolId
+      || binding.trustRootDigest !== preference.trustRootDigest
+      || !equalArrays(binding.suppliedIds, preference.preferredCapabilities)
+      || !equalArrays(binding.selectedIds, selectedIds)) {
+    throw new Error('Godskills recovery preference identity mismatch');
+  }
+  for (const values of [
+    binding.suppliedIds,
+    binding.qualifiedIds,
+    binding.selectedIds,
+    binding.baselineSelectedIds,
+    binding.semanticCandidateIds,
+  ]) {
+    if (new Set(values).size !== values.length || !equalArrays(values, [...values].sort())) {
+      throw new Error('Godskills recovery preference sets must be sorted and unique');
+    }
+  }
+  const supplied = new Set(binding.suppliedIds);
+  const qualified = new Set(binding.qualifiedIds);
+  const semantic = new Set(binding.semanticCandidateIds);
+  for (const id of binding.qualifiedIds) {
+    if (!supplied.has(id)) throw new Error('Godskills recovery preference qualification is inconsistent');
+  }
+  for (const id of [...binding.selectedIds, ...binding.baselineSelectedIds]) {
+    if (!semantic.has(id)) throw new Error('Godskills recovery preference selection escaped semantic candidates');
+    if (supplied.has(id) && !qualified.has(id)) {
+      throw new Error('Godskills recovery selected preference was not qualified');
+    }
+  }
+  if (!preferenceReasons.has(binding.reason)
+      || binding.applied !== !equalArrays(binding.selectedIds, binding.baselineSelectedIds)
+      || binding.applied !== (binding.reason === 'equal-quality-tie-break')) {
+    throw new Error('Godskills recovery preference disposition is inconsistent');
+  }
+  if (selectionStatus === 'no-qualified-route'
+      && (binding.reason !== 'no-selection' || binding.selectedIds.length > 0)) {
+    throw new Error('Godskills recovery no-route preference is inconsistent');
+  }
+  if (selectionStatus === 'selected'
+      && (binding.reason === 'no-selection' || binding.reason === 'unresolved-decision')) {
+    throw new Error('Godskills recovery selected preference has a terminal-only reason');
+  }
 }
 
 function compileAuthority(mission, hostEnvelope) {
@@ -92,6 +196,7 @@ function sourceEnvelopeFor({
   authority,
   release,
   activationTrustRootDigest = null,
+  preference = null,
 }) {
   const envelope = {
     requestId: mission.requestId,
@@ -106,6 +211,10 @@ function sourceEnvelopeFor({
   if (activationTrustRootDigest !== null) {
     envelope.activationTrustRootDigest = activationTrustRootDigest;
     envelope.explicitMethodRequests = sorted(mission.explicitMethodRequests ?? []);
+  }
+  if (preference !== null) {
+    envelope.preferenceTrustRootDigest = preference.trustRootDigest;
+    envelope.preferredCapabilities = [...preference.preferredCapabilities];
   }
   return deepFreeze(envelope);
 }
@@ -328,12 +437,14 @@ export async function createGodskillsAdapter({
     async bindMission({ mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch }) {
       if (!mission?.requestId || !mission?.text) throw new TypeError('Godskills mission identity and text are required');
       const eligibility = compileCapabilityEligibility(genomePolicy, release.manifest);
+      const preference = deriveSpecialistPreference(release, genomePolicy, eligibility);
       const authority = compileAuthority(mission, hostEnvelope);
       const context = routeContext({ release, eligibility, authority, hostEnvelope });
       if (context.permittedEffects.length === 0) throw new Error('Godskills has no permitted semantic effect binding');
       const sourceEnvelope = sourceEnvelopeFor({
         mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
         activationTrustRootDigest: adaptive?.trustRootDigest ?? null,
+        preference,
       });
       const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
       const routingRequestId = `${mission.requestId}:${sourceEnvelopeDigest}`;
@@ -341,6 +452,7 @@ export async function createGodskillsAdapter({
         request: { requestId: routingRequestId, text: mission.text },
         hostContext: context,
         transport,
+        preference: preferenceRequest(preference),
       });
       if (route.status === 'needs-decision') {
         return deepFreeze({
@@ -416,6 +528,8 @@ export async function createGodskillsAdapter({
         packageDigest: sha256Text(canonicalJson(cortexPackage)),
       };
       if (activation) receipt.activation = activation;
+      const preferenceBinding = bindPreference(preference, route.routeReceipt);
+      if (preferenceBinding) receipt.preference = preferenceBinding;
       assertSchema('godskills-cycle-receipt', receipt);
       return deepFreeze({
         status: route.status === 'selected' ? 'bound' : 'no-qualified-route',
@@ -435,10 +549,12 @@ export async function createGodskillsAdapter({
         throw new Error('Godskills no-route recovery cannot carry an activation binding');
       }
       const eligibility = compileCapabilityEligibility(genomePolicy, release.manifest);
+      const preference = deriveSpecialistPreference(release, genomePolicy, eligibility);
       const authority = compileAuthority(mission, hostEnvelope);
       const sourceEnvelope = sourceEnvelopeFor({
         mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
         activationTrustRootDigest: adaptive?.trustRootDigest ?? null,
+        preference,
       });
       const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
       if (receipt.sourceEnvelopeDigest !== sourceEnvelopeDigest
@@ -446,6 +562,7 @@ export async function createGodskillsAdapter({
         throw new Error('Godskills recovery source envelope mismatch');
       }
       const selectedIds = receipt.selected.map(({ id }) => id);
+      validateRecoveryPreference(receipt.preference, preference, selectedIds, receipt.selectionStatus);
       const entrypoints = selectedIds.map((id) => release.capabilitiesById.get(id)?.entrypoint.path);
       const forbiddenIds = sorted(hostEnvelope.forbiddenCapabilities ?? []);
       const selected = resolveSelectedCapabilities(
