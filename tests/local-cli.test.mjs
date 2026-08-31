@@ -38,12 +38,15 @@ test('local host derives mission authority and context only from validated polic
   let trustedMission;
   const code = await runLocalHost({
     argv: ['--policy', policyPath, '--mission', missionPath],
-    env: validEnv('canary-cli-secret'),
+    env: { ...validEnv('canary-cli-secret'), GODAGENT_ACTIVATION_ENABLED: 'true' },
     stdout,
     stderr,
-    execute: async ({ mission, credentialResolver }) => {
+    execute: async (options) => {
+      const { mission, credentialResolver } = options;
       trustedMission = mission;
       assert.equal(credentialResolver.resolve(), 'canary-cli-secret');
+      assert.equal(Object.hasOwn(options, 'activationClassifier'), false);
+      assert.equal(Object.hasOwn(options, 'activationTransport'), false);
       return {
         status: 'completed',
         instanceId: 'networked-fixture-1',

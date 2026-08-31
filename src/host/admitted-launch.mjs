@@ -163,6 +163,7 @@ function projectRecordedRequest(events, mission, binding) {
 
 async function defaultRuntimeFactory({
   policy, policyDigest, policyPath, realmContract, realmStatePath, credentialResolver, fetchImpl, clock,
+  activationClassifier, activationTransport,
 }) {
   const realm = await createPersistentLocalRealm({ contract: realmContract, statePath: realmStatePath });
   const godskillsTransport = await createLocalGodskillsTransport({
@@ -171,6 +172,8 @@ async function defaultRuntimeFactory({
   const godskillsAdapter = await createGodskillsAdapter({
     releasePin: policy.runtime.godskillsRelease,
     transport: godskillsTransport,
+    activationClassifier,
+    activationTransport,
   });
   const cortex = createOpenAICompatibleCortex({
     adapterId: policy.provider.adapterId,
@@ -209,12 +212,16 @@ export async function launchAdmittedLocalAgent({
   fetchImpl = globalThis.fetch,
   clock = () => new Date().toISOString(),
   runtimeFactory = defaultRuntimeFactory,
+  activationClassifier,
+  activationTransport,
 }) {
   if ([admissionRoot, policyPath, missionPath].some((value) => typeof value !== 'string'
       || value.length === 0 || /[\0\r\n]/.test(value))
       || typeof requestId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(requestId)
       || requestId === '.' || requestId === '..'
-      || typeof runtimeFactory !== 'function' || typeof clock !== 'function') fail('input-invalid');
+      || typeof runtimeFactory !== 'function' || typeof clock !== 'function'
+      || (activationClassifier !== undefined && typeof activationClassifier !== 'function')
+      || (activationTransport !== undefined && typeof activationTransport !== 'function')) fail('input-invalid');
 
   const root = resolve(admissionRoot);
   const resolvedPolicyPath = resolve(policyPath);
@@ -320,6 +327,8 @@ export async function launchAdmittedLocalAgent({
       credentialResolver,
       fetchImpl,
       clock,
+      activationClassifier,
+      activationTransport,
     });
     const vessel = await createPersistentVessel({ genesis, runtime, keelAdapter });
     if (recorded.status === 'interrupted') {

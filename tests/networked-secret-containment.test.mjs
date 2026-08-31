@@ -8,7 +8,7 @@ import { createOpenAICompatibleCortex } from '../src/cortex/openai-compatible.mj
 import { canonicalJson } from '../src/core/canonical-json.mjs';
 import { sha256Text } from '../src/core/digest.mjs';
 import { compileDistribution } from '../src/foundry/compile.mjs';
-import { runLocalHost } from '../src/host/local-cli.mjs';
+import { executeNetworkedVessel, runLocalHost } from '../src/host/local-cli.mjs';
 import { createFixtureRealm } from '../src/realm/fixture-realm.mjs';
 import { createFixtureCortexA, createFixtureCortexB } from '../src/runtime/fixture-cortex.mjs';
 import { createVessel } from '../src/runtime/vessel.mjs';
@@ -17,9 +17,49 @@ import { createGodskillsAdapter } from '../src/skills/mission-binder.mjs';
 import { readVerifiedJournal } from '../src/state/journal.mjs';
 
 const CANARY = 'canary-end-to-end-provider-secret';
+const POLICY_DIGEST = 'bf9e6878399b4edeb4ff6bb77d234fdf646b53fd62ba6e1448b4374246d4c41d';
+const EVIDENCE_DIGEST = '9a14d4296158c65c3929938c5c54b5f7f4b6a5ffeb5b0a827b3f8b25814f5e07';
+const TRUST_ROOT_DIGEST = 'c5a086bb131ff7e1a9508f02b95796ae9066627be3e8e1f8b7e57421220e9bd7';
 const fixedNow = '2026-08-29T12:00:00.000Z';
 const fixturePath = (name) => new URL(`../fixtures/${name}`, import.meta.url);
 const contract = JSON.parse(await readFile(fixturePath('realm-contract.json'), 'utf8'));
+
+const activationPin = Object.freeze({
+  protocolId: 'eternities-godskills-activation-v1',
+  executableReceipt: {
+    path: 'receipts/adaptive-activation-executable-v1.json',
+    sha256: '98ebeb63db38b67608cf71b1b511b807cfe2d96e17e9b1bc54e7dbb536f8403f',
+    receiptDigest: TRUST_ROOT_DIGEST,
+  },
+  parentReceipt: {
+    path: 'receipts/adaptive-activation-v1.json',
+    sha256: '6c6d689ecf9df14823407a917e89a5848776fb50eca3b7acc0d70056ae305f70',
+    receiptDigest: 'a28a0af7e588f2abbbe1d51a15775dfbeb8d565109d0a176711bfa73b520440f',
+  },
+  entrypoint: { path: 'scripts/activation.mjs', sha256: 'e19ceef6a781d1d82a82fb17c519755526dc17fa979474b99f291d6eaa17788a' },
+  compiler: { path: 'src/adaptive-activation.mjs', sha256: '9844aee1147f7129f3e37067424ccebb88ff478de1b7a9a9fb7306d5f2fdbd82' },
+  dependencies: [
+    { path: 'scripts/build-adaptive-activation-executable-receipt.mjs', sha256: 'd35fa44632711c64c1e23f84f80fc0edfb5adbed4261ef88b7d9c32de2d96486' },
+    { path: 'src/adaptive-activation-protocol.mjs', sha256: 'e697fe37d18a76de22ca4fdcd8ade6089bceddb20baad971e895bc49c9b0172e' },
+    { path: 'src/io.mjs', sha256: '48dca2b203947e12ca3d5500b70a25066a8166d86bc2284aaeed6abf622a5c37' },
+    { path: 'src/static-module-closure.mjs', sha256: '3bb0d825e6838b901315e685f9e5b02c94dac316ccb7788f54cd6fd18cd6a6ab' },
+  ],
+  schemas: {
+    request: { path: 'schemas/adaptive-activation-request.v1.schema.json', sha256: 'bcadd846b96809733837183e12dba6f8d094409aa7c16e5676fa63357e3c2cde' },
+    result: { path: 'schemas/adaptive-activation-result.v1.schema.json', sha256: '0a069a5eb121e625aa4ea529cbb48783e266e4c7c7f36f93ee24749303dd4391' },
+  },
+  policy: {
+    path: 'policies/adaptive-activation.v1.json',
+    sha256: 'b87bbfaddecb42417e57202173220bf240204d27b7de5fffc9e609eb18138939',
+    logicalDigest: POLICY_DIGEST,
+  },
+  evidence: {
+    path: 'artifacts/adaptive-activation/evidence.v1.json',
+    sha256: 'b55a5cb4f7ff039cc7f4027c165b2f151bad723d9030913076a4225342fbe8c5',
+    logicalDigest: EVIDENCE_DIGEST,
+  },
+  contract: { path: 'artifacts/adaptive-activation/neutral-contract.json', sha256: 'feade348d3fd31afd5103eb296181f68000186d3193a995e4b77c25a06e57c92' },
+});
 
 const hostContext = {
   permittedEffects: ['local-read', 'local-write'],
@@ -76,6 +116,49 @@ function proposal(counter, overrides = {}) {
   };
 }
 
+function nativeActivationResult(request) {
+  const decisions = request.selected.map(({ selectedId }) => {
+    const unsigned = {
+      schemaVersion: 1,
+      selectedId,
+      taskClass: request.classification.taskClass,
+      consequenceClass: request.classification.consequenceClass,
+      mode: 'native',
+      reasonCodes: ['fixture-native'],
+      preInferenceDisclosure: 'none',
+      deferredReview: false,
+      methodEvidence: {
+        eligible: false,
+        matchedEvaluations: 0,
+        wins: 0,
+        losses: 0,
+        ties: 0,
+        winRate: 0,
+        criticalRegressions: 0,
+        overheadRatio: null,
+        failedGates: ['fixture-evidence'],
+      },
+      policyDigest: POLICY_DIGEST,
+      evidenceDigest: EVIDENCE_DIGEST,
+      authorityProjection: structuredClone(request.authorityProjection),
+      authorityExpanded: false,
+    };
+    return { ...unsigned, decisionDigest: sha256Text(canonicalJson(unsigned)) };
+  });
+  const unsigned = {
+    schemaVersion: 1,
+    protocolId: request.protocolId,
+    requestId: request.requestId,
+    requestDigest: sha256Text(canonicalJson(request)),
+    trustRootDigest: request.trustRootDigest,
+    policyDigest: POLICY_DIGEST,
+    evidenceDigest: EVIDENCE_DIGEST,
+    classification: structuredClone(request.classification),
+    decisions,
+  };
+  return { ...unsigned, resultDigest: sha256Text(canonicalJson(unsigned)) };
+}
+
 async function allTextFiles(root) {
   const rows = [];
   async function walk(directory) {
@@ -127,7 +210,7 @@ async function hostWorkspace(t, name, providerContent) {
       headers: { 'content-type': 'application/json' },
     });
   };
-  return { root, policyPath, missionPath, fetchImpl, policyDigest: sha256Text(canonicalJson(policy)) };
+  return { root, policy, policyPath, missionPath, fetchImpl, policyDigest: sha256Text(canonicalJson(policy)) };
 }
 
 test('end-to-end local host leaves the canary credential out of every durable and emitted surface', async (t) => {
@@ -155,6 +238,109 @@ test('end-to-end local host leaves the canary credential out of every durable an
     .map((event) => event.payload);
   assert.equal(JSON.stringify(inferencePayloads).includes('authorization'), false);
   assert.equal(JSON.stringify(inferencePayloads).includes('rawResponse'), false);
+});
+
+test('explicit adaptive host keeps credentials continuity memory Realm handles and unselected bodies out of every boundary', async (t) => {
+  const workspace = await hostWorkspace(t, 'adaptive-secrets', proposal(0));
+  const policy = structuredClone(workspace.policy);
+  policy.runtime.godskillsRelease.activation = structuredClone(activationPin);
+  await writeFile(workspace.policyPath, `${canonicalJson(policy)}\n`, 'utf8');
+  const canaries = [
+    CANARY,
+    'canary-keel-state-private',
+    'canary-raw-memory-private',
+    'canary-realm-handle-private',
+    'canary-unselected-skill-body-private',
+  ];
+  let classifierProjection;
+  let activationRequest;
+  let activationResult;
+  let cortexRequestBody;
+  const result = await executeNetworkedVessel({
+    policy,
+    policyDigest: sha256Text(canonicalJson(policy)),
+    policyPath: workspace.policyPath,
+    mission: {
+      requestId: 'mission-adaptive-secret-boundary',
+      text: 'resolve conflicting runtime constraints into an implementation-ready system architecture',
+      authority: [...policy.authority],
+      hostContext: structuredClone(policy.hostContext),
+      keelState: canaries[1],
+      rawMemory: canaries[2],
+      realmHandle: { credential: canaries[3] },
+      unselectedSkillBody: canaries[4],
+    },
+    credentialResolver: Object.freeze({ resolve: () => CANARY }),
+    fetchImpl: async (url, request) => {
+      cortexRequestBody = request.body;
+      return workspace.fetchImpl(url, request);
+    },
+    clock: () => fixedNow,
+    activationClassifier: (projection) => {
+      classifierProjection = projection;
+      return { taskClass: 'implementation', consequenceClass: 'low', reviewAvailable: false };
+    },
+    activationTransport: (request) => {
+      activationRequest = request;
+      activationResult = nativeActivationResult(request);
+      return activationResult;
+    },
+  });
+
+  assert.equal(result.status, 'completed');
+  const surfaces = [
+    ...await allTextFiles(workspace.root),
+    { path: 'classifier-projection', text: JSON.stringify(classifierProjection) },
+    { path: 'activation-request', text: JSON.stringify(activationRequest) },
+    { path: 'activation-result', text: JSON.stringify(activationResult) },
+    { path: 'cortex-request', text: cortexRequestBody },
+    { path: 'host-result', text: JSON.stringify(result) },
+  ];
+  for (const surface of surfaces) {
+    for (const canary of canaries) assert.equal(surface.text.includes(canary), false, `${surface.path}: ${canary}`);
+  }
+  assert.deepEqual(Object.keys(classifierProjection).sort(), ['mission', 'selected']);
+  assert.deepEqual(Object.keys(activationRequest).sort(), [
+    'authorityProjection', 'classification', 'protocolId', 'requestId', 'schemaVersion', 'selected', 'trustRootDigest',
+  ].sort());
+});
+
+test('networked host rejects every partial adaptive state before routing or inference', async (t) => {
+  const workspace = await hostWorkspace(t, 'adaptive-partial', proposal(0));
+  const legacyPolicy = structuredClone(workspace.policy);
+  const adaptivePolicy = structuredClone(workspace.policy);
+  adaptivePolicy.runtime.godskillsRelease.activation = structuredClone(activationPin);
+  const calls = { classify: 0, activate: 0, infer: 0 };
+  const classifier = () => {
+    calls.classify += 1;
+    return { taskClass: 'implementation', consequenceClass: 'low', reviewAvailable: false };
+  };
+  const activationTransport = () => {
+    calls.activate += 1;
+    throw new Error('activation must not run');
+  };
+  const common = {
+    policyDigest: 'f'.repeat(64),
+    policyPath: workspace.policyPath,
+    mission: {
+      requestId: 'mission-partial-adaptive-state',
+      text: 'verify adaptive host closure',
+      authority: [...legacyPolicy.authority],
+      hostContext: structuredClone(legacyPolicy.hostContext),
+    },
+    credentialResolver: Object.freeze({ resolve: () => CANARY }),
+    fetchImpl: async () => { calls.infer += 1; throw new Error('inference must not run'); },
+    clock: () => fixedNow,
+  };
+  for (const options of [
+    { policy: adaptivePolicy },
+    { policy: adaptivePolicy, activationClassifier: classifier },
+    { policy: adaptivePolicy, activationTransport },
+    { policy: legacyPolicy, activationClassifier: classifier, activationTransport },
+  ]) {
+    await assert.rejects(executeNetworkedVessel({ ...common, ...options }), /activation/i);
+  }
+  assert.deepEqual(calls, { classify: 0, activate: 0, infer: 0 });
 });
 
 test('provider output cannot manufacture host authority or reach a Realm hand', async (t) => {

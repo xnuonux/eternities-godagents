@@ -36,6 +36,34 @@ function resolveRuntimePath(policyPath, path) {
   return resolve(dirname(policyPath), path);
 }
 
+function deepFreeze(value) {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) deepFreeze(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
+function boundedProgrammaticMission(policy, mission) {
+  if (!mission || typeof mission !== 'object' || Array.isArray(mission)
+      || typeof mission.requestId !== 'string' || mission.requestId.length === 0
+      || typeof mission.text !== 'string' || mission.text.length === 0
+      || !Array.isArray(mission.authority)) {
+    throw new TypeError('networked mission is invalid');
+  }
+  const requestedAuthority = new Set(mission.authority);
+  const bounded = {
+    requestId: mission.requestId,
+    text: mission.text,
+    authority: policy.authority.filter((value) => requestedAuthority.has(value)),
+    hostContext: structuredClone(policy.hostContext),
+  };
+  if (mission.explicitMethodRequests !== undefined) {
+    bounded.explicitMethodRequests = structuredClone(mission.explicitMethodRequests);
+  }
+  return deepFreeze(bounded);
+}
+
 export async function executeNetworkedVessel({
   policy,
   policyDigest,
@@ -44,7 +72,10 @@ export async function executeNetworkedVessel({
   credentialResolver,
   fetchImpl,
   clock,
+  activationClassifier,
+  activationTransport,
 }) {
+  const boundedMission = boundedProgrammaticMission(policy, mission);
   const distributionDir = resolveRuntimePath(policyPath, policy.runtime.distributionDir);
   const contract = JSON.parse(await readFile(resolve(distributionDir, 'realm-contract.json'), 'utf8'));
   if (contract.realmId !== policy.realmId) throw new Error('host policy Realm does not match distribution');
@@ -55,6 +86,8 @@ export async function executeNetworkedVessel({
   const godskillsAdapter = await createGodskillsAdapter({
     releasePin: policy.runtime.godskillsRelease,
     transport: godskillsTransport,
+    activationClassifier,
+    activationTransport,
   });
   const cortex = createOpenAICompatibleCortex({
     adapterId: policy.provider.adapterId,
@@ -85,7 +118,7 @@ export async function executeNetworkedVessel({
       hostPolicyDigest: policyDigest,
     },
   });
-  const cycle = await vessel.runCycle(mission);
+  const cycle = await vessel.runCycle(boundedMission);
   if (cycle.status === 'failed') {
     return {
       status: 'failed',

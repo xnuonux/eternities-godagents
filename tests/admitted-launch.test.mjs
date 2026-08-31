@@ -160,6 +160,30 @@ test('one admitted launch verifies persistent identity and completes one governe
   assert.equal(fixture.getRealm().inspect().counter, 1);
 });
 
+test('admitted launch forwards explicit adaptive dependencies only through its programmatic boundary', async (context) => {
+  const fixture = await setup(context, 'adaptive-boundary');
+  const activationClassifier = () => ({
+    taskClass: 'implementation', consequenceClass: 'low', reviewAvailable: false,
+  });
+  const activationTransport = async () => { throw new Error('fixture runtime must not invoke activation'); };
+  const baseFactory = fixture.runtimeFactory;
+  let observed;
+  fixture.runtimeFactory = async (input) => {
+    observed = input;
+    return baseFactory(input);
+  };
+  const result = await launchAdmittedLocalAgent({
+    ...fixture,
+    activationClassifier,
+    activationTransport,
+    clock: fixedClock,
+  });
+
+  assert.equal(result.status, 'completed');
+  assert.equal(observed.activationClassifier, activationClassifier);
+  assert.equal(observed.activationTransport, activationTransport);
+});
+
 test('retrying one completed request returns its recorded outcome without another runtime or effect', async (context) => {
   const fixture = await setup(context, 'replay');
   const first = await launchAdmittedLocalAgent({ ...fixture, clock: fixedClock });
