@@ -29,6 +29,9 @@ The adapter targets one pinned HTTPS `/v1/messages` policy. Requests use the
 Messages API's separate `system` field, one user message, non-streaming output,
 one exact model, `max_tokens`, and `output_config.format` with `json_schema`.
 No tools, thinking, web search, files, images, or arbitrary metadata are enabled.
+The Anthropic wire compiler recursively removes structured-output constraints the
+raw API does not accept, while the shared semantic core retains and enforces the
+complete original schema after the response returns.
 
 The static system block precedes changing mission data and carries one explicit
 ephemeral cache breakpoint. The model input remains the same canonical JSON value
@@ -53,6 +56,8 @@ Usage maps as follows:
 
 - total input is uncached input plus cache-creation input plus cache-read input
 - cached input is cache-read input only
+- cache-creation input remains separately available as validated provider usage
+  evidence instead of being collapsed into the normalized completion
 - completion and visible output are `output_tokens`
 - reasoning tokens are zero because this protocol enables no thinking mode
 - every counter is a safe non-negative integer and completion remains within the
@@ -60,10 +65,12 @@ Usage maps as follows:
 
 ## credential boundary
 
-The canonical policy names only the credential environment variable. The secret
-is resolved after policy and request preflight, reaches only the `x-api-key`
-header, and is absent from requests, dispatches, errors, usage, artifacts,
-fixtures, and receipts. Credential-bearing input or reflected output fails closed.
+The canonical policy names only the credential environment variable. The current
+protocol boundary resolves the secret lazily for response-reflection checks and
+keeps it absent from request bodies, dispatches, errors, normalized usage,
+artifacts, fixtures, and receipts. A future durable Anthropic transport must place
+that secret only in its host-owned `x-api-key` header after every policy and
+request preflight. Credential-bearing input or reflected output fails closed.
 
 ## compatibility and acceptance
 

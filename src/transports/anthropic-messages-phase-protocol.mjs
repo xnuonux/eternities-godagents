@@ -11,6 +11,11 @@ import {
 
 const PHASES = new Set(['native', 'review', 'revision']);
 const PROTOCOL_ID = 'eternities-anthropic-messages-phase-request-v1';
+const UNSUPPORTED_WIRE_SCHEMA_KEYS = new Set([
+  'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf',
+  'minLength', 'maxLength', 'pattern',
+  'minItems', 'maxItems', 'uniqueItems',
+]);
 const MESSAGES = Object.freeze({
   'dispatch-invalid': 'Anthropic Messages phase dispatch is invalid',
   'request-over-budget': 'Anthropic Messages phase request exceeds its byte ceiling',
@@ -47,6 +52,14 @@ function verifyDispatch(phase, dispatch, descriptor) {
   }
 }
 
+function anthropicWireSchema(value) {
+  if (Array.isArray(value)) return value.map(anthropicWireSchema);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value)
+    .filter(([key]) => !UNSUPPORTED_WIRE_SCHEMA_KEYS.has(key))
+    .map(([key, child]) => [key, anthropicWireSchema(child)]));
+}
+
 export function compileAnthropicMessagesPhaseRequest({ phase, dispatch, descriptor, policy } = {}) {
   if (!PHASES.has(phase)) throw new TypeError('Anthropic Messages phase is invalid');
   verifyDispatch(phase, dispatch, descriptor);
@@ -71,7 +84,7 @@ export function compileAnthropicMessagesPhaseRequest({ phase, dispatch, descript
       cache_control: { type: 'ephemeral' },
     }],
     messages: [{ role: 'user', content: [{ type: 'text', text: canonicalJson(input) }] }],
-    output_config: { format: { type: 'json_schema', schema } },
+    output_config: { format: { type: 'json_schema', schema: anthropicWireSchema(schema) } },
   };
   const body = canonicalJson(request);
   const bodyBytes = Buffer.byteLength(body, 'utf8');
@@ -89,18 +102,33 @@ function usageFrom(envelope, maximumCompletionTokens) {
   const created = usage?.cache_creation_input_tokens ?? 0;
   const cached = usage?.cache_read_input_tokens ?? 0;
   const completion = usage?.output_tokens;
+  const details = usage?.output_tokens_details;
+  if (details !== undefined && (!details || typeof details !== 'object' || Array.isArray(details))) {
+    fail('response-invalid');
+  }
+  const thinking = details?.thinking_tokens ?? 0;
   if ([uncached, created, cached, completion].some((value) => !Number.isSafeInteger(value) || value < 0)
+      || !Number.isSafeInteger(thinking) || thinking !== 0
       || completion > maximumCompletionTokens) {
     fail('response-invalid');
   }
   const inputTokens = uncached + created + cached;
   if (!Number.isSafeInteger(inputTokens)) fail('response-invalid');
   return {
-    inputTokens,
-    cachedInputTokens: cached,
-    reasoningTokens: 0,
-    visibleOutputTokens: completion,
-    completionTokens: completion,
+    normalized: {
+      inputTokens,
+      cachedInputTokens: cached,
+      reasoningTokens: 0,
+      visibleOutputTokens: completion,
+      completionTokens: completion,
+    },
+    providerUsage: {
+      uncachedInputTokens: uncached,
+      cacheCreationInputTokens: created,
+      cacheReadInputTokens: cached,
+      outputTokens: completion,
+      thinkingTokens: thinking,
+    },
   };
 }
 
@@ -143,7 +171,7 @@ function contentFrom(response, policy, credential) {
   return { content, envelope };
 }
 
-export function completeAnthropicMessagesPhaseResponse({
+export function inspectAnthropicMessagesPhaseResponse({
   phase, dispatch, descriptor, policy, response, credential, startedAt, completedAt,
 } = {}) {
   if (!PHASES.has(phase)) throw new TypeError('Anthropic Messages phase is invalid');
@@ -155,11 +183,16 @@ export function completeAnthropicMessagesPhaseResponse({
   }
   const usage = usageFrom(envelope, dispatch.maxCompletionTokens);
   try {
-    return buildProviderNeutralPhaseCompletion({
-      phase, dispatch, descriptor, content, usage, startedAt, completedAt,
+    const completion = buildProviderNeutralPhaseCompletion({
+      phase, dispatch, descriptor, content, usage: usage.normalized, startedAt, completedAt,
     });
+    return deepFreeze({ completion, providerUsage: usage.providerUsage });
   } catch (error) {
     if (error instanceof AnthropicMessagesPhaseProtocolError) throw error;
     fail('response-invalid', error);
   }
+}
+
+export function completeAnthropicMessagesPhaseResponse(options = {}) {
+  return inspectAnthropicMessagesPhaseResponse(options).completion;
 }

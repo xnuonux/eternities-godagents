@@ -1,7 +1,7 @@
 import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
-import { assertSchema } from '../core/schema-validator.mjs';
+import { assertSchema, validateAgainstSchema } from '../core/schema-validator.mjs';
 import {
   buildIdentityBoundNativeCompletion,
   verifyIdentityBoundNativeTransportDescriptor,
@@ -222,6 +222,11 @@ export function buildProviderNeutralPhaseCompletion({
 } = {}) {
   verifyProviderNeutralPhaseDispatch({ phase, dispatch, descriptor });
   try {
+    validateAgainstSchema(
+      'provider-neutral-phase-output',
+      providerNeutralPhaseOutputSchema({ phase, dispatch, descriptor }),
+      content,
+    );
     const artifact = artifactFrom(phase, content, dispatch);
     if (phase === 'native') {
       verifyMissionPhaseArtifact(artifact, { phase: 'native', inputs: [] });

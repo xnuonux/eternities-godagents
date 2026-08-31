@@ -2,7 +2,7 @@ import { canonicalJson } from '../../src/core/canonical-json.mjs';
 import { sha256Value } from '../../src/core/digest.mjs';
 import {
   compileAnthropicMessagesPhaseRequest,
-  completeAnthropicMessagesPhaseResponse,
+  inspectAnthropicMessagesPhaseResponse,
 } from '../../src/transports/anthropic-messages-phase-protocol.mjs';
 import {
   compileOpenAICompatiblePhaseRequest,
@@ -57,8 +57,8 @@ function anthropicResponse(model, content) {
       stop_reason: 'end_turn',
       stop_sequence: null,
       usage: {
-        input_tokens: 140,
-        cache_creation_input_tokens: 0,
+        input_tokens: 100,
+        cache_creation_input_tokens: 40,
         cache_read_input_tokens: 60,
         output_tokens: 30,
       },
@@ -80,12 +80,13 @@ function phaseRecord({ phase, dispatch, descriptor, content, openAIPolicy, anthr
     response: openAIResponse(openAIPolicy.provider.modelId, content),
     credential: OPENAI_CREDENTIAL,
   });
-  const anthropicCompletion = completeAnthropicMessagesPhaseResponse({
+  const anthropicInspection = inspectAnthropicMessagesPhaseResponse({
     ...shared,
     policy: anthropicPolicy,
     response: anthropicResponse(anthropicPolicy.provider.modelId, content),
     credential: ANTHROPIC_CREDENTIAL,
   });
+  const anthropicCompletion = anthropicInspection.completion;
   return {
     record: {
       dispatchDigest: dispatch.dispatchDigest,
@@ -94,6 +95,7 @@ function phaseRecord({ phase, dispatch, descriptor, content, openAIPolicy, anthr
       anthropicRequestDigest: anthropicRequest.requestDigest,
       artifactDigest: sha256Value(openAICompletion.artifact),
       completionParity: canonicalJson(openAICompletion) === canonicalJson(anthropicCompletion),
+      anthropicProviderUsage: structuredClone(anthropicInspection.providerUsage),
     },
     openAIRequest,
     anthropicRequest,
@@ -163,6 +165,9 @@ export async function buildDeterministicProviderNeutralPhaseProtocolFixture() {
       credentialsInRequests: requests.filter((body) => (
         body.includes(OPENAI_CREDENTIAL) || body.includes(ANTHROPIC_CREDENTIAL)
       )).length,
+      cacheCreationInputTokens: Object.values(built).reduce((sum, entry) => (
+        sum + entry.record.anthropicProviderUsage.cacheCreationInputTokens
+      ), 0),
       anthropicSystemCacheBoundary: Object.values(built).every(({ anthropicRequest }) => {
         const body = JSON.parse(anthropicRequest.body);
         return canonicalJson(body.system?.[0]?.cache_control) === canonicalJson({ type: 'ephemeral' });

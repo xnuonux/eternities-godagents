@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   compileAnthropicMessagesPhaseRequest,
   completeAnthropicMessagesPhaseResponse,
+  inspectAnthropicMessagesPhaseResponse,
 } from '../src/transports/anthropic-messages-phase-protocol.mjs';
 import { completeOpenAICompatiblePhaseResponse } from '../src/transports/openai-compatible-phase-protocol.mjs';
 import {
@@ -85,6 +86,10 @@ test('compiles one cache-stable Anthropic Messages structured-output request', a
   assert.equal(body.messages.length, 1);
   assert.equal(body.messages[0].role, 'user');
   assert.equal(body.output_config.format.type, 'json_schema');
+  const wireSchema = JSON.stringify(body.output_config.format.schema);
+  for (const unsupported of ['minLength', 'maxLength', 'minimum', 'maximum', 'minItems', 'maxItems', 'uniqueItems']) {
+    assert.equal(wireSchema.includes(`\"${unsupported}\"`), false, unsupported);
+  }
   assert.equal(body.stream, false);
   assert.equal(compiled.body.includes(credential), false);
   assert.ok(Object.isFrozen(compiled));
@@ -113,6 +118,20 @@ test('maps Anthropic text and cache usage into the existing typed completion', a
     identityOwnership: false,
     evolution: false,
     soul: false,
+  });
+
+  const inspected = inspectAnthropicMessagesPhaseResponse({
+    phase: 'native', dispatch: fixture.dispatch, descriptor: fixture.suite.descriptors.native,
+    policy, response: response(), credential,
+    startedAt: '2026-08-31T22:00:00.000Z', completedAt: '2026-08-31T22:00:01.000Z',
+  });
+  assert.deepEqual(inspected.completion, completion);
+  assert.deepEqual(inspected.providerUsage, {
+    uncachedInputTokens: 40,
+    cacheCreationInputTokens: 100,
+    cacheReadInputTokens: 60,
+    outputTokens: 30,
+    thinkingTokens: 0,
   });
 });
 
@@ -147,12 +166,36 @@ test('rejects contradictory, negative, and over-budget Anthropic usage', async (
     { input_tokens: -1 },
     { cache_read_input_tokens: -1 },
     { output_tokens: fixture.dispatch.maxCompletionTokens + 1 },
+    { output_tokens_details: { thinking_tokens: 1 } },
+    { output_tokens_details: { thinking_tokens: -1 } },
+    { output_tokens_details: 'forged' },
   ]) {
     assert.throws(
       () => completeAnthropicMessagesPhaseResponse({ ...base, response: response(undefined, usage) }),
       /response is invalid/,
     );
   }
+});
+
+test('locally rejects values that violate constraints stripped from the Anthropic wire schema', async (t) => {
+  const fixture = await setupPendingNativePhase(t);
+  const dispatch = await reviewDispatch(fixture.suite.descriptors.review);
+  assert.throws(
+    () => completeAnthropicMessagesPhaseResponse({
+      phase: 'review', dispatch, descriptor: fixture.suite.descriptors.review, policy,
+      response: response({
+        recommendation: 'revise',
+        findings: [{
+          id: 'x'.repeat(129), message: 'bounded finding', required: true, severity: 'important',
+        }],
+        summary: 'the provider wire stripped length constraints but the host retained them',
+      }),
+      credential,
+      startedAt: '2026-08-31T22:05:00.000Z',
+      completedAt: '2026-08-31T22:05:01.000Z',
+    }),
+    /response is invalid/,
+  );
 });
 
 test('builds review and revision artifacts with only host-assigned immutable digests', async (t) => {

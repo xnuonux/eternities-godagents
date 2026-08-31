@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
-import { sha256Value } from '../src/core/digest.mjs';
+import { sha256Text, sha256Value } from '../src/core/digest.mjs';
 import {
   buildProviderNeutralPhaseProtocolReceiptFromSource,
   verifyProviderNeutralPhaseProtocolReceipt,
@@ -29,6 +29,13 @@ test('cross-adapter certification fixture reproduces exact phase semantics', asy
     assert.notEqual(phase.openAIRequestDigest, phase.anthropicRequestDigest);
     assert.match(phase.artifactDigest, /^[a-f0-9]{64}$/);
     assert.equal(phase.completionParity, true);
+    assert.deepEqual(phase.anthropicProviderUsage, {
+      uncachedInputTokens: 100,
+      cacheCreationInputTokens: 40,
+      cacheReadInputTokens: 60,
+      outputTokens: 30,
+      thinkingTokens: 0,
+    });
   }
   assert.deepEqual(first.assertions, {
     phaseCount: 3,
@@ -37,6 +44,7 @@ test('cross-adapter certification fixture reproduces exact phase semantics', asy
     exactUsageParity: true,
     authorityExpansions: 0,
     credentialsInRequests: 0,
+    cacheCreationInputTokens: 120,
     anthropicSystemCacheBoundary: true,
     strictStructuredOutputs: true,
   });
@@ -57,4 +65,30 @@ test('provider-neutral protocol receipt reproduces from its exact source commit'
     testRuns: receipt.testRuns,
   });
   assert.equal(canonicalJson(rebuilt), canonicalJson(receipt));
+});
+
+test('receipt verifier rejects forged nested review and source references', async () => {
+  const receipt = JSON.parse(await readFile(
+    new URL('../receipts/provider-neutral-phase-protocol-v1.json', import.meta.url),
+    'utf8',
+  ));
+  const forge = (mutate) => {
+    const value = structuredClone(receipt);
+    mutate(value);
+    const { receiptDigest: _old, ...unsigned } = value;
+    value.receiptDigest = sha256Value(unsigned);
+    return value;
+  };
+
+  assert.throws(() => verifyProviderNeutralPhaseProtocolReceipt(forge((value) => {
+    value.source.review.value.disposition = 'rejected';
+    value.source.review.fileSha256 = sha256Text(`${canonicalJson(value.source.review.value)}\n`);
+    const entry = value.source.implementationManifest.entries.find(({ path }) => path === value.source.review.path);
+    entry.sha256 = value.source.review.fileSha256;
+    value.source.implementationManifest.digest = sha256Value(value.source.implementationManifest.entries);
+  })), /review/i);
+
+  assert.throws(() => verifyProviderNeutralPhaseProtocolReceipt(forge((value) => {
+    value.source.specification.sha256 = 'f'.repeat(64);
+  })), /reference/i);
 });

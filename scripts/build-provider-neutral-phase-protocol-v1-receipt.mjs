@@ -173,7 +173,7 @@ function verifyFixture(value) {
   for (const phase of Object.values(value.phases)) {
     exactKeys(phase, [
       'dispatchDigest', 'descriptorDigest', 'openAIRequestDigest', 'anthropicRequestDigest',
-      'artifactDigest', 'completionParity',
+      'artifactDigest', 'completionParity', 'anthropicProviderUsage',
     ], 'fixture phase');
     for (const [key, digest] of Object.entries(phase)) {
       if (key.endsWith('Digest')) requireDigest(digest, `fixture phase ${key}`);
@@ -181,6 +181,13 @@ function verifyFixture(value) {
     if (phase.completionParity !== true || phase.openAIRequestDigest === phase.anthropicRequestDigest) {
       throw new Error('fixture phase parity changed');
     }
+    if (canonicalJson(phase.anthropicProviderUsage) !== canonicalJson({
+      uncachedInputTokens: 100,
+      cacheCreationInputTokens: 40,
+      cacheReadInputTokens: 60,
+      outputTokens: 30,
+      thinkingTokens: 0,
+    })) throw new Error('fixture Anthropic provider usage changed');
   }
   const expectedAssertions = {
     phaseCount: 3,
@@ -189,6 +196,7 @@ function verifyFixture(value) {
     exactUsageParity: true,
     authorityExpansions: 0,
     credentialsInRequests: 0,
+    cacheCreationInputTokens: 120,
     anthropicSystemCacheBoundary: true,
     strictStructuredOutputs: true,
   };
@@ -266,16 +274,28 @@ export function verifyProviderNeutralPhaseProtocolReceipt(value) {
   Object.values(value.source.historicalReceiptDigests).forEach((digest) => requireDigest(digest, 'historical receipt'));
   verifyManifest(value.source.implementationManifest, implementationFiles, 'implementation manifest');
   verifyManifest(value.source.testManifest, testFiles, 'test manifest');
+  const implementationByPath = new Map(
+    value.source.implementationManifest.entries.map((entry) => [entry.path, entry]),
+  );
   for (const [reference, path] of [[value.source.specification, specificationPath], [value.source.plan, planPath]]) {
     exactKeys(reference, ['path', 'sha256'], 'source reference');
     if (reference.path !== path) throw new Error('source reference path changed');
     requireDigest(reference.sha256, 'source reference digest');
+    if (reference.sha256 !== implementationByPath.get(path)?.sha256) {
+      throw new Error('source reference differs from implementation manifest');
+    }
   }
   exactKeys(value.source.review, ['path', 'fileSha256', 'value'], 'source review');
   if (value.source.review.path !== reviewPath
-      || value.source.review.fileSha256 !== sha256Text(`${canonicalJson(value.source.review.value)}\n`)) {
+      || value.source.review.fileSha256 !== sha256Text(`${canonicalJson(value.source.review.value)}\n`)
+      || value.source.review.fileSha256 !== implementationByPath.get(reviewPath)?.sha256) {
     throw new Error('source review binding changed');
   }
+  verifyReview(value.source.review.value, {
+    parentCommit: value.source.parentCommit,
+    reviewedDiffSha256: value.source.review.value.reviewedDiffSha256,
+    reviewedPaths: value.source.review.value.reviewedPaths,
+  });
   exactKeys(value.fixture, ['path', 'fileSha256', 'logicalDigest', 'value'], 'fixture binding');
   const fixture = verifyFixture(value.fixture.value);
   if (value.fixture.path !== fixturePath || value.fixture.logicalDigest !== fixture.fixtureDigest
@@ -292,6 +312,7 @@ export function verifyProviderNeutralPhaseProtocolReceipt(value) {
     crossAdapterParityFailures: 0,
     authorityExpansions: 0,
     credentialLeaks: 0,
+    cacheCreationInputTokens: 120,
     independentReviewDefects: 0,
   };
   if (canonicalJson(value.metrics) !== canonicalJson(expectedMetrics)) throw new Error('receipt metrics changed');
@@ -343,6 +364,7 @@ export async function buildProviderNeutralPhaseProtocolReceiptFromSource({
       crossAdapterParityFailures: 0,
       authorityExpansions: fixture.assertions.authorityExpansions,
       credentialLeaks: fixture.assertions.credentialsInRequests,
+      cacheCreationInputTokens: fixture.assertions.cacheCreationInputTokens,
       independentReviewDefects: review.unresolvedCriticalDefects
         + review.unresolvedImportantDefects + review.unresolvedMinorDefects,
     },
