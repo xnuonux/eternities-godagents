@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authorityExpanded", "realmEffects", "continuityAdmission", "personalKeelWrite", "identityOwnership", "evolution", "soul"],
+      "properties": {
+        "authorityExpanded": { "const": false },
+        "realmEffects": { "const": false },
+        "continuityAdmission": { "const": false },
+        "personalKeelWrite": { "const": false },
+        "identityOwnership": { "const": false },
+        "evolution": { "const": false },
+        "soul": { "const": false }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "status", "missionId", "vesselAdmissionDigest", "bindingCandidateId", "candidateDigest", "modelProjectionDigest", "missionCompletionReceiptDigest", "verdictDigest", "acceptedArtifactDigest", "authority", "receiptDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-identity-bound-mission-vessel-completion-v1" },
+    "status": { "const": "completed" },
+    "missionId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "vesselAdmissionDigest": { "$ref": "#/$defs/digest" },
+    "bindingCandidateId": { "$ref": "#/$defs/digest" },
+    "candidateDigest": { "$ref": "#/$defs/digest" },
+    "modelProjectionDigest": { "$ref": "#/$defs/digest" },
+    "missionCompletionReceiptDigest": { "$ref": "#/$defs/digest" },
+    "verdictDigest": { "$ref": "#/$defs/digest" },
+    "acceptedArtifactDigest": {},
+    "authority": { "$ref": "#/$defs/authority" },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  }
+}

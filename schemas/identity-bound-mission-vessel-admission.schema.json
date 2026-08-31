@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64, "maxLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "requestDigest", "identity", "godskills", "missionAdmission", "missionAdmissionDigest", "vesselAdmissionDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-identity-bound-mission-vessel-v1" },
+    "requestDigest": { "$ref": "#/$defs/digest" },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bindingCandidateId", "candidateDigest", "fullEnvelopeDigest", "modelProjectionDigest", "admissionReceiptDigest", "instanceId", "genesisId", "keelId", "currentKeelHeadDigest"],
+      "properties": {
+        "bindingCandidateId": { "$ref": "#/$defs/digest" },
+        "candidateDigest": { "$ref": "#/$defs/digest" },
+        "fullEnvelopeDigest": { "$ref": "#/$defs/digest" },
+        "modelProjectionDigest": { "$ref": "#/$defs/digest" },
+        "admissionReceiptDigest": { "$ref": "#/$defs/digest" },
+        "instanceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "genesisId": { "$ref": "#/$defs/digest" },
+        "keelId": { "type": "string", "minLength": 69, "maxLength": 69 },
+        "currentKeelHeadDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "godskills": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "releaseDigest", "receiptDigest", "packageDigest", "receipt", "cortexPackage"],
+      "properties": {
+        "status": { "enum": ["bound", "no-qualified-route"] },
+        "releaseDigest": { "$ref": "#/$defs/digest" },
+        "receiptDigest": { "$ref": "#/$defs/digest" },
+        "packageDigest": { "$ref": "#/$defs/digest" },
+        "receipt": { "type": "object" },
+        "cortexPackage": { "type": "object" }
+      }
+    },
+    "missionAdmission": { "type": "object" },
+    "missionAdmissionDigest": { "$ref": "#/$defs/digest" },
+    "vesselAdmissionDigest": { "$ref": "#/$defs/digest" }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authorityExpanded", "realmEffects", "continuityAdmission", "personalKeelWrite", "identityOwnership", "evolution", "soul"],
+      "properties": {
+        "authorityExpanded": { "const": false },
+        "realmEffects": { "const": false },
+        "continuityAdmission": { "const": false },
+        "personalKeelWrite": { "const": false },
+        "identityOwnership": { "const": false },
+        "evolution": { "const": false },
+        "soul": { "const": false }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "vesselAdmissionDigest", "outerDispatchDigest", "outerPackageDigest", "transportDescriptorDigest", "bindingCandidateId", "candidateDigest", "fullEnvelopeDigest", "modelProjectionDigest", "modelProjection", "missionPackage", "maxCompletionTokens", "authority", "dispatchDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-identity-bound-native-dispatch-v1" },
+    "vesselAdmissionDigest": { "$ref": "#/$defs/digest" },
+    "outerDispatchDigest": { "$ref": "#/$defs/digest" },
+    "outerPackageDigest": { "$ref": "#/$defs/digest" },
+    "transportDescriptorDigest": { "$ref": "#/$defs/digest" },
+    "bindingCandidateId": { "$ref": "#/$defs/digest" },
+    "candidateDigest": { "$ref": "#/$defs/digest" },
+    "fullEnvelopeDigest": { "$ref": "#/$defs/digest" },
+    "modelProjectionDigest": { "$ref": "#/$defs/digest" },
+    "modelProjection": { "type": "object" },
+    "missionPackage": { "type": "object" },
+    "maxCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+    "authority": { "$ref": "#/$defs/authority" },
+    "dispatchDigest": { "$ref": "#/$defs/digest" }
+  }
+}

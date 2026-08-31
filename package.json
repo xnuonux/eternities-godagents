@@ -41,6 +41,7 @@
     "certify:deferred-review-materializer": "node scripts/build-deferred-review-materializer-v1-receipt.mjs",
     "certify:deferred-review-executor": "node scripts/build-deferred-review-executor-v1-receipt.mjs",
     "certify:mission-revision-executor": "node scripts/build-mission-revision-executor-v1-receipt.mjs",
-    "certify:mission-native-executor": "node scripts/build-mission-native-executor-v1-receipt.mjs"
+    "certify:mission-native-executor": "node scripts/build-mission-native-executor-v1-receipt.mjs",
+    "certify:identity-bound-mission-vessel": "node scripts/build-identity-bound-mission-vessel-v1-receipt.mjs"
   }
 }
