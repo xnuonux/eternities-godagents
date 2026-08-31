@@ -75,17 +75,21 @@ local-process-terminal/<stage>/<dispatch-digest>/
   request.json
   execution.json
   result.json
+  success.json
   completion.json
   execution.lock
 ```
 
 The exact dispatch and request are published before process launch. The child
 writes directly to the durable `result.json` path using the Godskills
-entrypoint's atomic publication. The parent validates a regular bounded JSON
-result, builds the existing closed completion receipt, and publishes it
-exclusively. A process interruption after child completion but before local
-completion publication leaves the atomic result in place. Reconstruction
-materializes the completion from that result without launching another child.
+entrypoint's atomic publication. A zero-exit child causes the parent to publish
+an immutable `success.json` witness binding the execution and result digests.
+The parent accepts or recovers a result only when that witness is present and
+valid, then builds the existing closed completion receipt and publishes it
+exclusively. A process interruption after the success witness but before local
+completion publication leaves both atomic records in place. Reconstruction
+materializes the completion from them without launching another child. A raw
+result from a failed or killed child is not evidence of successful execution.
 
 Per-dispatch locking prevents concurrent launch. A live or recent owner is
 reported as pending. A dead owner with no result may be retried because both
@@ -136,7 +140,7 @@ receipts rather than silently changing a historical runtime.
 | `SLT-004` | child environment, shell, window, arguments, timeout, and result bytes are bounded |
 | `SLT-005` | route mode is fixed from the verified release and cannot be selected per request |
 | `SLT-006` | exact dispatch and request records exist before process launch |
-| `SLT-007` | one atomic result and completion are addressed by the exact dispatch digest |
+| `SLT-007` | one atomic result, zero-exit success witness, and completion are addressed by the exact dispatch digest |
 | `SLT-008` | process death after child completion recovers the result without another child launch |
 | `SLT-009` | live contention is pending, changed evidence collides, and malformed or oversized output fails closed |
 | `SLT-010` | the actual default and activation Godskills entrypoints execute through the new transport |

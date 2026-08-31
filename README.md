@@ -2,7 +2,7 @@
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
-Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, a headless Phase 3 creator protocol, the first three host-side phases of the Cortex Binding Protocol, and a provider-neutral identity-bound mission vessel with recoverable Godskills admission. The binding path reconstructs one inert identity candidate from an admitted genesis, binds governed Godskills through immutable route and activation outboxes, places the exact bounded identity projection beside the exact recoverable mission package, and closes native generation through review, revision, and final review without granting Realm or continuity authority. Evolution and Soul activation remain excluded.
+Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, a headless Phase 3 creator protocol, the first three host-side phases of the Cortex Binding Protocol, and a provider-neutral identity-bound mission vessel with recoverable Godskills admission. The binding path reconstructs one inert identity candidate from an admitted genesis, binds governed Godskills through immutable route and activation outboxes, places the exact bounded identity projection beside the exact recoverable mission package, and closes native generation through review, revision, and final review without granting Realm or continuity authority. An optional sealed local adapter now executes the exact pinned Godskills route and activation binaries behind that recoverable boundary. Evolution and Soul activation remain excluded.
 
 The canonical architecture is [ADR-0002](C:/dev/eternities-canon/.worktrees/godagents-inspiration-covenant/architecture/ADR-0002-godagent-v0-runtime-and-foundry.md).
 
@@ -327,6 +327,14 @@ The wrapper publishes one immutable final binding record only after the existing
 The deterministic chain kills one process after routing, another after activation, and another after native completion. Every reconstruction recovers the same content-addressed operation with exactly one execution at each stage, then completes the actual deferred-review, revision, and final-review loop. Terminal replay makes zero route, activation, native, review, revision, or classification calls. `npm run certify:recoverable-godskills-admission` reproduces the fixture and issues the twenty-second append-only receipt.
 
 This certifies the local composition against injected transports that promise terminal lookup and atomic deduplication by dispatch digest. It does not certify those transport implementations, live providers, routing quality, model quality, credentials, model selection, hostile same-user isolation, a concrete OpenAI, Anthropic, Codex, Claude Code, local-model, or MCP adapter, Realm action, continuity admission, Lunari integration, Inspiration, or Soul.
+
+### Sealed local Godskills transport v1
+
+The [sealed local transport design](docs/superpowers/specs/2026-08-31-sealed-local-godskills-transport-v1-design.md) supplies a concrete local implementation for the route and activation sides of recoverable admission. It verifies the exact pushed Godskills release and routing executable closure before construction, fixes routing mode from that release, and invokes both entrypoints as hidden shell-free child processes with a minimal environment plus an in-child scrub.
+
+Every operation publishes immutable dispatch, request, execution, result, success, and completion records beneath its content-addressed digest. A result without a valid zero-exit success witness is never accepted. Process death after a successful atomic output is recovered without another child launch, while live contention returns `pending` and timeout, oversized output, symlinks, noncanonical bytes, mutation, or forged verifier provenance fail closed. Exact final binding replay and semantic rehydration launch no child process.
+
+`npm run certify:sealed-local-godskills-transport` reproduces the real-process crash fixture and issues the twenty-third append-only receipt. This proves deterministic local Godskills execution and recovery against the exact pinned binaries. It does not yet make this adapter the default admitted host path, qualify live model quality, remove trust from the injected classifier, provide hostile same-user isolation, or grant provider, Realm, continuity, keel, identity-evolution, Inspiration, Lunari, or Soul authority.
 
 ### Admitted local launch
 

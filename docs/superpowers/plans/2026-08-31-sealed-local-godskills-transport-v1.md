@@ -22,8 +22,9 @@ Godskills admission without changing any historical runtime path.
 - add a content-addressed transport with one lock and terminal directory per
   dispatch digest;
 - run the actual Godskills default and activation entrypoints;
-- interrupt after child result publication and prove reconstruction commits the
-  same result without another launch.
+- require a zero-exit success witness before any child result can be recovered;
+- interrupt after child success publication and prove reconstruction commits
+  the same result without another launch.
 
 ## task 3: compose recoverable admission
 
