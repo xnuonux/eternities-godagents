@@ -65,6 +65,18 @@ function deepFreeze(value) {
   return value;
 }
 
+function assertLaunchFields(value) {
+  if (!object(value)) fail('input-invalid');
+  const allowed = new Set([
+    'admissionRoot', 'policyPath', 'request', 'env', 'registryRoot', 'executors',
+    'clock', 'processClock', 'processCheckpoint', 'admissionCheckpoint',
+    'compilerCheckpoint', 'journalCheckpoint', 'processLockOptions',
+    'admissionLockOptions', 'compilerLockOptions', 'journalLockOptions',
+    'artifactCache', 'io', 'compositionIo', 'stepperIo',
+  ]);
+  if (Object.keys(value).some((name) => !allowed.has(name))) fail('input-invalid');
+}
+
 function snapshotExecutors(executors) {
   if (!Array.isArray(executors) || executors.length < 1 || executors.length > 3) fail('input-invalid');
   try {
@@ -184,6 +196,7 @@ function bindingInput(request, candidate) {
 }
 
 export async function launchAdmittedSealedTypedExecutionMission(input = {}) {
+  assertLaunchFields(input);
   const liveExecutors = snapshotExecutors(input.executors);
   const options = {
     admissionRoot: input.admissionRoot,
