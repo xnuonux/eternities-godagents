@@ -108,6 +108,10 @@ function contentFrom(response, policy, credential) {
   if (!response || typeof response.bodyText !== 'string') fail('response-invalid');
   if (typeof credential !== 'string' || credential.length < 8) fail('response-invalid');
   if (response.bodyText.includes(credential)) fail('credential-reflected');
+  if (!Number.isInteger(policy?.provider?.maximumResponseBytes)
+      || Buffer.byteLength(response.bodyText, 'utf8') > policy.provider.maximumResponseBytes) {
+    fail('response-invalid');
+  }
   if (!Number.isInteger(response.status) || response.status < 200 || response.status >= 300) {
     fail('response-invalid');
   }
@@ -145,6 +149,10 @@ export function completeAnthropicMessagesPhaseResponse({
   if (!PHASES.has(phase)) throw new TypeError('Anthropic Messages phase is invalid');
   verifyDispatch(phase, dispatch, descriptor);
   const { content, envelope } = contentFrom(response, policy, credential);
+  if (!Number.isInteger(policy?.phases?.[phase]?.maximumCompletionBytes)
+      || Buffer.byteLength(canonicalJson(content), 'utf8') > policy.phases[phase].maximumCompletionBytes) {
+    fail('response-invalid');
+  }
   const usage = usageFrom(envelope, dispatch.maxCompletionTokens);
   try {
     return buildProviderNeutralPhaseCompletion({

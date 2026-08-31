@@ -1,23 +1,6 @@
 import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { canonicalJson } from '../core/canonical-json.mjs';
-import { sha256Text, sha256Value } from '../core/digest.mjs';
-import { assertSchema } from '../core/schema-validator.mjs';
-import {
-  buildIdentityBoundNativeCompletion,
-  verifyIdentityBoundNativeTransportDescriptor,
-} from '../runtime/identity-bound-native-contracts.mjs';
-import { verifyMissionNativePackage } from '../runtime/mission-native-materializer.mjs';
-import { verifyMissionPhaseArtifact } from '../runtime/mission-phase-contracts.mjs';
-import { verifyMissionRevisionPackage } from '../runtime/mission-revision-materializer.mjs';
-import {
-  buildMissionRevisionTransportCompletion,
-  verifyMissionRevisionTransportDescriptor,
-} from '../runtime/mission-revision-transport-contracts.mjs';
-import { verifyDeferredGodskillsReviewPackage } from '../skills/deferred-review-materializer.mjs';
-import {
-  buildGodskillsReviewTransportCompletion,
-  verifyGodskillsReviewTransportDescriptor,
-} from '../skills/review-transport-contracts.mjs';
+import { sha256Text } from '../core/digest.mjs';
 import {
   buildProviderNeutralPhaseCompletion,
   providerNeutralPhaseInput,
@@ -51,34 +34,12 @@ function fail(code, cause) {
   throw new OpenAICompatiblePhaseProtocolError(code, cause);
 }
 
-function clone(value) {
-  return structuredClone(value);
-}
-
 function deepFreeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     for (const child of Object.values(value)) deepFreeze(child);
     Object.freeze(value);
   }
   return value;
-}
-
-function exactKeys(value, expected) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) fail('response-invalid');
-  const actual = Object.keys(value).sort();
-  const wanted = [...expected].sort();
-  if (actual.length !== wanted.length || actual.some((key, index) => key !== wanted[index])) {
-    fail('response-invalid');
-  }
-}
-
-function verifyDigestEnvelope(dispatch, descriptor) {
-  if (dispatch.transportDescriptorDigest !== descriptor.descriptorDigest) {
-    throw new Error('transport descriptor mismatch');
-  }
-  const { dispatchDigest, ...unsigned } = dispatch;
-  if (sha256Value(unsigned) !== dispatchDigest) throw new Error('dispatch digest mismatch');
-  assertNoCredentialFields(dispatch);
 }
 
 function verifyDispatch(phase, dispatch, descriptor) {
@@ -94,20 +55,6 @@ function modelInput(phase, dispatch, descriptor) {
   return providerNeutralPhaseInput({
     phase, dispatch, descriptor, protocolId: PROTOCOL_ID,
   });
-}
-
-function findingSchema() {
-  return {
-    type: 'object',
-    additionalProperties: false,
-    required: ['id', 'message', 'required', 'severity'],
-    properties: {
-      id: { type: 'string', minLength: 1, maxLength: 128 },
-      message: { type: 'string', minLength: 1, maxLength: 8192 },
-      required: { type: 'boolean' },
-      severity: { type: 'string', enum: ['advisory', 'important', 'critical'] },
-    },
-  };
 }
 
 function responseSchema(phase, dispatch, descriptor) {

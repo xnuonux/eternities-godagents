@@ -5,11 +5,24 @@ import {
   compileAnthropicMessagesPhaseRequest,
   completeAnthropicMessagesPhaseResponse,
 } from '../src/transports/anthropic-messages-phase-protocol.mjs';
-import { setupPendingNativePhase } from './helpers/openai-compatible-phase-operation-fixture.mjs';
+import { completeOpenAICompatiblePhaseResponse } from '../src/transports/openai-compatible-phase-protocol.mjs';
+import {
+  reviewDispatch,
+  revisionDispatch,
+  setupPendingNativePhase,
+} from './helpers/openai-compatible-phase-operation-fixture.mjs';
 
 const policy = Object.freeze({
-  provider: { modelId: 'claude-fixture-2026-08-31', maximumRequestBytes: 262_144 },
-  phases: { native: { maximumCompletionTokens: 400 } },
+  provider: {
+    modelId: 'claude-fixture-2026-08-31',
+    maximumRequestBytes: 262_144,
+    maximumResponseBytes: 262_144,
+  },
+  phases: {
+    native: { maximumCompletionBytes: 262_144, maximumCompletionTokens: 400 },
+    review: { maximumCompletionBytes: 262_144, maximumCompletionTokens: 1000 },
+    revision: { maximumCompletionBytes: 262_144, maximumCompletionTokens: 1000 },
+  },
 });
 const credential = 'anthropic-protocol-secret-canary';
 
@@ -31,6 +44,30 @@ function response(content = { content: 'one exact Anthropic native artifact' }, 
         cache_read_input_tokens: 60,
         output_tokens: 30,
         ...usage,
+      },
+    }),
+  };
+}
+
+function openAIResponse(modelId, content) {
+  return {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+    bodyText: JSON.stringify({
+      id: 'chatcmpl_cross_adapter_fixture',
+      object: 'chat.completion',
+      model: modelId,
+      choices: [{
+        index: 0,
+        finish_reason: 'stop',
+        message: { role: 'assistant', content: JSON.stringify(content) },
+      }],
+      usage: {
+        prompt_tokens: 200,
+        prompt_tokens_details: { cached_tokens: 60 },
+        completion_tokens: 30,
+        completion_tokens_details: { reasoning_tokens: 0 },
+        total_tokens: 230,
       },
     }),
   };
@@ -116,4 +153,110 @@ test('rejects contradictory, negative, and over-budget Anthropic usage', async (
       /response is invalid/,
     );
   }
+});
+
+test('builds review and revision artifacts with only host-assigned immutable digests', async (t) => {
+  const fixture = await setupPendingNativePhase(t);
+  const cases = [
+    {
+      phase: 'review',
+      dispatch: await reviewDispatch(fixture.suite.descriptors.review),
+      descriptor: fixture.suite.descriptors.review,
+      content: {
+        recommendation: 'accept', findings: [], summary: 'the exact subject satisfies review',
+      },
+      assertArtifact(artifact, dispatch) {
+        assert.equal(artifact.subjectDigest, dispatch.package.subject.artifactDigest);
+        assert.equal(artifact.recommendation, 'accept');
+        assert.equal(Object.hasOwn(artifact, 'nativeArtifactDigest'), false);
+      },
+    },
+    {
+      phase: 'revision',
+      dispatch: revisionDispatch(fixture.suite.descriptors.revision),
+      descriptor: fixture.suite.descriptors.revision,
+      content: {
+        addressedFindingIds: ['bind-evidence'], content: 'the exact evidence-bound revision',
+      },
+      assertArtifact(artifact, dispatch) {
+        assert.equal(artifact.nativeArtifactDigest, dispatch.package.native.artifactDigest);
+        assert.equal(artifact.reviewArtifactDigest, dispatch.package.review.artifactDigest);
+        assert.deepEqual(artifact.addressedFindingIds, ['bind-evidence']);
+        assert.equal(Object.hasOwn(artifact, 'subjectDigest'), false);
+      },
+    },
+  ];
+
+  for (const item of cases) {
+    const compiled = compileAnthropicMessagesPhaseRequest({ ...item, policy });
+    const body = JSON.parse(compiled.body);
+    assert.equal(body.output_config.format.type, 'json_schema');
+    assert.equal(Object.hasOwn(body.output_config.format.schema.properties, 'subjectDigest'), false);
+    assert.equal(Object.hasOwn(body.output_config.format.schema.properties, 'nativeArtifactDigest'), false);
+    assert.equal(Object.hasOwn(body.output_config.format.schema.properties, 'reviewArtifactDigest'), false);
+    const completion = completeAnthropicMessagesPhaseResponse({
+      ...item,
+      policy,
+      response: response(item.content),
+      credential,
+      startedAt: '2026-08-31T22:10:00.000Z',
+      completedAt: '2026-08-31T22:10:01.000Z',
+    });
+    item.assertArtifact(completion.artifact, item.dispatch);
+    assert.equal(completion.authority.authorityExpanded, false);
+  }
+});
+
+test('produces the same trusted native artifact and authority across provider adapters', async (t) => {
+  const fixture = await setupPendingNativePhase(t);
+  const content = { content: 'one exact cross-adapter native artifact' };
+  const times = {
+    startedAt: '2026-08-31T22:20:00.000Z',
+    completedAt: '2026-08-31T22:20:01.000Z',
+  };
+  const anthropic = completeAnthropicMessagesPhaseResponse({
+    phase: 'native', dispatch: fixture.dispatch, descriptor: fixture.suite.descriptors.native,
+    policy, response: response(content), credential, ...times,
+  });
+  const openAIPolicy = {
+    provider: { modelId: 'openai-cross-adapter-fixture' },
+  };
+  const openAI = completeOpenAICompatiblePhaseResponse({
+    phase: 'native', dispatch: fixture.dispatch, descriptor: fixture.suite.descriptors.native,
+    policy: openAIPolicy,
+    response: openAIResponse(openAIPolicy.provider.modelId, content),
+    credential: 'openai-cross-adapter-secret',
+    ...times,
+  });
+
+  assert.deepEqual(anthropic.artifact, openAI.artifact);
+  assert.deepEqual(anthropic.authority, openAI.authority);
+  assert.equal(anthropic.dispatchDigest, openAI.dispatchDigest);
+  assert.equal(anthropic.transportDescriptorDigest, openAI.transportDescriptorDigest);
+  assert.deepEqual(anthropic.usage, openAI.usage);
+});
+
+test('enforces provider response and phase artifact byte ceilings before completion', async (t) => {
+  const fixture = await setupPendingNativePhase(t);
+  const base = {
+    phase: 'native', dispatch: fixture.dispatch, descriptor: fixture.suite.descriptors.native,
+    credential, startedAt: '2026-08-31T22:30:00.000Z', completedAt: '2026-08-31T22:30:01.000Z',
+  };
+  const tinyResponsePolicy = structuredClone(policy);
+  tinyResponsePolicy.provider.maximumResponseBytes = 128;
+  assert.throws(
+    () => completeAnthropicMessagesPhaseResponse({
+      ...base, policy: tinyResponsePolicy, response: response({ content: 'x'.repeat(256) }),
+    }),
+    /response is invalid/,
+  );
+
+  const tinyArtifactPolicy = structuredClone(policy);
+  tinyArtifactPolicy.phases.native.maximumCompletionBytes = 64;
+  assert.throws(
+    () => completeAnthropicMessagesPhaseResponse({
+      ...base, policy: tinyArtifactPolicy, response: response({ content: 'x'.repeat(256) }),
+    }),
+    /response is invalid/,
+  );
 });
