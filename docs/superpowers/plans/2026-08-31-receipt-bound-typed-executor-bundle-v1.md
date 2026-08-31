@@ -4,9 +4,10 @@
 typed-host path by verifying and loading exact receipt-bound module bytes.
 
 **Architecture:** a native verifier loads a canonical receipt, checks exact
-self-contained module bytes, imports those already verified bytes from data
-URLs, privately brands frozen executor handles, and passes them through a
-closed sibling launcher to the certified admitted host.
+self-contained module bytes with an ECMAScript parser, then executes the
+verified function body through a JSON-only restricted VM context. Privately
+branded frozen executor handles pass through a closed sibling launcher to the
+certified admitted host.
 
 **Spec:** `docs/superpowers/specs/2026-08-31-receipt-bound-typed-executor-bundle-v1-design.md`
 
@@ -21,7 +22,8 @@ closed sibling launcher to the certified admitted host.
 
 - [ ] write failing tests for canonical receipt verification and exact-byte loading
 - [ ] implement native path, file, digest, descriptor, and closed-module checks
-- [ ] import verified bytes from data URLs and privately brand frozen handles
+- [ ] compile the verified function body in restricted per-call VM contexts and
+  privately brand frozen handles
 - [ ] reject changed bytes, paths, imports, exports, duplicates, aliases, and symlinks
 - [ ] run the focused verifier tests green and commit
 

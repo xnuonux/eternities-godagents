@@ -110,14 +110,14 @@ const requirements = Object.freeze([
   { id: 'RBTEB-001', status: 'pass', evidence: ['one sibling launcher accepts no caller executor functions'] },
   { id: 'RBTEB-002', status: 'pass', evidence: ['one external SHA-256 pins a canonical receipt and exact module bytes'] },
   { id: 'RBTEB-003', status: 'pass', evidence: ['native verifier I/O rejects observed symlinks noncanonical aliases changed bytes and expanded fields on a quiescent filesystem'] },
-  { id: 'RBTEB-004', status: 'pass', evidence: ['already verified bytes execute through content-addressed data URLs'] },
+  { id: 'RBTEB-004', status: 'pass', evidence: ['the verified function body executes through a fresh restricted VM context with a JSON-only host boundary'] },
   { id: 'RBTEB-005', status: 'pass', evidence: ['bundle-derived descriptors match the admitted policy before execution'] },
   { id: 'RBTEB-006', status: 'pass', evidence: ['persisted Muse recovery runs Forge only and terminal replay runs no executor'] },
   { id: 'RBTEB-007', status: 'pass', evidence: ['historical host runner fixture receipt ledger and lineage remain reproducible'] },
 ]);
 const proofLimits = Object.freeze([
   'Bundle executors are deterministic certification implementations, not live provider or model-quality certification.',
-  'Imported executor code runs in the Node process and is not an operating-system sandbox.',
+  'The restricted Node VM context is not an operating-system sandbox.',
   'Receipt-certified executor behavior remains trusted inside that process.',
   'Hostile same-user filesystem replacement races and hard-link identity are not certified.',
   'Hostile mutation of already executing process memory is not certified.',
@@ -220,7 +220,7 @@ function verifyFixture(value) {
   assertNoCredentialFields(value);
   if (value?.schemaVersion !== 1
       || value?.protocolId !== 'eternities-receipt-bound-typed-executor-bundle-host-fixture-v1'
-      || value?.fixtureDigest !== '7a213edd715b77e25336ac17fd6534362e8a1aec5b904ddf9d55615a2ff6e613') {
+      || value?.fixtureDigest !== 'f15a7ec63a13172e35befcf223aaffec64bedd6861c7cc688174f0d9d2da31d0') {
     throw new Error('receipt-bound executor fixture identity changed');
   }
   const unsigned = structuredClone(value);
@@ -293,7 +293,7 @@ export function verifyReceiptBoundTypedExecutorBundleReceipt(value) {
   if (value.schemaVersion !== 1 || value.certificationId !== certificationId
       || value.status !== 'certified' || value.protocolId !== protocolId
       || !COMMIT.test(value.source?.commit) || value.source?.parentCommit !== sourceBaseCommit
-      || value.fixture?.logicalDigest !== '7a213edd715b77e25336ac17fd6534362e8a1aec5b904ddf9d55615a2ff6e613'
+      || value.fixture?.logicalDigest !== 'f15a7ec63a13172e35befcf223aaffec64bedd6861c7cc688174f0d9d2da31d0'
       || value.parent?.receiptDigest !== 'c79366682c19ac9c597e014c003b6e13a1a126c192f6326428856d76c3833fc0') {
     throw new Error('receipt-bound executor certification identity changed');
   }
@@ -311,7 +311,7 @@ export function verifyReceiptBoundTypedExecutorBundleReceipt(value) {
   }
   exactKeys(value.fixture, ['path', 'fileSha256', 'logicalDigest', 'value'], 'receipt-bound executor fixture binding');
   if (value.fixture.path !== fixturePath
-      || value.fixture.fileSha256 !== 'cc9e4a24ee4b08f8cd81ffc931e2c118770d389d1adde3c10c0c9e00ccb2a664'
+      || value.fixture.fileSha256 !== 'e0af9aa5b351e479abfc787d598d814408288fb0e2bd5b71161d9c138fed31c2'
       || value.fixture.fileSha256 !== sha256Text(`${canonicalJson(value.fixture.value)}\n`)) {
     throw new Error('receipt-bound executor fixture file binding changed');
   }

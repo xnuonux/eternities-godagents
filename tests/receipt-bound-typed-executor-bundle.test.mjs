@@ -94,7 +94,7 @@ async function bundleFixture(t, selectedBundleId = bundleId) {
     status: 'verified-build',
     executors,
     proofLimits: [
-      'executor modules run in the Node process and are not an operating-system sandbox',
+      'the restricted Node VM context is not an operating-system sandbox',
       'external exactly-once effects remain unproved',
     ],
   };
@@ -293,5 +293,48 @@ test('top-level module behavior is rejected inertly before any evaluation', asyn
     assert.equal(globalThis[marker], undefined);
   } finally {
     delete globalThis[marker];
+  }
+});
+
+test('restricted execution cannot reach Node loaders or host constructors', async (t) => {
+  for (const [index, source, expected] of [
+    [
+      0,
+      "export async function execute(input) { return process.getBuiltinModule('node:fs').readFileSync(input.path, 'utf8'); }\n",
+      /process is not defined/,
+    ],
+    [
+      1,
+      "export async function execute(input) { return input.constructor.constructor('return process')(); }\n",
+      /Code generation from strings disallowed/,
+    ],
+    [
+      2,
+      "export async function execute(input) { return module['require']('node:fs'); }\n",
+      /module is not defined/,
+    ],
+  ]) {
+    const fixture = await bundleFixture(t, `restricted-executor-${index}-v1`);
+    const row = fixture.receipt.executors[0];
+    row.module.sha256 = sha256Text(source);
+    row.module.bytes = Buffer.byteLength(source);
+    row.descriptor.executorId = sha256Value({
+      protocolId: 'eternities-receipt-bound-typed-executor-identity-v1',
+      bundleId: fixture.receipt.bundleId,
+      capabilityId: row.capabilityId,
+      moduleSha256: row.module.sha256,
+    });
+    const { receiptDigest: ignored, ...unsigned } = fixture.receipt;
+    fixture.receipt.receiptDigest = sha256Value(unsigned);
+    const receiptText = `${canonicalJson(fixture.receipt)}\n`;
+    fixture.expectedSha256 = sha256Text(receiptText);
+    await writeFile(join(fixture.repositoryRoot, ...row.module.path.split('/')), source);
+    await writeFile(join(fixture.repositoryRoot, ...fixture.receiptPath.split('/')), receiptText);
+    const verified = await verifyReceiptBoundTypedExecutorBundle(verificationInput(fixture));
+    const executors = await instantiateVerifiedReceiptBoundTypedExecutors({
+      bundle: verified,
+      expectedDescriptors: verified.descriptors,
+    });
+    await assert.rejects(executors[0].execute({ path: import.meta.url }), expected);
   }
 });

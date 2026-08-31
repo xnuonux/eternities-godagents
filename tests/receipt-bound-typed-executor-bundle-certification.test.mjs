@@ -13,7 +13,7 @@ test('receipt-bound executor fixture rebuilds byte-for-byte through crash recove
   const expected = JSON.parse(await readFile(fixtureUrl, 'utf8'));
   const actual = await buildDeterministicReceiptBoundTypedExecutorBundleHostFixture();
   assert.deepEqual(actual, expected);
-  assert.equal(actual.fixtureDigest, '7a213edd715b77e25336ac17fd6534362e8a1aec5b904ddf9d55615a2ff6e613');
+  assert.equal(actual.fixtureDigest, 'f15a7ec63a13172e35befcf223aaffec64bedd6861c7cc688174f0d9d2da31d0');
   assert.equal(actual.recovery.crashObserved, true);
   assert.equal(actual.recovery.executedSteps, 1);
   assert.equal(actual.recovery.recoveredSteps, 1);

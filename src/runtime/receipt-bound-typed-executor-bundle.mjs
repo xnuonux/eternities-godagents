@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
+import { createContext, Script } from 'node:vm';
 import { parse } from 'acorn';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
@@ -122,12 +123,7 @@ function assertClosedModuleSource(bytes, label) {
     if (node.type === 'ImportDeclaration' || node.type === 'ImportExpression'
         || (node.type === 'ExportNamedDeclaration' && node.source !== null)
         || node.type === 'ExportAllDeclaration'
-        || (node.type === 'CallExpression' && (
-          (node.callee?.type === 'Identifier' && node.callee.name === 'require')
-          || (node.callee?.type === 'MemberExpression' && node.callee.computed === false
-            && node.callee.object?.type === 'Identifier' && node.callee.object.name === 'module'
-            && node.callee.property?.type === 'Identifier' && node.callee.property.name === 'require')
-        ))) throw new Error(`${label} dependencies are forbidden`);
+        ) throw new Error(`${label} dependencies are forbidden`);
     for (const child of Object.values(node)) {
       if (Array.isArray(child)) child.forEach(visit);
       else if (child && typeof child === 'object') visit(child);
@@ -144,24 +140,37 @@ function assertClosedModuleSource(bytes, label) {
       || declaration.params[0].name !== 'input') {
     throw new Error(`${label} must contain only one async execute declaration`);
   }
+  return Object.freeze({ exportStart: exported.start, declarationStart: declaration.start });
 }
 
-async function importVerifiedModule(bytes, { digest, bundleId, capabilityId }, label) {
-  assertClosedModuleSource(bytes, label);
-  const identity = new URLSearchParams({ bundleId, capabilityId, sha256: digest });
-  const url = `data:text/javascript;base64,${bytes.toString('base64')}#${identity}`;
-  let namespace;
+function compileVerifiedExecutor(bytes, label) {
+  const shape = assertClosedModuleSource(bytes, label);
+  const source = bytes.toString('utf8');
+  const transformed = `${source.slice(0, shape.exportStart)}${' '.repeat(
+    shape.declarationStart - shape.exportStart,
+  )}${source.slice(shape.declarationStart)}\n;globalThis.__receiptBoundExecute = execute;\n`;
+  let initialization;
   try {
-    namespace = await import(url);
+    initialization = new Script(transformed, { filename: `${label}.verified.mjs` });
   } catch (error) {
-    throw new Error(`${label} could not be imported`, { cause: error });
+    throw new Error(`${label} could not be compiled`, { cause: error });
   }
-  if (canonicalJson(Object.keys(namespace).sort()) !== canonicalJson(['execute'])
-      || typeof namespace.execute !== 'function'
-      || namespace.execute.constructor?.name !== 'AsyncFunction') {
-    throw new Error(`${label} must export exactly one async execute function`);
-  }
-  return namespace.execute;
+  const invocation = new Script(
+    'Promise.resolve(globalThis.__receiptBoundExecute(JSON.parse(globalThis.__receiptBoundInputJson))).then((value) => JSON.stringify(value))',
+    { filename: `${label}.invoke.mjs` },
+  );
+  return async (input) => {
+    const sandbox = Object.create(null);
+    sandbox.__receiptBoundInputJson = canonicalJson(input);
+    const context = createContext(sandbox, {
+      name: 'receipt-bound-typed-executor',
+      codeGeneration: { strings: false, wasm: false },
+    });
+    initialization.runInContext(context, { timeout: 5_000 });
+    const outputJson = await invocation.runInContext(context, { timeout: 5_000 });
+    if (typeof outputJson !== 'string') throw new Error(`${label} output is not canonical JSON data`);
+    return JSON.parse(outputJson);
+  };
 }
 
 function verifyReceipt(receipt) {
@@ -276,11 +285,7 @@ export async function instantiateVerifiedReceiptBoundTypedExecutors(input = {}) 
   for (let index = 0; index < modules.length; index += 1) {
     const module = modules[index];
     const descriptor = bundle.descriptors[index];
-    const execute = await importVerifiedModule(module.bytes, {
-      digest: module.digest,
-      bundleId: bundle.bundleId,
-      capabilityId: module.capabilityId,
-    }, `executor module ${module.capabilityId}`);
+    const execute = compileVerifiedExecutor(module.bytes, `executor module ${module.capabilityId}`);
     executors.push(Object.freeze({ descriptor: () => descriptor, execute }));
   }
   return Object.freeze(executors);

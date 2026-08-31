@@ -41,11 +41,7 @@ export async function execute(input) {
 function forgeSource(bundleId, forgeDelayMs) {
   return `// exact certification module ${bundleId}
 export async function execute(input) {
-  if (typeof process.send === 'function') process.send({
-    protocolId: 'eternities-receipt-bound-executor-stage-v1',
-    capabilityId: 'eternities-forge',
-  });
-  ${forgeDelayMs > 0 ? `await new Promise((resolve) => setTimeout(resolve, ${forgeDelayMs}));` : ''}
+  ${forgeDelayMs > 0 ? `await Atomics.waitAsync(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ${forgeDelayMs}).value;` : ''}
   return {
     schemaVersion: 1,
     capabilityId: 'eternities-forge',
@@ -100,7 +96,7 @@ export async function receiptBoundExecutorBundleFixture(context, {
     status: 'verified-build',
     executors,
     proofLimits: [
-      'executor modules run in the Node process and are not an operating-system sandbox',
+      'the restricted Node VM context is not an operating-system sandbox',
       'external exactly-once effects remain unproved',
     ],
   };
@@ -132,7 +128,10 @@ export async function buildDeterministicReceiptBoundTypedExecutorBundleHostFixtu
     const input = await bindBundleToAdmittedFixture(admitted, bundle);
     const inputPath = join(bundle.repositoryRoot, 'certification-input.json');
     await writeFile(inputPath, `${canonicalJson(input)}\n`, 'utf8');
-    const interrupted = await runHostChild(inputPath, { terminateAtForge: true });
+    const interrupted = await runHostChild(inputPath, {
+      terminateAfterFirstStep: true,
+      admissionRoot: admitted.admitted.admissionRoot,
+    });
     await expireDeadLocks(admitted.admitted.admissionRoot);
     const recovered = await runHostChild(inputPath);
     const replay = await runHostChild(inputPath);
@@ -161,7 +160,7 @@ export async function buildDeterministicReceiptBoundTypedExecutorBundleHostFixtu
         executionDigest: recovered.receipt.executionDigest,
       },
       recovery: {
-        crashObserved: interrupted.terminatedAtForge,
+        crashObserved: interrupted.terminatedAfterFirstStep,
         freshProcessRecovery: true,
         executedSteps: recovered.execution.execution.executedSteps,
         recoveredSteps: recovered.execution.execution.recoveredSteps,
@@ -204,32 +203,38 @@ async function expireDeadLocks(root) {
   await visit(root);
 }
 
-function runHostChild(inputPath, { terminateAtForge = false } = {}) {
+function runHostChild(inputPath, { terminateAfterFirstStep = false, admissionRoot } = {}) {
   const worker = new URL('./receipt-bound-typed-execution-child.mjs', import.meta.url);
   return new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(process.execPath, [fileURLToPath(worker), inputPath], {
       shell: false,
       windowsHide: true,
-      stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
     let stdout = '';
     let stderr = '';
-    let terminatedAtForge = false;
+    let terminatedAfterFirstStep = false;
+    let polling = false;
     child.stdout.setEncoding('utf8');
     child.stderr.setEncoding('utf8');
     child.stdout.on('data', (chunk) => { stdout += chunk; });
     child.stderr.on('data', (chunk) => { stderr += chunk; });
-    child.on('message', (message) => {
-      if (terminateAtForge
-          && message?.protocolId === 'eternities-receipt-bound-executor-stage-v1'
-          && message?.capabilityId === 'eternities-forge') {
-        terminatedAtForge = child.kill();
-      }
-    });
+    const monitor = terminateAfterFirstStep ? setInterval(async () => {
+      if (polling || terminatedAfterFirstStep) return;
+      polling = true;
+      try {
+        const paths = await readdir(admissionRoot, { recursive: true });
+        if (paths.some((path) => /(?:^|[\\/])steps[\\/]000000\.json$/.test(String(path)))) {
+          terminatedAfterFirstStep = child.kill();
+        }
+      } catch {}
+      polling = false;
+    }, 10) : null;
     child.once('error', rejectPromise);
     child.once('close', (code) => {
-      if (terminateAtForge && terminatedAtForge) {
-        resolvePromise({ terminatedAtForge: true });
+      if (monitor) clearInterval(monitor);
+      if (terminateAfterFirstStep && terminatedAfterFirstStep) {
+        resolvePromise({ terminatedAfterFirstStep: true });
         return;
       }
       if (code !== 0) {
