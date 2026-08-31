@@ -61,6 +61,7 @@ const testFiles = Object.freeze([
   'tests/host-policy.test.mjs',
   'tests/local-cli.test.mjs',
   'tests/networked-secret-containment.test.mjs',
+  'tests/release-lineage.test.mjs',
 ].sort());
 const focusedGodagentsTests = testFiles;
 const focusedGodskillsTests = Object.freeze([
@@ -72,6 +73,7 @@ const releaseOnlyPaths = Object.freeze([
   receiptPath,
   'src/certification/verify-ledger.mjs',
   'tests/certification-ledger.test.mjs',
+  'tests/release-lineage.test.mjs',
 ]);
 
 export const preferenceBoundaryEvidence = Object.freeze({
