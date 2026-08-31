@@ -157,6 +157,14 @@ One immutable intent binds that topology, the complete recoverable binding input
 
 After interruption, reconstruction reads bounded canonical regular-file state, rejects directory aliases and escaped slots, rehydrates the already completed Godskills binding without external reexecution, recompiles the method, and requires the compact result to reproduce. Same-process calls for one mission serialize around the durable publication lock. Cross-process waiting, durable graph execution, hostile executor isolation, live provider quality, exactly-once external effects, and adoption by an existing host remain outside this boundary.
 
+## Sealed local typed-composition compiler boundary
+
+The optional sealed compiler removes caller-supplied route and activation transports from the recoverable typed-composition boundary. One factory verifies the exact historical Godskills release, routing executable, activation executable, and typed-composition consumer, constructs one provenance-branded local process pair, and passes those transports privately into the recoverable compiler. Unknown factory options, partial pins, forged verification products, and caller transport injection fail before a child can launch.
+
+The real local router selects Forge and Muse for the retained topology. Route and activation execute through hidden shell-free Node children with bounded canonical output and content-addressed recovery records. If the process dies after activation output and a zero-exit success witness are durable, reconstruction publishes completion without relaunch, recovers the Godskills binding, recompiles the process-local method, and executes the typed Muse-to-Forge graph. Exact compilation replay launches no child, impossible topology fails before either executable, and no method body enters durable state.
+
+This is an additive programmatic construction boundary. The activation classifier and typed node executors remain trusted inputs, per-node graph progress is not durably journaled, same-user hostile-process isolation and exactly-once external effects remain unproved, and no existing host, CLI, provider, Realm, continuity, evolution, Lunari, Inspiration, or Soul path adopts it by default.
+
 ## Sealed local Godskills process boundary
 
 The optional local process adapter replaces the recoverable admission layer's assumed route and activation transports with the exact pushed Godskills executables. Construction first verifies the historical Godskills release and the additive routing executable receipt, including every declared local module, routing artifact, parent receipt, and entrypoint byte. The verified objects carry in-process provenance brands, so callers cannot assemble lookalike trust roots.

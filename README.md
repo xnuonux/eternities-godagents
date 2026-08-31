@@ -337,6 +337,14 @@ Intent and compact result records are canonical, bounded, immutable, and body-fr
 
 `npm run certify:recoverable-typed-composition` reproduces the crash-recovery and typed Muse-to-Forge fixture, runs focused and complete tests, and issues the thirtieth append-only receipt. The proof still trusts the injected route and activation transports, keeps graph execution in process, and grants no provider, credential, Realm, continuity, keel, identity-evolution, Lunari, Inspiration, or Soul authority.
 
+### Sealed local typed-composition compiler v1
+
+The [sealed local typed-composition design](docs/superpowers/specs/2026-08-31-sealed-local-typed-composition-compiler-v1-design.md) closes the recoverable compiler's injected-transport assumption for deterministic local Godskills execution. One explicit factory verifies the exact pinned Godskills release, routing executable, activation executable, and typed-composition consumer, then privately constructs the same branded local process pair used by the sealed admission adapter. Callers cannot replace either process transport or inject activation results, policy roots, typed methods, or launch authority.
+
+The deterministic proof runs the real local router and activation executable, naturally selects `eternities-forge` plus `eternities-muse`, interrupts after activation output and zero-exit success are durable, reconstructs without another child launch, then compiles, replays, and executes the private typed Muse-to-Forge method. Impossible topology and pin drift fail before any child starts. Durable state contains no method body, and this optional factory changes no existing host or launcher.
+
+`npm run certify:sealed-local-typed-composition` reproduces that process-recovery fixture, runs focused and complete tests, and issues the thirty-first append-only receipt. Typed node executors and the activation classifier remain caller-trusted, graph execution remains in process rather than durably journaled per node, and no provider, credential, Realm, continuity, keel, identity-evolution, Lunari, Inspiration, or Soul authority is added.
+
 ### Sealed local Godskills transport v1
 
 The [sealed local transport design](docs/superpowers/specs/2026-08-31-sealed-local-godskills-transport-v1-design.md) supplies a concrete local implementation for the route and activation sides of recoverable admission. It verifies the exact pushed Godskills release and routing executable closure before construction, fixes routing mode from that release, and invokes both entrypoints as hidden shell-free child processes with a minimal environment plus an in-child scrub.

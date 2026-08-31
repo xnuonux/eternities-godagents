@@ -45,6 +45,7 @@
     "certify:identity-bound-mission-vessel": "node scripts/build-identity-bound-mission-vessel-v1-receipt.mjs",
     "certify:recoverable-godskills-admission": "node scripts/build-recoverable-godskills-admission-v1-receipt.mjs",
     "certify:recoverable-typed-composition": "node scripts/build-recoverable-typed-composition-compiler-v1-receipt.mjs",
+    "certify:sealed-local-typed-composition": "node scripts/build-sealed-local-typed-composition-compiler-v1-receipt.mjs",
     "certify:sealed-local-godskills-transport": "node scripts/build-sealed-local-godskills-transport-v1-receipt.mjs",
     "certify:sealed-local-identity-vessel": "node scripts/build-sealed-local-identity-vessel-v1-receipt.mjs",
     "certify:routing-evidence-classifier": "node scripts/build-routing-evidence-activation-classifier-v1-receipt.mjs",
