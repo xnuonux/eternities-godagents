@@ -38,6 +38,7 @@
     "certify:codex-turn-journal": "node scripts/build-codex-turn-journal-v1-receipt.mjs",
     "certify:codex-recoverable-turn": "node scripts/build-codex-recoverable-turn-coordinator-v1-receipt.mjs",
     "certify:mission-review-kernel": "node scripts/build-mission-review-kernel-v1-receipt.mjs",
-    "certify:deferred-review-materializer": "node scripts/build-deferred-review-materializer-v1-receipt.mjs"
+    "certify:deferred-review-materializer": "node scripts/build-deferred-review-materializer-v1-receipt.mjs",
+    "certify:deferred-review-executor": "node scripts/build-deferred-review-executor-v1-receipt.mjs"
   }
 }

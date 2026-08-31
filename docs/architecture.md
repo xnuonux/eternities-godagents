@@ -101,7 +101,15 @@ Round one binds one canonical native artifact. Round two binds one canonical rev
 
 The release cache is outside the trust boundary. Only verifier-issued entries held in an internal cache may be reused, and the capability map exposed to a caller is a defensive copy. Preloading a caller-owned cache or mutating a returned map therefore cannot replace the verified release state used by a later materialization.
 
-This is not yet the review transport. It selects no model or provider, resolves no credential, performs no model call, owns no durable journal transition, and grants no Realm, continuity, identity, evolution, Soul, or personal-keel authority. The mission review kernel remains the ordering authority, while a later executor adapter must consume the verified package and return one exact phase result.
+This materializer alone is not the review transport. It selects no model or provider, resolves no credential, performs no model call, owns no durable journal transition, and grants no Realm, continuity, identity, evolution, Soul, or personal-keel authority. The mission review kernel remains the ordering authority.
+
+## Deferred Godskills review executor boundary
+
+The provider-neutral review executor composes the verified materializer with one injected transport. Its content-addressed executor identity binds the exact Godskills release, activation root, materializer, and closed transport descriptor. The transport descriptor promises terminal reconciliation and atomic deduplication by dispatch digest while carrying no provider, model, endpoint, credential, retry, Realm, continuity, identity, evolution, personal-keel, or Soul authority.
+
+Review reconciliation and execution receive the same immutable admission and committed artifact context from the mission kernel. The executor rematerializes and verifies the selected package before either operation, then constructs one dispatch binding every request, package, executor, transport, token, and authority identity. Only an exact `absent` reconciliation permits execution. `pending` waits, `completed` recovers, and ambiguous states fail closed. A completion must bind the dispatch, contain one strict review artifact, preserve separated token accounting, fit its byte ceiling, and remain authority-empty. Its digest is committed as optional executor evidence in the ordinary mission phase result.
+
+The deterministic recovery proof interrupts after the transport has completed but before the journal commits the review. A newly constructed executor independently reproduces the dispatch, recovers the existing completion, and closes the mission without another execution. This proves the adapter and local journal composition against a trusted injected transport, not the transport implementation itself, a live provider, review quality, hostile same-user isolation, a revision adapter, default vessel or Codex desktop wiring, Realm action, continuity admission, Lunari, Inspiration, or Soul.
 
 ## Phase 1 creation boundary
 

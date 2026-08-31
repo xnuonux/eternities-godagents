@@ -57,6 +57,9 @@ const schemaFiles = {
   'mission-review-journal-event': 'mission-review-journal-event.schema.json',
   'mission-review-journal-state': 'mission-review-journal-state.schema.json',
   'deferred-godskills-review-package': 'deferred-godskills-review-package.schema.json',
+  'godskills-review-transport-descriptor': 'godskills-review-transport-descriptor.schema.json',
+  'godskills-review-dispatch': 'godskills-review-dispatch.schema.json',
+  'godskills-review-transport-completion': 'godskills-review-transport-completion.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

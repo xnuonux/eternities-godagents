@@ -583,6 +583,7 @@ export function buildMissionPhaseResult({
   usage,
   startedAt,
   completedAt,
+  executorEvidenceDigest = null,
 } = {}) {
   object(request, 'mission phase request');
   verifyMissionExecutorDescriptor(descriptor, request.phase);
@@ -591,6 +592,7 @@ export function buildMissionPhaseResult({
   requireIso(startedAt, 'mission phase start');
   requireIso(completedAt, 'mission phase completion');
   if (Date.parse(completedAt) < Date.parse(startedAt)) fail('phase-time-invalid', 'mission phase completed before it started');
+  if (executorEvidenceDigest !== null) requireDigest(executorEvidenceDigest, 'mission executor evidence');
   const artifactBytes = Buffer.byteLength(canonicalJson(artifact), 'utf8');
   const artifactDigest = sha256Text(canonicalJson(artifact));
   const unsigned = {
@@ -608,6 +610,7 @@ export function buildMissionPhaseResult({
     completedAt,
     authorityExpanded: false,
   };
+  if (executorEvidenceDigest !== null) unsigned.executorEvidenceDigest = executorEvidenceDigest;
   return deepFreeze({
     receipt: { ...unsigned, resultDigest: sha256Value(unsigned) },
     artifact: clone(artifact),
@@ -618,7 +621,7 @@ export function verifyMissionPhaseResult(value, { request, descriptor } = {}) {
   assertSchema('mission-phase-result', value);
   exactKeys(value, ['artifact', 'receipt'], 'mission phase result');
   const receipt = value.receipt;
-  exactKeys(receipt, [
+  const receiptKeys = [
     'artifactBytes',
     'artifactDigest',
     'authorityExpanded',
@@ -633,7 +636,9 @@ export function verifyMissionPhaseResult(value, { request, descriptor } = {}) {
     'startedAt',
     'status',
     'usage',
-  ], 'mission phase result receipt');
+  ];
+  if (Object.hasOwn(receipt, 'executorEvidenceDigest')) receiptKeys.push('executorEvidenceDigest');
+  exactKeys(receipt, receiptKeys, 'mission phase result receipt');
   verifyMissionExecutorDescriptor(descriptor, request.phase);
   if (receipt.schemaVersion !== 1 || receipt.protocolId !== 'eternities-mission-phase-result-v1'
       || receipt.status !== 'completed' || receipt.phase !== request.phase || receipt.round !== request.round
@@ -643,6 +648,9 @@ export function verifyMissionPhaseResult(value, { request, descriptor } = {}) {
     fail('phase-result-invalid', 'mission phase result identity is invalid');
   }
   verifyMissionPhaseArtifact(value.artifact, request);
+  if (Object.hasOwn(receipt, 'executorEvidenceDigest')) {
+    requireDigest(receipt.executorEvidenceDigest, 'mission executor evidence');
+  }
   verifyUsage(receipt.usage, request.maxCompletionTokens);
   requireIso(receipt.startedAt, 'mission phase start');
   requireIso(receipt.completedAt, 'mission phase completion');

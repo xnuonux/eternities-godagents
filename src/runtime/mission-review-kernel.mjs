@@ -206,6 +206,7 @@ function contextFor(evidence, phase, round) {
   }
   if (phase === 'review' && round === 1) {
     return deepFreeze({
+      admission: clone(evidence.admission),
       subject: clone(evidence.native.artifact),
       deferredReviews: clone(evidence.admission.godskills.deferredReviews),
       godskillsReceipt: clone(evidence.admission.godskills.receipt),
@@ -220,6 +221,7 @@ function contextFor(evidence, phase, round) {
     });
   }
   return deepFreeze({
+    admission: clone(evidence.admission),
     subject: clone(evidence.revision.artifact),
     deferredReviews: clone(evidence.admission.godskills.deferredReviews),
     godskillsReceipt: clone(evidence.admission.godskills.receipt),
@@ -276,9 +278,10 @@ export function createResumableMissionReviewKernel({
       fail('executor-descriptor-changed', `${phase} executor descriptor changed after preparation`);
     }
     const request = prepared.request;
+    const context = contextFor(evidence, phase, round);
     const phaseLabel = phase === 'review' ? `review-${round}` : phase;
     await mark(`before-${phaseLabel}-reconcile`, evidence.admission.mission.missionId, request.requestDigest);
-    const reconciled = reconciliationValue(await executor.reconcile(clone(request)));
+    const reconciled = reconciliationValue(await executor.reconcile(clone(request), context));
     if (reconciled.status === 'pending') {
       return deepFreeze({
         status: 'pending',
@@ -294,7 +297,7 @@ export function createResumableMissionReviewKernel({
       await mark(`after-${phaseLabel}-reconcile-completed`, evidence.admission.mission.missionId, request.requestDigest);
     } else {
       await mark(`before-${phaseLabel}-execute`, evidence.admission.mission.missionId, request.requestDigest);
-      result = await executor.execute(clone(request), contextFor(evidence, phase, round));
+      result = await executor.execute(clone(request), context);
       await mark(`after-${phaseLabel}-execute`, evidence.admission.mission.missionId, request.requestDigest);
     }
     await handle.commitPhase(result);

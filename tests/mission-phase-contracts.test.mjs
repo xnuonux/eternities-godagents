@@ -288,6 +288,21 @@ test('completed phase results bind canonical artifact bytes and exact token arit
   const changedArtifact = structuredClone(result);
   changedArtifact.artifact.content = 'substituted';
   assert.throws(() => verifyMissionPhaseResult(changedArtifact, { request, descriptor }), /artifact|digest/i);
+
+  const evidenced = buildMissionPhaseResult({
+    request,
+    descriptor,
+    artifact,
+    usage: result.receipt.usage,
+    startedAt: result.receipt.startedAt,
+    completedAt: result.receipt.completedAt,
+    executorEvidenceDigest: digest('e'),
+  });
+  assert.equal(evidenced.receipt.executorEvidenceDigest, digest('e'));
+  assert.deepEqual(verifyMissionPhaseResult(evidenced, { request, descriptor }), evidenced);
+  const changedEvidence = structuredClone(evidenced);
+  changedEvidence.receipt.executorEvidenceDigest = digest('f');
+  assert.throws(() => verifyMissionPhaseResult(changedEvidence, { request, descriptor }), /evidence|digest/i);
 });
 
 test('portable artifacts reject authority-bearing or phase-incoherent structures', () => {

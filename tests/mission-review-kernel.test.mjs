@@ -187,6 +187,49 @@ test('review executes only after native artifact commit and can accept it', asyn
   ]);
 });
 
+test('review reconciliation receives the exact immutable committed context', async (t) => {
+  const supplied = input({ missionId: 'mission-kernel-review-reconcile-context', review: true });
+  const nativeExecutor = scriptedExecutor({
+    phase: 'native',
+    artifact: { schemaVersion: 1, artifactType: 'native', content: 'committed review subject' },
+  });
+  const reviewExecutor = scriptedExecutor({
+    phase: 'review',
+    artifact(request) {
+      return {
+        schemaVersion: 1,
+        artifactType: 'review',
+        subjectDigest: request.inputs.find(({ role }) => role === 'subject').artifactDigest,
+        recommendation: 'accept',
+        findings: [],
+        summary: 'exact committed context accepted',
+      };
+    },
+  });
+  let reconciledContext;
+  const originalReconcile = reviewExecutor.reconcile.bind(reviewExecutor);
+  reviewExecutor.reconcile = async (request, context) => {
+    reconciledContext = context;
+    return originalReconcile(request);
+  };
+  const revisionExecutor = scriptedExecutor({
+    phase: 'revision',
+    artifact: { schemaVersion: 1, artifactType: 'revision' },
+  });
+  const { kernel } = await kernelFixture(t, { nativeExecutor, reviewExecutor, revisionExecutor });
+  await kernel.run(supplied);
+
+  assert.equal(reconciledContext.admission.mission.missionId, supplied.mission.missionId);
+  assert.equal(reconciledContext.admission.godskills.receipt.requestId, supplied.mission.missionId);
+  assert.equal(reconciledContext.subject.content, 'committed review subject');
+  assert.deepEqual(reconciledContext.deferredReviews, reconciledContext.admission.godskills.deferredReviews);
+  assert.deepEqual(reconciledContext.godskillsReceipt, reconciledContext.admission.godskills.receipt);
+  assert.equal(reconciledContext.priorReview, null);
+  assert.equal(reconciledContext.revision, null);
+  assert.equal(Object.isFrozen(reconciledContext), true);
+  assert.equal(Object.isFrozen(reconciledContext.admission), true);
+});
+
 test('one revision receives exact findings and requires a terminal second review', async (t) => {
   const nativeExecutor = scriptedExecutor({
     phase: 'native',

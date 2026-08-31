@@ -32,6 +32,7 @@
         "round": { "type": "integer", "minimum": 1, "maximum": 2 },
         "requestDigest": { "$ref": "#/$defs/digest" },
         "executorDescriptorDigest": { "$ref": "#/$defs/digest" },
+        "executorEvidenceDigest": { "$ref": "#/$defs/digest" },
         "artifactDigest": { "$ref": "#/$defs/digest" },
         "artifactBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 },
         "usage": { "$ref": "#/$defs/usage" },
