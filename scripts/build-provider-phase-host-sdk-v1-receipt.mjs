@@ -19,6 +19,28 @@ const certificationPath = 'docs/provider-phase-host-sdk-v1-certification.md';
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
 const families = Object.freeze(['anthropic-messages-v1', 'openai-compatible-chat-completions-v1']);
+const expectedCapabilities = Object.freeze({
+  'anthropic-messages-v1': Object.freeze({
+    credentialPreflight: true,
+    durableExecution: true,
+    localDispatchSemantics: 'at-most-once',
+    phases: Object.freeze(['native', 'review', 'revision']),
+    providerEvidenceProfile: 'completion-bound-sidecar',
+    signedAmbiguityResolutionAvailable: false,
+    structuredOutputs: true,
+    wireProfile: 'anthropic-messages',
+  }),
+  'openai-compatible-chat-completions-v1': Object.freeze({
+    credentialPreflight: true,
+    durableExecution: true,
+    localDispatchSemantics: 'at-most-once',
+    phases: Object.freeze(['native', 'review', 'revision']),
+    providerEvidenceProfile: 'normalized-completion-usage',
+    signedAmbiguityResolutionAvailable: true,
+    structuredOutputs: true,
+    wireProfile: 'openai-compatible-chat-completions',
+  }),
+});
 
 const historicalReceiptPaths = Object.freeze([
   'admitted-sealed-identity-host-v1.json', 'admitted-sealed-typed-execution-host-v1.json',
@@ -123,7 +145,8 @@ function verifyFixture(value) {
         || !same(Object.keys(record.completionDigests), ['native', 'review', 'revision'])) throw new Error('sdk phase set is invalid');
     Object.values(record.descriptorDigests).forEach((value) => digest(value, 'descriptor'));
     Object.values(record.completionDigests).forEach((value) => digest(value, 'completion'));
-    if (!same(record.completedPhases, ['native', 'review', 'revision']) || record.providerCalls !== 3
+    if (!same(record.capabilities, expectedCapabilities[family])
+        || !same(record.completedPhases, ['native', 'review', 'revision']) || record.providerCalls !== 3
         || record.replayProviderCalls !== 0 || record.authorityExpansions !== 0
         || record.capabilities.signedAmbiguityResolutionAvailable !== family.startsWith('openai-')) {
       throw new Error('sdk family conformance is invalid');

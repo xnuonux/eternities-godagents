@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
-import { sha256Value } from '../src/core/digest.mjs';
+import { sha256Text, sha256Value } from '../src/core/digest.mjs';
 import {
   buildProviderPhaseHostSdkReceiptFromSource,
   verifyProviderPhaseHostSdkReceipt,
@@ -62,4 +62,14 @@ test('provider phase host sdk receipt rejects nested capability and source forge
   assert.throws(() => verifyProviderPhaseHostSdkReceipt(forge((value) => {
     value.source.plan.sha256 = 'f'.repeat(64);
   })), /plan/i);
+  assert.throws(() => verifyProviderPhaseHostSdkReceipt(forge((value) => {
+    value.fixture.value.families['anthropic-messages-v1'].capabilities.wireProfile = 'forged-wire';
+    const { fixtureDigest: _old, ...fixtureUnsigned } = value.fixture.value;
+    value.fixture.value.fixtureDigest = sha256Value(fixtureUnsigned);
+    value.fixture.logicalDigest = value.fixture.value.fixtureDigest;
+    value.fixture.fileSha256 = sha256Text(`${canonicalJson(value.fixture.value)}\n`);
+    const entry = value.source.implementationManifest.entries.find(({ path }) => path === value.fixture.path);
+    entry.sha256 = value.fixture.fileSha256;
+    value.source.implementationManifest.digest = sha256Value(value.source.implementationManifest.entries);
+  })), /capabilit|conformance|fixture/i);
 });
