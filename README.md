@@ -342,6 +342,8 @@ The [sealed vessel design](docs/superpowers/specs/2026-08-31-sealed-local-identi
 
 Its deterministic full-loop proof routes a consequential visual mission to `eternities-muse`, obtains deferred review from the real pinned activation executable, interrupts after activation success, reconstructs without relaunching routing or activation, and completes native generation, review, revision, and final review. Exact terminal replay performs zero external or classification work. This boundary remains additive and programmatic; it does not change the admitted launcher, legacy host, CLI, host policy, provider, Realm, continuity, evolution, Lunari, or Soul paths.
 
+`npm run certify:sealed-local-identity-vessel` reproduces that full-loop fixture and issues the twenty-fourth append-only receipt.
+
 ### Admitted local launch
 
 `launch:local` is the safe bridge from that inert admission to one networked mission. The host policy must name the exact admission-owned distribution, journal, snapshot, and instance. On first launch, an OS-account-local residency registry binds the identity to that canonical admission root so an ordinary copied tree cannot fork its history. Its location is derived from the operating-system account profile rather than launch environment variables. The launcher rejects changed bindings or runtime paths, verifies the transactional genesis receipt, journal, creation, distribution, and personal keel before runtime construction, then verifies them again through the persistent-vessel wake before the cycle. Its local reference Realm persists counter state and idempotency receipts beneath the admission-owned vessel directory instead of losing them at process exit.

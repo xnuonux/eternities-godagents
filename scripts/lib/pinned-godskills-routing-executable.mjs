@@ -1,3 +1,5 @@
+export const pinnedGodskillsRoutingSourceCommit = '7aad930bdb5408ba65e03acf8a56d1978021bcaf';
+
 export function pinnedGodskillsRoutingExecutable(overrides = {}) {
   return {
     protocolId: 'eternities-godskills-routing-executable-v1',

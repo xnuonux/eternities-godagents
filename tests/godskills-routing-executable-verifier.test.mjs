@@ -4,7 +4,10 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 
 import { pinnedGodskillsReviewRelease } from '../scripts/lib/pinned-godskills-review-release.mjs';
-import { pinnedGodskillsRoutingExecutable } from '../scripts/lib/pinned-godskills-routing-executable.mjs';
+import {
+  pinnedGodskillsRoutingExecutable,
+  pinnedGodskillsRoutingSourceCommit,
+} from '../scripts/lib/pinned-godskills-routing-executable.mjs';
 
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const receiptDigest = '30ca5eb79e8935d8701f2fb466a22dd0007fc370f587c191fe03d065a930ff28';
@@ -43,6 +46,7 @@ test('verifies and brands the exact pushed Godskills routing executable', async 
   });
 
   assert.equal(verified.routing.protocolId, 'eternities-godskills-routing-executable-v1');
+  assert.equal(pinnedGodskillsRoutingSourceCommit, '7aad930bdb5408ba65e03acf8a56d1978021bcaf');
   assert.equal(verified.routing.trustRootDigest, receiptDigest);
   assert.deepEqual(verified.routing.modes, ['default', 'specialist']);
   assert.equal(verified.routing.localModules.length, 17);
