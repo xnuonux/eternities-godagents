@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -8,6 +8,7 @@ import { canonicalJson } from '../src/core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../src/core/digest.mjs';
 import {
   assertVerifiedReceiptBoundTypedExecutorBundle,
+  instantiateVerifiedReceiptBoundTypedExecutors,
   verifyReceiptBoundTypedExecutorBundle,
 } from '../src/runtime/receipt-bound-typed-executor-bundle.mjs';
 
@@ -57,7 +58,7 @@ function executorIdentity(capabilityId, moduleSha256) {
   });
 }
 
-async function bundleFixture(t) {
+async function bundleFixture(t, selectedBundleId = bundleId) {
   const root = await mkdtemp(join(tmpdir(), 'godagents-executor-bundle-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const executors = [];
@@ -73,7 +74,12 @@ async function bundleFixture(t) {
       descriptor: {
         schemaVersion: 1,
         protocolId: 'eternities-typed-capability-executor-v1',
-        executorId: executorIdentity(capabilityId, moduleSha256),
+        executorId: sha256Value({
+          protocolId: 'eternities-receipt-bound-typed-executor-identity-v1',
+          bundleId: selectedBundleId,
+          capabilityId,
+          moduleSha256,
+        }),
         capabilityId,
         authority: [],
         maximumInputBytes: 65_536,
@@ -84,7 +90,7 @@ async function bundleFixture(t) {
   const unsigned = {
     schemaVersion: 1,
     protocolId,
-    bundleId,
+    bundleId: selectedBundleId,
     status: 'verified-build',
     executors,
     proofLimits: [
@@ -118,14 +124,19 @@ test('loads exact receipt-bound executor bytes into privately branded frozen han
   const bundle = await verifyReceiptBoundTypedExecutorBundle(verificationInput(fixture));
   assert.equal(assertVerifiedReceiptBoundTypedExecutorBundle(bundle), bundle);
   assert.equal(bundle.receiptDigest, fixture.receipt.receiptDigest);
-  assert.deepEqual(bundle.executors.map(({ descriptor }) => descriptor().capabilityId), [
+  assert.deepEqual(bundle.descriptors.map(({ capabilityId }) => capabilityId), [
     'eternities-forge', 'eternities-muse',
   ]);
+  const executors = await instantiateVerifiedReceiptBoundTypedExecutors({
+    bundle,
+    expectedDescriptors: bundle.descriptors,
+  });
   assert.ok(Object.isFrozen(bundle));
-  assert.ok(Object.isFrozen(bundle.executors));
-  assert.ok(Object.isFrozen(bundle.executors[0]));
-  assert.ok(Object.isFrozen(bundle.executors[0].descriptor()));
-  assert.equal((await bundle.executors[1].execute({ missionId: 'mission-1' })).capabilityId, 'eternities-muse');
+  assert.ok(Object.isFrozen(bundle.descriptors));
+  assert.ok(Object.isFrozen(executors));
+  assert.ok(Object.isFrozen(executors[0]));
+  assert.ok(Object.isFrozen(executors[0].descriptor()));
+  assert.equal((await executors[1].execute({ missionId: 'mission-1' })).capabilityId, 'eternities-muse');
   assert.throws(() => assertVerifiedReceiptBoundTypedExecutorBundle({ ...bundle }), /provenance brand/);
 });
 
@@ -193,7 +204,7 @@ test('rejects changed module exports and noncanonical receipt paths', async (t) 
   await writeFile(join(changed.repositoryRoot, ...changed.receiptPath.split('/')), receiptText);
   await assert.rejects(
     verifyReceiptBoundTypedExecutorBundle(verificationInput(changed)),
-    /must export exactly one async execute function/,
+    /must contain only one async execute declaration/,
   );
   await assert.rejects(
     verifyReceiptBoundTypedExecutorBundle({
@@ -202,4 +213,83 @@ test('rejects changed module exports and noncanonical receipt paths', async (t) 
     }),
     /canonical repository-relative path/,
   );
+});
+
+test('comment-separated dynamic imports fail syntactic closure before module evaluation', async (t) => {
+  const fixture = await bundleFixture(t);
+  const source = `export async function execute() { return import/* bypass */('node:path'); }\n`;
+  const row = fixture.receipt.executors[0];
+  row.module.sha256 = sha256Text(source);
+  row.module.bytes = Buffer.byteLength(source);
+  row.descriptor.executorId = executorIdentity(row.capabilityId, row.module.sha256);
+  const { receiptDigest: ignored, ...unsigned } = fixture.receipt;
+  fixture.receipt.receiptDigest = sha256Value(unsigned);
+  const receiptText = `${canonicalJson(fixture.receipt)}\n`;
+  fixture.expectedSha256 = sha256Text(receiptText);
+  await writeFile(join(fixture.repositoryRoot, ...row.module.path.split('/')), source);
+  await writeFile(join(fixture.repositoryRoot, ...fixture.receiptPath.split('/')), receiptText);
+  await assert.rejects(
+    verifyReceiptBoundTypedExecutorBundle(verificationInput(fixture)),
+    /dependencies are forbidden/,
+  );
+});
+
+test('module instances are isolated by bundle and capability identity', async (t) => {
+  const leftFixture = await bundleFixture(t, 'deterministic-visual-executors-left-v1');
+  const rightFixture = await bundleFixture(t, 'deterministic-visual-executors-right-v1');
+  const left = await verifyReceiptBoundTypedExecutorBundle(verificationInput(leftFixture));
+  const right = await verifyReceiptBoundTypedExecutorBundle(verificationInput(rightFixture));
+  const leftExecutors = await instantiateVerifiedReceiptBoundTypedExecutors({
+    bundle: left, expectedDescriptors: left.descriptors,
+  });
+  const rightExecutors = await instantiateVerifiedReceiptBoundTypedExecutors({
+    bundle: right, expectedDescriptors: right.descriptors,
+  });
+  assert.notEqual(leftExecutors[0].execute, rightExecutors[0].execute);
+  await assert.rejects(
+    instantiateVerifiedReceiptBoundTypedExecutors({
+      bundle: left, expectedDescriptors: right.descriptors,
+    }),
+    /not authorized by admitted policy/,
+  );
+});
+
+test('an observed symbolic-link bundle root is rejected before receipt loading', async (t) => {
+  const fixture = await bundleFixture(t);
+  const parent = await mkdtemp(join(tmpdir(), 'godagents-executor-alias-'));
+  t.after(() => rm(parent, { recursive: true, force: true }));
+  const alias = join(parent, 'bundle-link');
+  await symlink(fixture.repositoryRoot, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  await assert.rejects(
+    verifyReceiptBoundTypedExecutorBundle({
+      ...verificationInput(fixture),
+      repositoryRoot: alias,
+    }),
+    /not a real directory|non-canonical alias/,
+  );
+});
+
+test('top-level module behavior is rejected inertly before any evaluation', async (t) => {
+  const fixture = await bundleFixture(t);
+  const marker = `__receiptBoundTopLevel_${Date.now()}`;
+  const source = `globalThis[${JSON.stringify(marker)}] = true;\n${moduleSources['eternities-forge']}`;
+  const row = fixture.receipt.executors[0];
+  row.module.sha256 = sha256Text(source);
+  row.module.bytes = Buffer.byteLength(source);
+  row.descriptor.executorId = executorIdentity(row.capabilityId, row.module.sha256);
+  const { receiptDigest: ignored, ...unsigned } = fixture.receipt;
+  fixture.receipt.receiptDigest = sha256Value(unsigned);
+  const receiptText = `${canonicalJson(fixture.receipt)}\n`;
+  fixture.expectedSha256 = sha256Text(receiptText);
+  await writeFile(join(fixture.repositoryRoot, ...row.module.path.split('/')), source);
+  await writeFile(join(fixture.repositoryRoot, ...fixture.receiptPath.split('/')), receiptText);
+  try {
+    await assert.rejects(
+      verifyReceiptBoundTypedExecutorBundle(verificationInput(fixture)),
+      /must contain only one async execute declaration/,
+    );
+    assert.equal(globalThis[marker], undefined);
+  } finally {
+    delete globalThis[marker];
+  }
 });

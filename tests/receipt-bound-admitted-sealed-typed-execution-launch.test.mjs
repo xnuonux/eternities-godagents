@@ -33,20 +33,14 @@ test('closed launcher rejects caller executors and changed bundle pins before ex
   );
 });
 
-test('receipt-bound recovery runs only unfinished Forge and terminal replay runs no executor', async (t) => {
-  const fixture = await admittedTypedExecutionHostFixture(t, 'receipt-bound-recovery');
-  const bundle = await receiptBoundExecutorBundleFixture(t, { crashForgeOnce: true });
+test('receipt-bound terminal replay runs no executor work', async (t) => {
+  const fixture = await admittedTypedExecutionHostFixture(t, 'receipt-bound-replay');
+  const bundle = await receiptBoundExecutorBundleFixture(t);
   const input = await bindBundleToAdmittedFixture(fixture, bundle);
-  await assert.rejects(
-    launchReceiptBoundAdmittedSealedTypedExecutionMission(input),
-    (error) => error?.cause?.message === 'receipt-bound certification crash after persisted Muse output',
-  );
-  const recovered = await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
+  const completed = await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
   const replay = await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
-  assert.equal(recovered.status, 'completed');
-  assert.deepEqual(replay.receipt, recovered.receipt);
-  assert.equal(recovered.execution.execution.executedSteps, 1);
-  assert.equal(recovered.execution.execution.recoveredSteps, 1);
+  assert.equal(completed.status, 'completed');
+  assert.deepEqual(replay.receipt, completed.receipt);
   assert.equal(replay.execution.execution.executedSteps, 0);
   assert.equal(replay.execution.execution.recoveredSteps, 2);
 });
@@ -64,6 +58,7 @@ test('policy descriptors must bind the verified bundle before executor work', as
       request: fixture.request,
       env: fixture.common.env,
     }),
-    (error) => error?.code === 'dependency-mismatch',
+    (error) => error?.code === 'bundle-interface'
+      && /does not authorize/.test(error?.cause?.message),
   );
 });

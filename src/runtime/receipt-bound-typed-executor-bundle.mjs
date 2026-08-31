@@ -11,6 +11,7 @@ const IDENTITY_PROTOCOL_ID = 'eternities-receipt-bound-typed-executor-identity-v
 const DIGEST = /^[a-f0-9]{64}$/;
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const verifiedBundles = new WeakSet();
+const verifiedModuleBytes = new WeakMap();
 
 function object(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
@@ -108,18 +109,98 @@ function expectedExecutorId(bundleId, capabilityId, moduleSha256) {
   });
 }
 
+function stripComments(source) {
+  let result = '';
+  let index = 0;
+  let quote = null;
+  while (index < source.length) {
+    const current = source[index];
+    const next = source[index + 1];
+    if (quote !== null) {
+      result += current;
+      if (current === '\\') {
+        index += 1;
+        if (index < source.length) result += source[index];
+      } else if (current === quote) {
+        quote = null;
+      }
+      index += 1;
+      continue;
+    }
+    if (current === '"' || current === "'" || current === '`') {
+      quote = current;
+      result += current;
+      index += 1;
+      continue;
+    }
+    if (current === '/' && next === '/') {
+      result += '  ';
+      index += 2;
+      while (index < source.length && source[index] !== '\n') {
+        result += ' ';
+        index += 1;
+      }
+      continue;
+    }
+    if (current === '/' && next === '*') {
+      result += '  ';
+      index += 2;
+      while (index < source.length && !(source[index] === '*' && source[index + 1] === '/')) {
+        result += source[index] === '\n' ? '\n' : ' ';
+        index += 1;
+      }
+      if (index >= source.length) throw new Error('executor module contains an unterminated comment');
+      result += '  ';
+      index += 2;
+      continue;
+    }
+    result += current;
+    index += 1;
+  }
+  return result;
+}
+
 function assertClosedModuleSource(bytes, label) {
-  const source = bytes.toString('utf8');
+  const source = stripComments(bytes.toString('utf8'));
   if (/\bimport(?:\s|\()/m.test(source)
       || /\bexport\s+(?:\*|\{)[\s\S]*?\bfrom\s*["']/m.test(source)
       || /\b(?:require|module\.require)\s*\(/m.test(source)) {
     throw new Error(`${label} dependencies are forbidden`);
   }
+  const header = source.match(/^\s*export\s+async\s+function\s+execute\s*\(\s*input\s*\)\s*\{/);
+  if (!header) throw new Error(`${label} must contain only one async execute declaration`);
+  let depth = 1;
+  let quote = null;
+  let closingIndex = -1;
+  for (let index = header[0].length; index < source.length; index += 1) {
+    const current = source[index];
+    if (quote !== null) {
+      if (current === '\\') index += 1;
+      else if (current === quote) quote = null;
+      continue;
+    }
+    if (current === '"' || current === "'" || current === '`') {
+      quote = current;
+      continue;
+    }
+    if (current === '{') depth += 1;
+    else if (current === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        closingIndex = index;
+        break;
+      }
+    }
+  }
+  if (closingIndex < 0 || !/^\s*;?\s*$/.test(source.slice(closingIndex + 1))) {
+    throw new Error(`${label} must contain only one async execute declaration`);
+  }
 }
 
-async function importVerifiedModule(bytes, digest, label) {
+async function importVerifiedModule(bytes, { digest, bundleId, capabilityId }, label) {
   assertClosedModuleSource(bytes, label);
-  const url = `data:text/javascript;base64,${bytes.toString('base64')}#sha256=${digest}`;
+  const identity = new URLSearchParams({ bundleId, capabilityId, sha256: digest });
+  const url = `data:text/javascript;base64,${bytes.toString('base64')}#${identity}`;
   let namespace;
   try {
     namespace = await import(url);
@@ -183,7 +264,8 @@ export async function verifyReceiptBoundTypedExecutorBundle(input = {}) {
   const receipt = parseCanonicalReceipt(receiptBytes);
   verifyReceipt(receipt);
   const paths = new Set();
-  const executors = [];
+  const descriptors = [];
+  const modules = [];
   for (const row of receipt.executors) {
     exactKeys(row, ['capabilityId', 'module', 'descriptor'], 'executor bundle row');
     if (!IDENTIFIER.test(row.capabilityId)) throw new Error('executor bundle capability identity is invalid');
@@ -206,10 +288,12 @@ export async function verifyReceiptBoundTypedExecutorBundle(input = {}) {
     if (!sameDigest(sha256Text(moduleBytes), row.module.sha256)) {
       throw new Error('executor bundle module digest mismatch');
     }
-    const execute = await importVerifiedModule(moduleBytes, row.module.sha256, `executor module ${row.capabilityId}`);
-    executors.push(Object.freeze({
-      descriptor: () => descriptor,
-      execute,
+    assertClosedModuleSource(moduleBytes, `executor module ${row.capabilityId}`);
+    descriptors.push(descriptor);
+    modules.push(Object.freeze({
+      capabilityId: row.capabilityId,
+      digest: row.module.sha256,
+      bytes: Buffer.from(moduleBytes),
     }));
   }
   const bundle = deepFreeze({
@@ -217,9 +301,38 @@ export async function verifyReceiptBoundTypedExecutorBundle(input = {}) {
     bundleId: receipt.bundleId,
     receiptDigest: receipt.receiptDigest,
     receiptSha256: input.expectedSha256,
-    executors,
+    descriptors,
     proofLimits: structuredClone(receipt.proofLimits),
   });
   verifiedBundles.add(bundle);
+  verifiedModuleBytes.set(bundle, modules);
   return bundle;
+}
+
+export async function instantiateVerifiedReceiptBoundTypedExecutors(input = {}) {
+  exactKeys(input, ['bundle', 'expectedDescriptors'], 'executor bundle instantiation input');
+  const bundle = assertVerifiedReceiptBoundTypedExecutorBundle(input.bundle);
+  if (!Array.isArray(input.expectedDescriptors)) {
+    throw new TypeError('executor bundle expected descriptors are invalid');
+  }
+  const expected = input.expectedDescriptors.map((value) => verifyTypedCapabilityExecutorDescriptor(value));
+  if (canonicalJson(expected) !== canonicalJson(bundle.descriptors)) {
+    throw new Error('executor bundle descriptors are not authorized by admitted policy');
+  }
+  const modules = verifiedModuleBytes.get(bundle);
+  if (!modules || modules.length !== bundle.descriptors.length) {
+    throw new Error('executor bundle verified module bytes are unavailable');
+  }
+  const executors = [];
+  for (let index = 0; index < modules.length; index += 1) {
+    const module = modules[index];
+    const descriptor = bundle.descriptors[index];
+    const execute = await importVerifiedModule(module.bytes, {
+      digest: module.digest,
+      bundleId: bundle.bundleId,
+      capabilityId: module.capabilityId,
+    }, `executor module ${module.capabilityId}`);
+    executors.push(Object.freeze({ descriptor: () => descriptor, execute }));
+  }
+  return Object.freeze(executors);
 }

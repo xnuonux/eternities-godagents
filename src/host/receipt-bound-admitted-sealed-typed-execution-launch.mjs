@@ -1,6 +1,19 @@
+import { timingSafeEqual } from 'node:crypto';
+import { join, resolve } from 'node:path';
+
+import { canonicalJson } from '../core/canonical-json.mjs';
+import { verifyGenesisAdmission } from '../genesis/verify.mjs';
+import { createLocalKeelBackend } from '../keel/local-reference-backend.mjs';
 import { launchAdmittedSealedTypedExecutionMission } from './admitted-sealed-typed-execution-launch.mjs';
 import {
+  assertAdmissionPolicyBinding,
+  assertSafeAdmissionTree,
+  readAdmissionBinding,
+} from './admitted-identity-boundary.mjs';
+import { loadAdmittedTypedExecutionPolicy } from './admitted-typed-execution-policy.mjs';
+import {
   assertVerifiedReceiptBoundTypedExecutorBundle,
+  instantiateVerifiedReceiptBoundTypedExecutors,
   verifyReceiptBoundTypedExecutorBundle,
 } from '../runtime/receipt-bound-typed-executor-bundle.mjs';
 
@@ -63,6 +76,48 @@ function snapshotInput(input) {
   });
 }
 
+function sameDigest(left, right) {
+  return DIGEST.test(left ?? '') && DIGEST.test(right ?? '')
+    && timingSafeEqual(Buffer.from(left, 'hex'), Buffer.from(right, 'hex'));
+}
+
+async function authorizeBundleDescriptors(options, bundle) {
+  const root = resolve(options.admissionRoot);
+  const policyPath = resolve(options.policyPath);
+  let binding;
+  let loaded;
+  try {
+    await assertSafeAdmissionTree(root);
+    binding = await readAdmissionBinding(root);
+    loaded = await loadAdmittedTypedExecutionPolicy(policyPath);
+    const policyPin = options.env.GODAGENT_TYPED_EXECUTION_POLICY_SHA256?.toLowerCase();
+    if (!sameDigest(policyPin, loaded.digest)) throw new Error('typed execution policy pin mismatch');
+    assertAdmissionPolicyBinding({ policy: loaded.policy, policyPath, admissionRoot: root, binding });
+    const verifiedAdmission = await verifyGenesisAdmission({
+      receiptPath: join(root, 'transaction', 'genesis-receipt.json'),
+      creationDir: join(root, 'creation'),
+      distributionDir: join(root, 'distribution'),
+      expectedPolicyDigest: binding.policyDigest,
+      expectedCreationBuildId: binding.creationBuildId,
+      instanceId: binding.instanceId,
+      creatorRef: binding.creatorRef,
+      transactionDir: join(root, 'transaction'),
+      journalPath: join(root, 'vessel', 'journal.jsonl'),
+      snapshotPath: join(root, 'vessel', 'snapshot.json'),
+      keelAdapter: createLocalKeelBackend({ root: join(root, 'keels') }),
+    });
+    if (loaded.policy.realmId !== verifiedAdmission.distributionSnapshot.realmContract.realmId) {
+      throw new Error('typed execution policy Realm mismatch');
+    }
+    if (canonicalJson(loaded.policy.runtime.executors) !== canonicalJson(bundle.descriptors)) {
+      throw new Error('typed execution policy does not authorize executor bundle descriptors');
+    }
+  } catch (error) {
+    fail('bundle-interface', error);
+  }
+  return loaded.policy.runtime.executors;
+}
+
 export async function launchReceiptBoundAdmittedSealedTypedExecutionMission(input = {}) {
   const options = snapshotInput(input);
   let bundle;
@@ -80,11 +135,18 @@ export async function launchReceiptBoundAdmittedSealedTypedExecutionMission(inpu
   } catch (error) {
     fail('bundle-interface', error);
   }
+  const expectedDescriptors = await authorizeBundleDescriptors(options, bundle);
+  let executors;
+  try {
+    executors = await instantiateVerifiedReceiptBoundTypedExecutors({ bundle, expectedDescriptors });
+  } catch (error) {
+    fail('bundle-interface', error);
+  }
   return launchAdmittedSealedTypedExecutionMission({
     admissionRoot: options.admissionRoot,
     policyPath: options.policyPath,
     request: options.request,
     env: options.env,
-    executors: bundle.executors,
+    executors,
   });
 }

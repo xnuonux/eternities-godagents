@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
+import { sha256Text, sha256Value } from '../src/core/digest.mjs';
 import { buildDeterministicReceiptBoundTypedExecutorBundleHostFixture } from './helpers/receipt-bound-typed-executor-bundle-fixture.mjs';
 
 const fixtureUrl = new URL('../fixtures/receipt-bound-typed-executor-bundle-v1.json', import.meta.url);
@@ -12,12 +13,13 @@ test('receipt-bound executor fixture rebuilds byte-for-byte through crash recove
   const expected = JSON.parse(await readFile(fixtureUrl, 'utf8'));
   const actual = await buildDeterministicReceiptBoundTypedExecutorBundleHostFixture();
   assert.deepEqual(actual, expected);
-  assert.equal(actual.fixtureDigest, '81d0148d8c6a601abf3ed390bf749266779be031c5da312e7b941d99a12535e8');
+  assert.equal(actual.fixtureDigest, '7a213edd715b77e25336ac17fd6534362e8a1aec5b904ddf9d55615a2ff6e613');
   assert.equal(actual.recovery.crashObserved, true);
   assert.equal(actual.recovery.executedSteps, 1);
   assert.equal(actual.recovery.recoveredSteps, 1);
   assert.equal(actual.recovery.replayExecutedSteps, 0);
   assert.equal(actual.recovery.replayRecoveredSteps, 2);
+  assert.equal(actual.recovery.freshProcessRecovery, true);
   assert.equal(actual.guarantees.callerExecutorsAccepted, false);
   assert.equal(actual.guarantees.exactVerifiedBytesExecuted, true);
 });
@@ -45,4 +47,34 @@ test('receipt-bound executor certification reproduces from its exact source comm
     testRuns: receipt.testRuns,
   });
   assert.deepEqual(rebuilt, receipt);
+
+  const changedManifest = structuredClone(receipt);
+  changedManifest.source.implementationManifest.entries[0].path = 'foreign-source.mjs';
+  changedManifest.source.implementationManifest.digest = sha256Value(
+    changedManifest.source.implementationManifest.entries,
+  );
+  changedManifest.receiptDigest = sha256Value((({ receiptDigest, ...value }) => value)(changedManifest));
+  assert.throws(
+    () => verifyReceiptBoundTypedExecutorBundleReceipt(changedManifest),
+    /manifest|digest|binding/,
+  );
+
+  const changedReview = structuredClone(receipt);
+  changedReview.source.review.value.unresolvedImportantDefects = 1;
+  changedReview.source.review.fileSha256 = sha256Text(
+    `${canonicalJson(changedReview.source.review.value)}\n`,
+  );
+  changedReview.receiptDigest = sha256Value((({ receiptDigest, ...value }) => value)(changedReview));
+  assert.throws(
+    () => verifyReceiptBoundTypedExecutorBundleReceipt(changedReview),
+    /review is invalid/,
+  );
+
+  const changedParent = structuredClone(receipt);
+  changedParent.parent.fileSha256 = '0'.repeat(64);
+  changedParent.receiptDigest = sha256Value((({ receiptDigest, ...value }) => value)(changedParent));
+  assert.throws(
+    () => verifyReceiptBoundTypedExecutorBundleReceipt(changedParent),
+    /parent binding changed/,
+  );
 });

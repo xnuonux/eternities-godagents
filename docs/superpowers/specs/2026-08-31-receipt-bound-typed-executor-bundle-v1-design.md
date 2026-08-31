@@ -28,18 +28,22 @@ runner hook.
 
 ## exact-byte loading
 
-The verifier uses native filesystem operations. It rejects absolute,
-non-canonical, escaping, aliased, symbolic-link, duplicate, missing, or changed
-receipt and module paths. It reads each module once, verifies its exact bytes,
-and rejects static, dynamic, or CommonJS import syntax. Receipt-certified
+The verifier uses native filesystem operations. On a quiescent filesystem it
+rejects absolute, non-canonical, escaping, observed symbolic-link, duplicate,
+missing, or changed receipt and module paths. It reads each module once,
+verifies its exact bytes, strips comments for lexical inspection, and rejects
+static, dynamic, re-export, or CommonJS import syntax. Receipt-certified
 executor source remains trusted code inside the Node process.
 
-After verification, the exact already-read bytes are imported from a data URL.
+Verification is inert. The launcher first binds the complete descriptor set to
+the externally pinned policy and verifies that policy against the admitted
+genesis identity. Only then are the exact already-read bytes imported from a
+data URL whose cache identity includes bundle, capability, and source digest.
 No filesystem module is imported after verification, closing the ordinary
 verify-then-import mutation window for the loaded executor source. Each module
 must export exactly one asynchronous `execute` function. The verifier creates
-the descriptors itself from the receipt and returns privately branded, deeply
-frozen executor handles.
+the descriptors itself and returns privately branded, deeply frozen evidence
+and handles.
 
 ## host composition
 
@@ -81,6 +85,8 @@ must fail before any executor invocation.
 - changed receipt, module, export, descriptor, path, or policy fails before
   affected executor work
 - persisted Muse recovery invokes only Forge and terminal replay invokes none
+- recovery crosses a fresh Node process and does not depend on the interrupted
+  process's ESM module cache
 - all earlier certified host and runner artifacts remain byte-for-byte intact
 - deterministic fixture, independent Terra review, full suite, ledger, and
   release lineage reproduce from exact source commits
@@ -91,6 +97,8 @@ must fail before any executor invocation.
   provider or model-quality certification
 - imported code runs in the Node process and is not an operating-system sandbox
 - receipt-certified executor behavior remains trusted inside that process
+- hostile same-user filesystem replacement races and hard-link identity are
+  not certified
 - hostile mutation of already executing process memory is not certified
 - executor return before durable publication may still repeat after process death
 - external exactly-once effects and general executor idempotency remain unproved

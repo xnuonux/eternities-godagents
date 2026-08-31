@@ -1,7 +1,9 @@
+import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { canonicalJson } from '../../src/core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../../src/core/digest.mjs';
@@ -17,10 +19,7 @@ function executorId(bundleId, capabilityId, moduleSha256) {
 
 function museSource(bundleId) {
   return `// exact certification module ${bundleId}
-let calls = 0;
 export async function execute(input) {
-  calls += 1;
-  if (calls > 1) throw new Error('receipt-bound Muse replayed unexpectedly');
   return {
     schemaVersion: 1,
     capabilityId: 'eternities-muse',
@@ -39,13 +38,14 @@ export async function execute(input) {
 `;
 }
 
-function forgeSource(bundleId, crashForgeOnce) {
+function forgeSource(bundleId, forgeDelayMs) {
   return `// exact certification module ${bundleId}
-let calls = 0;
 export async function execute(input) {
-  calls += 1;
-  ${crashForgeOnce ? "if (calls === 1) throw new Error('receipt-bound certification crash after persisted Muse output');" : ''}
-  if (calls > ${crashForgeOnce ? 2 : 1}) throw new Error('receipt-bound Forge replayed unexpectedly');
+  if (typeof process.send === 'function') process.send({
+    protocolId: 'eternities-receipt-bound-executor-stage-v1',
+    capabilityId: 'eternities-forge',
+  });
+  ${forgeDelayMs > 0 ? `await new Promise((resolve) => setTimeout(resolve, ${forgeDelayMs}));` : ''}
   return {
     schemaVersion: 1,
     capabilityId: 'eternities-forge',
@@ -62,7 +62,7 @@ export async function execute(input) {
 }
 
 export async function receiptBoundExecutorBundleFixture(context, {
-  crashForgeOnce = false,
+  forgeDelayMs = 0,
   bundleId = `certification:${randomUUID()}`,
 } = {}) {
   const root = await mkdtemp(join(tmpdir(), 'godagents-receipt-bound-bundle-'));
@@ -70,7 +70,7 @@ export async function receiptBoundExecutorBundleFixture(context, {
   await mkdir(join(root, 'executors'), { recursive: true });
   await mkdir(join(root, 'receipts'), { recursive: true });
   const sources = {
-    'eternities-forge': forgeSource(bundleId, crashForgeOnce),
+    'eternities-forge': forgeSource(bundleId, forgeDelayMs),
     'eternities-muse': museSource(bundleId),
   };
   const executors = [];
@@ -124,24 +124,18 @@ export async function buildDeterministicReceiptBoundTypedExecutorBundleHostFixtu
     const { admittedTypedExecutionHostFixture } = await import(
       './admitted-sealed-typed-execution-host-fixture.mjs'
     );
-    const { launchReceiptBoundAdmittedSealedTypedExecutionMission } = await import(
-      '../../src/host/receipt-bound-admitted-sealed-typed-execution-launch.mjs'
-    );
     const admitted = await admittedTypedExecutionHostFixture(context, 'receipt-bound-certification');
     const bundle = await receiptBoundExecutorBundleFixture(context, {
-      crashForgeOnce: true,
+      forgeDelayMs: 250,
       bundleId: 'certification:receipt-bound-typed-executor-bundle-v1',
     });
     const input = await bindBundleToAdmittedFixture(admitted, bundle);
-    let crashObserved = false;
-    try {
-      await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
-    } catch (error) {
-      if (error?.cause?.message !== 'receipt-bound certification crash after persisted Muse output') throw error;
-      crashObserved = true;
-    }
-    const recovered = await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
-    const replay = await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
+    const inputPath = join(bundle.repositoryRoot, 'certification-input.json');
+    await writeFile(inputPath, `${canonicalJson(input)}\n`, 'utf8');
+    const interrupted = await runHostChild(inputPath, { terminateAtForge: true });
+    await expireDeadLocks(admitted.admitted.admissionRoot);
+    const recovered = await runHostChild(inputPath);
+    const replay = await runHostChild(inputPath);
     const unsigned = {
       schemaVersion: 1,
       protocolId: 'eternities-receipt-bound-typed-executor-bundle-host-fixture-v1',
@@ -167,7 +161,8 @@ export async function buildDeterministicReceiptBoundTypedExecutorBundleHostFixtu
         executionDigest: recovered.receipt.executionDigest,
       },
       recovery: {
-        crashObserved,
+        crashObserved: interrupted.terminatedAtForge,
+        freshProcessRecovery: true,
         executedSteps: recovered.execution.execution.executedSteps,
         recoveredSteps: recovered.execution.execution.recoveredSteps,
         replayExecutedSteps: replay.execution.execution.executedSteps,
@@ -191,6 +186,63 @@ export async function buildDeterministicReceiptBoundTypedExecutorBundleHostFixtu
   } finally {
     for (const action of cleanup.reverse()) await action();
   }
+}
+
+async function expireDeadLocks(root) {
+  async function visit(directory) {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await visit(path);
+      } else if (entry.isFile() && entry.name.endsWith('.lock')) {
+        const owner = JSON.parse(await readFile(path, 'utf8'));
+        owner.createdAt = '2000-01-01T00:00:00.000Z';
+        await writeFile(path, `${canonicalJson(owner)}\n`, 'utf8');
+      }
+    }
+  }
+  await visit(root);
+}
+
+function runHostChild(inputPath, { terminateAtForge = false } = {}) {
+  const worker = new URL('./receipt-bound-typed-execution-child.mjs', import.meta.url);
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(process.execPath, [fileURLToPath(worker), inputPath], {
+      shell: false,
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+    });
+    let stdout = '';
+    let stderr = '';
+    let terminatedAtForge = false;
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.on('message', (message) => {
+      if (terminateAtForge
+          && message?.protocolId === 'eternities-receipt-bound-executor-stage-v1'
+          && message?.capabilityId === 'eternities-forge') {
+        terminatedAtForge = child.kill();
+      }
+    });
+    child.once('error', rejectPromise);
+    child.once('close', (code) => {
+      if (terminateAtForge && terminatedAtForge) {
+        resolvePromise({ terminatedAtForge: true });
+        return;
+      }
+      if (code !== 0) {
+        rejectPromise(new Error(`receipt-bound child failed with code ${code}: ${stderr}`));
+        return;
+      }
+      try {
+        resolvePromise(JSON.parse(stdout));
+      } catch (error) {
+        rejectPromise(new Error('receipt-bound child returned invalid completion', { cause: error }));
+      }
+    });
+  });
 }
 
 export async function bindBundleToAdmittedFixture(fixture, bundle) {
