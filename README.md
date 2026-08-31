@@ -344,6 +344,12 @@ Its deterministic full-loop proof routes a consequential visual mission to `eter
 
 `npm run certify:sealed-local-identity-vessel` reproduces that full-loop fixture and issues the twenty-fourth append-only receipt.
 
+### Routing-evidence activation classifier v1
+
+The [classifier design](docs/superpowers/specs/2026-08-31-routing-evidence-activation-classifier-v1-design.md) converts the exact verified routing-card identities, families, and risk classes into the closed task, consequence, and review-availability triple consumed by adaptive activation. It never interprets mission prose, selects an activation mode, or carries authority. Mixed task classes collapse to `general`, the highest selected risk wins, and review availability is constructor-bound into a digest-bearing descriptor.
+
+The deterministic fixture proves direct classification across creative, debugging, research, verification, implementation, continuity, and mixed routes. It also runs the real pinned routing and activation executables, where the visual mission selects `eternities-muse` and the independently reviewed activation evidence selects deferred review. `npm run certify:routing-evidence-classifier` issues the twenty-fifth append-only receipt. This classifier remains additive until a separately certified host policy explicitly pins and adopts its descriptor.
+
 ### Admitted local launch
 
 `launch:local` is the safe bridge from that inert admission to one networked mission. The host policy must name the exact admission-owned distribution, journal, snapshot, and instance. On first launch, an OS-account-local residency registry binds the identity to that canonical admission root so an ordinary copied tree cannot fork its history. Its location is derived from the operating-system account profile rather than launch environment variables. The launcher rejects changed bindings or runtime paths, verifies the transactional genesis receipt, journal, creation, distribution, and personal keel before runtime construction, then verifies them again through the persistent-vessel wake before the cycle. Its local reference Realm persists counter state and idempotency receipts beneath the admission-owned vessel directory instead of losing them at process exit.

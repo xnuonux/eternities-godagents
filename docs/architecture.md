@@ -219,6 +219,14 @@ The admitted launcher composes, but does not replace, the local admission and ne
 
 The launch boundary holds one live-owner admission lock across request projection, recovery, inference, and action, preventing a concurrent process from mistaking active work for a crash. Its local reference Realm stores state and idempotency outcomes canonically beneath the admission-owned vessel directory so process restart does not erase governed effect state. The boundary executes one mission per process and returns only bounded identity and action references. Provider policy remains runtime authority rather than agent identity. The shell does not certify provider quality, background operation, hostile same-user OS isolation, cross-machine residency, general Realm durability, evolution, Inspiration, Lunari, or Soul activation. A separate append-only certification is required before describing this implementation as certified.
 
+## Routing-evidence activation classification boundary
+
+The routing executable verifier retains a minimal immutable projection of the exact receipt-bound routing cards only after it has verified the executable closure, routing artifacts, parent receipts, and portable capability release. The projection contains only capability identity, family, and risk class and must match all twenty-two release-owned top-level Godskills.
+
+The routing-evidence classifier maps those verified families into the activation protocol's closed task classes and maps the highest selected routing risk into its consequence class. A mixed-family composition becomes `general`; unknown selected identities fail closed; mission prose is validated but never interpreted. Review availability is supplied once at construction and is bound with the routing root, card digest, and taxonomy digest in an authority-empty descriptor. The classifier cannot select `native`, `guardrail`, `method`, or `review`; that decision remains exclusively inside the verified Godskills activation executable.
+
+This boundary supplies a deterministic policy-pinnable replacement for an opaque host classifier, but it remains additive. Host-policy adoption, a concrete model transport, admitted-launch migration, and any provider, Realm, continuity, evolution, Lunari, Inspiration, or Soul authority require later receipts.
+
 ## Phase 2 transactional genesis boundary
 
 Phase 2 converts a verified pre-genesis build into an admitted genesis result only after one deterministic transaction binds every immutable identity and continuity surface. The caller independently pins the creation-policy digest and creation-build ID. The coordinator derives the distribution-build and both genome digests from verified artifacts and checks their cross-artifact consistency. Genesis derives stable `genesisId` and `keelId` values from those verified values plus the instance and creator references; identity reuse with different bound data is rejected.
