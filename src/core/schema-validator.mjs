@@ -83,6 +83,7 @@ const schemaFiles = {
   'mission-revision-dispatch': 'mission-revision-dispatch.schema.json',
   'mission-revision-transport-completion': 'mission-revision-transport-completion.schema.json',
   'openai-compatible-phase-transport-policy': 'openai-compatible-phase-transport-policy.schema.json',
+  'openai-compatible-phase-resolution-policy': 'openai-compatible-phase-resolution-policy.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

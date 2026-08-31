@@ -28,6 +28,13 @@ import {
   completeOpenAICompatiblePhaseResponse,
   OpenAICompatiblePhaseProtocolError,
 } from './openai-compatible-phase-protocol.mjs';
+import {
+  buildOpenAICompatiblePhaseResponseWitness,
+  loadOpenAICompatiblePhaseResolutionPolicy,
+  OpenAICompatiblePhaseResolutionError,
+  verifyOpenAICompatiblePhaseResolutionDecision,
+  verifyOpenAICompatiblePhaseResponseWitness,
+} from './openai-compatible-phase-resolution.mjs';
 
 const MESSAGES = Object.freeze({
   'credential-in-input': 'OpenAI-compatible phase transport input contains its credential',
@@ -38,21 +45,31 @@ const MESSAGES = Object.freeze({
   'response-over-budget': 'OpenAI-compatible phase provider response exceeded its byte ceiling',
   'response-invalid': 'OpenAI-compatible phase provider response is invalid',
   'credential-reflected': 'OpenAI-compatible phase provider response reflected its credential',
+  'operator-abandoned': 'OpenAI-compatible phase operation was abandoned by its operator',
+  'resolution-not-pending': 'OpenAI-compatible phase operation is not pending resolution',
 });
 
 const DIGEST = /^[a-f0-9]{64}$/;
+const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+const NONCE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const PREPARED_PROTOCOL = 'eternities-openai-compatible-phase-prepared-v1';
 const ATTEMPT_PROTOCOL = 'eternities-openai-compatible-phase-attempt-v1';
 const FAILURE_PROTOCOL = 'eternities-openai-compatible-phase-failure-v1';
+const RESOLUTION_PROTOCOL = 'eternities-openai-compatible-phase-resolution-record-v1';
+const RESOLUTION_DECISION_PROTOCOL = 'eternities-openai-compatible-phase-resolution-decision-v1';
+const PHASES = new Set(['native', 'review', 'revision']);
+const RESOLUTION_DISPOSITIONS = new Set(['adopt-response', 'abandon']);
 const FAILURE_REASONS = new Set([
   'provider-rejected',
   'response-over-budget',
   'response-invalid',
   'credential-reflected',
+  'operator-abandoned',
 ]);
 const OPERATION_FILES = new Set([
   'prepared.json',
   'attempt.json',
+  'resolution.json',
   'completion.json',
   'failure.json',
   'execution.lock',
@@ -242,6 +259,103 @@ function verifyFailure(value, { phase, dispatch, request, attempt }) {
   return value;
 }
 
+function resolutionRecord({
+  phase,
+  dispatch,
+  request,
+  attempt,
+  loadedPolicy,
+  verifiedDecision,
+  responseWitness,
+  acceptedAt,
+}) {
+  return withRecordDigest({
+    schemaVersion: 1,
+    protocolId: RESOLUTION_PROTOCOL,
+    status: 'accepted',
+    phase,
+    dispatchDigest: dispatch.dispatchDigest,
+    requestDigest: request.requestDigest,
+    attemptId: attempt.attemptId,
+    resolutionPolicyDigest: loadedPolicy.digest,
+    decisionDigest: verifiedDecision.decision.decisionDigest,
+    disposition: verifiedDecision.decision.disposition,
+    signedDecision: clone(verifiedDecision),
+    responseWitness: responseWitness === null ? null : clone(responseWitness),
+    acceptedAt,
+  });
+}
+
+function verifyResolutionRecord(value, {
+  phase,
+  dispatch,
+  request,
+  attempt,
+  loadedPolicy,
+} = {}) {
+  exactKeys(value, [
+    'schemaVersion', 'protocolId', 'status', 'phase', 'dispatchDigest',
+    'requestDigest', 'attemptId', 'resolutionPolicyDigest', 'decisionDigest',
+    'disposition', 'signedDecision', 'responseWitness', 'acceptedAt',
+    'recordDigest',
+  ], 'phase resolution record');
+  const { recordDigest, ...unsigned } = value;
+  requireDigest(recordDigest, 'phase resolution record');
+  exactKeys(value.signedDecision, ['decision', 'signature'], 'phase resolution signed decision');
+  exactKeys(value.signedDecision.decision, [
+    'schemaVersion', 'protocolId', 'policyDigest', 'keyId', 'phase',
+    'dispatchDigest', 'requestDigest', 'attemptId', 'disposition',
+    'responseDigest', 'issuedAt', 'expiresAt', 'nonce', 'decisionDigest',
+  ], 'phase resolution decision');
+  const decision = value.signedDecision.decision;
+  const { decisionDigest, ...decisionUnsigned } = decision;
+  const acceptedAt = Date.parse(value.acceptedAt);
+  const issuedAt = Date.parse(decision.issuedAt);
+  const expiresAt = Date.parse(decision.expiresAt);
+  const witness = value.responseWitness === null
+    ? null
+    : verifyOpenAICompatiblePhaseResponseWitness(value.responseWitness);
+  if (value.schemaVersion !== 1 || value.protocolId !== RESOLUTION_PROTOCOL
+      || value.status !== 'accepted' || value.phase !== phase
+      || value.dispatchDigest !== dispatch.dispatchDigest
+      || value.requestDigest !== request.requestDigest
+      || value.attemptId !== attempt.attemptId
+      || !DIGEST.test(value.resolutionPolicyDigest)
+      || value.decisionDigest !== decisionDigest
+      || value.disposition !== decision.disposition
+      || decision.schemaVersion !== 1 || decision.protocolId !== RESOLUTION_DECISION_PROTOCOL
+      || !IDENTIFIER.test(decision.keyId) || !PHASES.has(decision.phase)
+      || !RESOLUTION_DISPOSITIONS.has(decision.disposition) || !NONCE.test(decision.nonce)
+      || decision.policyDigest !== value.resolutionPolicyDigest
+      || decision.phase !== phase || decision.dispatchDigest !== dispatch.dispatchDigest
+      || decision.requestDigest !== request.requestDigest || decision.attemptId !== attempt.attemptId
+      || decisionDigest !== sha256Value(decisionUnsigned)
+      || !Number.isFinite(acceptedAt) || new Date(acceptedAt).toISOString() !== value.acceptedAt
+      || !Number.isFinite(issuedAt) || new Date(issuedAt).toISOString() !== decision.issuedAt
+      || !Number.isFinite(expiresAt) || new Date(expiresAt).toISOString() !== decision.expiresAt
+      || expiresAt <= issuedAt || acceptedAt < issuedAt || acceptedAt > expiresAt
+      || (decision.disposition === 'adopt-response'
+        ? !witness || decision.responseDigest !== witness.witnessDigest
+        : witness !== null || decision.responseDigest !== null)
+      || typeof value.signedDecision.signature !== 'string'
+      || Buffer.from(value.signedDecision.signature, 'base64').toString('base64')
+        !== value.signedDecision.signature
+      || Buffer.from(value.signedDecision.signature, 'base64').length !== 64
+      || sha256Value(unsigned) !== recordDigest) {
+    throw new IntegrityError('phase resolution record binding is invalid');
+  }
+  if (loadedPolicy) {
+    verifyOpenAICompatiblePhaseResolutionDecision({
+      signedDecision: value.signedDecision,
+      loadedPolicy,
+      operation: { phase, dispatchDigest: dispatch.dispatchDigest, requestDigest: request.requestDigest, attemptId: attempt.attemptId },
+      responseDigest: witness?.witnessDigest ?? null,
+      now: acceptedAt,
+    });
+  }
+  return value;
+}
+
 function verifyCompletion(phase, completion, dispatch, descriptor) {
   if (phase === 'native') return verifyIdentityBoundNativeCompletion(completion, { dispatch, transportDescriptor: descriptor });
   if (phase === 'review') return verifyGodskillsReviewTransportCompletion(completion, { dispatch, transportDescriptor: descriptor });
@@ -256,6 +370,7 @@ function operationPaths(root, phase, dispatchDigest) {
     operationRoot,
     prepared: join(operationRoot, 'prepared.json'),
     attempt: join(operationRoot, 'attempt.json'),
+    resolution: join(operationRoot, 'resolution.json'),
     completion: join(operationRoot, 'completion.json'),
     failure: join(operationRoot, 'failure.json'),
     lock: join(operationRoot, 'execution.lock'),
@@ -287,7 +402,17 @@ async function verifyEntries(paths) {
   return { writing };
 }
 
-async function inspectOperation({ paths, phase, dispatch, descriptor, request, expectedPrepared, ignoreLock = false }) {
+async function inspectOperation({
+  paths,
+  phase,
+  dispatch,
+  descriptor,
+  request,
+  expectedPrepared,
+  ignoreLock = false,
+  returnFailure = false,
+  loadedResolutionPolicy,
+}) {
   if (!await operationExists(paths)) return { status: 'absent' };
   const { writing } = await verifyEntries(paths);
   const lock = await metadata(paths.lock);
@@ -296,22 +421,41 @@ async function inspectOperation({ paths, phase, dispatch, descriptor, request, e
 
   const prepared = await readCanonical(paths.prepared, 'phase prepared record');
   const attempt = await readCanonical(paths.attempt, 'phase attempt record');
+  const resolution = await readCanonical(paths.resolution, 'phase resolution record');
   const completion = await readCanonical(paths.completion, 'phase completion record');
   const failure = await readCanonical(paths.failure, 'phase failure record');
   if (completion && failure) throw new IntegrityError('phase operation has contradictory terminal records');
-  if ((attempt || completion || failure) && !prepared) throw new IntegrityError('phase operation lacks its prepared record');
-  if ((completion || failure) && !attempt) throw new IntegrityError('phase operation lacks its attempt record');
+  if ((attempt || resolution || completion || failure) && !prepared) throw new IntegrityError('phase operation lacks its prepared record');
+  if ((resolution || completion || failure) && !attempt) throw new IntegrityError('phase operation lacks its attempt record');
   if (prepared) verifyPrepared(prepared, expectedPrepared);
   if (attempt) verifyAttempt(attempt, { phase, dispatch, request });
+  if (resolution) verifyResolutionRecord(resolution, {
+    phase,
+    dispatch,
+    request,
+    attempt,
+    ...(loadedResolutionPolicy ? { loadedPolicy: loadedResolutionPolicy } : {}),
+  });
   if (completion) {
+    if (resolution && resolution.disposition !== 'adopt-response') {
+      throw new IntegrityError('phase completion contradicts its operator resolution');
+    }
     verifyCompletion(phase, completion, dispatch, descriptor);
-    return { status: 'completed', completion };
+    return { status: 'completed', completion, prepared, attempt, resolution };
   }
   if (failure) {
+    if ((resolution && (resolution.disposition !== 'abandon'
+        || failure.reasonCode !== 'operator-abandoned'))
+        || (!resolution && failure.reasonCode === 'operator-abandoned')) {
+      throw new IntegrityError('phase failure contradicts its operator resolution');
+    }
     verifyFailure(failure, { phase, dispatch, request, attempt });
+    if (returnFailure) return { status: 'failed', failure, prepared, attempt, resolution };
     fail(failure.reasonCode);
   }
-  if (attempt || writing.length > 0 || (lock && !ignoreLock)) return { status: 'pending' };
+  if (attempt || resolution || writing.length > 0 || (lock && !ignoreLock)) {
+    return { status: 'pending', prepared, attempt, resolution };
+  }
   return { status: 'absent', prepared };
 }
 
@@ -384,7 +528,7 @@ function phaseTransport({
     fail(reasonCode);
   }
 
-  return Object.freeze({
+  const adapter = Object.freeze({
     descriptor() {
       return clone(descriptor);
     },
@@ -551,6 +695,261 @@ function phaseTransport({
       }
     },
   });
+
+  function operationProjection(state) {
+    return {
+      phase,
+      dispatchDigest: state.attempt.dispatchDigest,
+      requestDigest: state.attempt.requestDigest,
+      attemptId: state.attempt.attemptId,
+    };
+  }
+
+  function resolutionResult(state) {
+    const common = {
+      decisionDigest: state.resolution.decisionDigest,
+      resolutionRecordDigest: state.resolution.recordDigest,
+    };
+    if (state.status === 'completed') {
+      return deepFreeze({ status: 'completed', ...common, completion: clone(state.completion) });
+    }
+    return deepFreeze({ status: 'abandoned', ...common, reasonCode: state.failure.reasonCode });
+  }
+
+  async function acquireOperationLock(paths) {
+    try {
+      return await acquireFileLock({ ...lockOptions, lockPath: paths.lock });
+    } catch (error) {
+      if (error instanceof IntegrityError
+          && error.message === 'resource is locked by a live or recent owner') {
+        fail('operation-pending', error);
+      }
+      fail('operation-integrity', error);
+    }
+  }
+
+  async function inspectForResolution(dispatch, loadedPolicy) {
+    const { request, expectedPrepared, paths } = prepare(dispatch);
+    try {
+      const state = await inspectOperation({
+        paths,
+        phase,
+        dispatch,
+        descriptor,
+        request,
+        expectedPrepared,
+        returnFailure: true,
+        loadedResolutionPolicy: loadedPolicy,
+      });
+      if (state.status === 'pending' && state.attempt) {
+        return deepFreeze({
+          status: 'pending',
+          operation: operationProjection(state),
+          resolutionAccepted: state.resolution !== null,
+        });
+      }
+      if ((state.status === 'completed' || state.status === 'failed') && state.resolution) {
+        return resolutionResult(state);
+      }
+      if (state.status === 'failed') {
+        return deepFreeze({ status: 'failed', reasonCode: state.failure.reasonCode });
+      }
+      return Object.freeze({ status: state.status });
+    } catch (error) {
+      if (error instanceof OpenAICompatiblePhaseTransportError
+          || error instanceof OpenAICompatiblePhaseProtocolError
+          || error instanceof OpenAICompatiblePhaseResolutionError) throw error;
+      fail('operation-integrity', error);
+    }
+  }
+
+  async function resolveOperation({ dispatch, signedDecision, response, loadedPolicy }) {
+    const { request, expectedPrepared, paths } = prepare(dispatch);
+    try {
+      if (!await operationExists(paths)) fail('resolution-not-pending');
+    } catch (error) {
+      if (error instanceof OpenAICompatiblePhaseTransportError) throw error;
+      fail('operation-integrity', error);
+    }
+    const lock = await acquireOperationLock(paths);
+    try {
+      let state = await inspectOperation({
+        paths,
+        phase,
+        dispatch,
+        descriptor,
+        request,
+        expectedPrepared,
+        ignoreLock: true,
+        returnFailure: true,
+        loadedResolutionPolicy: loadedPolicy,
+      });
+      if (!state.attempt) fail('resolution-not-pending');
+      const operation = operationProjection(state);
+      const responseWitness = response === undefined
+        ? null
+        : buildOpenAICompatiblePhaseResponseWitness(response);
+      if (responseWitness && responseWitness.bodyBytes > loadedPolicy.policy.maximumAdoptedResponseBytes) {
+        throw new OpenAICompatiblePhaseResolutionError('decision-invalid');
+      }
+
+      if (state.status === 'completed' || state.status === 'failed') {
+        if (!state.resolution) fail('resolution-not-pending');
+        verifyOpenAICompatiblePhaseResolutionDecision({
+          signedDecision,
+          loadedPolicy,
+          operation,
+          responseDigest: responseWitness?.witnessDigest ?? null,
+          now: Date.parse(state.resolution.acceptedAt),
+        });
+        if (canonicalJson(state.resolution.signedDecision) !== canonicalJson(signedDecision)
+            || canonicalJson(state.resolution.responseWitness) !== canonicalJson(responseWitness)) {
+          throw new IntegrityError('phase resolution collision');
+        }
+        return resolutionResult(state);
+      }
+
+      let acceptedAt;
+      let verifiedDecision;
+      let record;
+      if (state.resolution) {
+        acceptedAt = state.resolution.acceptedAt;
+        verifyResolutionRecord(state.resolution, {
+          phase,
+          dispatch,
+          request,
+          attempt: state.attempt,
+          loadedPolicy,
+        });
+        verifiedDecision = verifyOpenAICompatiblePhaseResolutionDecision({
+          signedDecision,
+          loadedPolicy,
+          operation,
+          responseDigest: responseWitness?.witnessDigest ?? null,
+          now: Date.parse(acceptedAt),
+        });
+        if (canonicalJson(state.resolution.signedDecision) !== canonicalJson(verifiedDecision)
+            || canonicalJson(state.resolution.responseWitness) !== canonicalJson(responseWitness)) {
+          throw new IntegrityError('phase resolution collision');
+        }
+        record = state.resolution;
+      } else {
+        acceptedAt = isoNow(clock, 'phase resolution');
+        verifiedDecision = verifyOpenAICompatiblePhaseResolutionDecision({
+          signedDecision,
+          loadedPolicy,
+          operation,
+          responseDigest: responseWitness?.witnessDigest ?? null,
+          now: Date.parse(acceptedAt),
+        });
+        record = resolutionRecord({
+          phase,
+          dispatch,
+          request,
+          attempt: state.attempt,
+          loadedPolicy,
+          verifiedDecision,
+          responseWitness,
+          acceptedAt,
+        });
+      }
+
+      let completion = null;
+      if (record.disposition === 'adopt-response') {
+        if (!responseWitness) throw new OpenAICompatiblePhaseResolutionError('decision-invalid');
+        const credential = credentialResolver.resolve();
+        completion = completeOpenAICompatiblePhaseResponse({
+          phase,
+          dispatch,
+          descriptor,
+          policy,
+          response,
+          credential,
+          startedAt: state.attempt.startedAt,
+          completedAt: acceptedAt,
+        });
+      }
+
+      if (!state.resolution) {
+        if (!await publishRecord(paths.resolution, record)) {
+          const stored = await readCanonical(paths.resolution, 'phase resolution record');
+          verifyResolutionRecord(stored, {
+            phase,
+            dispatch,
+            request,
+            attempt: state.attempt,
+            loadedPolicy,
+          });
+          if (canonicalJson(stored) !== canonicalJson(record)) {
+            throw new IntegrityError('phase resolution changed under one operation');
+          }
+          record = stored;
+        }
+      }
+      await checkpoint('after-openai-phase-resolution-persisted', phase, dispatch.dispatchDigest);
+
+      if (record.disposition === 'abandon') {
+        const failure = failureRecord({
+          phase,
+          dispatch,
+          request,
+          attempt: state.attempt,
+          reasonCode: 'operator-abandoned',
+          httpStatus: null,
+          responseDigest: null,
+          failedAt: acceptedAt,
+        });
+        if (!await publishRecord(paths.failure, failure)) {
+          const stored = await readCanonical(paths.failure, 'phase failure record');
+          verifyFailure(stored, { phase, dispatch, request, attempt: state.attempt });
+          if (canonicalJson(stored) !== canonicalJson(failure)) {
+            throw new IntegrityError('phase failure changed under one resolution');
+          }
+        }
+      } else if (!await publishRecord(paths.completion, completion)) {
+        const stored = await readCanonical(paths.completion, 'phase completion record');
+        verifyCompletion(phase, stored, dispatch, descriptor);
+        if (canonicalJson(stored) !== canonicalJson(completion)) {
+          throw new IntegrityError('phase completion changed under one resolution');
+        }
+      }
+      await checkpoint('after-openai-phase-resolution-terminal-persisted', phase, dispatch.dispatchDigest);
+      state = await inspectOperation({
+        paths,
+        phase,
+        dispatch,
+        descriptor,
+        request,
+        expectedPrepared,
+        ignoreLock: true,
+        returnFailure: true,
+        loadedResolutionPolicy: loadedPolicy,
+      });
+      return resolutionResult(state);
+    } catch (error) {
+      if (error instanceof OpenAICompatiblePhaseTransportError
+          || error instanceof OpenAICompatiblePhaseProtocolError
+          || error instanceof OpenAICompatiblePhaseResolutionError) throw error;
+      fail('operation-integrity', error);
+    } finally {
+      try {
+        await lock.release();
+      } catch (error) {
+        if (!(error instanceof OpenAICompatiblePhaseTransportError)) {
+          throw new OpenAICompatiblePhaseTransportError('operation-integrity', error);
+        }
+        throw error;
+      }
+    }
+  }
+
+  return Object.freeze({
+    adapter,
+    operator: Object.freeze({
+      inspect: inspectForResolution,
+      resolve: resolveOperation,
+    }),
+  });
 }
 
 export async function createOpenAICompatiblePhaseTransportSuite({
@@ -577,6 +976,20 @@ export async function createOpenAICompatiblePhaseTransportSuite({
   const root = await realpath(resolve(runtimeRoot));
   const descriptors = descriptorSet(loaded.policy, loaded.digest);
   const network = createHttpsTransport({ fetchImpl });
+  const phases = {
+    native: phaseTransport({
+      phase: 'native', descriptor: descriptors.native, policy: loaded.policy,
+      policyDigest: loaded.digest, root, credentialResolver, network, clock, checkpoint, lockOptions,
+    }),
+    review: phaseTransport({
+      phase: 'review', descriptor: descriptors.review, policy: loaded.policy,
+      policyDigest: loaded.digest, root, credentialResolver, network, clock, checkpoint, lockOptions,
+    }),
+    revision: phaseTransport({
+      phase: 'revision', descriptor: descriptors.revision, policy: loaded.policy,
+      policyDigest: loaded.digest, root, credentialResolver, network, clock, checkpoint, lockOptions,
+    }),
+  };
 
   function assertCredentialAbsent(value) {
     const credential = credentialResolver.resolve();
@@ -590,21 +1003,43 @@ export async function createOpenAICompatiblePhaseTransportSuite({
     return clone(value);
   }
 
+  async function createOperatorResolutionController({ policyPath: resolutionPolicyPath, env: resolutionEnv } = {}) {
+    const loadedResolutionPolicy = await loadOpenAICompatiblePhaseResolutionPolicy({
+      path: resolutionPolicyPath,
+      env: resolutionEnv,
+      transportPolicyDigest: loaded.digest,
+      maximumProviderResponseBytes: loaded.policy.provider.maximumResponseBytes,
+    });
+    function port(phase) {
+      if (!Object.hasOwn(phases, phase)) {
+        throw new TypeError('OpenAI-compatible phase resolution phase is invalid');
+      }
+      return phases[phase].operator;
+    }
+    return deepFreeze({
+      policyDigest: loadedResolutionPolicy.digest,
+      authorityKeyId: loadedResolutionPolicy.policy.authority.keyId,
+      async inspect({ phase, dispatch } = {}) {
+        return port(phase).inspect(dispatch, loadedResolutionPolicy);
+      },
+      async resolve({ phase, dispatch, signedDecision, response } = {}) {
+        return port(phase).resolve({
+          dispatch,
+          signedDecision,
+          ...(response === undefined ? {} : { response }),
+          loadedPolicy: loadedResolutionPolicy,
+        });
+      },
+    });
+  }
+
   return deepFreeze({
     policyDigest: loaded.digest,
     descriptors,
-    native: phaseTransport({
-      phase: 'native', descriptor: descriptors.native, policy: loaded.policy,
-      policyDigest: loaded.digest, root, credentialResolver, network, clock, checkpoint, lockOptions,
-    }),
-    review: phaseTransport({
-      phase: 'review', descriptor: descriptors.review, policy: loaded.policy,
-      policyDigest: loaded.digest, root, credentialResolver, network, clock, checkpoint, lockOptions,
-    }),
-    revision: phaseTransport({
-      phase: 'revision', descriptor: descriptors.revision, policy: loaded.policy,
-      policyDigest: loaded.digest, root, credentialResolver, network, clock, checkpoint, lockOptions,
-    }),
+    native: phases.native.adapter,
+    review: phases.review.adapter,
+    revision: phases.revision.adapter,
     assertCredentialAbsent,
+    createOperatorResolutionController,
   });
 }

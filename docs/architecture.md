@@ -181,6 +181,14 @@ The local outbox stores immutable prepared, attempt, completion, or sanitized fa
 
 The deterministic proof uses realistic fake HTTPS responses to run one admitted `native -> review -> revision -> final review` mission, persists four exact completions, scans every durable file for a canary credential, and performs an exact zero-call replay. It does not qualify a live endpoint or model, enable tools or streaming, implement automatic retry, alter Realm or continuity authority, or activate evolution, Lunari, Inspiration, or Soul.
 
+## Signed phase-resolution boundary
+
+The optional operator controller closes a concrete phase operation only after the original attempt is durably pending. A separately canonical policy binds the exact transport-policy digest, one Ed25519 public key, a maximum signed-decision lifetime, and a response-byte ceiling no broader than the provider policy. Its external SHA-256 pin is checked before operation inspection. The private key and provider credential never enter the resolution policy or controller surface.
+
+A signed decision binds the phase, dispatch, request, original attempt, disposition, timestamps, nonce, and either one normalized provider-response witness or `null`. `adopt-response` validates the exact resupplied bytes through the existing strict parser and phase completion builder without network access. `abandon` publishes the existing sanitized failure shape with `operator-abandoned`. Version 1 has no retry disposition.
+
+`resolution.json` is immutable and precedes the terminal completion or failure. If publication is interrupted, exact reconstruction may finish the already accepted decision after its signature window expires. A changed decision or response collides permanently. Ordinary adapters can observe only pending or terminal state and cannot invoke the operator port. This proves signed local resolution mechanics, not the truth of external provider evidence or remote exactly-once execution.
+
 ## Phase 1 creation boundary
 
 Creation is a compiler boundary, not a birth event. A strict candidate selects one lineage, archetype, attribute set, personality, voice, organ loadout, Godskills bundle, cortex class, and embodiment. The loader resolves canonical references, rejects collisions and kind mismatches, and recursively blocks authority, credentials, provider routing, retry controls, Inspiration state, and Soul state from module payloads.
