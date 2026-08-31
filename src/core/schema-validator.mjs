@@ -60,6 +60,10 @@ const schemaFiles = {
   'godskills-review-transport-descriptor': 'godskills-review-transport-descriptor.schema.json',
   'godskills-review-dispatch': 'godskills-review-dispatch.schema.json',
   'godskills-review-transport-completion': 'godskills-review-transport-completion.schema.json',
+  'mission-revision-package': 'mission-revision-package.schema.json',
+  'mission-revision-transport-descriptor': 'mission-revision-transport-descriptor.schema.json',
+  'mission-revision-dispatch': 'mission-revision-dispatch.schema.json',
+  'mission-revision-transport-completion': 'mission-revision-transport-completion.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

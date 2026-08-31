@@ -230,6 +230,59 @@ test('review reconciliation receives the exact immutable committed context', asy
   assert.equal(Object.isFrozen(reconciledContext.admission), true);
 });
 
+test('revision reconciliation receives the exact immutable admission and committed context', async (t) => {
+  const supplied = input({ missionId: 'mission-kernel-revision-reconcile-context', review: true });
+  const nativeExecutor = scriptedExecutor({
+    phase: 'native',
+    artifact: { schemaVersion: 1, artifactType: 'native', content: 'native revision subject' },
+  });
+  const reviewExecutor = scriptedExecutor({
+    phase: 'review',
+    artifact(request) {
+      return {
+        schemaVersion: 1,
+        artifactType: 'review',
+        subjectDigest: request.inputs.find(({ role }) => role === 'subject').artifactDigest,
+        recommendation: request.round === 1 ? 'revise' : 'accept',
+        findings: request.round === 1
+          ? [{ id: 'exact-context', severity: 'important', required: true, message: 'bind the exact context' }]
+          : [],
+        summary: request.round === 1 ? 'revision required' : 'revision accepted',
+      };
+    },
+  });
+  const revisionExecutor = scriptedExecutor({
+    phase: 'revision',
+    artifact(request) {
+      return {
+        schemaVersion: 1,
+        artifactType: 'revision',
+        nativeArtifactDigest: request.inputs.find(({ role }) => role === 'native').artifactDigest,
+        reviewArtifactDigest: request.inputs.find(({ role }) => role === 'review').artifactDigest,
+        addressedFindingIds: ['exact-context'],
+        content: 'revision from exact immutable context',
+      };
+    },
+  });
+  let reconciledContext;
+  const originalReconcile = revisionExecutor.reconcile.bind(revisionExecutor);
+  revisionExecutor.reconcile = async (request, context) => {
+    reconciledContext = context;
+    return originalReconcile(request);
+  };
+  const { kernel } = await kernelFixture(t, { nativeExecutor, reviewExecutor, revisionExecutor });
+  await kernel.run(supplied);
+
+  assert.equal(reconciledContext.admission.mission.missionId, supplied.mission.missionId);
+  assert.equal(reconciledContext.native.content, 'native revision subject');
+  assert.equal(reconciledContext.review.recommendation, 'revise');
+  assert.equal(reconciledContext.review.findings[0].id, 'exact-context');
+  assert.equal(Object.isFrozen(reconciledContext), true);
+  assert.equal(Object.isFrozen(reconciledContext.admission), true);
+  assert.equal(Object.isFrozen(reconciledContext.native), true);
+  assert.equal(Object.isFrozen(reconciledContext.review), true);
+});
+
 test('one revision receives exact findings and requires a terminal second review', async (t) => {
   const nativeExecutor = scriptedExecutor({
     phase: 'native',

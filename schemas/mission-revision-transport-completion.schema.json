@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputTokens", "cachedInputTokens", "reasoningTokens", "visibleOutputTokens", "completionTokens"],
+      "properties": {
+        "inputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "cachedInputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "reasoningTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "visibleOutputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "completionTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "status", "dispatchDigest", "requestDigest", "executorDescriptorDigest", "materializerDigest", "transportDescriptorDigest", "packageDigest", "artifact", "usage", "startedAt", "completedAt", "authority", "completionDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-revision-transport-completion-v1" },
+    "status": { "const": "completed" },
+    "dispatchDigest": { "$ref": "#/$defs/digest" },
+    "requestDigest": { "$ref": "#/$defs/digest" },
+    "executorDescriptorDigest": { "$ref": "#/$defs/digest" },
+    "materializerDigest": { "$ref": "#/$defs/digest" },
+    "transportDescriptorDigest": { "$ref": "#/$defs/digest" },
+    "packageDigest": { "$ref": "#/$defs/digest" },
+    "artifact": { "type": "object" },
+    "usage": { "$ref": "#/$defs/usage" },
+    "startedAt": { "type": "string", "minLength": 24, "maxLength": 24 },
+    "completedAt": { "type": "string", "minLength": 24, "maxLength": 24 },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authorityExpanded", "realmEffects", "continuityAdmission", "personalKeelWrite", "identityOwnership", "evolution", "soul"],
+      "properties": {
+        "authorityExpanded": { "const": false },
+        "realmEffects": { "const": false },
+        "continuityAdmission": { "const": false },
+        "personalKeelWrite": { "const": false },
+        "identityOwnership": { "const": false },
+        "evolution": { "const": false },
+        "soul": { "const": false }
+      }
+    },
+    "completionDigest": { "$ref": "#/$defs/digest" }
+  }
+}

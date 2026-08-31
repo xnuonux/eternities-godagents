@@ -220,6 +220,7 @@ export function verifyGodskillsReviewDispatch(value, {
   verifyDeferredGodskillsReviewPackage(value.package);
   requireDigest(request?.requestDigest, 'review request');
   requireInteger(request?.maxCompletionTokens, 'review request completion ceiling', { minimum: 1, maximum: 1_000_000 });
+  const requestInputs = new Map(request.inputs.map(({ role, artifactDigest }) => [role, artifactDigest]));
   if (request.phase !== 'review'
       || request.executorDescriptorDigest !== executorDescriptor.descriptorDigest
       || value.schemaVersion !== 1
@@ -231,9 +232,19 @@ export function verifyGodskillsReviewDispatch(value, {
       || value.packageDigest !== value.package.packageDigest
       || value.maxCompletionTokens !== request.maxCompletionTokens
       || value.package.requestDigest !== request.requestDigest
+      || value.package.mission.missionId !== request.missionId
+      || value.package.admissionDigest !== request.admissionDigest
       || value.package.executorDescriptorDigest !== executorDescriptor.descriptorDigest
+      || value.package.round !== request.round
       || value.package.maxCompletionTokens !== request.maxCompletionTokens) {
     fail('dispatch-binding-invalid', 'Godskills review dispatch identity or package binding is invalid');
+  }
+  if (value.package.godskills.bindingDigest !== requestInputs.get('godskills-binding')
+      || value.package.subject.artifactDigest !== requestInputs.get('subject')
+      || (request.round === 2
+        && (value.package.subject.artifactDigest !== requestInputs.get('revision')
+          || value.package.priorReview.artifactDigest !== requestInputs.get('prior-review')))) {
+    fail('dispatch-context-invalid', 'Godskills review dispatch artifact context is detached from its request');
   }
   verifyAuthority(value.authority, 'Godskills review dispatch authority');
   const { dispatchDigest, ...unsigned } = value;

@@ -419,6 +419,28 @@ test('dispatch and completion verifiers reject post-build mutation', async () =>
   );
 });
 
+test('review dispatch rejects coherently rehashed mission and admission detachment', async () => {
+  for (const mutate of [
+    (packageValue) => { packageValue.mission.missionId = 'detached-review-mission'; },
+    (packageValue) => { packageValue.admissionDigest = 'f'.repeat(64); },
+  ]) {
+    const state = await setup();
+    assert.deepEqual(await state.executor.reconcile(state.request, state.context), { status: 'absent' });
+    const dispatch = structuredClone(state.calls.find(({ type }) => type === 'reconcile').dispatch);
+    mutate(dispatch.package);
+    const { packageDigest: _oldPackageDigest, ...packageUnsigned } = dispatch.package;
+    dispatch.package.packageDigest = sha256Value(packageUnsigned);
+    dispatch.packageDigest = dispatch.package.packageDigest;
+    const { dispatchDigest: _oldDispatchDigest, ...dispatchUnsigned } = dispatch;
+    dispatch.dispatchDigest = sha256Value(dispatchUnsigned);
+    assert.throws(() => verifyGodskillsReviewDispatch(dispatch, {
+      request: state.request,
+      executorDescriptor: state.descriptor,
+      transportDescriptor: state.transportDescriptor,
+    }), /mission|admission|binding|dispatch/i);
+  }
+});
+
 test('kernel reconstruction recovers a completed deferred review without redispatch', async (t) => {
   const state = await setup();
   const journalRoot = await mkdtemp(join(tmpdir(), 'godagent-deferred-review-recovery-'));

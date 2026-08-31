@@ -216,6 +216,7 @@ function contextFor(evidence, phase, round) {
   }
   if (phase === 'revision') {
     return deepFreeze({
+      admission: clone(evidence.admission),
       native: clone(evidence.native.artifact),
       review: clone(evidence.reviews[0].artifact),
     });
