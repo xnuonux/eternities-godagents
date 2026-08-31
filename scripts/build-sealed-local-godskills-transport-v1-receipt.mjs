@@ -60,6 +60,11 @@ const implementationFiles = Object.freeze([
   'package.json',
   planPath,
   'schemas/godskills-routing-executable-pin.schema.json',
+  'scripts/build-deferred-review-executor-v1-receipt.mjs',
+  'scripts/build-deferred-review-materializer-v1-receipt.mjs',
+  'scripts/build-godskills-specialist-preference-integration-receipt.mjs',
+  'scripts/build-mission-native-executor-v1-receipt.mjs',
+  'scripts/build-mission-revision-executor-v1-receipt.mjs',
   'scripts/build-sealed-local-godskills-transport-v1-receipt.mjs',
   'scripts/lib/certification-support.mjs',
   'scripts/lib/pinned-godskills-review-release.mjs',
@@ -86,12 +91,22 @@ const implementationFiles = Object.freeze([
 
 const testFiles = Object.freeze([
   'tests/certification-ledger.test.mjs',
+  'tests/deferred-godskills-review-executor-certification.test.mjs',
+  'tests/deferred-godskills-review-materializer-certification.test.mjs',
   'tests/godskills-release-verifier.test.mjs',
   'tests/godskills-routing-executable-verifier.test.mjs',
+  'tests/godskills-specialist-preference-integration.test.mjs',
+  'tests/helpers/identity-bound-mission-vessel-certification-fixture.mjs',
+  'tests/helpers/recoverable-godskills-admission-certification-fixture.mjs',
   'tests/helpers/sealed-local-godskills-transport-certification-fixture.mjs',
+  'tests/identity-bound-mission-vessel-certification.test.mjs',
   'tests/local-recoverable-godskills-adapter.test.mjs',
   'tests/local-recoverable-godskills-process-transport.test.mjs',
+  'tests/mission-native-executor-certification.test.mjs',
+  'tests/mission-revision-executor-certification.test.mjs',
   'tests/recoverable-godskills-adapter.test.mjs',
+  'tests/recoverable-godskills-admission-certification.test.mjs',
+  'tests/recoverable-godskills-admission-integration.test.mjs',
   'tests/recoverable-godskills-outbox.test.mjs',
   'tests/release-lineage.test.mjs',
   'tests/schemas.test.mjs',
@@ -121,6 +136,7 @@ const requirementEvidence = Object.freeze({
   'SLT-008': ['routing mode is fixed by the verified release and cannot be supplied per mission'],
   'SLT-009': ['credentials provider routing Realm continuity keel identity evolution Inspiration and Soul authority remain absent'],
   'SLT-010': ['deterministic fixture full suite append-only ledger and release lineage remain release gates'],
+  'SLT-011': ['historical fixtures remain bound to their original Godskills source while accepting verified descendant releases'],
 });
 
 const retainedRegressions = Object.freeze([
@@ -134,6 +150,7 @@ const retainedRegressions = Object.freeze([
   'binds route mode trust roots ceilings and timeout into transport identity',
   'preserves the existing immutable recoverable Godskills binding contract',
   'performs no process work on exact terminal binding replay',
+  'reproduces historical Godskills fixtures after append-only upstream releases without changing historical evidence',
   'carries no provider credential Realm continuity identity evolution Inspiration or Soul authority',
 ]);
 

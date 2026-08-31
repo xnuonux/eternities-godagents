@@ -32,7 +32,10 @@ import {
   resolveSourceCommit,
   runTests,
 } from './lib/certification-support.mjs';
-import { pinnedGodskillsReviewRelease } from './lib/pinned-godskills-review-release.mjs';
+import {
+  pinnedGodskillsReviewRelease,
+  pinnedGodskillsReviewSourceCommit,
+} from './lib/pinned-godskills-review-release.mjs';
 
 const execFileAsync = promisify(execFile);
 const certificationId = 'deferred-godskills-review-executor-v1';
@@ -219,13 +222,10 @@ function phaseExecutor({ phase, artifact }) {
 }
 
 async function gitCommit(repositoryRoot) {
-  const { stdout } = await execFileAsync('git', ['-C', repositoryRoot, 'rev-parse', 'HEAD'], {
-    encoding: 'utf8',
-    windowsHide: true,
-  });
-  const commit = stdout.trim();
-  if (!COMMIT.test(commit)) throw new Error('Godskills source commit is invalid');
-  return commit;
+  await execFileAsync('git', [
+    '-C', repositoryRoot, 'merge-base', '--is-ancestor', pinnedGodskillsReviewSourceCommit, 'HEAD',
+  ], { windowsHide: true });
+  return pinnedGodskillsReviewSourceCommit;
 }
 
 function countForbiddenKeys(value) {

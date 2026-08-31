@@ -13,7 +13,10 @@ import {
   buildRecoverableGodskillsCompletion,
   buildRecoverableGodskillsTransportDescriptor,
 } from '../../src/skills/recoverable-godskills-contracts.mjs';
-import { pinnedGodskillsReviewRelease } from '../../scripts/lib/pinned-godskills-review-release.mjs';
+import {
+  pinnedGodskillsReviewRelease,
+  pinnedGodskillsReviewSourceCommit,
+} from '../../scripts/lib/pinned-godskills-review-release.mjs';
 import { setupAdmittedIdentity } from './admitted-identity-fixture.mjs';
 import {
   activationResult,
@@ -157,13 +160,10 @@ async function expectProcessDeath(operation, pattern) {
 }
 
 async function repositoryCommit(root) {
-  const { stdout } = await execFileAsync('git', ['-C', root, 'rev-parse', 'HEAD'], {
-    encoding: 'utf8',
-    windowsHide: true,
-  });
-  const commit = stdout.trim();
-  if (!/^[a-f0-9]{40}$/.test(commit)) throw new Error('Godskills fixture commit is invalid');
-  return commit;
+  await execFileAsync('git', [
+    '-C', root, 'merge-base', '--is-ancestor', pinnedGodskillsReviewSourceCommit, 'HEAD',
+  ], { windowsHide: true });
+  return pinnedGodskillsReviewSourceCommit;
 }
 
 export async function buildDeterministicRecoverableGodskillsAdmissionFixture({

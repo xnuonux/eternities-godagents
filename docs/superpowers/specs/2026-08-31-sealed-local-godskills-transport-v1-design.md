@@ -39,6 +39,12 @@ The historical `godskills-release-pin` remains unchanged. The new sidecar is
 required only by the new constructor. Existing callers retain their exact
 behavior and evidence.
 
+Historical certification fixtures continue to name the exact Godskills commit
+that originally supplied their pinned release. Reproduction requires that
+commit to remain an ancestor of the current pushed Godskills main and still
+verifies every pinned artifact byte, but it no longer mistakes a legitimate
+append-only Godskills release for historical evidence drift.
+
 ## sidecar trust root
 
 The routing sidecar pins only:
@@ -146,6 +152,7 @@ receipts rather than silently changing a historical runtime.
 | `SLT-010` | the actual default and activation Godskills entrypoints execute through the new transport |
 | `SLT-011` | the composed adapter routes, activates, binds, rehydrates, and terminally replays through existing validators |
 | `SLT-012` | existing release pins, legacy transports, receipts, schemas, adapters, and tests remain byte-compatible |
+| `SLT-013` | historical fixtures reproduce against their original certified Godskills source after append-only upstream releases |
 
 ## explicit non-goals
 

@@ -518,8 +518,15 @@ export async function rebuildGodskillsSpecialistPreferenceIntegrationReceipt({
     execFileAsync('git', ['-C', skillsRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8', windowsHide: true }),
     execFileAsync('git', ['-C', skillsRoot, 'rev-parse', 'origin/main'], { encoding: 'utf8', windowsHide: true }),
   ]);
-  if (skillsHead.stdout.trim() !== godskillsCommit || skillsOrigin.stdout.trim() !== godskillsCommit) {
-    throw new Error('Godskills preference source is not the exact pushed main checkout');
+  if (skillsHead.stdout.trim() !== skillsOrigin.stdout.trim()) {
+    throw new Error('Godskills preference checkout is not current pushed main');
+  }
+  try {
+    await execFileAsync('git', [
+      '-C', skillsRoot, 'merge-base', '--is-ancestor', godskillsCommit, skillsHead.stdout.trim(),
+    ], { windowsHide: true });
+  } catch {
+    throw new Error('Godskills preference source is not an ancestor of current pushed main');
   }
   const [specification, plan, fixtureText, policyText, preferenceText] = await Promise.all([
     gitText(root, sourceCommit, specificationPath),

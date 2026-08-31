@@ -1,3 +1,5 @@
+export const pinnedGodskillsReviewSourceCommit = '3a63c07322808b6958593bd765c0fb32023a2da5';
+
 export function pinnedGodskillsReviewRelease(repositoryRoot, overrides = {}) {
   return {
     adapterProtocol: 'eternities-godskills-adapter-v1',
