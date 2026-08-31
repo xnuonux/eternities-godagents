@@ -497,7 +497,7 @@ function verifyFinding(value, index) {
   return value;
 }
 
-function verifyArtifact(value, request) {
+export function verifyMissionPhaseArtifact(value, request) {
   object(value, 'mission phase artifact');
   for (const key of Object.keys(value)) {
     if (forbiddenArtifactKeys.has(key)) fail('artifact-authority-invalid', `mission phase artifact field ${key} is forbidden`);
@@ -586,7 +586,7 @@ export function buildMissionPhaseResult({
 } = {}) {
   object(request, 'mission phase request');
   verifyMissionExecutorDescriptor(descriptor, request.phase);
-  verifyArtifact(artifact, request);
+  verifyMissionPhaseArtifact(artifact, request);
   verifyUsage(usage, request.maxCompletionTokens);
   requireIso(startedAt, 'mission phase start');
   requireIso(completedAt, 'mission phase completion');
@@ -642,7 +642,7 @@ export function verifyMissionPhaseResult(value, { request, descriptor } = {}) {
       || receipt.authorityExpanded !== false) {
     fail('phase-result-invalid', 'mission phase result identity is invalid');
   }
-  verifyArtifact(value.artifact, request);
+  verifyMissionPhaseArtifact(value.artifact, request);
   verifyUsage(receipt.usage, request.maxCompletionTokens);
   requireIso(receipt.startedAt, 'mission phase start');
   requireIso(receipt.completedAt, 'mission phase completion');

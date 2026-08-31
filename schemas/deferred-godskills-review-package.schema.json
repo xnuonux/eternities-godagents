@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "artifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactDigest", "artifactBytes", "artifact"],
+      "properties": {
+        "artifactDigest": { "$ref": "#/$defs/digest" },
+        "artifactBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 },
+        "artifact": { "type": "object" }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "protocolId",
+    "materializer",
+    "mission",
+    "admissionDigest",
+    "requestDigest",
+    "executorDescriptorDigest",
+    "round",
+    "maxCompletionTokens",
+    "godskills",
+    "capabilities",
+    "subject",
+    "priorReview",
+    "authority",
+    "packageDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-godskills-deferred-review-package-v1" },
+    "materializer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocolId", "releaseDigest", "maximumMaterializedBytes", "materializerDigest"],
+      "properties": {
+        "protocolId": { "const": "eternities-godskills-deferred-review-materializer-v1" },
+        "releaseDigest": { "$ref": "#/$defs/digest" },
+        "maximumMaterializedBytes": { "type": "integer", "minimum": 128, "maximum": 16777216 },
+        "materializerDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "mission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["missionId", "objective", "successEvidence", "stopConditions"],
+      "properties": {
+        "missionId": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "objective": { "type": "string", "minLength": 1, "maxLength": 32768 },
+        "successEvidence": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 2048 }
+        },
+        "stopConditions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 2048 }
+        }
+      }
+    },
+    "admissionDigest": { "$ref": "#/$defs/digest" },
+    "requestDigest": { "$ref": "#/$defs/digest" },
+    "executorDescriptorDigest": { "$ref": "#/$defs/digest" },
+    "round": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "maxCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+    "godskills": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["releaseDigest", "cycleReceiptDigest", "bindingDigest", "activationTrustRootDigest"],
+      "properties": {
+        "releaseDigest": { "$ref": "#/$defs/digest" },
+        "cycleReceiptDigest": { "$ref": "#/$defs/digest" },
+        "bindingDigest": { "$ref": "#/$defs/digest" },
+        "activationTrustRootDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "tier",
+          "ownerGodskillId",
+          "entrypointSha256",
+          "contractSha256",
+          "entrypoint",
+          "contractText"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "tier": { "enum": ["godskill", "operational-skill"] },
+          "ownerGodskillId": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "entrypointSha256": { "$ref": "#/$defs/digest" },
+          "contractSha256": { "$ref": "#/$defs/digest" },
+          "entrypoint": { "type": "string", "minLength": 1, "maxLength": 1048576 },
+          "contractText": { "type": "string", "minLength": 1, "maxLength": 1048576 }
+        }
+      }
+    },
+    "subject": { "$ref": "#/$defs/artifactReference" },
+    "priorReview": {},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorityExpanded",
+        "realmEffects",
+        "continuityAdmission",
+        "personalKeelWrite",
+        "identityOwnership",
+        "evolution",
+        "soul"
+      ],
+      "properties": {
+        "authorityExpanded": { "const": false },
+        "realmEffects": { "const": false },
+        "continuityAdmission": { "const": false },
+        "personalKeelWrite": { "const": false },
+        "identityOwnership": { "const": false },
+        "evolution": { "const": false },
+        "soul": { "const": false }
+      }
+    },
+    "packageDigest": { "$ref": "#/$defs/digest" }
+  }
+}

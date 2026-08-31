@@ -56,6 +56,7 @@ const schemaFiles = {
   'mission-review-completion': 'mission-review-completion.schema.json',
   'mission-review-journal-event': 'mission-review-journal-event.schema.json',
   'mission-review-journal-state': 'mission-review-journal-state.schema.json',
+  'deferred-godskills-review-package': 'deferred-godskills-review-package.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

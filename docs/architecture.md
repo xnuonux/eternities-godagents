@@ -93,6 +93,16 @@ Each prepared request binds its ordered prior artifacts and reserved completion 
 
 The kernel consumes a separately pinned body-free Godskills activation result but does not itself run a real evaluator package. Its deterministic certification uses trusted injected executors to prove ordering, crash recovery, deduplication, token accounting, authority non-expansion, and zero Realm effects. Provider credentials, model quality, hostile-executor isolation, default vessel integration, Codex task transport, continuity admission, personal-keel writes, Realm action, Lunari, Inspiration, and Soul remain outside this boundary.
 
+## Deferred Godskills review materialization boundary
+
+The review materializer is the first post-native disclosure boundary. It verifies the complete pinned Godskills release at construction but does not read deferred capability entrypoints or contracts. For each materialization it first verifies the mission admission, exact review request and descriptor, round-specific artifact context, release and activation roots, and every deferred capability descriptor. It opens no selected body until that full set passes, preventing a later invalid descriptor from leaking an earlier valid body.
+
+Round one binds one canonical native artifact. Round two binds one canonical revision, its exact prior review, and the native digest carried through both. The output package records the mission, request, executor, completion ceiling, release, cycle, activation, capability, subject, and prior-review digests. Selected entrypoint and contract text remain exact source bytes represented as UTF-8. Package verification reparses the contract, checks both body hashes, checks the authority-empty projection, and recomputes the complete package digest and byte ceiling. The parsed contract is not duplicated into the package, avoiding repeated review context without sacrificing exact-byte verification.
+
+The release cache is outside the trust boundary. Only verifier-issued entries held in an internal cache may be reused, and the capability map exposed to a caller is a defensive copy. Preloading a caller-owned cache or mutating a returned map therefore cannot replace the verified release state used by a later materialization.
+
+This is not yet the review transport. It selects no model or provider, resolves no credential, performs no model call, owns no durable journal transition, and grants no Realm, continuity, identity, evolution, Soul, or personal-keel authority. The mission review kernel remains the ordering authority, while a later executor adapter must consume the verified package and return one exact phase result.
+
 ## Phase 1 creation boundary
 
 Creation is a compiler boundary, not a birth event. A strict candidate selects one lineage, archetype, attribute set, personality, voice, organ loadout, Godskills bundle, cortex class, and embodiment. The loader resolves canonical references, rejects collisions and kind mismatches, and recursively blocks authority, credentials, provider routing, retry controls, Inspiration state, and Soul state from module payloads.

@@ -492,3 +492,33 @@ test('keeps legacy and adaptive verification isolated in a shared artifact cache
   assert.equal(adaptive.activation.trustRootDigest, activationPin().executableReceipt.receiptDigest);
   assert.equal(artifactCache.size, 2);
 });
+
+test('ignores caller-preloaded forged release cache entries', async () => {
+  const pin = releasePin({ activation: activationPin() });
+  const trusted = await verifyGodskillsRelease(pin);
+  const forged = {
+    releaseDigest: trusted.releaseDigest,
+    activation: { protocolId: 'forged', trustRootDigest: 'f'.repeat(64) },
+    capabilitiesById: new Map(),
+    readSelectedArtifact: async () => Buffer.from('forged'),
+  };
+  const artifactCache = new Map([[trusted.releaseDigest, forged]]);
+  const verified = await verifyGodskillsRelease(pin, { artifactCache });
+
+  assert.notEqual(verified, forged);
+  assert.equal(verified.activation.protocolId, 'eternities-godskills-activation-v1');
+  assert.equal(verified.capabilitiesById.size, 44);
+  assert.equal(artifactCache.get(trusted.releaseDigest), verified);
+});
+
+test('caller mutation of a returned capability map cannot poison later cache hits', async () => {
+  const artifactCache = new Map();
+  const pin = releasePin({ activation: activationPin() });
+  const first = await verifyGodskillsRelease(pin, { artifactCache });
+  first.capabilitiesById.delete('eternities-aegis');
+  assert.equal(first.capabilitiesById.has('eternities-aegis'), true);
+
+  const second = await verifyGodskillsRelease(pin, { artifactCache });
+  assert.equal(second.capabilitiesById.has('eternities-aegis'), true);
+  assert.equal(second.capabilitiesById.size, 44);
+});

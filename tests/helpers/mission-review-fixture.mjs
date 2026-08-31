@@ -15,60 +15,67 @@ function authorityProjection() {
   };
 }
 
-export function buildReviewGodskillsBinding(missionId = 'mission-review-kernel') {
-  const selected = {
-    id: 'eternities-aegis',
-    entrypointSha256: fixtureDigest('1'),
-    contractSha256: fixtureDigest('2'),
-  };
-  const decisionUnsigned = {
-    schemaVersion: 1,
-    selectedId: selected.id,
-    taskClass: 'verification',
-    consequenceClass: 'consequential',
-    mode: 'review',
-    reasonCodes: ['fixture-review'],
-    preInferenceDisclosure: 'none',
-    deferredReview: true,
-    methodEvidence: {
-      eligible: false,
-      matchedEvaluations: 0,
-      wins: 0,
-      losses: 0,
-      ties: 0,
-      winRate: 0,
-      criticalRegressions: 0,
-      overheadRatio: null,
-      failedGates: ['review-only'],
-    },
-    policyDigest: fixtureDigest('3'),
-    evidenceDigest: fixtureDigest('4'),
-    authorityProjection: authorityProjection(),
-    authorityExpanded: false,
-  };
-  const decision = { ...decisionUnsigned, decisionDigest: sha256Value(decisionUnsigned) };
+export function buildReviewGodskillsBinding(missionId = 'mission-review-kernel', {
+  id = 'eternities-aegis',
+  entrypointSha256 = fixtureDigest('1'),
+  contractSha256 = fixtureDigest('2'),
+  releaseDigest = fixtureDigest('8'),
+  activationTrustRootDigest = fixtureDigest('6'),
+  selections = null,
+} = {}) {
+  const selected = (selections ?? [{ id, entrypointSha256, contractSha256 }])
+    .map((row) => ({ ...row }))
+    .sort((left, right) => left.id.localeCompare(right.id));
+  const decisions = selected.map((selection) => {
+    const decisionUnsigned = {
+      schemaVersion: 1,
+      selectedId: selection.id,
+      taskClass: 'verification',
+      consequenceClass: 'consequential',
+      mode: 'review',
+      reasonCodes: ['fixture-review'],
+      preInferenceDisclosure: 'none',
+      deferredReview: true,
+      methodEvidence: {
+        eligible: false,
+        matchedEvaluations: 0,
+        wins: 0,
+        losses: 0,
+        ties: 0,
+        winRate: 0,
+        criticalRegressions: 0,
+        overheadRatio: null,
+        failedGates: ['review-only'],
+      },
+      policyDigest: fixtureDigest('3'),
+      evidenceDigest: fixtureDigest('4'),
+      authorityProjection: authorityProjection(),
+      authorityExpanded: false,
+    };
+    return { ...decisionUnsigned, decisionDigest: sha256Value(decisionUnsigned) };
+  });
   const activationUnsigned = {
     schemaVersion: 1,
     protocolId: 'eternities-godskills-activation-v1',
     requestId: `activation-${missionId}`,
     requestDigest: fixtureDigest('5'),
-    trustRootDigest: fixtureDigest('6'),
-    policyDigest: decision.policyDigest,
-    evidenceDigest: decision.evidenceDigest,
+    trustRootDigest: activationTrustRootDigest,
+    policyDigest: decisions[0].policyDigest,
+    evidenceDigest: decisions[0].evidenceDigest,
     classification: {
       taskClass: 'verification',
       consequenceClass: 'consequential',
       reviewAvailable: true,
     },
-    decisions: [decision],
+    decisions,
   };
   const activation = { ...activationUnsigned, resultDigest: sha256Value(activationUnsigned) };
   const cortexPackage = {
     protocolId: 'eternities-godskills-adapter-v1',
     sourceEnvelopeDigest: fixtureDigest('7'),
-    releaseDigest: fixtureDigest('8'),
+    releaseDigest,
     stackDigest: fixtureDigest('9'),
-    selectedCapabilities: [selected.id],
+    selectedCapabilities: selected.map(({ id: selectedId }) => selectedId),
     methods: [],
     evidenceRequirements: [],
     proposalRequirements: [],
@@ -78,12 +85,12 @@ export function buildReviewGodskillsBinding(missionId = 'mission-review-kernel')
     authorityProjection: authorityProjection(),
     disclosureBytes: 0,
     selectedPackages: [],
-    deferredReviews: [{
-      id: selected.id,
-      entrypointSha256: selected.entrypointSha256,
-      contractSha256: selected.contractSha256,
+    deferredReviews: selected.map((selection) => ({
+      id: selection.id,
+      entrypointSha256: selection.entrypointSha256,
+      contractSha256: selection.contractSha256,
       status: 'scheduled-not-executed',
-    }],
+    })),
     activation,
   };
   const receipt = {
@@ -94,7 +101,7 @@ export function buildReviewGodskillsBinding(missionId = 'mission-review-kernel')
     releaseDigest: cortexPackage.releaseDigest,
     routerReceiptDigest: fixtureDigest('a'),
     selectionStatus: 'selected',
-    selected: [selected],
+    selected,
     authorityCeilingDigest: fixtureDigest('b'),
     stackDigest: cortexPackage.stackDigest,
     packageDigest: sha256Text(canonicalJson(cortexPackage)),
@@ -112,8 +119,8 @@ export function buildReviewGodskillsTrustPin(binding) {
   };
 }
 
-export function buildReviewAdmission(missionId = 'mission-review-kernel') {
-  const godskillsBinding = buildReviewGodskillsBinding(missionId);
+export function buildReviewAdmission(missionId = 'mission-review-kernel', options = {}) {
+  const godskillsBinding = options.godskillsBinding ?? buildReviewGodskillsBinding(missionId, options);
   return buildMissionAdmission({
     mission: {
       missionId,

@@ -55,6 +55,7 @@ const preferenceRoutingArtifacts = Object.freeze([
 const preferenceOutputs = Object.freeze([
   'artifacts/specialist-preference-routing-v1/fixture.json',
 ]);
+const trustedReleaseCaches = new WeakMap();
 
 function frozen(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -62,6 +63,16 @@ function frozen(value) {
     Object.freeze(value);
   }
   return value;
+}
+
+function trustedCacheFor(artifactCache) {
+  if (!(artifactCache instanceof Map)) throw new TypeError('Godskills artifact cache must be a Map');
+  let trusted = trustedReleaseCaches.get(artifactCache);
+  if (!trusted) {
+    trusted = new Map();
+    trustedReleaseCaches.set(artifactCache, trusted);
+  }
+  return trusted;
 }
 
 function assertRelativePath(path) {
@@ -481,6 +492,7 @@ function verifyPortableReceipt(receipt, manifestBytes, manifest) {
 }
 
 export async function verifyGodskillsRelease(releasePin, { artifactCache = new Map(), io = {} } = {}) {
+  const trustedCache = trustedCacheFor(artifactCache);
   assertSchema('godskills-release-pin', releasePin);
   if (releasePin.adapterProtocol !== 'eternities-godskills-adapter-v1') throw new Error('unsupported adapter protocol');
   const reader = await artifactReader(releasePin.repositoryRoot, {
@@ -536,20 +548,28 @@ export async function verifyGodskillsRelease(releasePin, { artifactCache = new M
     ...(activation ? { activationReceipt: activation.executableReceipt.sha256 } : {}),
   });
   const releaseDigest = sha256(canonicalJson({ pin, roots: rootDigests }));
-  if (artifactCache.has(releaseDigest)) return artifactCache.get(releaseDigest);
+  if (trustedCache.has(releaseDigest)) {
+    const cached = trustedCache.get(releaseDigest);
+    artifactCache.set(releaseDigest, cached);
+    return cached;
+  }
+  const capabilityEntries = [...capabilitiesById.entries()];
   const verified = frozen({
     releaseDigest,
     root: reader.root,
     rootDigests,
     pin,
     manifest: frozen(structuredClone(manifest)),
-    capabilitiesById,
+    get capabilitiesById() {
+      return new Map(capabilityEntries);
+    },
     routerArtifacts: frozen(structuredClone(router.artifacts)),
     compilerArtifacts: frozen(structuredClone(compiler.artifacts)),
     ...(preference ? { preference } : {}),
     ...(activation ? { activation } : {}),
     readSelectedArtifact: async (reference, label) => reader.read(reference, label),
   });
+  trustedCache.set(releaseDigest, verified);
   artifactCache.set(releaseDigest, verified);
   return verified;
 }
