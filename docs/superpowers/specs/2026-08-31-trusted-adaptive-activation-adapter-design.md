@@ -38,6 +38,8 @@ the design was derived from these exact states:
 
 - Godagents `b2679a75c310d0363b6a4cd031f69dafbd064bba`, synchronized with
   `origin/main` when preparation began.
+- Godagents design commit `46db9415054eebc98400505d3cc754b4e9b24037`,
+  synchronized with `origin/main` after approval.
 - Godskills design baseline `175f194640c807d7f9b78cfbdab3b1fba832bb21`,
   then pre-commit refresh `bc86dac31e6d8d428c5ff418ad40c4758d32e6c2`.
   both commits are docs-only and the refreshed head is two commits ahead of
@@ -47,6 +49,10 @@ the design was derived from these exact states:
   implementation. this design does not modify that file or claim its scope.
 - Godagents had `332` passing tests and Godskills had `632` passing tests at
   the preceding gap-audit verification.
+- after approval, the certified Godskills capability-layer canary was
+  independently rebuilt, passed `643` of `643` tests, and was integrated and
+  pushed at `2bf9fb929337d9a9c2f66adcb66536a63bf003c5`. it remains additive and
+  changes no activation default.
 
 the dependency-freeze gate must refresh both repositories before
 implementation. no digest or source commit in this section is a permanent
@@ -187,7 +193,8 @@ pinned compiler from executing mutable helper code outside its trust root.
 
 ### 2. Godskills local activation entrypoint
 
-`scripts/activation.mjs` accepts only explicit request and output file paths,
+`scripts/activation.mjs` accepts only explicit request, output, and executable
+receipt file paths,
 uses the same contained temporary-file conventions as `scripts/intent.mjs`,
 loads the receipt-bound policy and evidence, invokes
 `compileActivationDecision()` once per selected capability, and atomically
@@ -270,10 +277,13 @@ present, it returns a frozen `activation` projection containing only verified
 identities, digests, canonical policy and evidence values, the contained
 entrypoint path, and `trustRootDigest`.
 
-`trustRootDigest` is the SHA-256 of canonical JSON over the protocol id,
-executable and parent receipt identities, and the complete ordered artifact
-set. repository location is not part of the logical identity, so an exact copy
-of the certified release may move without changing the trust root.
+the executable receipt computes `receiptDigest` over its complete canonical
+unsigned body, which already contains the protocol id, parent receipt identity,
+and complete ordered artifact set. that `receiptDigest` is the
+`trustRootDigest`; no second digest includes the executable receipt's own
+identity. this avoids a circular digest definition while remaining independent
+of repository location, so an exact copy of the certified release may move
+without changing the trust root.
 
 ### 5. provider-neutral Godagents activation adapter
 
@@ -319,11 +329,18 @@ the adapter validates:
 Godagents validates the result contract but does not reimplement the policy
 that chose the mode.
 
+`createGodskillsAdapter()` accepts `activationClassifier` and
+`activationTransport`, verifies the release once, and constructs this adapter
+internally from the verified activation projection. the direct constructor
+remains available for focused tests and alternate programmatic hosts. callers
+never supply an unverified activation projection to the mission binder.
+
 ### 6. mission binder integration
 
-`createGodskillsAdapter()` receives an optional verified activation adapter,
-not the current policy-bearing resolver. after the host and genome envelopes
-are known and the router returns selected capabilities:
+`createGodskillsAdapter()` receives optional host classification and activation
+transport dependencies, not the current policy-bearing resolver. after the
+host and genome envelopes are known and the router returns selected
+capabilities:
 
 1. Godagents resolves selected capabilities against the certified portable
    manifest.
@@ -363,12 +380,18 @@ disclosure package and compares stack and package digests. a changed trust root
 requires an explicit operational migration before recovery. unsupported or
 incompatible activation protocol changes fail closed.
 
+when routing returns no qualified selection, the adapter records the configured
+trust-root digest in the source envelope but emits no activation binding and
+does not invoke classification or transport. recovery proves the same empty
+selection and trust root without manufacturing an empty compiler result.
+
 ### 8. host enablement
 
-programmatic local and admitted host constructors accept an explicit
-`activationClassifier` dependency. adaptive activation is enabled only when
-both the release pin contains the verified activation root and the host supplies
-that classifier. one without the other is a configuration error.
+programmatic local and admitted host constructors accept explicit
+`activationClassifier` and `activationTransport` dependencies. adaptive
+activation is enabled only when the release pin contains the verified
+activation root and the host supplies both dependencies. a partial combination
+is a configuration error.
 
 the command-line host does not invent task classification heuristics in this
 milestone. existing policies without an activation root preserve historical
@@ -391,12 +414,12 @@ mission and host envelope
 
 ## failure behavior
 
-- missing activation root plus no classifier: preserve the historical adapter
-  path.
-- activation root without classifier: fail configuration before mission
-  routing.
-- classifier without activation root: fail configuration before mission
-  routing.
+- missing activation root plus no classifier or activation transport: preserve
+  the historical adapter path.
+- activation root without both classifier and activation transport: fail
+  configuration before mission routing.
+- classifier or activation transport without an activation root: fail
+  configuration before mission routing.
 - unsupported protocol: fail before reading selected capability artifacts.
 - stale, missing, extra, escaped, or mismatched executable artifact: fail before
   spawning the entrypoint.
