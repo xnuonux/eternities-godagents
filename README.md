@@ -52,18 +52,20 @@ npm run certify:local-admission
 
 The [mission-binding design](docs/superpowers/specs/2026-08-30-godskills-v3-mission-binding-design.md) defines the provider-neutral boundary that verifies one exact Godskills System v3 release, routes after mission and host authority are known, and binds at most three selected first-party capability packages before cortex inference. The runtime stores a body-free cycle receipt, rehydrates the same package without rerouting after interruption, and treats release upgrades as operational dependency migrations only when the capability envelope does not expand. The deterministic [integration receipt](receipts/godskills-v3-integration.json) certifies `GSV3-001` through `GSV3-014` and records its explicit proof limits.
 
-### adaptive amplification experiment
+### receipt-bound adaptive activation
 
-The adapter also accepts an optional, host-supplied activation classifier that separates capability selection from context disclosure. The adapter accepts only the exact pinned v1 policy and reviewed-evidence digests, then compiles every activation mode locally. The classifier may identify task class, consequence, and real review availability, but it cannot supply or override a mode. This additive path leaves the certified adapter-v1 default unchanged.
+The adapter also supports an optional host-supplied activation classifier and transport. Adaptive activation is admitted only when the verified release contains the complete v1 executable root and the host supplies both functions; every partial configuration fails before routing or inference. Godagents carries no local activation policy, evidence profile, threshold, or mode compiler. It verifies the exact Godskills executable receipt, parent receipt, entrypoint, compiler, dependency closure, schemas, policy, evidence, and contract, then sends the external entrypoint only the selected identities, the minimized host classification, explicit method requests, and the unchanged authority projection.
+
+The classifier sees only mission identity and text plus selected capability identities. It may classify task class, consequence, and real review availability, but it cannot select capabilities, choose a mode, disclose skill bodies, or alter authority. The receipt-bound Godskills compiler alone returns one validated activation decision per selected capability.
 
 - `native` preserves the route identity but reads and discloses no selected artifact.
 - `guardrail` reads only the selected capability contract and emits compact success, failure, effect, and termination constraints.
 - `method` preserves the original exact entrypoint-and-contract package.
 - `review` reads nothing before inference and records an exact deferred descriptor with status `scheduled-not-executed`.
 
-Adaptive decisions and their policy and evidence digests enter the source, stack, package, and recovery identities. A changed activation policy or evidence registry cannot rehydrate an earlier cycle. Explicit method requests are bound to the mission source envelope, and stored decisions are recompiled during recovery before any selected artifact is read. Selection still cannot expand authority, effects, preconditions, risk, evidence, context, or composition. The host must provide a real later review phase before it may represent a deferred review as executed.
+Adaptive decisions and their trust-root, policy, and evidence digests enter the source, stack, package, and recovery identities. A changed executable, policy, evidence registry, classification, authority projection, selected artifact, or explicit request cannot rehydrate an earlier cycle. Recovery validates the stored external result synchronously and performs no rerouting, reclassification, compiler call, or subprocess launch. Selection still cannot expand authority, effects, preconditions, risk, evidence, context, or composition. The host must provide a real later review phase before it may represent a deferred review as executed.
 
-The corresponding evidence policy and experimental receipt live in `C:\dev\eternities-godskills`. This repository does not infer activation quality from a skill name or routing success.
+The local CLI does not synthesize classifier or transport configuration from ambient environment variables, and release pins without an activation root preserve the historical System v3 behavior. The deterministic [adaptive integration receipt](receipts/godskills-adaptive-activation-v1.json) binds the exact pushed Godskills executable release and certifies `GSA-001` through `GSA-016` while retaining explicit limits around executed review, model-quality improvement, unseen missions and models, public SDK readiness, specialist-routing quality, and Lunari readiness. This repository does not infer activation quality from a skill name or routing success.
 
 ## Modular creation forge
 
@@ -218,7 +220,7 @@ npm run launch:local -- `
 
 One invocation runs at most one unseen mission and exits. An admission-owned live-owner lock serializes projection, recovery, and execution. Retrying the same request ID returns its recorded outcome or recovers its interrupted cycle without admitting a duplicate. Reusing that ID with changed mission or policy-derived authority fails closed. Explicit registry migration will be required before a legitimate relocation; copying the admission is not migration. The launcher does not daemonize, widen host authority, modify genesis, lift frozen evolution, integrate Lunari, activate Inspiration, or activate Soul. This implementation has not yet received a separate certification receipt.
 
-`npm run verify:certifications` audits the exact seven-file certification ledger. It requires canonical bytes, recomputes each internal receipt digest, verifies certified status, resolves every source commit as a Git commit in this repository, and checks the exact required historical file set and hashes across the versioned receipt formats. It returns one canonical ledger projection and digest. This is an integrity audit, not a substitute for rerunning a receipt at its pinned source commit.
+`npm run verify:certifications` audits the exact nine-file certification ledger. It requires canonical bytes, recomputes each internal receipt digest, verifies certified status, resolves every source commit as a Git commit in this repository, and checks the exact required historical file set and hashes across the versioned receipt formats. It returns one canonical ledger projection and digest. This is an integrity audit, not a substitute for rerunning a receipt at its pinned source commit.
 
 `npm run verify:release-lineage` additionally resolves the current `HEAD` and proves that every registered certification source commit is its Git ancestor. It emits one content-addressed release-lineage projection. This closes source-history detachment; it still does not claim that current-head behavior has been recertified.
 
@@ -248,9 +250,11 @@ The host rejects credentials in command-line arguments, policy values, mission t
 ```text
 mission
   -> Realm observation
-  -> concurrent organ proposals
+  -> verified host authority and genome capability ceiling
+  -> commandless Godskills route and optional receipt-bound activation
+  -> bounded selected package compiled into the cortex envelope
+  -> concurrent cortex and organ proposals
   -> constitutional decision commit
-  -> commandless Godskills route receipt
   -> governed hand invocation
   -> expected-versus-observed consequence receipt
   -> hash-chained continuity event

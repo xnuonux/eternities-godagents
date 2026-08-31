@@ -14,6 +14,7 @@
     "build:genesis-fixture": "node scripts/build-genesis-fixture.mjs",
     "build:networked-fixture": "node scripts/build-networked-fixture.mjs",
     "build:godskills-v3-integration": "node scripts/build-godskills-v3-integration-receipt.mjs",
+    "build:godskills-adaptive-integration": "node scripts/build-godskills-adaptive-integration-receipt.mjs",
     "demo": "node scripts/run-demo.mjs",
     "creator:local": "node src/creator/local-cli.mjs",
     "creator:web": "node src/creator/web/server.mjs",
