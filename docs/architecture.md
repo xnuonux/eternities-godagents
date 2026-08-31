@@ -157,6 +157,12 @@ Each route or activation operation runs as a hidden shell-free Node child with a
 
 The deterministic proof interrupts after the real activation executable has atomically published its output and success witness but before completion publication. Reconstruction materializes the exact completion without another route or activation launch, publishes one immutable binding, and performs no child work on exact binding replay or rehydration. This closes the trusted-injected-transport assumption for local deterministic Godskills execution only. It does not migrate the admitted host or identity vessel, qualify a live model provider, make the injected classifier untrusted, provide hostile same-user isolation, or grant Realm, continuity, keel, evolution, Inspiration, Lunari, or Soul authority.
 
+## Sealed local identity-bound vessel boundary
+
+The additive sealed vessel factory composes that local process adapter with the existing identity-bound mission vessel under one caller-owned runtime root. It derives separate Godskills, vessel-admission, and mission-journal directories, preserves distinct process and mission clocks and locks, and exposes only the vessel's `run` function plus digest-bound execution metadata. Routing, activation, identity projection, mission admission, native generation, review, revision, final review, and recovery remain owned by their already certified components.
+
+The full-loop proof routes a consequential visual mission to `eternities-muse`, receives a real deferred-review decision from the pinned activation executable, interrupts after activation success, reconstructs without another child launch, and completes the identity-bound native, review, revision, and final-review sequence. Exact terminal replay performs no route, activation, classification, native, review, or revision operation. This is a programmatic construction boundary, not an admitted-host, CLI, host-policy, live-provider, Realm, continuity, evolution, Lunari, or Soul migration.
+
 ## Phase 1 creation boundary
 
 Creation is a compiler boundary, not a birth event. A strict candidate selects one lineage, archetype, attribute set, personality, voice, organ loadout, Godskills bundle, cortex class, and embodiment. The loader resolves canonical references, rejects collisions and kind mismatches, and recursively blocks authority, credentials, provider routing, retry controls, Inspiration state, and Soul state from module payloads.
