@@ -167,15 +167,10 @@ function parseCanonicalProgram(bytes, capabilityId, label) {
       return;
     }
     if (!object(value)) return;
-    if (Object.hasOwn(value, '$input')) {
-      if (canonicalJson(value) !== canonicalJson({ $input: 'missionId' })) {
-        throw new Error(`${label} contains an unsupported input projection`);
-      }
-      return;
-    }
+    if (Object.hasOwn(value, '$input')) throw new Error(`${label} contains an unsupported input projection`);
     Object.values(value).forEach((child) => inspect(child, depth + 1));
   };
-  inspect(program.outputTemplate);
+  inspect(program.outputTemplate.slots);
   return deepFreeze(program);
 }
 

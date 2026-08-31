@@ -199,6 +199,7 @@ test('javascript-looking strings remain inert data inside an admitted fixed temp
 test('rejects unsupported projections, wrong capability identity, and excessive delay', async (t) => {
   for (const [name, mutate, pattern] of [
     ['projection', (value) => { value.outputTemplate.missionId = { $input: 'path' }; }, /output template is invalid|unsupported input projection/],
+    ['slot-projection', (value) => { value.outputTemplate.slots.payload = { $input: 'missionId' }; }, /unsupported input projection/],
     ['capability', (value) => { value.capabilityId = 'eternities-muse'; }, /identity or delay is invalid/],
     ['delay', (value) => { value.delayMs = 5_001; }, /identity or delay is invalid/],
   ]) {
