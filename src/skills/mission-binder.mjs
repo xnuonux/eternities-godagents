@@ -2,6 +2,7 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
 import { compileCapabilityEligibility } from './capability-policy.mjs';
+import { validateActivationResolution, validateActivationResolver } from './activation-resolver.mjs';
 import { routeGodskill } from './godskills-adapter.mjs';
 import { verifyGodskillsRelease } from './release-verifier.mjs';
 
@@ -81,8 +82,10 @@ function routeContext({ release, eligibility, authority, hostEnvelope }) {
   };
 }
 
-function sourceEnvelopeFor({ mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release }) {
-  return deepFreeze({
+function sourceEnvelopeFor({
+  mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release, activationPolicyDigest = null,
+}) {
+  const envelope = {
     requestId: mission.requestId,
     mission: mission.text,
     observationDigest: sha256Value(observation),
@@ -91,13 +94,15 @@ function sourceEnvelopeFor({ mission, observation, genomePolicy, hostEnvelope, s
     authorityCeilingDigest: sha256Value(authority),
     realmHandContractDigest: hostEnvelope.realmHandContractDigest,
     releaseDigest: release.releaseDigest,
-  });
+  };
+  if (activationPolicyDigest !== null) envelope.activationPolicyDigest = activationPolicyDigest;
+  return deepFreeze(envelope);
 }
 
-async function loadPackages(release, selectedIds, entrypoints, eligibility, authority, forbiddenIds) {
+function resolveSelectedCapabilities(release, selectedIds, entrypoints, eligibility, authority, forbiddenIds) {
   const eligible = new Set(eligibility.eligibleIds);
   const forbidden = new Set(forbiddenIds);
-  const packages = [];
+  const selected = [];
   for (let index = 0; index < selectedIds.length; index += 1) {
     const id = selectedIds[index];
     if (forbidden.has(id)) throw new Error(`Godskills capability ${id} is forbidden by host`);
@@ -107,6 +112,17 @@ async function loadPackages(release, selectedIds, entrypoints, eligibility, auth
     if (entrypoints[index] !== capability.entrypoint.path) throw new Error(`Godskills entrypoint for ${id} does not match the portable manifest`);
     requireOwnerSelection(capability, selectedIds);
     requireSelectedEffects(capability, release, authority);
+    selected.push({ id, capability });
+  }
+  return selected;
+}
+
+async function loadPackages(release, selectedIds, entrypoints, eligibility, authority, forbiddenIds) {
+  const selected = resolveSelectedCapabilities(
+    release, selectedIds, entrypoints, eligibility, authority, forbiddenIds,
+  );
+  const packages = [];
+  for (const { id, capability } of selected) {
     const [entrypointBytes, contractBytes] = await Promise.all([
       release.readSelectedArtifact(capability.entrypoint, `selected entrypoint ${id}`),
       release.readSelectedArtifact(capability.contract, `selected contract ${id}`),
@@ -128,6 +144,85 @@ async function loadPackages(release, selectedIds, entrypoints, eligibility, auth
     }));
   }
   return packages;
+}
+
+function selectionRows(selected) {
+  return selected.map(({ id, capability }) => ({
+    id,
+    entrypointSha256: capability.entrypoint.sha256,
+    contractSha256: capability.contract.sha256,
+  }));
+}
+
+async function loadAdaptivePackages(release, selected, activation) {
+  const decisions = new Map(activation.decisions.map((decision) => [decision.id, decision]));
+  const packages = [];
+  const deferredReviews = [];
+  let disclosureBytes = 0;
+  for (const { id, capability } of selected) {
+    const decision = decisions.get(id);
+    if (decision.mode === 'native') continue;
+    if (decision.mode === 'review') {
+      deferredReviews.push({
+        id,
+        entrypointSha256: capability.entrypoint.sha256,
+        contractSha256: capability.contract.sha256,
+        status: 'scheduled-not-executed',
+      });
+      continue;
+    }
+    if (decision.mode === 'method') {
+      const [entrypointBytes, contractBytes] = await Promise.all([
+        release.readSelectedArtifact(capability.entrypoint, `selected entrypoint ${id}`),
+        release.readSelectedArtifact(capability.contract, `selected contract ${id}`),
+      ]);
+      const entrypoint = entrypointBytes.toString('utf8');
+      const contract = parseContract(contractBytes, id);
+      disclosureBytes += Buffer.byteLength(entrypoint, 'utf8') + Buffer.byteLength(canonicalJson(contract), 'utf8');
+      packages.push(deepFreeze({
+        id,
+        tier: capability.tier,
+        ownerGodskillId: capability.ownerGodskillId,
+        entrypointSha256: capability.entrypoint.sha256,
+        contractSha256: capability.contract.sha256,
+        activationMode: 'method',
+        entrypoint,
+        contract,
+        capabilityVocabulary: sorted(capability.capabilityVocabulary),
+        effectVocabulary: sorted(capability.effectVocabulary),
+        riskObligations: sorted(capability.riskVocabulary),
+        evidenceVocabulary: sorted(capability.evidenceVocabulary),
+        preconditionObligations: sorted(capability.preconditionVocabulary),
+        terminationConditions: sorted(capability.terminationConditions),
+      }));
+      continue;
+    }
+    const contractBytes = await release.readSelectedArtifact(capability.contract, `selected contract ${id}`);
+    const contract = parseContract(contractBytes, id);
+    const guardrails = deepFreeze({
+      successCondition: contract.successCondition,
+      failureModes: sorted(contract.failureModes),
+      effects: sorted(contract.effects),
+      terminationConditions: sorted(capability.terminationConditions),
+    });
+    disclosureBytes += Buffer.byteLength(canonicalJson(guardrails), 'utf8');
+    packages.push(deepFreeze({
+      id,
+      tier: capability.tier,
+      ownerGodskillId: capability.ownerGodskillId,
+      entrypointSha256: capability.entrypoint.sha256,
+      contractSha256: capability.contract.sha256,
+      activationMode: 'guardrail',
+      guardrails,
+      capabilityVocabulary: [],
+      effectVocabulary: sorted(capability.effectVocabulary),
+      riskObligations: sorted(capability.riskVocabulary),
+      evidenceVocabulary: sorted(capability.evidenceVocabulary),
+      preconditionObligations: sorted(capability.preconditionVocabulary),
+      terminationConditions: sorted(capability.terminationConditions),
+    }));
+  }
+  return { packages, deferredReviews, disclosureBytes };
 }
 
 function compilePackage({ sourceEnvelopeDigest, release, authority, packages }) {
@@ -159,8 +254,51 @@ function compilePackage({ sourceEnvelopeDigest, release, authority, packages }) 
   return { cortexPackage: deepFreeze(cortexPackage), stackDigest };
 }
 
-export async function createGodskillsAdapter({ releasePin, transport, artifactCache, io } = {}) {
+function compileAdaptivePackage({
+  sourceEnvelopeDigest, release, authority, selected, activation, packages, deferredReviews, disclosureBytes,
+}) {
+  const stack = selected.map(({ id, capability }, index) => ({
+    id,
+    tier: capability.tier,
+    ownerGodskillId: capability.ownerGodskillId,
+    entrypointSha256: capability.entrypoint.sha256,
+    contractSha256: capability.contract.sha256,
+    activation: activation.decisions[index],
+  }));
+  const stackDigest = sha256Value(stack);
+  const methodPackages = packages.filter(({ activationMode }) => activationMode === 'method');
+  const cortexPackage = {
+    protocolId: release.pin.adapterProtocol,
+    sourceEnvelopeDigest,
+    releaseDigest: release.releaseDigest,
+    stackDigest,
+    selectedCapabilities: selected.map(({ id }) => id),
+    methods: valuesFrom(methodPackages, ({ capabilityVocabulary }) => capabilityVocabulary),
+    evidenceRequirements: valuesFrom(packages, ({ evidenceVocabulary, contract, guardrails }) => [
+      ...evidenceVocabulary,
+      ...(contract?.sourceIds ?? []),
+      ...(guardrails?.failureModes ?? []),
+    ]),
+    proposalRequirements: valuesFrom(packages, ({ contract, guardrails }) => [
+      ...(contract?.outputs ?? []),
+      contract?.successCondition,
+      guardrails?.successCondition,
+    ]),
+    riskObligations: valuesFrom(packages, ({ riskObligations }) => riskObligations),
+    preconditionObligations: valuesFrom(packages, ({ preconditionObligations }) => preconditionObligations),
+    terminationConditions: valuesFrom(packages, ({ terminationConditions }) => terminationConditions),
+    authorityProjection: authority,
+    activation,
+    disclosureBytes,
+    selectedPackages: packages,
+    deferredReviews,
+  };
+  return { cortexPackage: deepFreeze(cortexPackage), stackDigest };
+}
+
+export async function createGodskillsAdapter({ releasePin, transport, artifactCache, io, activationResolver } = {}) {
   if (typeof transport !== 'function') throw new TypeError('Godskills routing transport is required');
+  const adaptive = validateActivationResolver(activationResolver);
   const release = await verifyGodskillsRelease(releasePin, { artifactCache, io });
   return Object.freeze({
     releaseDigest: release.releaseDigest,
@@ -172,6 +310,7 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       if (context.permittedEffects.length === 0) throw new Error('Godskills has no permitted semantic effect binding');
       const sourceEnvelope = sourceEnvelopeFor({
         mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
+        activationPolicyDigest: adaptive?.policyDigest ?? null,
       });
       const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
       const routingRequestId = `${mission.requestId}:${sourceEnvelopeDigest}`;
@@ -188,8 +327,8 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
           cortexPackage: null,
         });
       }
-      const packages = route.status === 'selected'
-        ? await loadPackages(
+      const selected = route.status === 'selected'
+        ? resolveSelectedCapabilities(
           release,
           route.selectedIds,
           route.entrypoints,
@@ -198,7 +337,50 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
           hostEnvelope.forbiddenCapabilities ?? [],
         )
         : [];
-      const { cortexPackage, stackDigest } = compilePackage({ sourceEnvelopeDigest, release, authority, packages });
+      let packages;
+      let cortexPackage;
+      let stackDigest;
+      let activation = null;
+      if (adaptive) {
+        activation = validateActivationResolution({
+          resolution: await adaptive.resolve({
+            mission: structuredClone(mission),
+            selected: selected.map(({ id, capability }) => ({
+              id,
+              tier: capability.tier,
+              ownerGodskillId: capability.ownerGodskillId,
+              entrypointSha256: capability.entrypoint.sha256,
+              contractSha256: capability.contract.sha256,
+            })),
+          }),
+          selected,
+          expectedPolicyDigest: adaptive.policyDigest,
+        });
+        const loaded = await loadAdaptivePackages(release, selected, activation);
+        packages = loaded.packages;
+        ({ cortexPackage, stackDigest } = compileAdaptivePackage({
+          sourceEnvelopeDigest,
+          release,
+          authority,
+          selected,
+          activation,
+          packages,
+          deferredReviews: loaded.deferredReviews,
+          disclosureBytes: loaded.disclosureBytes,
+        }));
+      } else {
+        packages = route.status === 'selected'
+          ? await loadPackages(
+            release,
+            route.selectedIds,
+            route.entrypoints,
+            eligibility,
+            authority,
+            hostEnvelope.forbiddenCapabilities ?? [],
+          )
+          : [];
+        ({ cortexPackage, stackDigest } = compilePackage({ sourceEnvelopeDigest, release, authority, packages }));
+      }
       const packageBytes = Buffer.byteLength(canonicalJson(cortexPackage), 'utf8');
       const byteCeiling = Math.min(release.pin.maximumPackageBytes, hostEnvelope.contextBudget * 4);
       if (packageBytes > byteCeiling) throw new Error('Godskills package byte ceiling exceeded');
@@ -210,11 +392,14 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
         releaseDigest: release.releaseDigest,
         routerReceiptDigest: sha256Value(route.routeReceipt),
         selectionStatus: route.status,
-        selected: packages.map(({ id, entrypointSha256, contractSha256 }) => ({ id, entrypointSha256, contractSha256 })),
+        selected: adaptive
+          ? selectionRows(selected)
+          : packages.map(({ id, entrypointSha256, contractSha256 }) => ({ id, entrypointSha256, contractSha256 })),
         authorityCeilingDigest: sourceEnvelope.authorityCeilingDigest,
         stackDigest,
         packageDigest: sha256Text(canonicalJson(cortexPackage)),
       };
+      if (activation) receipt.activation = activation;
       assertSchema('godskills-cycle-receipt', receipt);
       return deepFreeze({
         status: route.status === 'selected' ? 'bound' : 'no-qualified-route',
@@ -226,10 +411,16 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       assertSchema('godskills-cycle-receipt', receipt);
       if (receipt.releaseDigest !== release.releaseDigest) throw new Error('Godskills recovery release digest mismatch');
       if (receipt.requestId !== mission?.requestId) throw new Error('Godskills recovery request identity mismatch');
+      if (receipt.activation && !adaptive) throw new Error('Godskills recovery requires its activation policy');
+      if (!receipt.activation && adaptive) throw new Error('Godskills recovery receipt lacks adaptive activation state');
+      if (receipt.activation?.policyDigest !== adaptive?.policyDigest) {
+        throw new Error('Godskills recovery activation policy digest mismatch');
+      }
       const eligibility = compileCapabilityEligibility(genomePolicy, release.manifest);
       const authority = compileAuthority(mission, hostEnvelope);
       const sourceEnvelope = sourceEnvelopeFor({
         mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
+        activationPolicyDigest: receipt.activation?.policyDigest ?? null,
       });
       const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
       if (receipt.sourceEnvelopeDigest !== sourceEnvelopeDigest
@@ -239,21 +430,39 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       const selectedIds = receipt.selected.map(({ id }) => id);
       const entrypoints = selectedIds.map((id) => release.capabilitiesById.get(id)?.entrypoint.path);
       const forbiddenIds = sorted(hostEnvelope.forbiddenCapabilities ?? []);
-      const packages = await loadPackages(
-        release,
-        selectedIds,
-        entrypoints,
-        eligibility,
-        authority,
-        forbiddenIds,
+      const selected = resolveSelectedCapabilities(
+        release, selectedIds, entrypoints, eligibility, authority, forbiddenIds,
       );
-      for (let index = 0; index < packages.length; index += 1) {
-        if (packages[index].entrypointSha256 !== receipt.selected[index].entrypointSha256
-            || packages[index].contractSha256 !== receipt.selected[index].contractSha256) {
+      for (let index = 0; index < selected.length; index += 1) {
+        if (selected[index].capability.entrypoint.sha256 !== receipt.selected[index].entrypointSha256
+            || selected[index].capability.contract.sha256 !== receipt.selected[index].contractSha256) {
           throw new Error('Godskills recovery selected artifact digest mismatch');
         }
       }
-      const compiled = compilePackage({ sourceEnvelopeDigest, release, authority, packages });
+      let compiled;
+      if (receipt.activation) {
+        const activation = validateActivationResolution({
+          resolution: receipt.activation,
+          selected,
+          expectedPolicyDigest: adaptive.policyDigest,
+        });
+        const loaded = await loadAdaptivePackages(release, selected, activation);
+        compiled = compileAdaptivePackage({
+          sourceEnvelopeDigest,
+          release,
+          authority,
+          selected,
+          activation,
+          packages: loaded.packages,
+          deferredReviews: loaded.deferredReviews,
+          disclosureBytes: loaded.disclosureBytes,
+        });
+      } else {
+        const packages = await loadPackages(
+          release, selectedIds, entrypoints, eligibility, authority, forbiddenIds,
+        );
+        compiled = compilePackage({ sourceEnvelopeDigest, release, authority, packages });
+      }
       if (compiled.stackDigest !== receipt.stackDigest
           || sha256Text(canonicalJson(compiled.cortexPackage)) !== receipt.packageDigest) {
         throw new Error('Godskills recovery package digest mismatch');

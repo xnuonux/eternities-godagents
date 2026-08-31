@@ -52,6 +52,19 @@ npm run certify:local-admission
 
 The [mission-binding design](docs/superpowers/specs/2026-08-30-godskills-v3-mission-binding-design.md) defines the provider-neutral boundary that verifies one exact Godskills System v3 release, routes after mission and host authority are known, and binds at most three selected first-party capability packages before cortex inference. The runtime stores a body-free cycle receipt, rehydrates the same package without rerouting after interruption, and treats release upgrades as operational dependency migrations only when the capability envelope does not expand. The deterministic [integration receipt](receipts/godskills-v3-integration.json) certifies `GSV3-001` through `GSV3-014` and records its explicit proof limits.
 
+### adaptive amplification experiment
+
+The adapter also accepts an optional, host-supplied activation resolver that separates capability selection from context disclosure. This additive path leaves the certified adapter-v1 default unchanged.
+
+- `native` preserves the route identity but reads and discloses no selected artifact.
+- `guardrail` reads only the selected capability contract and emits compact success, failure, effect, and termination constraints.
+- `method` preserves the original exact entrypoint-and-contract package.
+- `review` reads nothing before inference and records an exact deferred descriptor with status `scheduled-not-executed`.
+
+Adaptive decisions and their policy digest enter the source, stack, package, and recovery identities. A changed activation policy cannot rehydrate an earlier cycle. Selection still cannot expand authority, effects, preconditions, risk, evidence, context, or composition. The host must provide a real later review phase before it may represent a deferred review as executed.
+
+The corresponding evidence policy and experimental receipt live in `C:\dev\eternities-godskills`. This repository does not infer activation quality from a skill name or routing success.
+
 ## Modular creation forge
 
 The Phase 1 forge accepts one strict candidate, one independently pinned creation-policy ceiling, one presentation-only expression overlay, and exactly nine selected module kinds: lineage, archetype, attributes, personality, voice, organs, Godskills, cortex, and embodiment. The compiler and verifier both require the expected policy SHA-256 from a trust path separate from the policy file; calculating a digest after accepting an arbitrary policy is not sufficient.

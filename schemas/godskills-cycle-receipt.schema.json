@@ -14,7 +14,8 @@
     "selected": { "type": "array", "maxItems": 3, "items": { "$ref": "#/$defs/selection" } },
     "authorityCeilingDigest": { "$ref": "#/$defs/digest" },
     "stackDigest": { "$ref": "#/$defs/digest" },
-    "packageDigest": { "$ref": "#/$defs/digest" }
+    "packageDigest": { "$ref": "#/$defs/digest" },
+    "activation": { "$ref": "#/$defs/activation" }
   },
   "$defs": {
     "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
@@ -26,6 +27,34 @@
         "id": { "type": "string", "minLength": 1 },
         "entrypointSha256": { "$ref": "#/$defs/digest" },
         "contractSha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policyDigest", "decisions"],
+      "properties": {
+        "policyDigest": { "$ref": "#/$defs/digest" },
+        "decisions": {
+          "type": "array",
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/activationDecision" }
+        }
+      }
+    },
+    "activationDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "mode", "decisionDigest", "reasonCodes"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "mode": { "enum": ["native", "guardrail", "method", "review"] },
+        "decisionDigest": { "$ref": "#/$defs/digest" },
+        "reasonCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
       }
     }
   }
