@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
+import { sha256Value } from '../src/core/digest.mjs';
 import {
   adaptiveBoundaryEvidence,
   buildGodskillsAdaptiveIntegrationReceipt,
@@ -29,7 +30,7 @@ function passingRun(tests, evidenceTests = []) {
   return {
     status: 'pass',
     tests,
-    testNameDigest: '6'.repeat(64),
+    evidenceDigest: sha256Value(evidenceTests),
     evidenceTests: [...evidenceTests],
   };
 }
@@ -121,7 +122,11 @@ test('failed tests, missing requirements, malformed closure, or unmeasured bound
 
   const unmeasured = fixtureInput();
   unmeasured.testRuns.godagentsFocused.evidenceTests.pop();
-  assert.throws(() => buildGodskillsAdaptiveIntegrationReceipt(unmeasured), /boundary evidence/i);
+  assert.throws(() => buildGodskillsAdaptiveIntegrationReceipt(unmeasured), /evidence/i);
+
+  const detachedEvidenceDigest = fixtureInput();
+  detachedEvidenceDigest.testRuns.godagentsFocused.evidenceDigest = '9'.repeat(64);
+  assert.throws(() => buildGodskillsAdaptiveIntegrationReceipt(detachedEvidenceDigest), /evidence digest/i);
 
   const changedClosure = fixtureInput();
   changedClosure.godskills.artifacts.pop();

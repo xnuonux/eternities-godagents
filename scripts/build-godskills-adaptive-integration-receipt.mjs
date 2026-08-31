@@ -237,17 +237,20 @@ function requireArtifactClosure(artifacts) {
 function allTestsPass(testRuns) {
   exactKeys(testRuns, ['godskillsFocused', 'godskillsFull', 'godagentsFocused', 'godagentsFull'], 'test runs');
   for (const [name, run] of Object.entries(testRuns)) {
-    exactKeys(run, ['status', 'tests', 'testNameDigest', 'evidenceTests'], `${name} test run`);
+    exactKeys(run, ['status', 'tests', 'evidenceDigest', 'evidenceTests'], `${name} test run`);
     if (!['pass', 'fail'].includes(run.status)
         || !Number.isInteger(run.tests) || run.tests < 1) {
       throw new Error(`${name} test run result is invalid`);
     }
-    requireDigest(run.testNameDigest, `${name} test-name`);
+    requireDigest(run.evidenceDigest, `${name} test-evidence`);
     if (!Array.isArray(run.evidenceTests)
         || run.evidenceTests.some((value) => typeof value !== 'string' || value.length === 0)
         || new Set(run.evidenceTests).size !== run.evidenceTests.length
         || !same(run.evidenceTests, [...run.evidenceTests].sort())) {
       throw new Error(`${name} test evidence is invalid`);
+    }
+    if (run.evidenceDigest !== sha256Value(run.evidenceTests)) {
+      throw new Error(`${name} test evidence digest mismatch`);
     }
   }
   return Object.values(testRuns).every((run) => run.status === 'pass');
@@ -520,7 +523,7 @@ function runTests(files, cwd, evidenceNames = []) {
       } else resolvePromise({
         status: 'pass',
         tests,
-        testNameDigest: sha256Value([...names].sort()),
+        evidenceDigest: sha256Value([...evidenceNames].sort()),
         evidenceTests: [...evidenceNames].sort(),
       });
     });
@@ -549,18 +552,17 @@ async function main() {
     runTests([], skillsRoot),
   ]);
   const outputPath = join(root, 'receipts', 'godskills-adaptive-activation-v1.json');
-  const provisionalNameDigest = sha256Value(['provisional-certification-bootstrap']);
   const preliminaryRuns = {
     godskillsFocused,
     godskillsFull,
     godagentsFocused: {
       status: 'pass',
       tests: requiredEvidenceTests.length,
-      testNameDigest: sha256Value(requiredEvidenceTests),
+      evidenceDigest: sha256Value(requiredEvidenceTests),
       evidenceTests: [...requiredEvidenceTests],
     },
     godagentsFull: {
-      status: 'pass', tests: 1, testNameDigest: provisionalNameDigest, evidenceTests: [],
+      status: 'pass', tests: 1, evidenceDigest: sha256Value([]), evidenceTests: [],
     },
   };
   const preliminary = await rebuildGodskillsAdaptiveIntegrationReceipt({
