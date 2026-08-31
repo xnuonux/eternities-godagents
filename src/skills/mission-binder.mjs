@@ -1,14 +1,9 @@
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
+import { createGodskillsActivationAdapter } from './activation-adapter.mjs';
 import { compileCapabilityEligibility } from './capability-policy.mjs';
-import {
-  compileActivationResolution,
-  compileContractGuardrails,
-  compileEmptyActivation,
-  validateActivationResolver,
-  validateStoredActivation,
-} from './activation-resolver.mjs';
+import { compileContractGuardrails } from './contract-guardrails.mjs';
 import { routeGodskill } from './godskills-adapter.mjs';
 import { verifyGodskillsRelease } from './release-verifier.mjs';
 
@@ -96,8 +91,7 @@ function sourceEnvelopeFor({
   sourceStateEpoch,
   authority,
   release,
-  activationPolicyDigest = null,
-  activationEvidenceDigest = null,
+  activationTrustRootDigest = null,
 }) {
   const envelope = {
     requestId: mission.requestId,
@@ -109,9 +103,8 @@ function sourceEnvelopeFor({
     realmHandContractDigest: hostEnvelope.realmHandContractDigest,
     releaseDigest: release.releaseDigest,
   };
-  if (activationPolicyDigest !== null) {
-    envelope.activationPolicyDigest = activationPolicyDigest;
-    envelope.activationEvidenceDigest = activationEvidenceDigest;
+  if (activationTrustRootDigest !== null) {
+    envelope.activationTrustRootDigest = activationTrustRootDigest;
     envelope.explicitMethodRequests = sorted(mission.explicitMethodRequests ?? []);
   }
   return deepFreeze(envelope);
@@ -173,12 +166,13 @@ function selectionRows(selected) {
 }
 
 async function loadAdaptivePackages(release, selected, activation) {
-  const decisions = new Map(activation.decisions.map((decision) => [decision.id, decision]));
+  const decisions = new Map(activation.decisions.map((decision) => [decision.selectedId, decision]));
   const packages = [];
   const deferredReviews = [];
   let disclosureBytes = 0;
   for (const { id, capability } of selected) {
     const decision = decisions.get(id);
+    if (!decision) throw new Error(`Godskills activation decision for ${id} is missing`);
     if (decision.mode === 'native') continue;
     if (decision.mode === 'review') {
       deferredReviews.push({
@@ -270,7 +264,7 @@ function compileAdaptivePackage({
     ownerGodskillId: capability.ownerGodskillId,
     entrypointSha256: capability.entrypoint.sha256,
     contractSha256: capability.contract.sha256,
-    activation: activation.decisions[index],
+    activation: activation?.decisions[index],
   }));
   const stackDigest = sha256Value(stack);
   const methodPackages = packages.filter(({ activationMode }) => activationMode === 'method');
@@ -298,18 +292,37 @@ function compileAdaptivePackage({
       ...(guardrails?.terminationConditions ?? []),
     ]),
     authorityProjection: authority,
-    activation,
     disclosureBytes,
     selectedPackages: packages,
     deferredReviews,
   };
+  if (activation) cortexPackage.activation = activation;
   return { cortexPackage: deepFreeze(cortexPackage), stackDigest };
 }
 
-export async function createGodskillsAdapter({ releasePin, transport, artifactCache, io, activationResolver } = {}) {
+export async function createGodskillsAdapter({
+  releasePin,
+  transport,
+  artifactCache,
+  io,
+  activationClassifier,
+  activationTransport,
+} = {}) {
   if (typeof transport !== 'function') throw new TypeError('Godskills routing transport is required');
-  const adaptive = validateActivationResolver(activationResolver);
   const release = await verifyGodskillsRelease(releasePin, { artifactCache, io });
+  const hasActivationRoot = release.activation !== undefined;
+  const hasClassifier = activationClassifier !== undefined;
+  const hasActivationTransport = activationTransport !== undefined;
+  const adaptive = hasActivationRoot && hasClassifier && hasActivationTransport
+    ? createGodskillsActivationAdapter({
+      verifiedActivation: release.activation,
+      classifier: activationClassifier,
+      transport: activationTransport,
+    })
+    : null;
+  if ((hasActivationRoot || hasClassifier || hasActivationTransport) && !adaptive) {
+    throw new Error('Godskills adaptive activation requires one verified root, classifier, and transport');
+  }
   return Object.freeze({
     releaseDigest: release.releaseDigest,
     async bindMission({ mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch }) {
@@ -320,8 +333,7 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       if (context.permittedEffects.length === 0) throw new Error('Godskills has no permitted semantic effect binding');
       const sourceEnvelope = sourceEnvelopeFor({
         mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
-        activationPolicyDigest: adaptive?.policyDigest ?? null,
-        activationEvidenceDigest: adaptive?.evidenceDigest ?? null,
+        activationTrustRootDigest: adaptive?.trustRootDigest ?? null,
       });
       const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
       const routingRequestId = `${mission.requestId}:${sourceEnvelopeDigest}`;
@@ -353,24 +365,14 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       let stackDigest;
       let activation = null;
       if (adaptive) {
-        activation = selected.length === 0
-          ? compileEmptyActivation()
-          : compileActivationResolution({
-            classification: await adaptive.classify({
-              mission: structuredClone(mission),
-              selected: selected.map(({ id, capability }) => ({
-                id,
-                tier: capability.tier,
-                ownerGodskillId: capability.ownerGodskillId,
-                entrypointSha256: capability.entrypoint.sha256,
-                contractSha256: capability.contract.sha256,
-              })),
-            }),
-            selected,
-            authority,
-            explicitMethodRequests: mission.explicitMethodRequests,
-          });
-        const loaded = await loadAdaptivePackages(release, selected, activation);
+        activation = selected.length === 0 ? null : await adaptive.compile({
+          mission,
+          selected: selectionRows(selected),
+          authority,
+        });
+        const loaded = activation
+          ? await loadAdaptivePackages(release, selected, activation)
+          : { packages: [], deferredReviews: [], disclosureBytes: 0 };
         packages = loaded.packages;
         ({ cortexPackage, stackDigest } = compileAdaptivePackage({
           sourceEnvelopeDigest,
@@ -425,20 +427,18 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       assertSchema('godskills-cycle-receipt', receipt);
       if (receipt.releaseDigest !== release.releaseDigest) throw new Error('Godskills recovery release digest mismatch');
       if (receipt.requestId !== mission?.requestId) throw new Error('Godskills recovery request identity mismatch');
-      if (receipt.activation && !adaptive) throw new Error('Godskills recovery requires its activation policy');
-      if (!receipt.activation && adaptive) throw new Error('Godskills recovery receipt lacks adaptive activation state');
-      if (receipt.activation?.policyDigest !== adaptive?.policyDigest) {
-        throw new Error('Godskills recovery activation policy digest mismatch');
+      if (receipt.activation && !adaptive) throw new Error('Godskills recovery requires its activation trust root');
+      if (adaptive && receipt.selectionStatus === 'selected' && !receipt.activation) {
+        throw new Error('Godskills recovery receipt lacks its adaptive activation binding');
       }
-      if (receipt.activation?.evidenceDigest !== adaptive?.evidenceDigest) {
-        throw new Error('Godskills recovery activation evidence digest mismatch');
+      if (receipt.selectionStatus === 'no-qualified-route' && receipt.activation) {
+        throw new Error('Godskills no-route recovery cannot carry an activation binding');
       }
       const eligibility = compileCapabilityEligibility(genomePolicy, release.manifest);
       const authority = compileAuthority(mission, hostEnvelope);
       const sourceEnvelope = sourceEnvelopeFor({
         mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
-        activationPolicyDigest: receipt.activation?.policyDigest ?? null,
-        activationEvidenceDigest: receipt.activation?.evidenceDigest ?? null,
+        activationTrustRootDigest: adaptive?.trustRootDigest ?? null,
       });
       const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
       if (receipt.sourceEnvelopeDigest !== sourceEnvelopeDigest
@@ -458,14 +458,18 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
         }
       }
       let compiled;
-      if (receipt.activation) {
-        const activation = validateStoredActivation({
-          activation: receipt.activation,
-          selected,
-          authority,
-          explicitMethodRequests: mission.explicitMethodRequests,
-        });
-        const loaded = await loadAdaptivePackages(release, selected, activation);
+      if (adaptive) {
+        const activation = receipt.activation
+          ? adaptive.rehydrate({
+            binding: receipt.activation,
+            mission,
+            selected: selectionRows(selected),
+            authority,
+          })
+          : null;
+        const loaded = activation
+          ? await loadAdaptivePackages(release, selected, activation)
+          : { packages: [], deferredReviews: [], disclosureBytes: 0 };
         compiled = compileAdaptivePackage({
           sourceEnvelopeDigest,
           release,

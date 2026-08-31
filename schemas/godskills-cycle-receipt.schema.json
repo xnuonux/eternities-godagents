@@ -18,13 +18,13 @@
     "activation": { "$ref": "#/$defs/activation" }
   },
   "$defs": {
-    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "selection": {
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "entrypointSha256", "contractSha256"],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
         "entrypointSha256": { "$ref": "#/$defs/digest" },
         "contractSha256": { "$ref": "#/$defs/digest" }
       }
@@ -32,37 +32,41 @@
     "activation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["policyDigest", "evidenceDigest", "context", "decisions"],
+      "required": ["schemaVersion", "protocolId", "requestId", "requestDigest", "trustRootDigest", "policyDigest", "evidenceDigest", "classification", "decisions", "resultDigest"],
       "properties": {
+        "schemaVersion": { "const": 1 },
+        "protocolId": { "const": "eternities-godskills-activation-v1" },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[^\\u0000\\r\\n]+$" },
+        "requestDigest": { "$ref": "#/$defs/digest" },
+        "trustRootDigest": { "$ref": "#/$defs/digest" },
         "policyDigest": { "$ref": "#/$defs/digest" },
         "evidenceDigest": { "$ref": "#/$defs/digest" },
-        "context": {
-          "oneOf": [
-            { "type": "null" },
-            { "$ref": "#/$defs/activationContext" }
-          ]
-        },
-        "decisions": {
-          "type": "array",
-          "maxItems": 3,
-          "items": { "$ref": "#/$defs/activationDecision" }
-        }
+        "classification": { "$ref": "#/$defs/classification" },
+        "decisions": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/activationDecision" } },
+        "resultDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskClass", "consequenceClass", "reviewAvailable"],
+      "properties": {
+        "taskClass": { "$ref": "#/$defs/taskClass" },
+        "consequenceClass": { "$ref": "#/$defs/consequenceClass" },
+        "reviewAvailable": { "type": "boolean" }
       }
     },
     "activationDecision": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "taskClass", "consequenceClass", "mode", "reasonCodes", "preInferenceDisclosure", "deferredReview", "methodEvidence", "policyDigest", "evidenceDigest", "authorityProjection", "authorityExpanded", "decisionDigest"],
+      "required": ["schemaVersion", "selectedId", "taskClass", "consequenceClass", "mode", "reasonCodes", "preInferenceDisclosure", "deferredReview", "methodEvidence", "policyDigest", "evidenceDigest", "authorityProjection", "authorityExpanded", "decisionDigest"],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
+        "schemaVersion": { "const": 1 },
+        "selectedId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
         "taskClass": { "$ref": "#/$defs/taskClass" },
         "consequenceClass": { "$ref": "#/$defs/consequenceClass" },
         "mode": { "enum": ["native", "guardrail", "method", "review"] },
-        "reasonCodes": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
-        },
+        "reasonCodes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
         "preInferenceDisclosure": { "enum": ["none", "guardrails-only", "entrypoint-and-contract"] },
         "deferredReview": { "type": "boolean" },
         "methodEvidence": { "$ref": "#/$defs/methodEvidence" },
@@ -71,22 +75,6 @@
         "authorityProjection": { "$ref": "#/$defs/authorityProjection" },
         "authorityExpanded": { "const": false },
         "decisionDigest": { "$ref": "#/$defs/digest" }
-      }
-    },
-    "activationContext": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["taskClass", "consequenceClass", "reviewAvailable", "explicitMethodRequests"],
-      "properties": {
-        "taskClass": { "$ref": "#/$defs/taskClass" },
-        "consequenceClass": { "$ref": "#/$defs/consequenceClass" },
-        "reviewAvailable": { "type": "boolean" },
-        "explicitMethodRequests": {
-          "type": "array",
-          "maxItems": 3,
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
-        }
       }
     },
     "methodEvidence": {
@@ -101,12 +89,8 @@
         "ties": { "type": "integer", "minimum": 0 },
         "winRate": { "type": "number", "minimum": 0, "maximum": 1 },
         "criticalRegressions": { "type": "integer", "minimum": 0 },
-        "overheadRatio": { "oneOf": [{ "type": "number" }, { "type": "null" }] },
-        "failedGates": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
-        }
+        "overheadRatio": { "oneOf": [{ "type": "null" }, { "type": "number", "exclusiveMinimum": 0 }] },
+        "failedGates": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
       }
     },
     "authorityProjection": {
@@ -114,14 +98,15 @@
       "additionalProperties": false,
       "required": ["availableAuthority", "permittedEffects", "availablePreconditions", "maximumRisk", "minimumEvidenceConfidence", "contextBudget"],
       "properties": {
-        "availableAuthority": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
-        "permittedEffects": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
-        "availablePreconditions": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
-        "maximumRisk": { "type": "string", "minLength": 1 },
-        "minimumEvidenceConfidence": { "type": "string", "minLength": 1 },
+        "availableAuthority": { "$ref": "#/$defs/stringSet" },
+        "permittedEffects": { "$ref": "#/$defs/stringSet" },
+        "availablePreconditions": { "$ref": "#/$defs/stringSet" },
+        "maximumRisk": { "enum": ["low", "moderate", "high"] },
+        "minimumEvidenceConfidence": { "enum": ["unverified", "inferred", "verified"] },
         "contextBudget": { "type": "integer", "minimum": 0 }
       }
     },
+    "stringSet": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
     "taskClass": { "enum": ["creative-generation", "debugging-recovery", "implementation", "research", "continuity", "verification", "general"] },
     "consequenceClass": { "enum": ["low", "consequential", "critical"] }
   }
