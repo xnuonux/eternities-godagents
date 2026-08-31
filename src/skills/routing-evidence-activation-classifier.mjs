@@ -3,7 +3,7 @@ import { sha256Value } from '../core/digest.mjs';
 import { assertVerifiedGodskillsRoutingExecutable } from './routing-executable-verifier.mjs';
 
 const PROTOCOL_ID = 'eternities-routing-evidence-activation-classifier-v1';
-const CAPABILITY_ID = /^[a-z0-9][a-z0-9-]*$/;
+const CAPABILITY_ID = /^[a-z0-9][a-z0-9-]{0,127}$/;
 const FAMILY_TASK_CLASSES = Object.freeze({
   'agency-client-services': 'general',
   'architecture-specification': 'implementation',
@@ -92,8 +92,10 @@ function taxonomyValue() {
     unknownFamilyFallback: 'general',
     mixedTaskClassFallback: 'general',
     familyTaskClasses: Object.entries(FAMILY_TASK_CLASSES)
+      .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
       .map(([family, taskClass]) => ({ family, taskClass })),
     riskConsequenceClasses: Object.entries(RISK_CONSEQUENCE_CLASSES)
+      .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
       .map(([riskClass, consequenceClass]) => ({ riskClass, consequenceClass })),
   };
 }

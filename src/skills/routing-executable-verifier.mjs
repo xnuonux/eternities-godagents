@@ -8,7 +8,8 @@ import { verifyGodskillsRelease } from './release-verifier.mjs';
 
 const PROTOCOL_ID = 'eternities-godskills-routing-executable-v1';
 const DIGEST = /^[a-f0-9]{64}$/;
-const CAPABILITY_ID = /^[a-z0-9][a-z0-9-]*$/;
+const CAPABILITY_ID = /^[a-z0-9][a-z0-9-]{0,127}$/;
+const FAMILY_ID = /^[a-z0-9][a-z0-9-]{0,127}$/;
 const RISK_CLASSES = new Set(['low', 'moderate', 'high']);
 const MODES = Object.freeze([
   Object.freeze({ mode: 'default', entrypoint: 'scripts/intent.mjs' }),
@@ -194,7 +195,7 @@ function buildActivationClassificationEvidence(cards, cardsLogicalDigest, releas
   const projections = cards.map((card) => {
     if (!card || typeof card !== 'object' || Array.isArray(card)
         || typeof card.id !== 'string' || !CAPABILITY_ID.test(card.id)
-        || typeof card.family !== 'string' || card.family.length === 0 || /[\0\r\n]/.test(card.family)
+        || typeof card.family !== 'string' || !FAMILY_ID.test(card.family)
         || !RISK_CLASSES.has(card.riskClass)) {
       throw new Error('Godskills routing classification card projection is invalid');
     }

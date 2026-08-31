@@ -71,11 +71,18 @@ const implementationFiles = Object.freeze([
   'src/core/canonical-json.mjs',
   'src/core/digest.mjs',
   'src/skills/activation-adapter.mjs',
+  'src/skills/godskills-adapter.mjs',
   'src/skills/local-recoverable-godskills-adapter.mjs',
   'src/skills/local-recoverable-godskills-process-transport.mjs',
+  'src/skills/mission-binder.mjs',
   'src/skills/recoverable-godskills-adapter.mjs',
+  'src/skills/recoverable-godskills-contracts.mjs',
+  'src/skills/recoverable-godskills-outbox.mjs',
+  'src/skills/release-verifier.mjs',
   'src/skills/routing-evidence-activation-classifier.mjs',
   'src/skills/routing-executable-verifier.mjs',
+  'src/state/atomic-publication.mjs',
+  'src/state/file-lock.mjs',
 ].sort());
 
 const testFiles = Object.freeze([

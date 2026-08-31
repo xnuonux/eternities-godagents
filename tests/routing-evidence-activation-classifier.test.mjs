@@ -65,13 +65,28 @@ test('classifies exact routing evidence without reading mission prose or choosin
   });
 
   const cases = [
-    ['eternities-muse', 'creative-generation', 'consequential'],
-    ['eternities-phoenix', 'debugging-recovery', 'consequential'],
-    ['eternities-oracle', 'research', 'low'],
     ['eternities-aegis', 'verification', 'critical'],
-    ['eternities-forge', 'implementation', 'consequential'],
-    ['eternities-mnemosyne', 'continuity', 'consequential'],
+    ['eternities-agora', 'general', 'consequential'],
+    ['eternities-arcadia', 'creative-generation', 'consequential'],
+    ['eternities-architect', 'implementation', 'consequential'],
+    ['eternities-athena', 'research', 'low'],
+    ['eternities-atlas', 'implementation', 'consequential'],
     ['eternities-beacon', 'general', 'consequential'],
+    ['eternities-chorus', 'general', 'consequential'],
+    ['eternities-daedalus', 'implementation', 'critical'],
+    ['eternities-forge', 'implementation', 'consequential'],
+    ['eternities-hephaestus', 'research', 'consequential'],
+    ['eternities-herald', 'verification', 'consequential'],
+    ['eternities-hermes', 'implementation', 'critical'],
+    ['eternities-logos', 'creative-generation', 'consequential'],
+    ['eternities-mnemosyne', 'continuity', 'consequential'],
+    ['eternities-muse', 'creative-generation', 'consequential'],
+    ['eternities-omnibus', 'research', 'low'],
+    ['eternities-oracle', 'research', 'low'],
+    ['eternities-orpheus', 'creative-generation', 'critical'],
+    ['eternities-phoenix', 'debugging-recovery', 'consequential'],
+    ['eternities-prometheus', 'general', 'consequential'],
+    ['sovereign-skill-refinery', 'verification', 'consequential'],
   ];
   for (const [id, taskClass, consequenceClass] of cases) {
     assert.deepEqual(await classifier.classify(projection([id])), {
