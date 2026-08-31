@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
@@ -9,9 +11,9 @@ import {
   verifyMissionReviewKernelCertificationReceipt,
 } from '../scripts/build-mission-review-kernel-v1-receipt.mjs';
 
-const repositoryRoot = new URL('../', import.meta.url);
-const fixturePath = new URL('../fixtures/resumable-mission-review-kernel-v1.json', import.meta.url);
-const receiptPath = new URL('../receipts/resumable-mission-review-kernel-v1.json', import.meta.url);
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const fixturePath = resolve(repositoryRoot, 'fixtures', 'resumable-mission-review-kernel-v1.json');
+const receiptPath = resolve(repositoryRoot, 'receipts', 'resumable-mission-review-kernel-v1.json');
 
 test('mission review fixture rebuilds with stable recovery and authority assertions', async (context) => {
   let text;
