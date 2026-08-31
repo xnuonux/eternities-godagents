@@ -57,6 +57,7 @@
     "certify:provider-neutral-phase-protocol": "node scripts/build-provider-neutral-phase-protocol-v1-receipt.mjs",
     "build:durable-anthropic-phase-fixture": "node scripts/build-durable-anthropic-messages-phase-transport-v1-fixture.mjs",
     "certify:durable-anthropic-phase-transport": "node scripts/build-durable-anthropic-messages-phase-transport-v1-receipt.mjs",
-    "build:provider-phase-host-sdk-fixture": "node scripts/build-provider-phase-host-sdk-v1-fixture.mjs"
+    "build:provider-phase-host-sdk-fixture": "node scripts/build-provider-phase-host-sdk-v1-fixture.mjs",
+    "certify:provider-phase-host-sdk": "node scripts/build-provider-phase-host-sdk-v1-receipt.mjs"
   }
 }
