@@ -227,7 +227,13 @@ test('real route and activation recover into the complete identity-bound review 
     review: operationCalls(review.calls),
     revision: operationCalls(revision.calls),
   };
-  const replay = await recovered.run(request);
+  const terminal = await createSealedLocalIdentityBoundMissionVessel({
+    ...common,
+    checkpoint: async (name) => {
+      if (name.includes('local-godskills')) throw new Error('terminal replay must not launch a child');
+    },
+  });
+  const replay = await terminal.run(request);
   const afterReplay = {
     route: launches.route,
     activation: launches.activation,
