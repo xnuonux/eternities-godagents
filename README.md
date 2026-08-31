@@ -43,6 +43,8 @@ npm run certify:local-admission
 npm run certify:cortex-binding
 npm run certify:cortex-binding-registry
 npm run certify:codex-bound-turn
+npm run certify:codex-turn-journal
+npm run certify:codex-recoverable-turn
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -257,6 +259,14 @@ The recoverable journal adds the inert durable substrate that phase 3 deliberate
 Model output is stored outside trusted metadata as an exact content-addressed UTF-8 blob. Terminal recovery rereads that blob and cross-checks its byte count and digest against the task transport receipt, a trusted execution-time witness, and the final host receipt. A completed transport cannot be abandoned and silently dispatched again. An undispatched attempt can be replaced only after its binding has a verified terminal lifecycle receipt.
 
 This journal is intentionally inert. It does not yet reconcile or call a live task transport, acquire or recover a binding, admit continuity content, activate Godskills, invoke Realm effects, or integrate Lunari. The next coordinator milestone must consume the frozen journal contract without weakening its receipt chain.
+
+### Recoverable Codex turn coordinator v1
+
+The coordinator composes the phase-3 envelope, phase-2 writer lease, and inert journal through a stronger recovery-capable transport boundary. It binds the transport's task-control and recovery descriptors under one digest, opens or recovers the operation journal before mutating task state, reconciles a create reservation before reserving, and reconciles an exact dispatch digest before every possible dispatch. An accepted retry replays its response and receipt directly from verified journal evidence without calling the transport.
+
+Process reconstruction never guesses that an uncertain model call was absent. A journaled attempt with no completion waits while its exact binding remains active. After verified expiry, an absent dispatch closes and abandons that ordinal before rebinding. A transport completion recovered after process death may finalize through an expired lease only when its execution witness proves start and completion inside that lease. Revoked completion quarantines. The final receipt binds the journal head, execution witness, actor, task, envelope, response, and zero continuity or Realm authority.
+
+The certified implementation uses a deterministic injected transport whose terminal reconciliation promise is trusted and adversarially checked at the contract boundary. It does not claim that the current public Codex app exposes these task controls, and it performs no provider credential handling, task migration, continuity admission, Godskills activation, Realm effect, background service, or Lunari integration.
 
 ### Admitted local launch
 

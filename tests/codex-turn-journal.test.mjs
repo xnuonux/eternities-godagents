@@ -16,6 +16,7 @@ import {
   createCodexTurnJournal,
   verifyCodexTaskExecutionReceipt,
 } from '../src/host/codex-turn-journal.mjs';
+import { buildRecoverableCodexBoundTurnReceipt } from '../src/host/codex-recoverable-turn-contracts.mjs';
 
 const zeroDigest = '0'.repeat(64);
 const digest = (character) => character.repeat(64);
@@ -262,6 +263,19 @@ test('opening identity is deterministic and the operation slot rejects changed i
     /operation id collision/,
   );
   assert.equal((await first.inspect()).eventCount, 1);
+});
+
+test('an existing operation can be reopened before transport discovery', async (context) => {
+  const fixture = await journalFixture(context, 'open-existing');
+  const identity = opening();
+  const created = await fixture.journal.open(identity);
+
+  const reopened = await fixture.journal.openExisting(identity.operationId);
+  assert.ok(reopened);
+  assert.equal(reopened.transactionId, created.transactionId);
+  assert.deepEqual(await reopened.inspect(), await created.inspect());
+  assert.equal(await fixture.journal.openExisting('operation-never-opened'), null);
+  await assert.rejects(() => fixture.journal.openExisting('bad operation id'), /operation id is invalid/);
 });
 
 test('a create transaction survives reconstruction and returns one exact terminal result', async (context) => {
@@ -632,4 +646,67 @@ test('the journal source is inert and has no task, binding, continuity, skill, o
     'activateGodskill',
     'invokeRealm',
   ]) assert.equal(source.includes(forbidden), false, forbidden);
+});
+
+test('host recovery evidence exposes only verified full artifacts and exact response bytes', async (context) => {
+  const fixture = await journalFixture(context, 'recovery-evidence');
+  const identity = opening();
+  const handle = await fixture.journal.open(identity);
+  const reservation = reservationFor(identity);
+  const active = activeReceipt();
+  const dispatch = dispatchFor(identity, active, reservation.task);
+  const completed = completedEvidence(identity, active, dispatch);
+  await handle.recordReservation(reservation);
+  const attempt = await handle.prepareAttempt({ activeReceipt: active, dispatch });
+  await handle.recordTransport({ attemptId: attempt.attemptId, ...completed });
+
+  const recovered = await handle.recoverEvidence();
+  assert.deepEqual(recovered.identity, identity);
+  assert.deepEqual(recovered.reservation, reservation);
+  assert.equal(recovered.attempts.length, 1);
+  assert.deepEqual(recovered.attempts[0].activeReceipt, active);
+  assert.deepEqual(recovered.attempts[0].dispatch, dispatch);
+  assert.deepEqual(recovered.attempts[0].transport.transportReceipt, completed.transportReceipt);
+  assert.equal(recovered.attempts[0].responseText, completed.responseText);
+  assert.equal(Object.hasOwn(recovered, 'transactionDir'), false);
+});
+
+test('a recoverable host receipt may finalize verified in-lease execution after process-death expiry', async (context) => {
+  const fixture = await journalFixture(context, 'expired-finalization');
+  const identity = opening();
+  const handle = await fixture.journal.open(identity);
+  const reservation = reservationFor(identity);
+  const active = activeReceipt({ expiresAt: '2026-08-31T18:00:03.500Z' });
+  const dispatch = dispatchFor(identity, active, reservation.task);
+  const completed = completedEvidence(identity, active, dispatch);
+  await handle.recordReservation(reservation);
+  const attempt = await handle.prepareAttempt({ activeReceipt: active, dispatch });
+  await handle.recordTransport({ attemptId: attempt.attemptId, ...completed });
+  const lifecycle = lifecycleReceipt(active, {
+    status: 'expired',
+    recordedAt: '2026-08-31T18:00:03.800Z',
+  });
+  await handle.closeBinding({ attemptId: attempt.attemptId, lifecycleReceipt: lifecycle });
+  const preAcceptanceState = await handle.inspect();
+  assert.equal(preAcceptanceState.nextAction, 'finalize-turn');
+  const preAcceptanceJournalHeadDigest = preAcceptanceState.headDigest;
+  const hostReceipt = buildRecoverableCodexBoundTurnReceipt({
+    transactionId: handle.transactionId,
+    preAcceptanceJournalHeadDigest,
+    reservationReceiptDigest: reservation.receiptDigest,
+    activeReceipt: active,
+    lifecycleReceipt: lifecycle,
+    dispatch,
+    transportReceipt: completed.transportReceipt,
+    executionReceipt: completed.executionReceipt,
+    responseText: completed.responseText,
+    recoveredAfterInterruption: true,
+  });
+  await handle.accept({ attemptId: attempt.attemptId, hostReceipt });
+  const recovered = await handle.inspect({ includeResponse: true });
+  assert.equal(recovered.status, 'accepted');
+  assert.equal(recovered.responseText, completed.responseText);
+  assert.equal(recovered.hostReceipt.binding.lifecycleStatus, 'expired');
+  assert.equal(recovered.hostReceipt.recovery.preAcceptanceJournalHeadDigest,
+    preAcceptanceJournalHeadDigest);
 });

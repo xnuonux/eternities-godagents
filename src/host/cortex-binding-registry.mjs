@@ -541,6 +541,30 @@ export function defaultCortexBindingRegistryRoot() {
   return join(profile, '.eternities', 'godagents', 'cortex-bindings');
 }
 
+export async function inspectCortexBindingById({
+  registryRoot = defaultCortexBindingRegistryRoot(),
+  bindingId,
+  clock = Date.now,
+} = {}) {
+  if (typeof registryRoot !== 'string' || registryRoot.length === 0 || /[\0\r\n]/.test(registryRoot)) {
+    throw new TypeError('cortex binding registry root is invalid');
+  }
+  requireDigest(bindingId, 'binding id');
+  const nowMs = clockValue(clock);
+  const result = await mutateRegistry({
+    registryRoot,
+    nowMs,
+    mutate: ({ records }) => {
+      const record = records().get(bindingId);
+      if (!record) fail('binding-missing', 'binding record is unavailable');
+      return record.status === 'active'
+        ? { status: 'active', receipt: activeReceipt(record) }
+        : { status: 'terminal', receipt: lifecycleReceipt(record) };
+    },
+  });
+  return deepFreeze(result);
+}
+
 export async function inspectCortexBindingRegistry({
   registryRoot = defaultCortexBindingRegistryRoot(),
   clock = Date.now,

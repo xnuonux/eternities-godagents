@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "reservationReconciliation", "dispatchReconciliation", "executionWitness"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-codex-task-recovery-v1" },
+    "reservationReconciliation": { "const": "terminal-by-operation" },
+    "dispatchReconciliation": { "const": "terminal-by-dispatch-digest" },
+    "executionWitness": { "const": "lease-bounded-v1" }
+  }
+}

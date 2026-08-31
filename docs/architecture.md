@@ -75,6 +75,16 @@ An uncertain prepared dispatch remains distinguishable from a verified completio
 
 The recovery projection names only the next legal host action. It cannot execute that action, admit continuity, select a skill, write a personal keel, invoke a Realm hand, or establish that the current public Codex task controls implement the future reconciliation contract.
 
+## Recoverable Codex turn coordinator boundary
+
+The coordinator is the first executable composition of the phase-1 candidate compiler, phase-2 binding registry, phase-3 sealed turn, and recoverable journal. A task transport must supply both the strict task-control descriptor and a recovery descriptor promising terminal reservation lookup by operation, terminal dispatch lookup by canonical dispatch digest, and a lease-bounded execution witness. Their canonical binding digest enters the reservation intent, sealed envelope, journal opening, and accepted receipt.
+
+Create always reconciles its suspended reservation before reserving. Every prepared attempt is journaled before dispatch, and every possible dispatch is preceded by exact reconciliation. An orphan active binding is retryable pending, never evidence that the dispatch was absent. Once an undispatched orphan is terminal, the coordinator records its lifecycle and abandonment before allocating a new ordinal. A journaled or reconciled completion cannot be abandoned.
+
+Ordinary completion closes through a released lease. Reconstruction after process death may close through expiry only when the execution witness proves the exact response began and completed inside the original lease. Revocation quarantines. Acceptance cross-binds the pre-acceptance journal head and execution receipt with every existing task, actor, parent, binding, envelope, cortex, transport, and response digest. Exact accepted replay reads the content-addressed response without transport use. Output text remains proposal-only and cannot mint identity, continuity, Godskills, Realm, or receipt authority.
+
+This is a provider-neutral injected contract, not a live Codex desktop integration. Terminal reconciliation and atomic dispatch deduplication remain responsibilities of a trusted adapter. The boundary handles no provider credential, task migration, continuity-content admission, Godskills activation, Realm effect, daemon lifecycle, cross-machine replication, or hostile same-user isolation.
+
 ## Phase 1 creation boundary
 
 Creation is a compiler boundary, not a birth event. A strict candidate selects one lineage, archetype, attribute set, personality, voice, organ loadout, Godskills bundle, cortex class, and embodiment. The loader resolves canonical references, rejects collisions and kind mismatches, and recursively blocks authority, credentials, provider routing, retry controls, Inspiration state, and Soul state from module payloads.

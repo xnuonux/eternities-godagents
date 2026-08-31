@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "taskControl", "recovery", "bindingDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-codex-recoverable-transport-binding-v1" },
+    "taskControl": { "type": "object" },
+    "recovery": { "type": "object" },
+    "bindingDigest": { "$ref": "#/$defs/digest" }
+  }
+}

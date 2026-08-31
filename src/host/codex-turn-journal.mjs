@@ -10,19 +10,19 @@ import { deepFreeze } from '../creation/contracts.mjs';
 import { publishFileExclusive, replaceFileAtomically } from '../state/atomic-publication.mjs';
 import { acquireFileLock } from '../state/file-lock.mjs';
 import {
-  verifyCodexBoundTurnReceipt,
   verifyCodexTaskDispatch,
   verifyCodexTaskReservationReceipt,
   verifyCodexTaskTransportReceipt,
   verifyCodexTaskTransportResult,
 } from './codex-bound-turn.mjs';
+import { verifyCodexTaskExecutionReceipt } from './codex-task-execution.mjs';
+import { verifyAnyCodexBoundTurnReceipt } from './codex-recoverable-turn-contracts.mjs';
 import {
   verifyCortexBindingLifecycleReceipt,
   verifyCortexBindingReceipt,
 } from './cortex-binding-registry.mjs';
 
 const protocolId = 'eternities-godagent-codex-turn-journal-v1';
-const executionProtocolId = 'eternities-codex-task-execution-v1';
 const zeroDigest = '0'.repeat(64);
 const digestPattern = /^[a-f0-9]{64}$/;
 const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
@@ -291,7 +291,7 @@ function assertLifecycleLinks(attempt, lifecycleReceipt) {
   }
 }
 
-function assertHostReceiptLinks(projection, attempt, hostReceipt) {
+function assertHostReceiptLinks(projection, attempt, hostReceipt, preAcceptanceJournalHeadDigest) {
   const { identity, reservation, task } = projection;
   const transport = attempt.transport.transportReceipt;
   const lifecycle = attempt.lifecycleReceipt;
@@ -326,6 +326,13 @@ function assertHostReceiptLinks(projection, attempt, hostReceipt) {
       || hostReceipt.responseBytes !== transport.responseBytes
       || hostReceipt.responseDigest !== transport.responseDigest) {
     throw new IntegrityError('bound-turn host receipt does not match journal evidence');
+  }
+  if (hostReceipt.protocolId === 'eternities-godagent-codex-recoverable-bound-turn-v1'
+      && (hostReceipt.recovery.transactionId !== projection.transactionId
+        || hostReceipt.recovery.preAcceptanceJournalHeadDigest !== preAcceptanceJournalHeadDigest
+        || hostReceipt.recovery.executionReceiptDigest
+          !== attempt.transport.executionReceipt.receiptDigest)) {
+    throw new IntegrityError('recoverable host receipt does not match journal recovery evidence');
   }
 }
 
@@ -472,11 +479,14 @@ function replayEvent(projection, event) {
       throw new IntegrityError('turn acceptance lacks complete attempt evidence');
     }
     if (event.payload.attemptId !== current.attemptId) throw new IntegrityError('accepted attempt id mismatch');
-    if (current.lifecycleReceipt.status !== 'released') {
-      throw new IntegrityError('turn acceptance requires a released binding');
+    const hostReceipt = verifyAnyCodexBoundTurnReceipt(event.payload.hostReceipt);
+    const recoverable = hostReceipt.protocolId
+      === 'eternities-godagent-codex-recoverable-bound-turn-v1';
+    if (current.lifecycleReceipt.status !== 'released'
+        && !(recoverable && current.lifecycleReceipt.status === 'expired')) {
+      throw new IntegrityError('turn acceptance requires a released or safely expired binding');
     }
-    const hostReceipt = verifyCodexBoundTurnReceipt(event.payload.hostReceipt);
-    assertHostReceiptLinks(projection, current, hostReceipt);
+    assertHostReceiptLinks(projection, current, hostReceipt, event.previousDigest);
     projection.terminal = { status: 'accepted', hostReceipt, attemptId: current.attemptId };
     return;
   }
@@ -541,7 +551,7 @@ function nextAction(projection) {
   if (!current.transport && !current.lifecycleReceipt) return 'reconcile-dispatch';
   if (!current.transport && current.lifecycleReceipt) return 'abandon-attempt';
   if (current.transport && !current.lifecycleReceipt) return 'close-binding';
-  if (current.lifecycleReceipt.status === 'released') return 'finalize-turn';
+  if (new Set(['released', 'expired']).has(current.lifecycleReceipt.status)) return 'finalize-turn';
   return 'quarantine';
 }
 
@@ -633,52 +643,6 @@ async function readResponseBlob(path, expected) {
   return text;
 }
 
-export function buildCodexTaskExecutionReceipt({
-  dispatch: inputDispatch,
-  transportReceipt: inputTransportReceipt,
-  responseText,
-  startedAt,
-  completedAt,
-}) {
-  const dispatch = verifyCodexTaskDispatch(inputDispatch);
-  const transport = verifyCodexTaskTransportResult({
-    responseText,
-    receipt: inputTransportReceipt,
-  }, dispatch);
-  const start = parseTime(startedAt, 'task execution startedAt');
-  const completion = parseTime(completedAt, 'task execution completedAt');
-  if (completion < start) throw new IntegrityError('task execution completed before it started');
-  const unsigned = {
-    schemaVersion: 1,
-    protocolId: executionProtocolId,
-    status: 'completed',
-    dispatchDigest: sha256Value(dispatch),
-    transportReceiptDigest: transport.receipt.receiptDigest,
-    responseBytes: transport.receipt.responseBytes,
-    responseDigest: transport.receipt.responseDigest,
-    startedAt,
-    completedAt,
-  };
-  const receipt = { ...unsigned, receiptDigest: sha256Value(unsigned) };
-  assertSchema('codex-task-execution-receipt', receipt);
-  return deepFreeze(receipt);
-}
-
-export function verifyCodexTaskExecutionReceipt(value) {
-  const receipt = clone(value);
-  assertSchema('codex-task-execution-receipt', receipt);
-  const { receiptDigest, ...unsigned } = receipt;
-  requireDigest(receiptDigest, 'task execution receipt digest');
-  if (receiptDigest !== sha256Value(unsigned)) throw new IntegrityError('task execution receipt digest mismatch');
-  const started = parseTime(receipt.startedAt, 'task execution startedAt');
-  const completed = parseTime(receipt.completedAt, 'task execution completedAt');
-  if (completed < started) throw new IntegrityError('task execution completed before it started');
-  requireDigest(receipt.dispatchDigest, 'task execution dispatch digest');
-  requireDigest(receipt.transportReceiptDigest, 'task execution transport receipt digest');
-  requireDigest(receipt.responseDigest, 'task execution response digest');
-  return deepFreeze(receipt);
-}
-
 export function defaultCodexTurnJournalRoot() {
   const profile = userInfo().homedir;
   if (typeof profile !== 'string' || profile.length === 0 || /[\0\r\n]/.test(profile)) {
@@ -686,6 +650,11 @@ export function defaultCodexTurnJournalRoot() {
   }
   return join(profile, '.eternities', 'godagents', 'codex-turn-journals');
 }
+
+export {
+  buildCodexTaskExecutionReceipt,
+  verifyCodexTaskExecutionReceipt,
+} from './codex-task-execution.mjs';
 
 export function createCodexTurnJournal({
   journalRoot = defaultCodexTurnJournalRoot(),
@@ -778,6 +747,30 @@ export function createCodexTurnJournal({
         if (verified.projection.terminal?.status === 'accepted') result.responseText = responseText;
       }
       return deepFreeze(result);
+    }
+
+    async function recoverEvidence() {
+      const verified = await readState(statePath);
+      if (!verified) throw new IntegrityError('turn journal is missing');
+      const recovered = {
+        transactionId: verified.projection.transactionId,
+        identity: clone(verified.projection.identity),
+        task: clone(verified.projection.task),
+        reservation: clone(verified.projection.reservation),
+        attempts: clone(verified.projection.attempts),
+        terminal: clone(verified.projection.terminal),
+        eventCount: verified.state.events.length,
+        headDigest: verified.state.headDigest,
+      };
+      for (let index = 0; index < recovered.attempts.length; index += 1) {
+        const attempt = recovered.attempts[index];
+        if (!attempt.transport) continue;
+        attempt.responseText = await readResponseBlob(
+          join(responsesDir, `${attempt.transport.response.digest}.txt`),
+          attempt.transport.response,
+        );
+      }
+      return deepFreeze(recovered);
     }
 
     async function recordReservation(inputReceipt) {
@@ -917,7 +910,7 @@ export function createCodexTurnJournal({
 
     async function accept({ attemptId, hostReceipt: inputHostReceipt } = {}) {
       requireDigest(attemptId, 'accepted attempt id');
-      const hostReceipt = verifyCodexBoundTurnReceipt(inputHostReceipt);
+      const hostReceipt = verifyAnyCodexBoundTurnReceipt(inputHostReceipt);
       return mutate(async (verified) => {
         const projection = verified.projection;
         if (projection.terminal) {
@@ -933,10 +926,13 @@ export function createCodexTurnJournal({
             || !current.transport || !current.lifecycleReceipt) {
           throw new IntegrityError('turn acceptance lacks complete attempt evidence');
         }
-        if (current.lifecycleReceipt.status !== 'released') {
-          throw new IntegrityError('turn acceptance requires a released binding');
+        const recoverable = hostReceipt.protocolId
+          === 'eternities-godagent-codex-recoverable-bound-turn-v1';
+        if (current.lifecycleReceipt.status !== 'released'
+            && !(recoverable && current.lifecycleReceipt.status === 'expired')) {
+          throw new IntegrityError('turn acceptance requires a released or safely expired binding');
         }
-        assertHostReceiptLinks(projection, current, hostReceipt);
+        assertHostReceiptLinks(projection, current, hostReceipt, verified.state.headDigest);
         await readResponseBlob(
           join(responsesDir, `${current.transport.response.digest}.txt`),
           current.transport.response,
@@ -1000,6 +996,7 @@ export function createCodexTurnJournal({
       transactionDir,
       statePath,
       inspect,
+      recoverEvidence,
       recordReservation,
       prepareAttempt,
       recordTransport,
@@ -1011,5 +1008,16 @@ export function createCodexTurnJournal({
     });
   }
 
-  return Object.freeze({ open });
+  async function openExisting(operationId) {
+    requireIdentifier(operationId, 'turn journal operation id');
+    const operationSlotId = operationSlotIdFor(operationId);
+    const existing = await readState(join(root, operationSlotId, 'journal.json'));
+    if (!existing) return null;
+    if (existing.projection.identity.operationId !== operationId) {
+      throw new IntegrityError('turn journal operation slot mismatch');
+    }
+    return open(existing.projection.identity);
+  }
+
+  return Object.freeze({ open, openExisting });
 }

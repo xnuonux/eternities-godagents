@@ -92,6 +92,10 @@ function requireTurnRequest(value) {
   return deepFreeze(request);
 }
 
+export function verifyCodexBoundTurnRequest(value) {
+  return requireTurnRequest(value);
+}
+
 function descriptorValue(value) {
   exactKeys(value, [
     'schemaVersion', 'protocolId', 'hostAdapterId', 'instructionChannel', 'suspendedReservation',
@@ -105,6 +109,10 @@ function descriptorValue(value) {
     throw new IntegrityError('task transport descriptor is unsupported');
   }
   return deepFreeze(clone(value));
+}
+
+export function verifyCodexTaskTransportDescriptor(value) {
+  return descriptorValue(value);
 }
 
 async function loadDescriptor(taskTransport, { requireReservation = false } = {}) {
@@ -242,6 +250,12 @@ function bindingRequest(task, request) {
   };
 }
 
+export function buildCodexBindingRequest({ task: inputTask, request: inputRequest } = {}) {
+  const task = requireTask(inputTask);
+  const request = requireTurnRequest(inputRequest);
+  return deepFreeze(bindingRequest(task, request));
+}
+
 function bindingProjection(receipt) {
   return {
     bindingId: receipt.bindingId,
@@ -340,6 +354,34 @@ function verifyEnvelope(value) {
     throw new IntegrityError('codex bound-turn model projection binding mismatch');
   }
   return deepFreeze(envelope);
+}
+
+export function buildCodexBoundTurnEnvelope({
+  operation,
+  request: inputRequest,
+  parentTurnReceiptDigest,
+  transportDescriptorDigest,
+  activeReceipt: inputActiveReceipt,
+  candidate: inputCandidate,
+} = {}) {
+  if (!operations.has(operation)) throw new IntegrityError('codex bound-turn operation is invalid');
+  const request = requireTurnRequest(inputRequest);
+  requireDigest(parentTurnReceiptDigest, 'codex bound-turn parent receipt digest');
+  requireDigest(transportDescriptorDigest, 'codex bound-turn transport descriptor digest');
+  const activeReceipt = verifyCortexBindingReceipt(inputActiveReceipt);
+  const candidate = verifyCortexBindingCandidate(inputCandidate);
+  return buildEnvelope({
+    operation,
+    request,
+    parentTurnReceiptDigest,
+    transportDescriptorDigest,
+    activeReceipt,
+    candidate,
+  });
+}
+
+export function verifyCodexBoundTurnEnvelope(value) {
+  return verifyEnvelope(value);
 }
 
 function transportUnsigned({ dispatch, responseText }) {

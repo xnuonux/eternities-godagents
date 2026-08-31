@@ -10,6 +10,7 @@ import { compileCreation } from '../src/creation/compile.mjs';
 import { admitLocalCreation } from '../src/genesis/local-admission.mjs';
 import {
   acquireCortexBinding,
+  inspectCortexBindingById,
   inspectCortexBindingRegistry,
   verifyCortexBindingLifecycleReceipt,
   verifyCortexBindingReceipt,
@@ -147,6 +148,53 @@ test('one verified candidate becomes one credential-free active host receipt', a
   assert.ok(!canonicalJson(snapshot).includes(leaseCanary));
   assert.deepEqual(await handle.inspect(), handle.receipt);
   await handle.release();
+});
+
+test('exact binding lookup returns one verified active or terminal receipt without credentials', async (context) => {
+  let now = Date.parse('2026-08-31T15:05:00.000Z');
+  const fixture = await setupAdmission(context, 'exact-lookup', { clock: () => now });
+  const registryRoot = join(fixture.root, 'binding-registry');
+  const handle = await acquireCortexBinding({
+    registryRoot,
+    instanceRegistryRoot: join(fixture.root, 'instance-registry'),
+    admission: fixture.admission,
+    request: bindingRequest(),
+    leaseDurationMs: 2_000,
+    clock: () => now,
+    leaseCredential: () => 'exact-lookup-secret',
+  });
+
+  const active = await inspectCortexBindingById({
+    registryRoot,
+    bindingId: handle.receipt.bindingId,
+    clock: () => now,
+  });
+  assert.deepEqual(active, { status: 'active', receipt: handle.receipt });
+  assert.equal(canonicalJson(active).includes('exact-lookup-secret'), false);
+
+  now += 3_000;
+  const terminal = await inspectCortexBindingById({
+    registryRoot,
+    bindingId: handle.receipt.bindingId,
+    clock: () => now,
+  });
+  assert.equal(terminal.status, 'terminal');
+  assert.equal(terminal.receipt.status, 'expired');
+  assert.equal(terminal.receipt.bindingId, handle.receipt.bindingId);
+  assert.equal(canonicalJson(terminal).includes('exact-lookup-secret'), false);
+
+  await assert.rejects(
+    () => inspectCortexBindingById({
+      registryRoot,
+      bindingId: 'f'.repeat(64),
+      clock: () => now,
+    }),
+    (error) => error?.code === 'binding-missing',
+  );
+  await assert.rejects(
+    () => inspectCortexBindingById({ registryRoot, bindingId: 'not-a-digest', clock: () => now }),
+    /binding id is invalid/,
+  );
 });
 
 test('one codex task cannot hold two active admitted identities', async (context) => {

@@ -45,6 +45,9 @@ const schemaFiles = {
   'codex-task-execution-receipt': 'codex-task-execution-receipt.schema.json',
   'codex-turn-journal-event': 'codex-turn-journal-event.schema.json',
   'codex-turn-journal-state': 'codex-turn-journal-state.schema.json',
+  'codex-task-recovery-descriptor': 'codex-task-recovery-descriptor.schema.json',
+  'codex-recoverable-transport-binding': 'codex-recoverable-transport-binding.schema.json',
+  'codex-recoverable-bound-turn-receipt': 'codex-recoverable-bound-turn-receipt.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {
