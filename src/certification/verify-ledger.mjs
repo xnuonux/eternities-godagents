@@ -9,6 +9,7 @@ import { sha256Text, sha256Value } from '../core/digest.mjs';
 
 const registry = Object.freeze({
   'codex-bound-turn-v1.json': 'codex-bound-turn-v1',
+  'codex-recoverable-turn-coordinator-v1.json': 'codex-recoverable-turn-coordinator-v1',
   'codex-recoverable-turn-journal-v1.json': 'codex-recoverable-turn-journal-v1',
   'creation-forge-phase1-certification.json': 'creation-forge-phase1',
   'cortex-binding-contracts-v1.json': 'cortex-binding-contracts-v1',
@@ -26,6 +27,22 @@ const registry = Object.freeze({
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
 const requiredHistoricalLinks = Object.freeze({
   'codex-bound-turn-v1.json': Object.freeze([
+    'receipts/cortex-binding-contracts-v1.json',
+    'receipts/cortex-binding-registry-v1.json',
+    'receipts/creation-forge-phase1-certification.json',
+    'receipts/creator-protocol-phase3-certification.json',
+    'receipts/godagent-v0-certification.json',
+    'receipts/godskills-adaptive-activation-v1.json',
+    'receipts/godskills-specialist-preference-v1.json',
+    'receipts/godskills-v3-integration.json',
+    'receipts/local-admission-shell-certification.json',
+    'receipts/networked-cortex-certification.json',
+    'receipts/transactional-genesis-phase2-certification.json',
+    'receipts/visual-creator-shell-certification.json',
+  ]),
+  'codex-recoverable-turn-coordinator-v1.json': Object.freeze([
+    'receipts/codex-bound-turn-v1.json',
+    'receipts/codex-recoverable-turn-journal-v1.json',
     'receipts/cortex-binding-contracts-v1.json',
     'receipts/cortex-binding-registry-v1.json',
     'receipts/creation-forge-phase1-certification.json',
