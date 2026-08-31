@@ -81,19 +81,66 @@ const artifactIdentities = Object.freeze([
   ['dependency', 'src/io.mjs'],
   ['dependency', 'src/static-module-closure.mjs'],
 ]);
-const metricNames = Object.freeze([
-  'authorityExpansions',
-  'classificationProjectionMinimized',
-  'coldQuarryReads',
-  'legacyBehaviorPreserved',
-  'orderedBindingBeforeCortex',
-  'partialConfigurationsAdmitted',
-  'recoveryActivationCalls',
-  'recoveryClassificationCalls',
-  'recoveryRouteCalls',
-  'secretCanaryLeaks',
-  'unselectedBodyLoads',
-].sort());
+export const adaptiveBoundaryEvidence = Object.freeze({
+  authorityExpansions: Object.freeze([
+    'validates every compiler identity, digest, order, authority, and disclosure boundary',
+    'provider output cannot manufacture host authority or reach a Realm hand',
+  ]),
+  classificationProjectionMinimized: Object.freeze([
+    'minimizes and freezes classification input, then builds one exact ordered request',
+  ]),
+  coldQuarryReads: Object.freeze([
+    'verifies the exact certified release without reading any capability body',
+    'opens only the selected entrypoint and contract after release verification',
+  ]),
+  legacyBehaviorPreserved: Object.freeze([
+    'adaptive configuration is all-or-nothing while the legacy path remains unbound',
+    'bound vessels reject a bare transport while explicit unbound operation stays unchanged',
+  ]),
+  orderedBindingBeforeCortex: Object.freeze([
+    'routes then classifies and compiles exact artifacts before any selected body read',
+    'journals a body-free Godskills binding before cortex inference and constitutional decision',
+  ]),
+  partialConfigurationsAdmitted: Object.freeze([
+    'adaptive configuration is all-or-nothing while the legacy path remains unbound',
+    'networked host rejects every partial adaptive state before routing or inference',
+  ]),
+  recoveryActivationCalls: Object.freeze([
+    'adaptive recovery reuses the exact activation binding without route, classification, or external activation calls',
+    'rehydrates without classifier or transport and rejects every changed binding input',
+  ]),
+  recoveryClassificationCalls: Object.freeze([
+    'adaptive recovery reuses the exact activation binding without route, classification, or external activation calls',
+    'rehydrates without classifier or transport and rejects every changed binding input',
+  ]),
+  recoveryRouteCalls: Object.freeze([
+    'adaptive recovery reuses the exact activation binding without route, classification, or external activation calls',
+    'rehydrates a durable selected receipt without invoking the router again',
+  ]),
+  secretCanaryLeaks: Object.freeze([
+    'local transport executes the verified Godskills process with a minimal environment',
+    'explicit adaptive host keeps credentials continuity memory Realm handles and unselected bodies out of every boundary',
+  ]),
+  unselectedBodyLoads: Object.freeze([
+    'native activation preserves route identity without reading selected artifacts',
+    'explicit adaptive host keeps credentials continuity memory Realm handles and unselected bodies out of every boundary',
+  ]),
+});
+const expectedMetrics = Object.freeze({
+  authorityExpansions: 0,
+  classificationProjectionMinimized: true,
+  coldQuarryReads: 0,
+  legacyBehaviorPreserved: true,
+  orderedBindingBeforeCortex: true,
+  partialConfigurationsAdmitted: 0,
+  recoveryActivationCalls: 0,
+  recoveryClassificationCalls: 0,
+  recoveryRouteCalls: 0,
+  secretCanaryLeaks: 0,
+  unselectedBodyLoads: 0,
+});
+const metricNames = Object.freeze(Object.keys(adaptiveBoundaryEvidence).sort());
+const requiredEvidenceTests = Object.freeze([...new Set(Object.values(adaptiveBoundaryEvidence).flat())].sort());
 const requirementEvidence = Object.freeze({
   'GSA-001': ['tests/godskills-release-verifier.test.mjs'],
   'GSA-002': ['tests/godskills-release-verifier.test.mjs', 'tests/godskills-adaptive-integration.test.mjs'],
@@ -117,6 +164,7 @@ const proofLimits = Object.freeze([
   'executed-review-or-model-quality-improvement',
   'hostile-same-user-filesystem-mutation',
   'lunari-integration-readiness',
+  'production-runtime-metric-observation',
   'public-sdk-readiness',
   'soul-or-inspiration-activation',
   'specialist-preference-routing-quality',
@@ -188,23 +236,40 @@ function requireArtifactClosure(artifacts) {
 
 function allTestsPass(testRuns) {
   exactKeys(testRuns, ['godskillsFocused', 'godskillsFull', 'godagentsFocused', 'godagentsFull'], 'test runs');
-  return Object.values(testRuns).every((run) => run?.status === 'pass'
-    && Number.isInteger(run.tests) && run.tests > 0);
+  for (const [name, run] of Object.entries(testRuns)) {
+    exactKeys(run, ['status', 'tests', 'testNameDigest', 'evidenceTests'], `${name} test run`);
+    if (!['pass', 'fail'].includes(run.status)
+        || !Number.isInteger(run.tests) || run.tests < 1) {
+      throw new Error(`${name} test run result is invalid`);
+    }
+    requireDigest(run.testNameDigest, `${name} test-name`);
+    if (!Array.isArray(run.evidenceTests)
+        || run.evidenceTests.some((value) => typeof value !== 'string' || value.length === 0)
+        || new Set(run.evidenceTests).size !== run.evidenceTests.length
+        || !same(run.evidenceTests, [...run.evidenceTests].sort())) {
+      throw new Error(`${name} test evidence is invalid`);
+    }
+  }
+  return Object.values(testRuns).every((run) => run.status === 'pass');
 }
 
-function boundariesPass(metrics) {
-  exactKeys(metrics, metricNames, 'adaptive boundary metrics');
-  return metrics.authorityExpansions === 0
-    && metrics.coldQuarryReads === 0
-    && metrics.unselectedBodyLoads === 0
-    && metrics.recoveryRouteCalls === 0
-    && metrics.recoveryClassificationCalls === 0
-    && metrics.recoveryActivationCalls === 0
-    && metrics.partialConfigurationsAdmitted === 0
-    && metrics.secretCanaryLeaks === 0
-    && metrics.classificationProjectionMinimized === true
-    && metrics.orderedBindingBeforeCortex === true
-    && metrics.legacyBehaviorPreserved === true;
+function deriveBoundaryProof(testRuns) {
+  if (!same(testRuns.godagentsFocused.evidenceTests, requiredEvidenceTests)) {
+    throw new Error('adaptive boundary evidence set is incomplete or changed');
+  }
+  const passed = new Set(testRuns.godagentsFocused.evidenceTests);
+  const metricEvidence = {};
+  for (const name of metricNames) {
+    const basis = adaptiveBoundaryEvidence[name];
+    if (basis.some((testName) => !passed.has(testName))) {
+      throw new Error(`adaptive boundary evidence is missing ${name}`);
+    }
+    metricEvidence[name] = [...basis];
+  }
+  return {
+    metrics: structuredClone(expectedMetrics),
+    metricEvidence,
+  };
 }
 
 export function buildGodskillsAdaptiveIntegrationReceipt(input) {
@@ -247,7 +312,9 @@ export function buildGodskillsAdaptiveIntegrationReceipt(input) {
       throw new Error(`adaptive integration evidence is missing ${id}`);
     }
   }
-  const passed = allTestsPass(input.testRuns) && boundariesPass(input.metrics);
+  const testsPassed = allTestsPass(input.testRuns);
+  const { metrics, metricEvidence } = deriveBoundaryProof(input.testRuns);
+  const passed = testsPassed;
   const requirements = requirementIds.map((id) => ({
     id,
     status: passed ? 'pass' : 'fail',
@@ -260,7 +327,8 @@ export function buildGodskillsAdaptiveIntegrationReceipt(input) {
     source: structuredClone(input.source),
     godskills: structuredClone(input.godskills),
     testRuns: structuredClone(input.testRuns),
-    metrics: structuredClone(input.metrics),
+    metrics,
+    metricEvidence,
     requirements,
     proofLimits: [...proofLimits],
   };
@@ -419,26 +487,13 @@ export async function rebuildGodskillsAdaptiveIntegrationReceipt({
       executableProofLimits: structuredClone(executable.proofLimits),
     },
     testRuns,
-    metrics: {
-      authorityExpansions: 0,
-      classificationProjectionMinimized: true,
-      coldQuarryReads: 0,
-      legacyBehaviorPreserved: true,
-      orderedBindingBeforeCortex: true,
-      partialConfigurationsAdmitted: 0,
-      recoveryActivationCalls: 0,
-      recoveryClassificationCalls: 0,
-      recoveryRouteCalls: 0,
-      secretCanaryLeaks: 0,
-      unselectedBodyLoads: 0,
-    },
     requirementEvidence,
   });
 }
 
-function runTests(files, cwd) {
+function runTests(files, cwd, evidenceNames = []) {
   return new Promise((resolvePromise, rejectPromise) => {
-    const child = spawn(process.execPath, ['--test', ...files], {
+    const child = spawn(process.execPath, ['--test', '--test-reporter=tap', ...files], {
       cwd,
       shell: false,
       windowsHide: true,
@@ -450,11 +505,24 @@ function runTests(files, cwd) {
     child.stderr.on('data', (chunk) => { output += chunk; });
     child.once('error', rejectPromise);
     child.once('close', (code) => {
-      const matches = [...output.matchAll(/(?:^|\n)[^\S\r\n]*(?:ℹ|#)?\s*tests\s+(\d+)/g)];
-      const tests = Number(matches.at(-1)?.[1]);
-      if (code !== 0 || !Number.isInteger(tests) || tests < 1) {
+      const summary = (name) => Number(output.match(new RegExp(`(?:^|\\n)# ${name} (\\d+)(?:\\r?$|\\n)`))?.[1]);
+      const tests = summary('tests');
+      const passed = summary('pass');
+      const failed = summary('fail');
+      const skipped = summary('skipped');
+      const names = [...output.matchAll(/(?:^|\n)# Subtest: ([^\r\n]+)/g)].map((match) => match[1]);
+      const passedNames = new Set(names);
+      const missingEvidence = evidenceNames.filter((name) => !passedNames.has(name));
+      if (code !== 0 || !Number.isInteger(tests) || tests < 1
+          || passed !== tests || failed !== 0 || skipped !== 0
+          || names.length !== tests || missingEvidence.length > 0) {
         rejectPromise(new Error(`adaptive integration test gate failed with code ${code}`));
-      } else resolvePromise({ status: 'pass', tests });
+      } else resolvePromise({
+        status: 'pass',
+        tests,
+        testNameDigest: sha256Value([...names].sort()),
+        evidenceTests: [...evidenceNames].sort(),
+      });
     });
   });
 }
@@ -481,11 +549,19 @@ async function main() {
     runTests([], skillsRoot),
   ]);
   const outputPath = join(root, 'receipts', 'godskills-adaptive-activation-v1.json');
+  const provisionalNameDigest = sha256Value(['provisional-certification-bootstrap']);
   const preliminaryRuns = {
     godskillsFocused,
     godskillsFull,
-    godagentsFocused: { status: 'pass', tests: 1 },
-    godagentsFull: { status: 'pass', tests: 1 },
+    godagentsFocused: {
+      status: 'pass',
+      tests: requiredEvidenceTests.length,
+      testNameDigest: sha256Value(requiredEvidenceTests),
+      evidenceTests: [...requiredEvidenceTests],
+    },
+    godagentsFull: {
+      status: 'pass', tests: 1, testNameDigest: provisionalNameDigest, evidenceTests: [],
+    },
   };
   const preliminary = await rebuildGodskillsAdaptiveIntegrationReceipt({
     repositoryRoot: root,
@@ -495,7 +571,7 @@ async function main() {
     testRuns: preliminaryRuns,
   });
   await writeFile(outputPath, `${canonicalJson(preliminary)}\n`, 'utf8');
-  const godagentsFocused = await runTests(focusedGodagentsTests, root);
+  const godagentsFocused = await runTests(focusedGodagentsTests, root, requiredEvidenceTests);
   const godagentsFull = await runTests([], root);
   const receipt = await rebuildGodskillsAdaptiveIntegrationReceipt({
     repositoryRoot: root,

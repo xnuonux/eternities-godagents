@@ -55,7 +55,7 @@ new exact base in the final receipt.
 - a partial activation configuration fails before routing or body reads.
 - no route means no classification, no activation process, and no synthetic
   empty activation result.
-- recovery performs no routing, classification, or activation compilation.
+- recovery performs no routing, classification, or external activation compilation; deterministic package reconstruction must match its durable digests.
 - executable receipt digest is the logical, location-independent
   `trustRootDigest`; do not define a digest over itself.
 - generated build evidence may report `verified-build`, but may not certify its
@@ -514,8 +514,8 @@ source envelope.
 
 - [ ] add recovery tests before changing recovery code.
 
-prove recovery performs no route, classify, or compile call and reproduces the
-exact stack and cortex package digests. changed trust root, selection, mission,
+prove recovery performs no route, classification, or external activation call,
+then reconstructs the exact stack and cortex package digests. changed trust root, selection, mission,
 authority, explicit method request, activation bytes, disclosure bytes, stack,
 or package must fail closed.
 
@@ -609,9 +609,11 @@ the new certification receipt must bind:
   contract digests
 - exact test counts from fresh Godskills focused and full suites
 - exact test counts from fresh Godagents focused and full suites
+- exact named passing-test evidence for every declared boundary metric; these
+  fixture-backed assertions must not be represented as production telemetry
 - unchanged historical receipt file digests
 - zero authority expansion, zero cold quarry reads, zero unselected body reads,
-  zero recovery recompilations, and preserved legacy behavior
+  zero recovery external activation recompilations, and preserved legacy behavior
 - explicit proof limits
 
 - [ ] write receipt rejection and byte-rebuild tests first.
@@ -695,7 +697,7 @@ this milestone is complete only when all of these are true:
   exact selected artifacts, explicit requests, and trust root.
 - native, guardrail, method, and review disclosure boundaries are proven with
   real read spies.
-- recovery performs no routing, classification, or activation compilation.
+- recovery performs no routing, classification, or external activation compilation; deterministic package reconstruction must match its durable digests.
 - old release pins retain the historical System v3 behavior.
 - both complete suites pass on merged mains.
 - the new certification receipt joins the verified historical ledger without

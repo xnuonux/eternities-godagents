@@ -406,7 +406,7 @@ test('adaptive no-route source identity binds the trust root and explicit reques
   assert.equal(adaptive.state.transportCalls, 0);
 });
 
-test('adaptive recovery reuses the exact activation binding without route classify or compile calls', async () => {
+test('adaptive recovery reuses the exact activation binding without route, classification, or external activation calls', async () => {
   const adaptive = compiler({ mode: 'guardrail' });
   const first = await createGodskillsAdapter({
     releasePin: releasePin(),

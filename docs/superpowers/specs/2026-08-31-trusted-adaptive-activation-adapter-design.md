@@ -162,7 +162,7 @@ capability bodies into its own repository.
 | activation compilation | Godskills executable entrypoint | the host cannot forge a mode-bearing result |
 | authority and effect intersection | Godagents | compiler output cannot widen the host envelope |
 | capability layer disclosure | Godagents binder from verified Godskills artifacts | no cold quarry or unselected body may load |
-| continuity and recovery | Godagents keel and journal | no classifier or compiler rerun may change a committed cycle |
+| continuity and recovery | Godagents keel and journal | no classifier or external activation-compiler rerun may change a committed cycle; deterministic package reconstruction must match its committed digests |
 | preference ranking | future Godskills routing protocol | preferences cannot become exclusions |
 
 ## selected architecture

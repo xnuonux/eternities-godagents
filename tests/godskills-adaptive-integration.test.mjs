@@ -6,6 +6,7 @@ import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
 import {
+  adaptiveBoundaryEvidence,
   buildGodskillsAdaptiveIntegrationReceipt,
   rebuildGodskillsAdaptiveIntegrationReceipt,
 } from '../scripts/build-godskills-adaptive-integration-receipt.mjs';
@@ -22,6 +23,16 @@ const historicalPaths = Object.freeze([
   'receipts/transactional-genesis-phase2-certification.json',
   'receipts/visual-creator-shell-certification.json',
 ]);
+const requiredEvidenceTests = Object.freeze([...new Set(Object.values(adaptiveBoundaryEvidence).flat())].sort());
+
+function passingRun(tests, evidenceTests = []) {
+  return {
+    status: 'pass',
+    tests,
+    testNameDigest: '6'.repeat(64),
+    evidenceTests: [...evidenceTests],
+  };
+}
 
 function artifactRows() {
   return [
@@ -75,23 +86,10 @@ function fixtureInput() {
       executableProofLimits: ['fixture-limit'],
     },
     testRuns: {
-      godskillsFocused: { status: 'pass', tests: 25 },
-      godskillsFull: { status: 'pass', tests: 660 },
-      godagentsFocused: { status: 'pass', tests: 60 },
-      godagentsFull: { status: 'pass', tests: 340 },
-    },
-    metrics: {
-      authorityExpansions: 0,
-      coldQuarryReads: 0,
-      unselectedBodyLoads: 0,
-      recoveryRouteCalls: 0,
-      recoveryClassificationCalls: 0,
-      recoveryActivationCalls: 0,
-      partialConfigurationsAdmitted: 0,
-      classificationProjectionMinimized: true,
-      orderedBindingBeforeCortex: true,
-      legacyBehaviorPreserved: true,
-      secretCanaryLeaks: 0,
+      godskillsFocused: passingRun(25),
+      godskillsFull: passingRun(660),
+      godagentsFocused: passingRun(60, requiredEvidenceTests),
+      godagentsFull: passingRun(340),
     },
     requirementEvidence: Object.fromEntries(requirementIds.map((id) => [id, [`tests/${id.toLowerCase()}.test.mjs`]])),
   };
@@ -104,12 +102,15 @@ test('adaptive integration receipt certifies all sixteen requirements and exact 
   assert.equal(receipt.godskills.artifacts.length, 11);
   assert.equal(receipt.metrics.authorityExpansions, 0);
   assert.equal(receipt.metrics.recoveryActivationCalls, 0);
+  assert.deepEqual(receipt.metricEvidence.recoveryActivationCalls,
+    adaptiveBoundaryEvidence.recoveryActivationCalls);
   assert.equal(receipt.proofLimits.includes('executed-review-or-model-quality-improvement'), true);
   assert.equal(receipt.proofLimits.includes('lunari-integration-readiness'), true);
+  assert.equal(receipt.proofLimits.includes('production-runtime-metric-observation'), true);
   assert.match(receipt.receiptDigest, /^[a-f0-9]{64}$/);
 });
 
-test('failed tests, missing requirements, malformed closure, or boundary violations cannot certify', () => {
+test('failed tests, missing requirements, malformed closure, or unmeasured boundaries cannot certify', () => {
   const failed = fixtureInput();
   failed.testRuns.godagentsFull.status = 'fail';
   assert.equal(buildGodskillsAdaptiveIntegrationReceipt(failed).status, 'rejected');
@@ -118,9 +119,9 @@ test('failed tests, missing requirements, malformed closure, or boundary violati
   delete missing.requirementEvidence['GSA-016'];
   assert.throws(() => buildGodskillsAdaptiveIntegrationReceipt(missing), /GSA-016/);
 
-  const expanded = fixtureInput();
-  expanded.metrics.authorityExpansions = 1;
-  assert.equal(buildGodskillsAdaptiveIntegrationReceipt(expanded).status, 'rejected');
+  const unmeasured = fixtureInput();
+  unmeasured.testRuns.godagentsFocused.evidenceTests.pop();
+  assert.throws(() => buildGodskillsAdaptiveIntegrationReceipt(unmeasured), /boundary evidence/i);
 
   const changedClosure = fixtureInput();
   changedClosure.godskills.artifacts.pop();
