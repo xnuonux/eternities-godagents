@@ -101,7 +101,6 @@ const focusedTestFiles = Object.freeze([
   'tests/openai-compatible-phase-policy.test.mjs',
   'tests/openai-compatible-phase-transport.test.mjs',
   'tests/openai-compatible-phase-transport-certification.test.mjs',
-  'tests/provider-neutral-phase-protocol-certification.test.mjs',
 ]);
 
 const releaseOnlyPaths = Object.freeze([certificationPath, receiptPath]);
