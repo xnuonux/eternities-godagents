@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64, "maxLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "missionId", "admissionDigest", "phase", "round", "executorDescriptorDigest", "inputs", "maxCompletionTokens", "requestDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-phase-request-v1" },
+    "missionId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "admissionDigest": { "$ref": "#/$defs/digest" },
+    "phase": { "enum": ["native", "review", "revision"] },
+    "round": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "executorDescriptorDigest": { "$ref": "#/$defs/digest" },
+    "inputs": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "artifactDigest"],
+        "properties": {
+          "role": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "artifactDigest": { "$ref": "#/$defs/digest" }
+        }
+      }
+    },
+    "maxCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+    "requestDigest": { "$ref": "#/$defs/digest" }
+  }
+}

@@ -36,6 +36,7 @@
     "certify:cortex-binding-registry": "node scripts/build-cortex-binding-registry-v1-receipt.mjs",
     "certify:codex-bound-turn": "node scripts/build-codex-bound-turn-v1-receipt.mjs",
     "certify:codex-turn-journal": "node scripts/build-codex-turn-journal-v1-receipt.mjs",
-    "certify:codex-recoverable-turn": "node scripts/build-codex-recoverable-turn-coordinator-v1-receipt.mjs"
+    "certify:codex-recoverable-turn": "node scripts/build-codex-recoverable-turn-coordinator-v1-receipt.mjs",
+    "certify:mission-review-kernel": "node scripts/build-mission-review-kernel-v1-receipt.mjs"
   }
 }

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64, "maxLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "missionId", "admissionDigest", "disposition", "reason", "acceptedArtifactDigest", "nativeResultDigest", "reviewResultDigests", "revisionResultDigest", "authorityExpanded", "realmEffects", "verdictDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-verdict-v1" },
+    "missionId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "admissionDigest": { "$ref": "#/$defs/digest" },
+    "disposition": { "enum": ["accepted", "rejected"] },
+    "reason": { "enum": ["native-no-review", "review-accepted", "review-rejected", "revision-review-accepted", "revision-review-rejected", "revision-budget-exhausted", "budget-exhausted-before-review", "budget-exhausted-before-revision", "budget-exhausted-before-final-review"] },
+    "acceptedArtifactDigest": {},
+    "nativeResultDigest": { "$ref": "#/$defs/digest" },
+    "reviewResultDigests": { "type": "array", "maxItems": 2, "uniqueItems": true, "items": { "$ref": "#/$defs/digest" } },
+    "revisionResultDigest": {},
+    "authorityExpanded": { "const": false },
+    "realmEffects": { "const": 0 },
+    "verdictDigest": { "$ref": "#/$defs/digest" }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputTokens", "cachedInputTokens", "reasoningTokens", "visibleOutputTokens", "completionTokens"],
+      "properties": {
+        "inputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "cachedInputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "reasoningTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "visibleOutputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "completionTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "status", "missionId", "admissionDigest", "transactionId", "preCompletionJournalHeadDigest", "verdictDigest", "disposition", "acceptedArtifactDigest", "phases", "usage", "completedAt", "authorityExpanded", "realmEffects", "receiptDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-review-completion-v1" },
+    "status": { "const": "completed" },
+    "missionId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "admissionDigest": { "$ref": "#/$defs/digest" },
+    "transactionId": { "$ref": "#/$defs/digest" },
+    "preCompletionJournalHeadDigest": { "$ref": "#/$defs/digest" },
+    "verdictDigest": { "$ref": "#/$defs/digest" },
+    "disposition": { "enum": ["accepted", "rejected"] },
+    "acceptedArtifactDigest": {},
+    "phases": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nativeResultDigest", "reviewResultDigests", "revisionResultDigest"],
+      "properties": {
+        "nativeResultDigest": { "$ref": "#/$defs/digest" },
+        "reviewResultDigests": { "type": "array", "maxItems": 2, "uniqueItems": true, "items": { "$ref": "#/$defs/digest" } },
+        "revisionResultDigest": {}
+      }
+    },
+    "usage": { "$ref": "#/$defs/usage" },
+    "completedAt": { "type": "string", "minLength": 24, "maxLength": 24 },
+    "authorityExpanded": { "const": false },
+    "realmEffects": { "const": 0 },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  }
+}

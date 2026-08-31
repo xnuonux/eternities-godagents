@@ -48,6 +48,14 @@ const schemaFiles = {
   'codex-task-recovery-descriptor': 'codex-task-recovery-descriptor.schema.json',
   'codex-recoverable-transport-binding': 'codex-recoverable-transport-binding.schema.json',
   'codex-recoverable-bound-turn-receipt': 'codex-recoverable-bound-turn-receipt.schema.json',
+  'mission-review-admission': 'mission-review-admission.schema.json',
+  'mission-phase-executor-descriptor': 'mission-phase-executor-descriptor.schema.json',
+  'mission-phase-request': 'mission-phase-request.schema.json',
+  'mission-phase-result': 'mission-phase-result.schema.json',
+  'mission-verdict': 'mission-verdict.schema.json',
+  'mission-review-completion': 'mission-review-completion.schema.json',
+  'mission-review-journal-event': 'mission-review-journal-event.schema.json',
+  'mission-review-journal-state': 'mission-review-journal-state.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

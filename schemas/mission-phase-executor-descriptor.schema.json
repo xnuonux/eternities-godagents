@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64, "maxLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "executorId", "phase", "terminalReconciliation", "atomicDeduplication", "authority", "descriptorDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-phase-executor-v1" },
+    "executorId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "phase": { "enum": ["native", "review", "revision"] },
+    "terminalReconciliation": { "const": "by-request-digest" },
+    "atomicDeduplication": { "const": true },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["continuityAdmission", "evolution", "identityOwnership", "inspiration", "personalKeelWrite", "realmEffects", "soul"],
+      "properties": {
+        "continuityAdmission": { "const": false },
+        "evolution": { "const": false },
+        "identityOwnership": { "const": false },
+        "inspiration": { "const": false },
+        "personalKeelWrite": { "const": false },
+        "realmEffects": { "const": false },
+        "soul": { "const": false }
+      }
+    },
+    "descriptorDigest": { "$ref": "#/$defs/digest" }
+  }
+}

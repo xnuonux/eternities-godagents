@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64, "maxLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sequence", "previousDigest", "eventType", "transactionId", "recordedAt", "payload", "contentDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sequence": { "type": "integer", "minimum": 1, "maximum": 64 },
+    "previousDigest": { "$ref": "#/$defs/digest" },
+    "eventType": { "enum": ["mission.admitted", "native.prepared", "native.committed", "review.bound", "review.prepared", "review.committed", "revision.prepared", "revision.committed", "native.accepted", "revision.accepted", "budget.exhausted", "verdict.committed", "mission.completed"] },
+    "transactionId": { "$ref": "#/$defs/digest" },
+    "recordedAt": { "type": "string", "minLength": 24, "maxLength": 24 },
+    "payload": { "type": "object" },
+    "contentDigest": { "$ref": "#/$defs/digest" }
+  }
+}

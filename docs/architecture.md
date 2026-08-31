@@ -85,6 +85,14 @@ Ordinary completion closes through a released lease. Reconstruction after proces
 
 This is a provider-neutral injected contract, not a live Codex desktop integration. Terminal reconciliation and atomic dispatch deduplication remain responsibilities of a trusted adapter. The boundary handles no provider credential, task migration, continuity-content admission, Godskills activation, Realm effect, daemon lifecycle, cross-machine replication, or hostile same-user isolation.
 
+## Resumable mission review kernel boundary
+
+The mission review kernel is a separate durable state machine for one admitted mission. Its authority-empty executor descriptors, exact phase requests, canonical artifacts, phase results, verdict, and terminal completion are closed contracts. A native artifact must be committed before a deferred review can be materialized. The only review path is native, optional first review, optional one revision, and mandatory final review, with no branch that can exceed two reviews or one revision.
+
+Each prepared request binds its ordered prior artifacts and reserved completion ceiling. The journal records preparation before dispatch and reconciles the exact request before every possible execution. Completed external work can therefore be recovered after process death without redispatch, while absent, pending, ambiguous, substituted, authority-bearing, or over-budget evidence fails closed. Exact terminal replay is read-only and performs no executor calls.
+
+The kernel consumes a separately pinned body-free Godskills activation result but does not itself run a real evaluator package. Its deterministic certification uses trusted injected executors to prove ordering, crash recovery, deduplication, token accounting, authority non-expansion, and zero Realm effects. Provider credentials, model quality, hostile-executor isolation, default vessel integration, Codex task transport, continuity admission, personal-keel writes, Realm action, Lunari, Inspiration, and Soul remain outside this boundary.
+
 ## Phase 1 creation boundary
 
 Creation is a compiler boundary, not a birth event. A strict candidate selects one lineage, archetype, attribute set, personality, voice, organ loadout, Godskills bundle, cortex class, and embodiment. The loader resolves canonical references, rejects collisions and kind mismatches, and recursively blocks authority, credentials, provider routing, retry controls, Inspiration state, and Soul state from module payloads.

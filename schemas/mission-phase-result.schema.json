@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputTokens", "cachedInputTokens", "reasoningTokens", "visibleOutputTokens", "completionTokens"],
+      "properties": {
+        "inputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "cachedInputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "reasoningTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "visibleOutputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "completionTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["receipt", "artifact"],
+  "properties": {
+    "artifact": { "type": "object" },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "protocolId", "status", "phase", "round", "requestDigest", "executorDescriptorDigest", "artifactDigest", "artifactBytes", "usage", "startedAt", "completedAt", "authorityExpanded", "resultDigest"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "protocolId": { "const": "eternities-mission-phase-result-v1" },
+        "status": { "const": "completed" },
+        "phase": { "enum": ["native", "review", "revision"] },
+        "round": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "requestDigest": { "$ref": "#/$defs/digest" },
+        "executorDescriptorDigest": { "$ref": "#/$defs/digest" },
+        "artifactDigest": { "$ref": "#/$defs/digest" },
+        "artifactBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 },
+        "usage": { "$ref": "#/$defs/usage" },
+        "startedAt": { "type": "string", "minLength": 24, "maxLength": 24 },
+        "completedAt": { "type": "string", "minLength": 24, "maxLength": 24 },
+        "authorityExpanded": { "const": false },
+        "resultDigest": { "$ref": "#/$defs/digest" }
+      }
+    }
+  }
+}
