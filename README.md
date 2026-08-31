@@ -2,7 +2,7 @@
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
-Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, a headless Phase 3 creator protocol, and the first two phases of the Cortex Binding Protocol. The binding path reconstructs one inert identity candidate from an admitted genesis, then admits it into one task and personal-keel writer lease without invoking a model or granting Realm effects. Evolution and Soul activation remain excluded.
+Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, a headless Phase 3 creator protocol, and the first three host-side phases of the Cortex Binding Protocol. The binding path reconstructs one inert identity candidate from an admitted genesis, admits it into one task and personal-keel writer lease, then seals it into a receipt-bound task-scoped turn without granting Realm or continuity authority. Evolution and Soul activation remain excluded.
 
 The canonical architecture is [ADR-0002](C:/dev/eternities-canon/.worktrees/godagents-inspiration-covenant/architecture/ADR-0002-godagent-v0-runtime-and-foundry.md).
 
@@ -42,6 +42,7 @@ npm run certify:visual-creator
 npm run certify:local-admission
 npm run certify:cortex-binding
 npm run certify:cortex-binding-registry
+npm run certify:codex-bound-turn
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -240,6 +241,14 @@ Phase 2 upgrades one verified inert candidate into a credential-free active host
 Renewal re-verifies the admitted source and current keel head before extending the lease. Release frees task and writer claims without changing the revocation epoch. Revocation advances the monotonic task-and-instance epoch, so stale requests cannot rebind. Expired durable leases become explicit lifecycle events, and dead-host recovery additionally requires the existing process lock to satisfy dead-owner and stale-grace checks. Registry updates are serialized and atomically replaced, while every read verifies canonical bytes, outer state digest, event-chain digests, ordering, semantic transitions, collision rules, and a bounded file size.
 
 The active receipt grants only `continuity: host-lease-only` and `realmEffects: none`. It does not create or resume a Codex task, inject context, call a model, activate Godskills, admit continuity content, invoke a Realm effect, integrate Lunari, or activate Soul. Those remain later protocol phases with separate evidence.
+
+### Codex bound-turn protocol v1
+
+Phase 3 defines the host transaction that can place one verified compact identity envelope onto a Codex task without editing global instructions or trusting model self-identification. Create requires a trusted transport to reserve a suspended task without starting a model. The returned task id is then bound through the phase-2 registry, a fresh phase-1 candidate is compiled and checked against the active receipt, and one canonical envelope is dispatched through the transport's declared task-scoped instruction channel. Continue and compaction-resume require an exact parent host receipt on the same task and actor, but no transcript replay.
+
+The transport must return a host-generated receipt over the exact task, turn, instruction channel, transport descriptor, active binding receipt, envelope digest, cortex id, and response bytes. Model text is carried beside that receipt as untrusted output and cannot manufacture identity, continuity admission, or Realm authority. Every v1 turn closes its phase-2 writer lease after the response is verified, allowing the next mission to compile a fresh candidate while preserving actor continuity through the admitted instance, personal keel, exact task, and parent receipt chain.
+
+The current public Codex app controls do not expose suspended task reservation or a trusted envelope-bound execution receipt, so this repository does not claim a live app integration. The certified boundary is an injected provider-neutral task transport contract. Prompt echoes, task titles, working directories, and global `AGENTS.md` edits are explicitly not binding proof.
 
 ### Admitted local launch
 

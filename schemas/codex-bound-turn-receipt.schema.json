@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 128 }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "status", "operation", "operationId", "turnId", "parentTurnReceiptDigest", "reservationReceiptDigest", "transportDescriptorDigest", "instructionChannel", "task", "actor", "binding", "envelopeDigest", "modelProjectionDigest", "transportReceiptDigest", "cortexId", "responseBytes", "responseDigest", "authority", "receiptDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-godagent-codex-bound-turn-v1" },
+    "status": { "const": "accepted" },
+    "operation": { "enum": ["create", "continue", "compaction-resume"] },
+    "operationId": { "$ref": "#/$defs/identifier" },
+    "turnId": { "$ref": "#/$defs/identifier" },
+    "parentTurnReceiptDigest": { "$ref": "#/$defs/digest" },
+    "reservationReceiptDigest": { "$ref": "#/$defs/digest" },
+    "transportDescriptorDigest": { "$ref": "#/$defs/digest" },
+    "instructionChannel": { "enum": ["developer", "sealed-user-envelope"] },
+    "task": {
+      "type": "object", "additionalProperties": false, "required": ["taskId", "hostId", "hostAdapterId"],
+      "properties": { "taskId": { "$ref": "#/$defs/identifier" }, "hostId": { "$ref": "#/$defs/identifier" }, "hostAdapterId": { "$ref": "#/$defs/identifier" } }
+    },
+    "actor": {
+      "type": "object", "additionalProperties": false, "required": ["instanceId", "genesisId", "identityDigest", "genomeDigest", "distributionDigest", "keelId", "keelHeadDigest"],
+      "properties": {
+        "instanceId": { "$ref": "#/$defs/identifier" }, "genesisId": { "$ref": "#/$defs/digest" },
+        "identityDigest": { "$ref": "#/$defs/digest" }, "genomeDigest": { "$ref": "#/$defs/digest" },
+        "distributionDigest": { "$ref": "#/$defs/digest" }, "keelId": { "type": "string", "minLength": 69, "maxLength": 69 },
+        "keelHeadDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "binding": {
+      "type": "object", "additionalProperties": false, "required": ["bindingId", "bindingCandidateId", "bindingCandidateDigest", "activeReceiptDigest", "lifecycleReceiptDigest", "lifecycleStatus"],
+      "properties": {
+        "bindingId": { "$ref": "#/$defs/digest" }, "bindingCandidateId": { "$ref": "#/$defs/digest" },
+        "bindingCandidateDigest": { "$ref": "#/$defs/digest" }, "activeReceiptDigest": { "$ref": "#/$defs/digest" },
+        "lifecycleReceiptDigest": { "$ref": "#/$defs/digest" }, "lifecycleStatus": { "const": "released" }
+      }
+    },
+    "envelopeDigest": { "$ref": "#/$defs/digest" },
+    "modelProjectionDigest": { "$ref": "#/$defs/digest" },
+    "transportReceiptDigest": { "$ref": "#/$defs/digest" },
+    "cortexId": { "$ref": "#/$defs/identifier" },
+    "responseBytes": { "type": "integer", "minimum": 0, "maximum": 4194304 },
+    "responseDigest": { "$ref": "#/$defs/digest" },
+    "authority": {
+      "type": "object", "additionalProperties": false, "required": ["continuityAdmission", "realmEffects"],
+      "properties": { "continuityAdmission": { "const": false }, "realmEffects": { "const": 0 } }
+    },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  }
+}

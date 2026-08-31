@@ -37,6 +37,11 @@ const schemaFiles = {
   'cortex-binding-registry-state': 'cortex-binding-registry-state.schema.json',
   'cortex-binding-receipt': 'cortex-binding-receipt.schema.json',
   'cortex-binding-lifecycle-receipt': 'cortex-binding-lifecycle-receipt.schema.json',
+  'codex-bound-turn-request': 'codex-bound-turn-request.schema.json',
+  'codex-task-reservation-receipt': 'codex-task-reservation-receipt.schema.json',
+  'codex-bound-turn-envelope': 'codex-bound-turn-envelope.schema.json',
+  'codex-task-transport-receipt': 'codex-task-transport-receipt.schema.json',
+  'codex-bound-turn-receipt': 'codex-bound-turn-receipt.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

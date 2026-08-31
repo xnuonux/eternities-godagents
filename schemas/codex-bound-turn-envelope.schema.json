@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 128 }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "operation", "operationId", "turnId", "parentTurnReceiptDigest", "transportDescriptorDigest", "binding", "modelProjection", "modelProjectionDigest", "hostRules", "envelopeDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-godagent-codex-bound-turn-v1" },
+    "operation": { "enum": ["create", "continue", "compaction-resume"] },
+    "operationId": { "$ref": "#/$defs/identifier" },
+    "turnId": { "$ref": "#/$defs/identifier" },
+    "parentTurnReceiptDigest": { "$ref": "#/$defs/digest" },
+    "transportDescriptorDigest": { "$ref": "#/$defs/digest" },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bindingId", "bindingReceiptDigest", "bindingCandidateId", "bindingCandidateDigest", "identityDigest", "instanceId", "genesisId", "genomeDigest", "distributionDigest", "realmContractDigest", "keelId", "keelHeadDigest", "taskId", "hostAdapterId", "revocationEpoch", "leaseId", "expiresAt"],
+      "properties": {
+        "bindingId": { "$ref": "#/$defs/digest" },
+        "bindingReceiptDigest": { "$ref": "#/$defs/digest" },
+        "bindingCandidateId": { "$ref": "#/$defs/digest" },
+        "bindingCandidateDigest": { "$ref": "#/$defs/digest" },
+        "identityDigest": { "$ref": "#/$defs/digest" },
+        "instanceId": { "$ref": "#/$defs/identifier" },
+        "genesisId": { "$ref": "#/$defs/digest" },
+        "genomeDigest": { "$ref": "#/$defs/digest" },
+        "distributionDigest": { "$ref": "#/$defs/digest" },
+        "realmContractDigest": { "$ref": "#/$defs/digest" },
+        "keelId": { "type": "string", "minLength": 69, "maxLength": 69 },
+        "keelHeadDigest": { "$ref": "#/$defs/digest" },
+        "taskId": { "$ref": "#/$defs/identifier" },
+        "hostAdapterId": { "$ref": "#/$defs/identifier" },
+        "revocationEpoch": { "type": "integer", "minimum": 0 },
+        "leaseId": { "$ref": "#/$defs/digest" },
+        "expiresAt": { "type": "string", "minLength": 20, "maxLength": 32 }
+      }
+    },
+    "modelProjection": { "type": "object" },
+    "modelProjectionDigest": { "$ref": "#/$defs/digest" },
+    "hostRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identitySource", "modelAuthority", "selfAdmission", "continuityAdmission", "realmEffects", "outputMetadataTrust"],
+      "properties": {
+        "identitySource": { "const": "host-verified" },
+        "modelAuthority": { "const": "proposal-only" },
+        "selfAdmission": { "const": false },
+        "continuityAdmission": { "const": false },
+        "realmEffects": { "const": "none" },
+        "outputMetadataTrust": { "const": "untrusted" }
+      }
+    },
+    "envelopeDigest": { "$ref": "#/$defs/digest" }
+  }
+}

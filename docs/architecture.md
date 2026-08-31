@@ -38,6 +38,7 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 | local admission shell | snapshots one verified creation and compatible local distribution, then composes transactional genesis beneath one exact-bound workspace without starting runtime execution |
 | cortex binding compiler | derives one inert, content-addressed identity candidate and bounded model projection from a verified admission without task mutation, authority, or continuity writes |
 | cortex binding registry | serializes task and personal-keel ownership, issues credential-free active and lifecycle receipts, re-verifies renewal sources, records revocation and expiry, and shares the admitted-launch writer lock |
+| Codex bound-turn host | reserves or identifies one task, acquires a per-turn binding lease, dispatches one sealed task-scoped envelope through a trusted transport, verifies exact response bytes, and chains host receipts without transcript replay |
 
 ## Cortex binding phase 1 boundary
 
@@ -56,6 +57,14 @@ The phase 2 registry is one canonical atomically replaced event chain protected 
 Acquisition verifies the inert candidate before taking the admission-owned `vessel/launch.lock`, claims the existing OS-account-local instance residency, then verifies the candidate again while holding that lock. Any changed candidate, identity, keel head, task claim, or epoch aborts before activation. The live handle alone retains the usable random lease credential and writer-lock capability. Registry state, active receipts, lifecycle receipts, and inspection projections expose only its digest or public lease identity.
 
 Renewal extends only the same binding after fresh admission verification. Release and revocation durably close the binding before releasing the process lock, and transient lock-release failure remains retryable from the same terminal handle. Expiry releases a live handle when inspection or renewal discovers it; abandoned-process recovery still requires dead-owner and stale-grace reclamation by the shared file-lock primitive. An active receipt grants only a host-held lease marker and no Realm effect. Phase 2 still has no Codex task-control adapter, model invocation, context injection, Godskill activation, continuity-content writer, task-migration protocol, Lunari integration, or Soul activation.
+
+## Codex bound-turn phase 3 boundary
+
+The phase-3 host accepts a strict mission-shaped turn request with no identity, authority, transcript, path, credential, or model-routing fields. Create first asks a trusted task transport for a suspended reservation whose receipt states that no model started. Continue and compaction-resume instead verify one parent host receipt against the exact existing task and admitted actor. All three operations acquire a fresh phase-2 lease, compile the phase-1 candidate again, and require its candidate, identity, task, and keel-head digests to equal the active binding receipt before dispatch.
+
+The sealed envelope binds the operation, parent receipt, transport descriptor, active binding, and exact compact model projection under one canonical digest. Fixed host rules identify the cortex as proposal-only and deny self-admission, continuity admission, and Realm effects. The trusted transport receipt binds that digest and the exact UTF-8 response bytes. The final host receipt additionally binds the reservation for create, task and actor identity, active and released lifecycle receipts, replaceable cortex id, and zero admitted authority. Model output remains untrusted text beside the receipt.
+
+Version 1 closes its writer lease after every accepted or rejected dispatch. A later turn can therefore carry a different mission and cortex while preserving the actor through verified sources and the parent receipt chain. This avoids misrepresenting the phase-2 mission-specific candidate as a permanent multi-mission session. The current public Codex app task controls cannot satisfy the suspended-reservation and trusted execution-receipt contract, so live app wiring remains excluded rather than approximated with prompt echoes, task titles, current directories, or global instruction edits.
 
 ## Phase 1 creation boundary
 

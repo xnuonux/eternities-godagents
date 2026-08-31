@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 128 }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "status", "operation", "operationId", "turnId", "task", "instructionChannel", "bindingReceiptDigest", "envelopeDigest", "cortexId", "responseBytes", "responseDigest", "receiptDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-codex-task-control-v1" },
+    "status": { "const": "completed" },
+    "operation": { "enum": ["create", "continue", "compaction-resume"] },
+    "operationId": { "$ref": "#/$defs/identifier" },
+    "turnId": { "$ref": "#/$defs/identifier" },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskId", "hostId"],
+      "properties": { "taskId": { "$ref": "#/$defs/identifier" }, "hostId": { "$ref": "#/$defs/identifier" } }
+    },
+    "instructionChannel": { "enum": ["developer", "sealed-user-envelope"] },
+    "bindingReceiptDigest": { "$ref": "#/$defs/digest" },
+    "envelopeDigest": { "$ref": "#/$defs/digest" },
+    "cortexId": { "$ref": "#/$defs/identifier" },
+    "responseBytes": { "type": "integer", "minimum": 0, "maximum": 4194304 },
+    "responseDigest": { "$ref": "#/$defs/digest" },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  }
+}

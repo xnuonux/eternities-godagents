@@ -33,6 +33,7 @@
     "certify:visual-creator": "node src/certification/certify-visual-creator-shell.mjs",
     "certify:local-admission": "node src/certification/certify-local-admission-shell.mjs",
     "certify:cortex-binding": "node scripts/build-cortex-binding-contracts-v1-receipt.mjs",
-    "certify:cortex-binding-registry": "node scripts/build-cortex-binding-registry-v1-receipt.mjs"
+    "certify:cortex-binding-registry": "node scripts/build-cortex-binding-registry-v1-receipt.mjs",
+    "certify:codex-bound-turn": "node scripts/build-codex-bound-turn-v1-receipt.mjs"
   }
 }
