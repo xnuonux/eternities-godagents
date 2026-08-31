@@ -254,6 +254,10 @@ the Godagents Godskills release pin gains an optional `activation` object:
   entrypoint: { path, sha256 },
   compiler: { path, sha256 },
   dependencies: [{ path, sha256 }],
+  schemas: {
+    request: { path, sha256 },
+    result: { path, sha256 }
+  },
   policy: { path, sha256, logicalDigest },
   evidence: { path, sha256, logicalDigest },
   contract: { path, sha256 }
@@ -436,6 +440,8 @@ mission and host envelope
 ## security and privacy
 
 - child processes use `shell: false` and hidden windows.
+- child processes receive only the minimum nonsecret operating-system
+  environment required to start Node, never the host's complete environment.
 - request and output files live under a verified operating-system temporary
   root and are removed in `finally`.
 - repository paths are verified through realpath containment before execution.
