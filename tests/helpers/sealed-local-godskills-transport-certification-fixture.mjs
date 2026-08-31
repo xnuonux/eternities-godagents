@@ -1,16 +1,16 @@
-import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
 
 import { pinnedGodskillsReviewRelease } from '../../scripts/lib/pinned-godskills-review-release.mjs';
-import { pinnedGodskillsRoutingExecutable } from '../../scripts/lib/pinned-godskills-routing-executable.mjs';
+import {
+  pinnedGodskillsRoutingExecutable,
+  pinnedGodskillsRoutingSourceCommit,
+} from '../../scripts/lib/pinned-godskills-routing-executable.mjs';
 import { canonicalJson } from '../../src/core/canonical-json.mjs';
 import { sha256Value } from '../../src/core/digest.mjs';
 import { createLocalRecoverableGodskillsAdapter } from '../../src/skills/local-recoverable-godskills-adapter.mjs';
 
-const execFileAsync = promisify(execFile);
 const fixtureProtocol = 'eternities-sealed-local-godskills-transport-fixture-v1';
 
 function requireCondition(condition, message) {
@@ -78,20 +78,6 @@ async function allFiles(root) {
   }
   await walk(root);
   return files.sort();
-}
-
-async function repositoryCommit(root) {
-  const environment = Object.fromEntries(
-    Object.entries(process.env).filter(([name]) => !name.toUpperCase().startsWith('GIT_')),
-  );
-  const { stdout } = await execFileAsync('git', ['-C', root, 'rev-parse', 'HEAD'], {
-    encoding: 'utf8',
-    windowsHide: true,
-    env: environment,
-  });
-  const commit = stdout.trim();
-  if (!/^[a-f0-9]{40}$/.test(commit)) throw new Error('Godskills fixture commit is invalid');
-  return commit;
 }
 
 async function expectProcessDeath(operation) {
@@ -197,7 +183,7 @@ export async function buildDeterministicSealedLocalGodskillsTransportFixture({
       schemaVersion: 1,
       protocolId: fixtureProtocol,
       godskills: {
-        commit: await repositoryCommit(godskillsRoot),
+        commit: pinnedGodskillsRoutingSourceCommit,
         releaseDigest: recovered.releaseDigest,
         routingReceiptDigest: routingPin.executableReceipt.receiptDigest,
         routingReceiptFileSha256: routingPin.executableReceipt.sha256,

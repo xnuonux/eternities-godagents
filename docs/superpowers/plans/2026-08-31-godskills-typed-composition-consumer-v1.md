@@ -23,8 +23,9 @@
 8. generate the actual cross-repository canary fixture against the pinned
    Godskills root and require the published method and execution digests.
 9. run focused compatibility tests, inline adversarial review, and the full
-   Godagents suite. issue one append-only certification receipt from the exact
-   feature source commit.
+   Godagents suite. repair any confirmed ambient-state regression at its
+   declared trust boundary. issue one append-only certification receipt from
+   the exact feature source commit.
 10. update the certification ledger and release lineage for one new receipt,
     merge by fast-forward, push canonical main, and remove only the verified
     clean feature worktree.

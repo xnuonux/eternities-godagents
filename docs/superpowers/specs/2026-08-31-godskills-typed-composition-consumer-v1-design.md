@@ -119,6 +119,14 @@ exports. compilation and execution preserve the Godskills rejection behavior
 for plan, activation, type, graph, authority, context, method, input, executor,
 and output drift.
 
+## compatibility repair
+
+the full release gate exposed one older sealed-transport fixture that recorded
+ambient Godskills `HEAD` while executing an explicitly pinned routing release.
+the fixture now records the routing sidecar's declared source commit. its
+historical fixture bytes, artifact roots, execution result, and certification
+receipt remain unchanged when the wider Godskills checkout advances.
+
 ## proof limits
 
 v1 proves one local, exact, in-process consumer of the certified Godskills

@@ -80,7 +80,9 @@ const testFiles = Object.freeze([
   'tests/godskills-typed-composition-consumer-certification.test.mjs',
   'tests/godskills-typed-composition-consumer.test.mjs',
   'tests/helpers/godskills-typed-composition-consumer-fixture.mjs',
+  'tests/helpers/sealed-local-godskills-transport-certification-fixture.mjs',
   'tests/release-lineage.test.mjs',
+  'tests/sealed-local-godskills-transport-certification.test.mjs',
 ].sort());
 
 const focusedTestFiles = Object.freeze([
@@ -102,6 +104,7 @@ const requirementEvidence = Object.freeze({
   'GTC-010': ['authority remains closed and the adapter is absent from every default launch path'],
   'GTC-011': ['pin byte plan activation method executor input and output drift fail closed'],
   'GTC-012': ['fixture receipt ledger and release lineage reproduce from one exact source commit'],
+  'GTC-013': ['the existing sealed transport fixture records its declared static routing source rather than ambient Godskills HEAD'],
 });
 
 const retainedRegressions = Object.freeze([
@@ -113,6 +116,7 @@ const retainedRegressions = Object.freeze([
   'rejects foreign serialized methods without compiler provenance',
   'rejects missing executors malformed mission inputs and malformed outputs',
   'preserves exact Muse-to-Forge handoff and terminal output evidence',
+  'preserves sealed local transport evidence when the ambient Godskills checkout advances',
 ]);
 
 const proofLimits = Object.freeze([
