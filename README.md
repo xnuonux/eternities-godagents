@@ -2,7 +2,7 @@
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
-Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, a headless Phase 3 creator protocol, the first three host-side phases of the Cortex Binding Protocol, and a provider-neutral identity-bound mission vessel with recoverable Godskills admission. The binding path reconstructs one inert identity candidate from an admitted genesis, binds governed Godskills through immutable route and activation outboxes, places the exact bounded identity projection beside the exact recoverable mission package, and closes native generation through review, revision, and final review without granting Realm or continuity authority. An optional sealed local adapter executes the exact pinned Godskills route and activation binaries, and a separate admitted identity host binds that vessel to one externally pinned operator policy without changing the historical launch path. Evolution and Soul activation remain excluded.
+Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, a headless Phase 3 creator protocol, the first three host-side phases of the Cortex Binding Protocol, and a provider-neutral identity-bound mission vessel with recoverable Godskills admission. The binding path reconstructs one inert identity candidate from an admitted genesis, binds governed Godskills through immutable route and activation outboxes, places the exact bounded identity projection beside the exact recoverable mission package, and closes native generation through review, revision, and final review without granting Realm or continuity authority. An optional sealed local adapter executes the exact pinned Godskills route and activation binaries, a separate admitted identity host binds that vessel to one externally pinned operator policy, and an additive OpenAI-compatible suite now supplies concrete native, review, and revision cognition without changing either historical launch path. Evolution and Soul activation remain excluded.
 
 The canonical architecture is [ADR-0002](C:/dev/eternities-canon/.worktrees/godagents-inspiration-covenant/architecture/ADR-0002-godagent-v0-runtime-and-foundry.md).
 
@@ -45,6 +45,7 @@ npm run certify:cortex-binding-registry
 npm run certify:codex-bound-turn
 npm run certify:codex-turn-journal
 npm run certify:codex-recoverable-turn
+npm run certify:openai-compatible-phase-transport
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -356,7 +357,15 @@ The [admitted identity host design](docs/superpowers/specs/2026-08-31-admitted-s
 
 The reviewed deterministic path selects `eternities-muse`, interrupts after real activation success, recovers without another routing or activation process, and completes native generation, review, revision, and final review. Exact replay performs no external work. A separate no-review policy completes a low-risk Athena mission natively, proving that review availability is policy-bound rather than ambient. `npm run certify:admitted-sealed-identity-host` issues the twenty-sixth append-only receipt.
 
-This remains a programmatic, provider-neutral host. It does not install a concrete model transport, handle credentials, expose a CLI, switch `launch:local`, grant Realm or continuity writes, evolve identity, integrate Lunari, activate Inspiration, or activate Soul.
+The host itself remains provider-neutral and programmatic. Concrete cognition is an independently pinned optional dependency rather than ambient host behavior. It still exposes no CLI, does not switch `launch:local`, grant Realm or continuity writes, evolve identity, integrate Lunari, activate Inspiration, or activate Soul.
+
+### Sealed OpenAI-compatible phase transport v1
+
+The [phase transport design](docs/superpowers/specs/2026-08-31-sealed-openai-compatible-phase-transport-v1-design.md) supplies one concrete strict-JSON cognition boundary for the admitted identity host. A canonical provider policy independently pins one HTTPS endpoint, one exact model, one credential environment variable name, per-phase completion-token ceilings, and request, response, dispatch, and completion byte ceilings. Its digest is supplied through `GODAGENT_PHASE_TRANSPORT_POLICY_SHA256` and is embedded in all three existing transport descriptors.
+
+The model receives only the exact native, review, or revision package and may return only content, critique, or addressed finding identifiers. Trusted adapters assign identity, authority, subject and input digests, timestamps, usage, and completion evidence. Credentials exist only in the in-memory Authorization header. Raw requests and provider responses are not persisted, reflected credentials fail closed, and closed failures retain only status and response digests.
+
+Each dispatch publishes a synced attempt marker before HTTPS. A verified completion replays durably with zero provider work, concurrent callers cannot produce a second call, and an ambiguous interrupted call remains `pending` rather than silently buying duplicate cognition. `npm run certify:openai-compatible-phase-transport` issues the twenty-seventh append-only receipt from fake but wire-real provider responses. It proves the transport and complete reviewed host loop, not live model quality, universal provider equivalence, automatic retry, CLI adoption, Realm action, continuity, evolution, Lunari, Inspiration, or Soul.
 
 ### Admitted local launch
 
