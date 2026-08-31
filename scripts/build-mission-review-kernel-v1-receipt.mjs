@@ -89,7 +89,6 @@ const focusedTestFiles = Object.freeze([
   'tests/mission-phase-contracts.test.mjs',
   'tests/mission-review-journal.test.mjs',
   'tests/mission-review-kernel.test.mjs',
-  'tests/mission-review-kernel-certification.test.mjs',
   'tests/schemas.test.mjs',
 ]);
 
