@@ -4,6 +4,7 @@ import { assertVerifiedGodskillsRoutingExecutable } from './routing-executable-v
 
 const PROTOCOL_ID = 'eternities-routing-evidence-activation-classifier-v1';
 const CAPABILITY_ID = /^[a-z0-9][a-z0-9-]{0,127}$/;
+const DIGEST = /^[a-f0-9]{64}$/;
 const FAMILY_TASK_CLASSES = Object.freeze({
   'agency-client-services': 'general',
   'architecture-specification': 'implementation',
@@ -60,6 +61,12 @@ function nonEmptyString(value, label, { singleLine = false } = {}) {
   }
 }
 
+function requireDigest(value, label) {
+  if (typeof value !== 'string' || !DIGEST.test(value)) {
+    throw new TypeError(`${label} must be a lowercase SHA-256 digest`);
+  }
+}
+
 function verifyProjection(value, cardsById) {
   exactKeys(value, ['mission', 'selected'], 'routing-evidence classifier input');
   exactKeys(value.mission, ['requestId', 'text'], 'routing-evidence classifier mission');
@@ -100,6 +107,31 @@ function taxonomyValue() {
   };
 }
 
+export function verifyRoutingEvidenceActivationClassifierDescriptor(value) {
+  exactKeys(value, [
+    'schemaVersion', 'protocolId', 'routingTrustRootDigest', 'cardsLogicalDigest',
+    'taxonomyDigest', 'reviewAvailable', 'authorityExpanded', 'descriptorDigest',
+  ], 'routing-evidence classifier descriptor');
+  if (value.schemaVersion !== 1 || value.protocolId !== PROTOCOL_ID) {
+    throw new Error('routing-evidence classifier descriptor protocol is invalid');
+  }
+  for (const [name, digest] of [
+    ['routing trust root', value.routingTrustRootDigest],
+    ['cards logical', value.cardsLogicalDigest],
+    ['taxonomy', value.taxonomyDigest],
+    ['descriptor', value.descriptorDigest],
+  ]) requireDigest(digest, `routing-evidence classifier ${name}`);
+  if (typeof value.reviewAvailable !== 'boolean' || value.authorityExpanded !== false) {
+    throw new Error('routing-evidence classifier descriptor authority or review state is invalid');
+  }
+  const unsigned = structuredClone(value);
+  delete unsigned.descriptorDigest;
+  if (sha256Value(unsigned) !== value.descriptorDigest) {
+    throw new Error('routing-evidence classifier descriptor digest mismatch');
+  }
+  return value;
+}
+
 export function createRoutingEvidenceActivationClassifier({
   verifiedRoutingExecutable,
   reviewAvailable,
@@ -128,6 +160,7 @@ export function createRoutingEvidenceActivationClassifier({
     ...unsignedDescriptor,
     descriptorDigest: sha256Value(unsignedDescriptor),
   });
+  verifyRoutingEvidenceActivationClassifierDescriptor(descriptor);
 
   function classify(input) {
     const selected = verifyProjection(input, cardsById);

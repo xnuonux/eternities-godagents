@@ -1,11 +1,10 @@
 import { timingSafeEqual } from 'node:crypto';
-import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
 import { createHttpsTransport } from '../cortex/http-transport.mjs';
 import { createOpenAICompatibleCortex } from '../cortex/openai-compatible.mjs';
 import { canonicalJson } from '../core/canonical-json.mjs';
-import { sha256Value } from '../core/digest.mjs';
 import { verifyGenesisAdmission } from '../genesis/verify.mjs';
 import { createLocalKeelBackend } from '../keel/local-reference-backend.mjs';
 import { createPersistentLocalRealm } from '../realm/local-persistent-realm.mjs';
@@ -15,17 +14,14 @@ import { createGodskillsAdapter } from '../skills/mission-binder.mjs';
 import { acquireFileLock } from '../state/file-lock.mjs';
 import { readVerifiedJournal } from '../state/journal.mjs';
 import { claimLocalInstanceResidency, defaultLocalInstanceRegistryRoot } from './local-instance-registry.mjs';
+import {
+  assertAdmissionPolicyBinding,
+  assertSafeAdmissionTree,
+  readAdmissionBinding,
+} from './admitted-identity-boundary.mjs';
 import { createCredentialResolver, loadHostPolicy } from './policy.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
-const KEEL_ID = /^keel-[a-f0-9]{64}$/;
-const INSTANCE_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
-const CREATOR_REF = /^[a-z0-9][a-z0-9:._-]{0,127}$/;
-const BINDING_KEYS = Object.freeze([
-  'bindingDigest', 'checkpointPurpose', 'creationBuildId', 'creatorRef', 'distributionBuildId',
-  'genesisId', 'instanceId', 'keelId', 'policyDigest', 'schemaVersion',
-]);
-const ROOT_ENTRIES = Object.freeze(['binding.json', 'creation', 'distribution', 'keels', 'transaction', 'vessel']);
 const MESSAGES = Object.freeze({
   'admission-invalid': 'admitted launch evidence is invalid',
   'input-invalid': 'admitted launch input is invalid',
@@ -51,81 +47,6 @@ export class AdmittedLaunchError extends Error {
 
 function fail(code, cause) {
   throw new AdmittedLaunchError(code, cause);
-}
-
-function sameArray(left, right) {
-  return left.length === right.length && left.every((value, index) => value === right[index]);
-}
-
-function isPathWithinRoot(root, target) {
-  const remainder = relative(resolve(root), resolve(target));
-  return remainder !== '' && remainder !== '..' && !remainder.startsWith(`..\\`)
-    && !remainder.startsWith('../') && !isAbsolute(remainder);
-}
-
-async function assertSafeTree(root, directory = root) {
-  const stats = await lstat(directory);
-  if (!stats.isDirectory() || stats.isSymbolicLink()) fail('admission-invalid');
-  const canonical = await realpath(directory);
-  if (directory !== root && !isPathWithinRoot(root, canonical)) fail('admission-invalid');
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    const path = join(directory, entry.name);
-    if (entry.isSymbolicLink()) fail('admission-invalid');
-    if (entry.isDirectory()) await assertSafeTree(root, path);
-    else if (!entry.isFile()) fail('admission-invalid');
-  }
-}
-
-async function readBinding(admissionRoot) {
-  let text;
-  try {
-    text = await readFile(join(admissionRoot, 'binding.json'), 'utf8');
-  } catch {
-    fail('admission-invalid');
-  }
-  let binding;
-  try {
-    binding = JSON.parse(text);
-  } catch {
-    fail('admission-invalid');
-  }
-  if (!binding || typeof binding !== 'object' || Array.isArray(binding)
-      || text !== `${canonicalJson(binding)}\n`
-      || !sameArray(Object.keys(binding).sort(), BINDING_KEYS)
-      || binding.schemaVersion !== 1
-      || !DIGEST.test(binding.genesisId)
-      || !KEEL_ID.test(binding.keelId)
-      || !DIGEST.test(binding.creationBuildId)
-      || !DIGEST.test(binding.distributionBuildId)
-      || !DIGEST.test(binding.policyDigest)
-      || !DIGEST.test(binding.bindingDigest)
-      || !INSTANCE_ID.test(binding.instanceId)
-      || !CREATOR_REF.test(binding.creatorRef)
-      || typeof binding.checkpointPurpose !== 'string'
-      || binding.checkpointPurpose.length < 1
-      || binding.checkpointPurpose.length > 1024) fail('admission-invalid');
-  const { bindingDigest, ...unsigned } = binding;
-  if (bindingDigest !== sha256Value(unsigned)) fail('admission-invalid');
-  return Object.freeze(binding);
-}
-
-function pathIdentity(path) {
-  const normalized = resolve(path);
-  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
-}
-
-function assertPolicyBinding({ policy, policyPath, admissionRoot, binding }) {
-  if (policy.runtime.instanceId !== binding.instanceId) fail('policy-mismatch');
-  const expected = {
-    distributionDir: join(admissionRoot, 'distribution'),
-    journalPath: join(admissionRoot, 'vessel', 'journal.jsonl'),
-    snapshotPath: join(admissionRoot, 'vessel', 'snapshot.json'),
-  };
-  for (const [name, target] of Object.entries(expected)) {
-    if (pathIdentity(resolve(dirname(policyPath), policy.runtime[name])) !== pathIdentity(target)) {
-      fail('policy-mismatch');
-    }
-  }
 }
 
 function projectRecordedRequest(events, mission, binding) {
@@ -227,13 +148,16 @@ export async function launchAdmittedLocalAgent({
   const root = resolve(admissionRoot);
   const resolvedPolicyPath = resolve(policyPath);
   try {
-    await assertSafeTree(root);
-    if (!sameArray((await readdir(root)).sort(), ROOT_ENTRIES)) fail('admission-invalid');
-  } catch (error) {
-    if (error instanceof AdmittedLaunchError) throw error;
+    await assertSafeAdmissionTree(root);
+  } catch {
     fail('admission-invalid');
   }
-  const binding = await readBinding(root);
+  let binding;
+  try {
+    binding = await readAdmissionBinding(root);
+  } catch {
+    fail('admission-invalid');
+  }
 
   let loaded;
   try {
@@ -246,7 +170,16 @@ export async function launchAdmittedLocalAgent({
       || !timingSafeEqual(Buffer.from(pinnedDigest, 'hex'), Buffer.from(loaded.digest, 'hex'))) {
     fail('policy-integrity');
   }
-  assertPolicyBinding({ policy: loaded.policy, policyPath: resolvedPolicyPath, admissionRoot: root, binding });
+  try {
+    assertAdmissionPolicyBinding({
+      policy: loaded.policy,
+      policyPath: resolvedPolicyPath,
+      admissionRoot: root,
+      binding,
+    });
+  } catch {
+    fail('policy-mismatch');
+  }
 
   let missionText;
   try {
