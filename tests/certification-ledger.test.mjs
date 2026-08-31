@@ -23,15 +23,16 @@ async function fixture(context) {
   return receipts;
 }
 
-test('certification ledger verifies all nine canonical receipts and declared links', async () => {
+test('certification ledger verifies all ten canonical receipts and declared links', async () => {
   const result = await verify(sourceReceipts);
   assert.equal(result.status, 'verified');
-  assert.equal(result.receipts.length, 9);
+  assert.equal(result.receipts.length, 10);
   assert.deepEqual(result.receipts.map((row) => row.certificationId), [
     'creation-forge-phase1',
     'creator-protocol-phase3',
     'godagent-v0',
     'godskills-adaptive-activation-v1',
+    'godskills-specialist-preference-v1',
     'godskills-v3-mission-binding',
     'local-admission-shell-v1',
     'networked-cortex-v1',
