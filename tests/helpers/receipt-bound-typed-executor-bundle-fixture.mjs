@@ -8,53 +8,56 @@ import { fileURLToPath } from 'node:url';
 import { canonicalJson } from '../../src/core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../../src/core/digest.mjs';
 
-function executorId(bundleId, capabilityId, moduleSha256) {
+function executorId(bundleId, capabilityId, programSha256) {
   return sha256Value({
-    protocolId: 'eternities-receipt-bound-typed-executor-identity-v1',
+    protocolId: 'eternities-receipt-bound-typed-executor-program-identity-v1',
     bundleId,
     capabilityId,
-    moduleSha256,
+    programSha256,
   });
 }
 
-function museSource(bundleId) {
-  return `// exact certification module ${bundleId}
-export async function execute(input) {
+function museProgram() {
   return {
     schemaVersion: 1,
+    protocolId: 'eternities-declarative-typed-executor-program-v1',
     capabilityId: 'eternities-muse',
-    missionId: input.missionId,
-    slots: {
-      'visual-direction': { direction: 'receipt-bound-white-fire' },
-      'visual-system': { visualPrimitives: ['luminance', 'motion'] },
-      'specialist-handoff': { target: 'eternities-forge' },
-      'acceptance-boundary': {
-        invariants: ['activation-bound', 'receipt-bound-executor'],
-        rejectionCriteria: ['caller-executor', 'unverified-module'],
+    delayMs: 0,
+    outputTemplate: {
+      schemaVersion: 1,
+      capabilityId: 'eternities-muse',
+      missionId: { $input: 'missionId' },
+      slots: {
+        'visual-direction': { direction: 'receipt-bound-white-fire' },
+        'visual-system': { visualPrimitives: ['luminance', 'motion'] },
+        'specialist-handoff': { target: 'eternities-forge' },
+        'acceptance-boundary': {
+          invariants: ['activation-bound', 'receipt-bound-executor'],
+          rejectionCriteria: ['caller-executor', 'unverified-program'],
+        },
       },
     },
   };
 }
-`;
-}
 
-function forgeSource(bundleId, forgeDelayMs) {
-  return `// exact certification module ${bundleId}
-export async function execute(input) {
-  ${forgeDelayMs > 0 ? `await Atomics.waitAsync(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ${forgeDelayMs}).value;` : ''}
+function forgeProgram(forgeDelayMs) {
   return {
     schemaVersion: 1,
+    protocolId: 'eternities-declarative-typed-executor-program-v1',
     capabilityId: 'eternities-forge',
-    missionId: input.missionId,
-    slots: {
-      implementation: { status: 'verified' },
-      'claim-evidence-ledger': { claims: 3, evidence: 3 },
-      'review-disposition': { disposition: 'accepted' },
-      'integration-state': { state: 'ready' },
+    delayMs: forgeDelayMs,
+    outputTemplate: {
+      schemaVersion: 1,
+      capabilityId: 'eternities-forge',
+      missionId: { $input: 'missionId' },
+      slots: {
+        implementation: { status: 'verified' },
+        'claim-evidence-ledger': { claims: 3, evidence: 3 },
+        'review-disposition': { disposition: 'accepted' },
+        'integration-state': { state: 'ready' },
+      },
     },
   };
-}
-`;
 }
 
 export async function receiptBoundExecutorBundleFixture(context, {
@@ -65,23 +68,23 @@ export async function receiptBoundExecutorBundleFixture(context, {
   if (context) context.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(join(root, 'executors'), { recursive: true });
   await mkdir(join(root, 'receipts'), { recursive: true });
-  const sources = {
-    'eternities-forge': forgeSource(bundleId, forgeDelayMs),
-    'eternities-muse': museSource(bundleId),
+  const programs = {
+    'eternities-forge': forgeProgram(forgeDelayMs),
+    'eternities-muse': museProgram(),
   };
   const executors = [];
-  for (const capabilityId of Object.keys(sources).sort()) {
-    const source = sources[capabilityId];
-    const moduleSha256 = sha256Text(source);
-    const path = `executors/${capabilityId}.mjs`;
-    await writeFile(join(root, ...path.split('/')), source, 'utf8');
+  for (const capabilityId of Object.keys(programs).sort()) {
+    const programText = `${canonicalJson(programs[capabilityId])}\n`;
+    const programSha256 = sha256Text(programText);
+    const path = `executors/${capabilityId}.json`;
+    await writeFile(join(root, ...path.split('/')), programText, 'utf8');
     executors.push({
       capabilityId,
-      module: { path, sha256: moduleSha256, bytes: Buffer.byteLength(source) },
+      program: { path, sha256: programSha256, bytes: Buffer.byteLength(programText) },
       descriptor: {
         schemaVersion: 1,
         protocolId: 'eternities-typed-capability-executor-v1',
-        executorId: executorId(bundleId, capabilityId, moduleSha256),
+        executorId: executorId(bundleId, capabilityId, programSha256),
         capabilityId,
         authority: [],
         maximumInputBytes: 65_536,
@@ -96,7 +99,7 @@ export async function receiptBoundExecutorBundleFixture(context, {
     status: 'verified-build',
     executors,
     proofLimits: [
-      'the restricted Node VM context is not an operating-system sandbox',
+      'the host-owned declarative interpreter is trusted implementation',
       'external exactly-once effects remain unproved',
     ],
   };
@@ -144,7 +147,7 @@ export async function buildDeterministicReceiptBoundTypedExecutorBundleHostFixtu
         receiptSha256: bundle.expectedSha256,
         executors: bundle.receipt.executors.map((row) => ({
           capabilityId: row.capabilityId,
-          module: structuredClone(row.module),
+          program: structuredClone(row.program),
           descriptor: structuredClone(row.descriptor),
         })),
       },
@@ -171,7 +174,7 @@ export async function buildDeterministicReceiptBoundTypedExecutorBundleHostFixtu
       guarantees: {
         externalBundlePin: true,
         canonicalReceipt: true,
-        exactVerifiedBytesExecuted: true,
+        exactVerifiedProgramsInterpreted: true,
         callerExecutorsAccepted: false,
         callerLoaderHooksAccepted: false,
         policyDescriptorMatched: true,

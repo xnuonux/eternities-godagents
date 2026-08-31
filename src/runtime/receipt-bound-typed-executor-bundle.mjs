@@ -1,19 +1,18 @@
 import { timingSafeEqual } from 'node:crypto';
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
-import { createContext, Script } from 'node:vm';
-import { parse } from 'acorn';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
+import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { verifyTypedCapabilityExecutorDescriptor } from '../host/admitted-typed-execution-contracts.mjs';
 
 const PROTOCOL_ID = 'eternities-receipt-bound-typed-executor-bundle-v1';
-const IDENTITY_PROTOCOL_ID = 'eternities-receipt-bound-typed-executor-identity-v1';
+const IDENTITY_PROTOCOL_ID = 'eternities-receipt-bound-typed-executor-program-identity-v1';
 const DIGEST = /^[a-f0-9]{64}$/;
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const verifiedBundles = new WeakSet();
-const verifiedModuleBytes = new WeakMap();
+const verifiedPrograms = new WeakMap();
 
 function object(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
@@ -102,74 +101,102 @@ function parseCanonicalReceipt(bytes) {
   return receipt;
 }
 
-function expectedExecutorId(bundleId, capabilityId, moduleSha256) {
+function expectedExecutorId(bundleId, capabilityId, programSha256) {
   return sha256Value({
     protocolId: IDENTITY_PROTOCOL_ID,
     bundleId,
     capabilityId,
-    moduleSha256,
+    programSha256,
   });
 }
 
-function assertClosedModuleSource(bytes, label) {
-  let program;
-  try {
-    program = parse(bytes.toString('utf8'), { ecmaVersion: 'latest', sourceType: 'module' });
-  } catch (error) {
-    throw new Error(`${label} is not valid ECMAScript`, { cause: error });
-  }
-  const visit = (node) => {
-    if (!node || typeof node !== 'object') return;
-    if (node.type === 'ImportDeclaration' || node.type === 'ImportExpression'
-        || (node.type === 'ExportNamedDeclaration' && node.source !== null)
-        || node.type === 'ExportAllDeclaration'
-        ) throw new Error(`${label} dependencies are forbidden`);
-    for (const child of Object.values(node)) {
-      if (Array.isArray(child)) child.forEach(visit);
-      else if (child && typeof child === 'object') visit(child);
+function assertSafeObjectKeys(value, label) {
+  const pending = [{ value, depth: 0 }];
+  let nodes = 0;
+  while (pending.length > 0) {
+    const current = pending.pop();
+    nodes += 1;
+    if (nodes > 512 || current.depth > 16) {
+      throw new Error(`${label} output template exceeds structural limits`);
     }
-  };
-  visit(program);
-  const exported = program.body[0];
-  const declaration = exported?.declaration;
-  if (program.body.length !== 1 || exported.type !== 'ExportNamedDeclaration'
-      || exported.source !== null || exported.specifiers.length !== 0
-      || declaration?.type !== 'FunctionDeclaration' || declaration.id?.name !== 'execute'
-      || declaration.async !== true || declaration.generator !== false
-      || declaration.params.length !== 1 || declaration.params[0]?.type !== 'Identifier'
-      || declaration.params[0].name !== 'input') {
-    throw new Error(`${label} must contain only one async execute declaration`);
+    if (!current.value || typeof current.value !== 'object') continue;
+    if (!Array.isArray(current.value)
+        && Object.keys(current.value).some((key) => ['__proto__', 'constructor', 'prototype'].includes(key))) {
+      throw new Error(`${label} contains a forbidden object key`);
+    }
+    for (const child of Object.values(current.value)) {
+      pending.push({ value: child, depth: current.depth + 1 });
+    }
   }
-  return Object.freeze({ exportStart: exported.start, declarationStart: declaration.start });
 }
 
-function compileVerifiedExecutor(bytes, label) {
-  const shape = assertClosedModuleSource(bytes, label);
-  const source = bytes.toString('utf8');
-  const transformed = `${source.slice(0, shape.exportStart)}${' '.repeat(
-    shape.declarationStart - shape.exportStart,
-  )}${source.slice(shape.declarationStart)}\n;globalThis.__receiptBoundExecute = execute;\n`;
-  let initialization;
+function parseCanonicalProgram(bytes, capabilityId, label) {
+  let program;
   try {
-    initialization = new Script(transformed, { filename: `${label}.verified.mjs` });
+    program = JSON.parse(bytes.toString('utf8'));
   } catch (error) {
-    throw new Error(`${label} could not be compiled`, { cause: error });
+    throw new Error(`${label} is invalid JSON`, { cause: error });
   }
-  const invocation = new Script(
-    'Promise.resolve(globalThis.__receiptBoundExecute(JSON.parse(globalThis.__receiptBoundInputJson))).then((value) => JSON.stringify(value))',
-    { filename: `${label}.invoke.mjs` },
+  assertSafeObjectKeys(program, label);
+  if (bytes.toString('utf8') !== `${canonicalJson(program)}\n`) {
+    throw new Error(`${label} is not canonical JSON`);
+  }
+  assertNoCredentialFields(program);
+  exactKeys(program, [
+    'schemaVersion', 'protocolId', 'capabilityId', 'delayMs', 'outputTemplate',
+  ], label);
+  if (program.schemaVersion !== 1
+      || program.protocolId !== 'eternities-declarative-typed-executor-program-v1'
+      || program.capabilityId !== capabilityId
+      || !Number.isInteger(program.delayMs) || program.delayMs < 0 || program.delayMs > 5_000) {
+    throw new Error(`${label} identity or delay is invalid`);
+  }
+  exactKeys(program.outputTemplate, ['schemaVersion', 'capabilityId', 'missionId', 'slots'], `${label} output template`);
+  if (program.outputTemplate.schemaVersion !== 1
+      || program.outputTemplate.capabilityId !== capabilityId
+      || canonicalJson(program.outputTemplate.missionId) !== canonicalJson({ $input: 'missionId' })
+      || !object(program.outputTemplate.slots)) {
+    throw new Error(`${label} output template is invalid`);
+  }
+  let nodes = 0;
+  const inspect = (value, depth = 0) => {
+    nodes += 1;
+    if (nodes > 512 || depth > 16) throw new Error(`${label} output template exceeds structural limits`);
+    if (Array.isArray(value)) {
+      value.forEach((child) => inspect(child, depth + 1));
+      return;
+    }
+    if (!object(value)) return;
+    if (Object.hasOwn(value, '$input')) {
+      if (canonicalJson(value) !== canonicalJson({ $input: 'missionId' })) {
+        throw new Error(`${label} contains an unsupported input projection`);
+      }
+      return;
+    }
+    Object.values(value).forEach((child) => inspect(child, depth + 1));
+  };
+  inspect(program.outputTemplate);
+  return deepFreeze(program);
+}
+
+function materializeTemplate(value, input) {
+  if (Array.isArray(value)) return value.map((child) => materializeTemplate(child, input));
+  if (!object(value)) return value;
+  if (Object.hasOwn(value, '$input')) return input.missionId;
+  return Object.fromEntries(
+    Object.entries(value).map(([name, child]) => [name, materializeTemplate(child, input)]),
   );
+}
+
+function compileVerifiedExecutor(program, label) {
   return async (input) => {
-    const sandbox = Object.create(null);
-    sandbox.__receiptBoundInputJson = canonicalJson(input);
-    const context = createContext(sandbox, {
-      name: 'receipt-bound-typed-executor',
-      codeGeneration: { strings: false, wasm: false },
-    });
-    initialization.runInContext(context, { timeout: 5_000 });
-    const outputJson = await invocation.runInContext(context, { timeout: 5_000 });
-    if (typeof outputJson !== 'string') throw new Error(`${label} output is not canonical JSON data`);
-    return JSON.parse(outputJson);
+    if (!object(input) || typeof input.missionId !== 'string' || input.missionId.length === 0) {
+      throw new Error(`${label} input mission identity is invalid`);
+    }
+    if (program.delayMs > 0) {
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, program.delayMs));
+    }
+    return materializeTemplate(program.outputTemplate, input);
   };
 }
 
@@ -223,36 +250,33 @@ export async function verifyReceiptBoundTypedExecutorBundle(input = {}) {
   verifyReceipt(receipt);
   const paths = new Set();
   const descriptors = [];
-  const modules = [];
+  const programs = [];
   for (const row of receipt.executors) {
-    exactKeys(row, ['capabilityId', 'module', 'descriptor'], 'executor bundle row');
+    exactKeys(row, ['capabilityId', 'program', 'descriptor'], 'executor bundle row');
     if (!IDENTIFIER.test(row.capabilityId)) throw new Error('executor bundle capability identity is invalid');
-    exactKeys(row.module, ['path', 'sha256', 'bytes'], 'executor bundle module');
-    requireRelativePath(row.module.path, 'executor bundle module');
-    if (row.module.path !== `executors/${row.capabilityId}.mjs` || paths.has(row.module.path)) {
-      throw new Error('executor bundle module path is invalid or duplicated');
+    exactKeys(row.program, ['path', 'sha256', 'bytes'], 'executor bundle program');
+    requireRelativePath(row.program.path, 'executor bundle program');
+    if (row.program.path !== `executors/${row.capabilityId}.json` || paths.has(row.program.path)) {
+      throw new Error('executor bundle program path is invalid or duplicated');
     }
-    paths.add(row.module.path);
-    if (!DIGEST.test(row.module.sha256) || !Number.isInteger(row.module.bytes) || row.module.bytes < 1) {
-      throw new Error('executor bundle module descriptor is invalid');
+    paths.add(row.program.path);
+    if (!DIGEST.test(row.program.sha256) || !Number.isInteger(row.program.bytes)
+        || row.program.bytes < 1 || row.program.bytes > 1_048_576) {
+      throw new Error('executor bundle program descriptor is invalid');
     }
     const descriptor = verifyTypedCapabilityExecutorDescriptor(row.descriptor);
     if (descriptor.capabilityId !== row.capabilityId
-        || descriptor.executorId !== expectedExecutorId(receipt.bundleId, row.capabilityId, row.module.sha256)) {
+        || descriptor.executorId !== expectedExecutorId(receipt.bundleId, row.capabilityId, row.program.sha256)) {
       throw new Error('executor bundle executor identity mismatch');
     }
-    const moduleBytes = await readCanonicalFile(root, row.module.path, `executor module ${row.capabilityId}`);
-    if (moduleBytes.length !== row.module.bytes) throw new Error('executor bundle module byte count mismatch');
-    if (!sameDigest(sha256Text(moduleBytes), row.module.sha256)) {
-      throw new Error('executor bundle module digest mismatch');
+    const programBytes = await readCanonicalFile(root, row.program.path, `executor program ${row.capabilityId}`);
+    if (programBytes.length !== row.program.bytes) throw new Error('executor bundle program byte count mismatch');
+    if (!sameDigest(sha256Text(programBytes), row.program.sha256)) {
+      throw new Error('executor bundle program digest mismatch');
     }
-    assertClosedModuleSource(moduleBytes, `executor module ${row.capabilityId}`);
+    const program = parseCanonicalProgram(programBytes, row.capabilityId, `executor program ${row.capabilityId}`);
     descriptors.push(descriptor);
-    modules.push(Object.freeze({
-      capabilityId: row.capabilityId,
-      digest: row.module.sha256,
-      bytes: Buffer.from(moduleBytes),
-    }));
+    programs.push(program);
   }
   const bundle = deepFreeze({
     protocolId: PROTOCOL_ID,
@@ -263,7 +287,7 @@ export async function verifyReceiptBoundTypedExecutorBundle(input = {}) {
     proofLimits: structuredClone(receipt.proofLimits),
   });
   verifiedBundles.add(bundle);
-  verifiedModuleBytes.set(bundle, modules);
+  verifiedPrograms.set(bundle, programs);
   return bundle;
 }
 
@@ -277,15 +301,14 @@ export async function instantiateVerifiedReceiptBoundTypedExecutors(input = {}) 
   if (canonicalJson(expected) !== canonicalJson(bundle.descriptors)) {
     throw new Error('executor bundle descriptors are not authorized by admitted policy');
   }
-  const modules = verifiedModuleBytes.get(bundle);
-  if (!modules || modules.length !== bundle.descriptors.length) {
-    throw new Error('executor bundle verified module bytes are unavailable');
+  const programs = verifiedPrograms.get(bundle);
+  if (!programs || programs.length !== bundle.descriptors.length) {
+    throw new Error('executor bundle verified programs are unavailable');
   }
   const executors = [];
-  for (let index = 0; index < modules.length; index += 1) {
-    const module = modules[index];
+  for (let index = 0; index < programs.length; index += 1) {
     const descriptor = bundle.descriptors[index];
-    const execute = compileVerifiedExecutor(module.bytes, `executor module ${module.capabilityId}`);
+    const execute = compileVerifiedExecutor(programs[index], `executor program ${descriptor.capabilityId}`);
     executors.push(Object.freeze({ descriptor: () => descriptor, execute }));
   }
   return Object.freeze(executors);

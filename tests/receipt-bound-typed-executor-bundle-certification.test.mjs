@@ -13,7 +13,7 @@ test('receipt-bound executor fixture rebuilds byte-for-byte through crash recove
   const expected = JSON.parse(await readFile(fixtureUrl, 'utf8'));
   const actual = await buildDeterministicReceiptBoundTypedExecutorBundleHostFixture();
   assert.deepEqual(actual, expected);
-  assert.equal(actual.fixtureDigest, 'f15a7ec63a13172e35befcf223aaffec64bedd6861c7cc688174f0d9d2da31d0');
+  assert.equal(actual.fixtureDigest, 'c05d1371bbeb43ad903eef6cfcec00eaa3919636f537005e6147343c3d3062ba');
   assert.equal(actual.recovery.crashObserved, true);
   assert.equal(actual.recovery.executedSteps, 1);
   assert.equal(actual.recovery.recoveredSteps, 1);
@@ -21,7 +21,7 @@ test('receipt-bound executor fixture rebuilds byte-for-byte through crash recove
   assert.equal(actual.recovery.replayRecoveredSteps, 2);
   assert.equal(actual.recovery.freshProcessRecovery, true);
   assert.equal(actual.guarantees.callerExecutorsAccepted, false);
-  assert.equal(actual.guarantees.exactVerifiedBytesExecuted, true);
+  assert.equal(actual.guarantees.exactVerifiedProgramsInterpreted, true);
 });
 
 test('receipt-bound executor certification reproduces from its exact source commit', async (t) => {

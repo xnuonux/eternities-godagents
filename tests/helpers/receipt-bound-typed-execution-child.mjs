@@ -6,10 +6,5 @@ import { launchReceiptBoundAdmittedSealedTypedExecutionMission } from '../../src
 const inputPath = process.argv[2];
 if (!inputPath) throw new Error('receipt-bound child input path is required');
 const input = JSON.parse(await readFile(inputPath, 'utf8'));
-const keepAlive = setInterval(() => {}, 1_000);
-try {
-  const completion = await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
-  process.stdout.write(`${canonicalJson(completion)}\n`);
-} finally {
-  clearInterval(keepAlive);
-}
+const completion = await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
+process.stdout.write(`${canonicalJson(completion)}\n`);

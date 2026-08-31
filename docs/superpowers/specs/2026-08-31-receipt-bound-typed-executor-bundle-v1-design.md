@@ -2,60 +2,63 @@
 
 ## purpose
 
-The admitted sealed typed execution host currently verifies exact executor
-descriptors but receives the corresponding functions from its caller. This
-milestone adds a sibling launcher that resolves those functions from one
-externally pinned, locally verified executor bundle. It removes caller-selected
-executor code from the new path without changing any certified host byte or
-existing launch path.
+The admitted sealed typed execution host verifies exact executor descriptors but
+receives corresponding functions from its caller. This milestone adds a sibling
+launcher that resolves those behaviors from one externally pinned, locally
+verified bundle. It removes caller-selected executable code from the new path
+without changing any certified host byte or existing launch path.
 
 ## boundary
 
-The bundle is a canonical receipt plus one self-contained ECMAScript module per
-capability. The operator pins the receipt file SHA-256 through
+The bundle is a canonical receipt plus one canonical declarative JSON program
+per capability. The operator pins the receipt file SHA-256 through
 `GODAGENT_TYPED_EXECUTOR_BUNDLE_SHA256`. The receipt binds:
 
 - protocol and bundle identities
 - an exact, sorted capability set
-- each module's canonical repository-relative path, SHA-256, and byte count
-- each authority-empty executor descriptor
+- each program's canonical repository-relative path, SHA-256, and byte count
+- each authority-empty executor descriptor derived from the program digest
 - a logical receipt digest over every preceding field
 
 The public sibling launcher accepts only `admissionRoot`, `policyPath`,
 `executorBundleRoot`, `executorBundleReceiptPath`, `request`, and `env`. It has
-no `executors`, loader, import, filesystem, cache, clock, lock, registry, or
-runner hook.
+no executor, loader, import, filesystem, cache, clock, lock, registry, or runner
+hook.
 
-## exact-byte loading
+## declarative program
+
+Every program has exactly five fields: schema version, protocol id, capability
+id, bounded delay, and output template. The output template has exactly the
+typed capability result header and a fixed JSON `slots` object. Its only dynamic
+operation is the exact projection `{ "$input": "missionId" }` in the result's
+mission field. No other input, branch, loop, call, expression, module, source,
+loader, path, environment, credential, authority, or effect vocabulary exists.
+
+The verifier rejects noncanonical JSON, extra fields, credential-shaped data,
+prototype-affecting keys, unsupported projections, structural depth above 16,
+more than 512 template nodes, delay above five seconds, and program files above
+one MiB. JavaScript-looking strings in admitted output are inert JSON data.
+
+## exact-byte interpretation
 
 The verifier uses native filesystem operations. On a quiescent filesystem it
-rejects absolute, non-canonical, escaping, observed symbolic-link, duplicate,
-missing, or changed receipt and module paths. It reads each module once and
-verifies its exact bytes. A pinned standards-compliant ECMAScript parser then
-requires one exported asynchronous `execute(input)` declaration as the entire
-program and rejects import expressions anywhere in its syntax tree.
-Receipt-certified executor source remains trusted code.
+rejects absolute, noncanonical, escaping, observed symbolic-link, duplicate,
+missing, or changed receipt and program paths. It reads each program once and
+verifies its exact bytes before parsing and freezing it.
 
-Verification is inert. The launcher first binds the complete descriptor set to
-the externally pinned policy and verifies that policy against the admitted
-genesis identity. Only then is the parser-identified `export` prefix removed
-without changing the verified function body, and the resulting declaration is
-compiled in a fresh restricted VM context for each invocation. The context has
-no injected `process`, `require`, `module`, loader, network, or host object. Its
-input crosses as canonical JSON, output returns as JSON, and string or WebAssembly
-code generation is disabled. No filesystem module is loaded after verification.
-Each module must export exactly one asynchronous `execute` function. The
-verifier creates the descriptors itself and returns privately branded, deeply
-frozen evidence and handles.
+Verification performs no program behavior. The launcher first binds the
+complete descriptor set to the externally pinned policy and verifies that
+policy against the admitted genesis identity. Only then does host-owned code
+construct frozen handles that materialize the fixed template, copy the admitted
+mission id, and optionally wait through the host timer. No guest source is
+evaluated and no module is loaded from the bundle.
 
 ## host composition
 
-The sibling launcher verifies and loads the bundle first, then calls the
-already certified `launchAdmittedSealedTypedExecutionMission` with the branded
-executor handles. The existing host independently requires their descriptors
-to match the externally pinned admitted policy exactly. The policy therefore
-binds the same implementation-derived executor identities that the bundle
-receipt certifies.
+The sibling launcher verifies the bundle, authorizes all derived descriptors,
+then calls the already certified `launchAdmittedSealedTypedExecutionMission`
+with the privately branded handles. The existing host independently requires
+their descriptors to match the externally pinned admitted policy exactly.
 
 No historical host contract, fixture, runtime namespace, policy, receipt, or
 default is reinterpreted. A policy that selects the bundle-backed descriptors
@@ -64,46 +67,42 @@ host.
 
 ## failures
 
-The new public launcher exposes closed failure classes:
+The public launcher exposes closed failure classes:
 
 - `input-invalid`
 - `bundle-integrity`
 - `bundle-interface`
-- the existing admitted host error classes after successful bundle resolution
+- existing admitted host failures after successful bundle resolution
 
-Changed pins, receipt fields, receipt digest, module bytes, module path,
-capability set, descriptor, import statement, export surface, or policy binding
-must fail before any executor invocation.
+Changed pins, receipt fields, receipt digest, program bytes, program path,
+capability set, descriptor, grammar, template, or policy binding fail before
+affected executor work.
 
 ## acceptance
 
 - caller-selected executor functions are impossible on the sibling API
-- one external digest pins one canonical receipt and exact module byte set
+- one external digest pins one canonical receipt and exact program byte set
 - native verifier I/O cannot be replaced by the caller
-- exact verified bytes, rather than a later filesystem read, are executed
-- parsed modules expose only one async `execute` function
-- receipt descriptors are authority-empty, sorted, unique, and policy-matched
-- one real admitted fixture completes the Muse-to-Forge graph through the
-  receipt-bound bundle
-- changed receipt, module, export, descriptor, path, or policy fails before
-  affected executor work
+- no executable guest source or external dependency mechanism is admitted
+- only a bounded delay, fixed JSON template, and exact mission-id projection exist
+- receipt descriptors are authority-empty, sorted, unique, derived, and policy-matched
+- one real admitted fixture completes the Muse-to-Forge graph through the bundle
+- changed receipt, program, descriptor, path, grammar, or policy fails first
 - persisted Muse recovery invokes only Forge and terminal replay invokes none
-- recovery crosses a fresh Node process and does not depend on interrupted
-  process-local executor state
+- recovery crosses a fresh Node process and does not depend on interrupted state
 - all earlier certified host and runner artifacts remain byte-for-byte intact
 - deterministic fixture, independent Terra review, full suite, ledger, and
   release lineage reproduce from exact source commits
 
 ## proof limits
 
-- bundle executors are deterministic certification implementations, not live
+- bundled programs are deterministic certification implementations, not live
   provider or model-quality certification
-- the restricted Node VM context is not an operating-system sandbox
-- receipt-certified executor behavior remains trusted inside that process
-- hostile same-user filesystem replacement races and hard-link identity are
-  not certified
+- the host-owned declarative interpreter remains trusted implementation
+- hostile same-user filesystem replacement races and hard-link identity are not certified
 - hostile mutation of already executing process memory is not certified
 - executor return before durable publication may still repeat after process death
-- external exactly-once effects and general executor idempotency remain unproved
+- external exactly-once effects remain unproved
+- the narrow grammar is not a general-purpose agent executor
 - no default adoption, CLI, provider transport, Realm action, continuity write,
   evolution, Inspiration, Lunari, or Soul activation is added

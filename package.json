@@ -53,8 +53,5 @@
     "certify:openai-compatible-phase-transport": "node scripts/build-sealed-openai-compatible-phase-transport-v1-receipt.mjs",
     "certify:signed-phase-resolution": "node scripts/build-signed-openai-phase-resolution-v1-receipt.mjs",
     "certify:receipt-bound-executors": "node scripts/build-receipt-bound-typed-executor-bundle-v1-receipt.mjs"
-  },
-  "dependencies": {
-    "acorn": "8.15.0"
   }
 }
