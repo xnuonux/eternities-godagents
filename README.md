@@ -54,14 +54,14 @@ The [mission-binding design](docs/superpowers/specs/2026-08-30-godskills-v3-miss
 
 ### adaptive amplification experiment
 
-The adapter also accepts an optional, host-supplied activation resolver that separates capability selection from context disclosure. This additive path leaves the certified adapter-v1 default unchanged.
+The adapter also accepts an optional, host-supplied activation classifier that separates capability selection from context disclosure. The adapter accepts only the exact pinned v1 policy and reviewed-evidence digests, then compiles every activation mode locally. The classifier may identify task class, consequence, and real review availability, but it cannot supply or override a mode. This additive path leaves the certified adapter-v1 default unchanged.
 
 - `native` preserves the route identity but reads and discloses no selected artifact.
 - `guardrail` reads only the selected capability contract and emits compact success, failure, effect, and termination constraints.
 - `method` preserves the original exact entrypoint-and-contract package.
 - `review` reads nothing before inference and records an exact deferred descriptor with status `scheduled-not-executed`.
 
-Adaptive decisions and their policy digest enter the source, stack, package, and recovery identities. A changed activation policy cannot rehydrate an earlier cycle. Selection still cannot expand authority, effects, preconditions, risk, evidence, context, or composition. The host must provide a real later review phase before it may represent a deferred review as executed.
+Adaptive decisions and their policy and evidence digests enter the source, stack, package, and recovery identities. A changed activation policy or evidence registry cannot rehydrate an earlier cycle. Explicit method requests are bound to the mission source envelope, and stored decisions are recompiled during recovery before any selected artifact is read. Selection still cannot expand authority, effects, preconditions, risk, evidence, context, or composition. The host must provide a real later review phase before it may represent a deferred review as executed.
 
 The corresponding evidence policy and experimental receipt live in `C:\dev\eternities-godskills`. This repository does not infer activation quality from a skill name or routing success.
 

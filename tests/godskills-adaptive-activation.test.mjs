@@ -5,7 +5,8 @@ import test from 'node:test';
 import { createGodskillsAdapter } from '../src/skills/mission-binder.mjs';
 
 const root = 'C:/dev/eternities-godskills';
-const policyDigest = '9'.repeat(64);
+const policyDigest = 'bf9e6878399b4edeb4ff6bb77d234fdf646b53fd62ba6e1448b4374246d4c41d';
+const evidenceDigest = '9a14d4296158c65c3929938c5c54b5f7f4b6a5ffeb5b0a827b3f8b25814f5e07';
 
 function releasePin() {
   return {
@@ -73,8 +74,8 @@ function routed(request) {
       requestId: request.requestId,
       status: 'selected',
       selectionKind: 'single',
-      selectedIds: ['eternities-forge'],
-      selectedEntrypoints: ['skills/eternities-forge/SKILL.md'],
+      selectedIds: ['eternities-muse'],
+      selectedEntrypoints: ['skills/eternities-muse/SKILL.md'],
       requestFeatures: {
         permittedEffects: [...request.context.permittedEffects],
         maximumRisk: request.context.maximumRisk,
@@ -86,23 +87,21 @@ function routed(request) {
   };
 }
 
-function resolver(mode) {
-  return {
+function resolver({ consequenceClass = 'consequential', reviewAvailable = true, extras = {} } = {}) {
+  const state = { calls: 0 };
+  return { state, value: {
     policyDigest,
-    resolve({ selected }) {
+    evidenceDigest,
+    classify() {
+      state.calls += 1;
       return {
-        policyDigest,
-        decisions: selected.map(({ id }) => ({
-          id,
-          mode,
-          decisionDigest: ({
-            native: '1', guardrail: '2', method: '3', review: '4',
-          })[mode].repeat(64),
-          reasonCodes: [`fixture-${mode}`],
-        })),
+        taskClass: 'creative-generation',
+        consequenceClass,
+        reviewAvailable,
+        ...extras,
       };
     },
-  };
+  } };
 }
 
 async function bind(mode) {
@@ -114,20 +113,29 @@ async function bind(mode) {
     },
     realpath,
   };
+  const settings = ({
+    native: { consequenceClass: 'low', reviewAvailable: false },
+    guardrail: { consequenceClass: 'consequential', reviewAvailable: false },
+    method: { consequenceClass: 'consequential', reviewAvailable: true },
+    review: { consequenceClass: 'consequential', reviewAvailable: true },
+  })[mode];
+  const adaptive = resolver(settings);
   const adapter = await createGodskillsAdapter({
     releasePin: releasePin(),
     transport: routed,
-    activationResolver: resolver(mode),
+    activationResolver: adaptive.value,
     io,
   });
   reads.length = 0;
-  return { result: await adapter.bindMission(input()), reads };
+  const supplied = input();
+  if (mode === 'method') supplied.mission.explicitMethodRequests = ['eternities-muse'];
+  return { result: await adapter.bindMission(supplied), reads, adaptive, supplied };
 }
 
 test('native activation preserves route identity without reading selected artifacts', async () => {
   const { result, reads } = await bind('native');
   assert.deepEqual(reads, []);
-  assert.deepEqual(result.cortexPackage.selectedCapabilities, ['eternities-forge']);
+  assert.deepEqual(result.cortexPackage.selectedCapabilities, ['eternities-muse']);
   assert.deepEqual(result.cortexPackage.selectedPackages, []);
   assert.deepEqual(result.cortexPackage.deferredReviews, []);
   assert.equal(result.cortexPackage.activation.decisions[0].mode, 'native');
@@ -137,22 +145,28 @@ test('native activation preserves route identity without reading selected artifa
 
 test('guardrail activation reads only the contract and transports no method prose', async () => {
   const { result, reads } = await bind('guardrail');
-  assert.deepEqual(reads, [`${root}/skills/eternities-forge/references/capability-contract.json`]);
-  assert.equal(Object.hasOwn(result.cortexPackage.selectedPackages[0], 'entrypoint'), false);
-  assert.equal(Object.hasOwn(result.cortexPackage.selectedPackages[0], 'contract'), false);
-  assert.equal(result.cortexPackage.selectedPackages[0].activationMode, 'guardrail');
-  assert.ok(result.cortexPackage.selectedPackages[0].guardrails.successCondition.length > 0);
+  assert.deepEqual(reads, [`${root}/skills/eternities-muse/references/capability-contract.json`]);
+  const selected = result.cortexPackage.selectedPackages[0];
+  assert.deepEqual(Object.keys(selected).sort(), [
+    'activationMode', 'contractSha256', 'entrypointSha256', 'guardrails', 'id', 'ownerGodskillId', 'tier',
+  ].sort());
+  assert.equal(selected.activationMode, 'guardrail');
+  assert.ok(selected.guardrails.successCondition.length > 0);
+  assert.ok(selected.guardrails.terminationConditions.length > 0);
+  assert.deepEqual(result.cortexPackage.methods, []);
+  assert.deepEqual(result.cortexPackage.riskObligations, []);
+  assert.deepEqual(result.cortexPackage.preconditionObligations, []);
   assert.ok(result.cortexPackage.disclosureBytes > 0);
 });
 
 test('method activation retains the exact legacy entrypoint and contract disclosure', async () => {
   const { result, reads } = await bind('method');
   assert.deepEqual(reads.sort(), [
-    `${root}/skills/eternities-forge/SKILL.md`,
-    `${root}/skills/eternities-forge/references/capability-contract.json`,
+    `${root}/skills/eternities-muse/SKILL.md`,
+    `${root}/skills/eternities-muse/references/capability-contract.json`,
   ]);
-  assert.match(result.cortexPackage.selectedPackages[0].entrypoint, /name:\s*eternities-forge/);
-  assert.equal(result.cortexPackage.selectedPackages[0].contract.name, 'eternities-forge');
+  assert.match(result.cortexPackage.selectedPackages[0].entrypoint, /name:\s*eternities-muse/);
+  assert.equal(result.cortexPackage.selectedPackages[0].contract.name, 'eternities-muse');
   assert.equal(result.cortexPackage.selectedPackages[0].activationMode, 'method');
   assert.ok(result.cortexPackage.disclosureBytes > 0);
 });
@@ -162,7 +176,7 @@ test('review activation defers exact selected artifacts without reading or claim
   assert.deepEqual(reads, []);
   assert.deepEqual(result.cortexPackage.selectedPackages, []);
   assert.deepEqual(result.cortexPackage.deferredReviews, [{
-    id: 'eternities-forge',
+    id: 'eternities-muse',
     entrypointSha256: result.receipt.selected[0].entrypointSha256,
     contractSha256: result.receipt.selected[0].contractSha256,
     status: 'scheduled-not-executed',
@@ -172,18 +186,62 @@ test('review activation defers exact selected artifacts without reading or claim
 });
 
 test('adaptive recovery reuses the exact activation receipt and rejects a changed policy', async () => {
-  const adaptive = resolver('review');
-  const first = await createGodskillsAdapter({ releasePin: releasePin(), transport: routed, activationResolver: adaptive });
+  const adaptive = resolver();
+  const first = await createGodskillsAdapter({ releasePin: releasePin(), transport: routed, activationResolver: adaptive.value });
   const bound = await first.bindMission(input());
   const second = await createGodskillsAdapter({
     releasePin: releasePin(),
     transport: async () => { throw new Error('routing must not run during recovery'); },
-    activationResolver: adaptive,
+    activationResolver: adaptive.value,
   });
   const rehydrated = await second.rehydrateMission({ ...input(), receipt: bound.receipt });
   assert.deepEqual(rehydrated.cortexPackage, bound.cortexPackage);
+  assert.equal(adaptive.state.calls, 1);
 
-  const changed = { ...resolver('review'), policyDigest: '8'.repeat(64) };
-  const incompatible = await createGodskillsAdapter({ releasePin: releasePin(), transport: routed, activationResolver: changed });
-  await assert.rejects(incompatible.rehydrateMission({ ...input(), receipt: bound.receipt }), /activation policy digest/i);
+  const changed = { ...resolver().value, policyDigest: '8'.repeat(64) };
+  await assert.rejects(
+    createGodskillsAdapter({ releasePin: releasePin(), transport: routed, activationResolver: changed }),
+    /trusted activation policy/i,
+  );
+});
+
+test('a mode-bearing resolver cannot forge method activation before selected artifact reads', async () => {
+  const reads = [];
+  const io = {
+    async readFile(path) { reads.push(String(path).replaceAll('\\', '/')); return readFile(path); },
+    realpath,
+  };
+  const adaptive = resolver({ extras: {
+    mode: 'method',
+    decisions: [{ id: 'eternities-muse', mode: 'method', decisionDigest: '0'.repeat(64) }],
+  } });
+  const adapter = await createGodskillsAdapter({
+    releasePin: releasePin(), transport: routed, activationResolver: adaptive.value, io,
+  });
+  reads.length = 0;
+  await assert.rejects(adapter.bindMission(input()), /classification fields/i);
+  assert.deepEqual(reads, []);
+});
+
+test('adaptive no-qualified route never invokes classification and recovers its empty package', async () => {
+  const adaptive = resolver();
+  const transport = (request) => {
+    const response = routed(request);
+    response.routeReceipt.status = 'no-qualified-route';
+    response.routeReceipt.selectionKind = 'none';
+    response.routeReceipt.selectedIds = [];
+    response.routeReceipt.selectedEntrypoints = [];
+    return response;
+  };
+  const adapter = await createGodskillsAdapter({ releasePin: releasePin(), transport, activationResolver: adaptive.value });
+  const bound = await adapter.bindMission(input());
+  assert.equal(bound.status, 'no-qualified-route');
+  assert.equal(adaptive.state.calls, 0);
+  assert.deepEqual(bound.receipt.activation.decisions, []);
+  assert.equal(bound.receipt.activation.context, null);
+
+  const recovered = await adapter.rehydrateMission({ ...input(), receipt: bound.receipt });
+  assert.equal(recovered.status, 'no-qualified-route');
+  assert.deepEqual(recovered.cortexPackage, bound.cortexPackage);
+  assert.equal(adaptive.state.calls, 0);
 });

@@ -32,9 +32,16 @@
     "activation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["policyDigest", "decisions"],
+      "required": ["policyDigest", "evidenceDigest", "context", "decisions"],
       "properties": {
         "policyDigest": { "$ref": "#/$defs/digest" },
+        "evidenceDigest": { "$ref": "#/$defs/digest" },
+        "context": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/activationContext" }
+          ]
+        },
         "decisions": {
           "type": "array",
           "maxItems": 3,
@@ -45,17 +52,77 @@
     "activationDecision": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "mode", "decisionDigest", "reasonCodes"],
+      "required": ["id", "taskClass", "consequenceClass", "mode", "reasonCodes", "preInferenceDisclosure", "deferredReview", "methodEvidence", "policyDigest", "evidenceDigest", "authorityProjection", "authorityExpanded", "decisionDigest"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
+        "taskClass": { "$ref": "#/$defs/taskClass" },
+        "consequenceClass": { "$ref": "#/$defs/consequenceClass" },
         "mode": { "enum": ["native", "guardrail", "method", "review"] },
-        "decisionDigest": { "$ref": "#/$defs/digest" },
         "reasonCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "preInferenceDisclosure": { "enum": ["none", "guardrails-only", "entrypoint-and-contract"] },
+        "deferredReview": { "type": "boolean" },
+        "methodEvidence": { "$ref": "#/$defs/methodEvidence" },
+        "policyDigest": { "$ref": "#/$defs/digest" },
+        "evidenceDigest": { "$ref": "#/$defs/digest" },
+        "authorityProjection": { "$ref": "#/$defs/authorityProjection" },
+        "authorityExpanded": { "const": false },
+        "decisionDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "activationContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskClass", "consequenceClass", "reviewAvailable", "explicitMethodRequests"],
+      "properties": {
+        "taskClass": { "$ref": "#/$defs/taskClass" },
+        "consequenceClass": { "$ref": "#/$defs/consequenceClass" },
+        "reviewAvailable": { "type": "boolean" },
+        "explicitMethodRequests": {
+          "type": "array",
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "methodEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eligible", "matchedEvaluations", "wins", "losses", "ties", "winRate", "criticalRegressions", "overheadRatio", "failedGates"],
+      "properties": {
+        "eligible": { "type": "boolean" },
+        "matchedEvaluations": { "type": "integer", "minimum": 0 },
+        "wins": { "type": "integer", "minimum": 0 },
+        "losses": { "type": "integer", "minimum": 0 },
+        "ties": { "type": "integer", "minimum": 0 },
+        "winRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "criticalRegressions": { "type": "integer", "minimum": 0 },
+        "overheadRatio": { "oneOf": [{ "type": "number" }, { "type": "null" }] },
+        "failedGates": {
           "type": "array",
           "uniqueItems": true,
           "items": { "type": "string", "minLength": 1 }
         }
       }
-    }
+    },
+    "authorityProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["availableAuthority", "permittedEffects", "availablePreconditions", "maximumRisk", "minimumEvidenceConfidence", "contextBudget"],
+      "properties": {
+        "availableAuthority": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "permittedEffects": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "availablePreconditions": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "maximumRisk": { "type": "string", "minLength": 1 },
+        "minimumEvidenceConfidence": { "type": "string", "minLength": 1 },
+        "contextBudget": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "taskClass": { "enum": ["creative-generation", "debugging-recovery", "implementation", "research", "continuity", "verification", "general"] },
+    "consequenceClass": { "enum": ["low", "consequential", "critical"] }
   }
 }

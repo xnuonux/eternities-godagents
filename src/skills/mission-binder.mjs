@@ -2,7 +2,12 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
 import { compileCapabilityEligibility } from './capability-policy.mjs';
-import { validateActivationResolution, validateActivationResolver } from './activation-resolver.mjs';
+import {
+  compileActivationResolution,
+  compileEmptyActivation,
+  validateActivationResolver,
+  validateStoredActivation,
+} from './activation-resolver.mjs';
 import { routeGodskill } from './godskills-adapter.mjs';
 import { verifyGodskillsRelease } from './release-verifier.mjs';
 
@@ -83,7 +88,15 @@ function routeContext({ release, eligibility, authority, hostEnvelope }) {
 }
 
 function sourceEnvelopeFor({
-  mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release, activationPolicyDigest = null,
+  mission,
+  observation,
+  genomePolicy,
+  hostEnvelope,
+  sourceStateEpoch,
+  authority,
+  release,
+  activationPolicyDigest = null,
+  activationEvidenceDigest = null,
 }) {
   const envelope = {
     requestId: mission.requestId,
@@ -95,7 +108,11 @@ function sourceEnvelopeFor({
     realmHandContractDigest: hostEnvelope.realmHandContractDigest,
     releaseDigest: release.releaseDigest,
   };
-  if (activationPolicyDigest !== null) envelope.activationPolicyDigest = activationPolicyDigest;
+  if (activationPolicyDigest !== null) {
+    envelope.activationPolicyDigest = activationPolicyDigest;
+    envelope.activationEvidenceDigest = activationEvidenceDigest;
+    envelope.explicitMethodRequests = sorted(mission.explicitMethodRequests ?? []);
+  }
   return deepFreeze(envelope);
 }
 
@@ -214,12 +231,6 @@ async function loadAdaptivePackages(release, selected, activation) {
       contractSha256: capability.contract.sha256,
       activationMode: 'guardrail',
       guardrails,
-      capabilityVocabulary: [],
-      effectVocabulary: sorted(capability.effectVocabulary),
-      riskObligations: sorted(capability.riskVocabulary),
-      evidenceVocabulary: sorted(capability.evidenceVocabulary),
-      preconditionObligations: sorted(capability.preconditionVocabulary),
-      terminationConditions: sorted(capability.terminationConditions),
     }));
   }
   return { packages, deferredReviews, disclosureBytes };
@@ -275,7 +286,7 @@ function compileAdaptivePackage({
     selectedCapabilities: selected.map(({ id }) => id),
     methods: valuesFrom(methodPackages, ({ capabilityVocabulary }) => capabilityVocabulary),
     evidenceRequirements: valuesFrom(packages, ({ evidenceVocabulary, contract, guardrails }) => [
-      ...evidenceVocabulary,
+      ...(evidenceVocabulary ?? []),
       ...(contract?.sourceIds ?? []),
       ...(guardrails?.failureModes ?? []),
     ]),
@@ -286,7 +297,10 @@ function compileAdaptivePackage({
     ]),
     riskObligations: valuesFrom(packages, ({ riskObligations }) => riskObligations),
     preconditionObligations: valuesFrom(packages, ({ preconditionObligations }) => preconditionObligations),
-    terminationConditions: valuesFrom(packages, ({ terminationConditions }) => terminationConditions),
+    terminationConditions: valuesFrom(packages, ({ terminationConditions, guardrails }) => [
+      ...(terminationConditions ?? []),
+      ...(guardrails?.terminationConditions ?? []),
+    ]),
     authorityProjection: authority,
     activation,
     disclosureBytes,
@@ -311,6 +325,7 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       const sourceEnvelope = sourceEnvelopeFor({
         mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
         activationPolicyDigest: adaptive?.policyDigest ?? null,
+        activationEvidenceDigest: adaptive?.evidenceDigest ?? null,
       });
       const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
       const routingRequestId = `${mission.requestId}:${sourceEnvelopeDigest}`;
@@ -342,20 +357,23 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       let stackDigest;
       let activation = null;
       if (adaptive) {
-        activation = validateActivationResolution({
-          resolution: await adaptive.resolve({
-            mission: structuredClone(mission),
-            selected: selected.map(({ id, capability }) => ({
-              id,
-              tier: capability.tier,
-              ownerGodskillId: capability.ownerGodskillId,
-              entrypointSha256: capability.entrypoint.sha256,
-              contractSha256: capability.contract.sha256,
-            })),
-          }),
-          selected,
-          expectedPolicyDigest: adaptive.policyDigest,
-        });
+        activation = selected.length === 0
+          ? compileEmptyActivation()
+          : compileActivationResolution({
+            classification: await adaptive.classify({
+              mission: structuredClone(mission),
+              selected: selected.map(({ id, capability }) => ({
+                id,
+                tier: capability.tier,
+                ownerGodskillId: capability.ownerGodskillId,
+                entrypointSha256: capability.entrypoint.sha256,
+                contractSha256: capability.contract.sha256,
+              })),
+            }),
+            selected,
+            authority,
+            explicitMethodRequests: mission.explicitMethodRequests,
+          });
         const loaded = await loadAdaptivePackages(release, selected, activation);
         packages = loaded.packages;
         ({ cortexPackage, stackDigest } = compileAdaptivePackage({
@@ -416,11 +434,15 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       if (receipt.activation?.policyDigest !== adaptive?.policyDigest) {
         throw new Error('Godskills recovery activation policy digest mismatch');
       }
+      if (receipt.activation?.evidenceDigest !== adaptive?.evidenceDigest) {
+        throw new Error('Godskills recovery activation evidence digest mismatch');
+      }
       const eligibility = compileCapabilityEligibility(genomePolicy, release.manifest);
       const authority = compileAuthority(mission, hostEnvelope);
       const sourceEnvelope = sourceEnvelopeFor({
         mission, observation, genomePolicy, hostEnvelope, sourceStateEpoch, authority, release,
         activationPolicyDigest: receipt.activation?.policyDigest ?? null,
+        activationEvidenceDigest: receipt.activation?.evidenceDigest ?? null,
       });
       const sourceEnvelopeDigest = sha256Value(sourceEnvelope);
       if (receipt.sourceEnvelopeDigest !== sourceEnvelopeDigest
@@ -441,10 +463,11 @@ export async function createGodskillsAdapter({ releasePin, transport, artifactCa
       }
       let compiled;
       if (receipt.activation) {
-        const activation = validateActivationResolution({
-          resolution: receipt.activation,
+        const activation = validateStoredActivation({
+          activation: receipt.activation,
           selected,
-          expectedPolicyDigest: adaptive.policyDigest,
+          authority,
+          explicitMethodRequests: mission.explicitMethodRequests,
         });
         const loaded = await loadAdaptivePackages(release, selected, activation);
         compiled = compileAdaptivePackage({
