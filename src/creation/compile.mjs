@@ -189,7 +189,7 @@ function assertModuleManifestIntegrity(moduleManifest, candidate, manifest) {
   }
 }
 
-export async function verifyCreationBuild(outputDir, { expectedPolicyDigest } = {}) {
+export async function loadVerifiedCreationBuild(outputDir, { expectedPolicyDigest } = {}) {
   if (typeof expectedPolicyDigest !== 'string' || !/^[a-f0-9]{64}$/.test(expectedPolicyDigest)) {
     throw new TypeError('creation policy digest pin is required');
   }
@@ -250,5 +250,16 @@ export async function verifyCreationBuild(outputDir, { expectedPolicyDigest } = 
   if (manifest.buildId !== sha256Value(creationBuildIdProjection(manifest))) {
     throw new IntegrityError('creation build id mismatch');
   }
-  return deepFreeze(manifest);
+  return deepFreeze({
+    manifest: structuredClone(manifest),
+    candidate: structuredClone(candidate),
+    policy: structuredClone(policy),
+    expression: structuredClone(expression),
+    moduleManifest: structuredClone(moduleManifest),
+    genome: structuredClone(genome),
+  });
+}
+
+export async function verifyCreationBuild(outputDir, options = {}) {
+  return (await loadVerifiedCreationBuild(outputDir, options)).manifest;
 }

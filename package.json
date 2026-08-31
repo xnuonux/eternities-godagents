@@ -31,6 +31,7 @@
     "certify:transactional-genesis": "node src/certification/certify-transactional-genesis-phase2.mjs",
     "certify:creator-protocol": "node src/certification/certify-creator-protocol-phase3.mjs",
     "certify:visual-creator": "node src/certification/certify-visual-creator-shell.mjs",
-    "certify:local-admission": "node src/certification/certify-local-admission-shell.mjs"
+    "certify:local-admission": "node src/certification/certify-local-admission-shell.mjs",
+    "certify:cortex-binding": "node scripts/build-cortex-binding-contracts-v1-receipt.mjs"
   }
 }

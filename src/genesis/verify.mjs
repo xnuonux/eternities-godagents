@@ -4,6 +4,7 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
+import { deepFreeze } from '../creation/contracts.mjs';
 import { readVerifiedJournal } from '../state/journal.mjs';
 import { createGenesisStateStore } from './state-store.mjs';
 import { verifyGenesisInputs } from './preflight.mjs';
@@ -118,7 +119,9 @@ export async function verifyGenesisAdmission({
   }
   return Object.freeze({
     receipt: Object.freeze(structuredClone(receipt)),
+    creationSnapshot: inputs.creationSnapshot,
     distributionSnapshot: inputs.distributionSnapshot,
+    keelSnapshot: deepFreeze(structuredClone(keel)),
   });
 }
 

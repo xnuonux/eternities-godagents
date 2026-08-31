@@ -8,6 +8,8 @@ The optional [trusted adaptive activation design](superpowers/specs/2026-08-31-t
 
 The optional [specialist preference design](superpowers/specs/2026-08-31-specialist-preference-adapter-v1-design.md) adds a narrower ranking-only extension. A specialist forwards the exact preferred capability ids already derived from its genome and the verified portable manifest only when the host pins the separate Godskills preference receipt and complete executable closure. All-rounders and legacy releases emit no preference field. Non-preferred capabilities remain eligible and win every stronger ordinary comparison. The source envelope and cycle receipt bind the preference root, supplied ids, disposition, and selected identity; recovery validates that binding and never reroutes. The exact cross-repository proof is the [specialist preference receipt](../receipts/godskills-specialist-preference-v1.json).
 
+The [Cortex Binding Protocol design](superpowers/specs/2026-08-30-godagent-cortex-binding-protocol-design.md) defines how a replaceable Codex task can later host one persistent Godagent without treating shared instructions or prompt text as identity. Phase 1 implements only the pure contract boundary. It verifies one admitted genesis, immutable creation and distribution snapshots, and the current personal-keel head, then compiles a full identity envelope plus a deterministic byte-bounded model projection. The output is inert, grants no effects, and cannot bind a task or write continuity. Per-section digests support exact rehydration; lower-priority sections are removed whole and replaced by digest references rather than silently truncated.
+
 The model proposes. The constitutional arbiter commits. The Realm Contract governs effects. The journal preserves causal continuity. The Soul port remains dormant.
 
 ## Implemented components
@@ -34,6 +36,17 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 | local creator shell | maps strict local operator arguments to bounded catalog, preset preview, and explicitly digest-approved finalization output |
 | visual creator shell | presents fixed presets and exact review evidence over a token-gated loopback boundary, then confines approved finalization below one configured workspace |
 | local admission shell | snapshots one verified creation and compatible local distribution, then composes transactional genesis beneath one exact-bound workspace without starting runtime execution |
+| cortex binding compiler | derives one inert, content-addressed identity candidate and bounded model projection from a verified admission without task mutation, authority, or continuity writes |
+
+## Cortex binding phase 1 boundary
+
+The compiler accepts two inputs: the complete verification arguments for one local admission and a strict request containing only an opaque task id, host-adapter id, revocation epoch, bounded mission projection, and maximum model-projection bytes. Identity is reconstructed from the admitted receipt, creation candidate, expression, module manifest, operational genome, distribution Realm contract, and current verified keel head. The caller cannot submit a name, lineage, archetype, personality, voice, constitution, authority, path, transcript, history, credential, or raw model prompt through this boundary.
+
+The canonical full envelope contains binding, identity, expression, continuity, mission, capability, authority, and causal sections plus exact digests for each section. The continuity section carries only the verified keel identity, state, record count, admitted head, and current head. It does not copy the keel chain. The capability section names verified compatibility and module identities but selects no active Godskill contract. The authority section records the constitutional and Realm ceilings while keeping `grantedEffects` empty and every declared effect blocked until a later host-issued binding receipt, registry admission, and exclusive writer lease exist.
+
+The model projection always keeps the binding header, identity, mission, inert authority, causal state, and section-digest map. If the declared byte budget requires compaction, expression, capability, and continuity are replaced in that order by exact digest references. A budget that cannot hold the mandatory projection fails closed. The candidate id excludes mission text, so a mission can change work without redefining the actor, while the current keel head and target task surface remain bound into the candidate identity.
+
+Phase 1 has no task-control adapter, binding registry, writer lease, provider call, Realm invocation, continuity admission, or Soul activation. A copied candidate remains powerless. Live binding, compaction recovery, Godskill activation, and cross-model acceptance remain subsequent phases with separate evidence.
 
 ## Phase 1 creation boundary
 

@@ -30,6 +30,10 @@ const schemaFiles = {
   'godskills-release-pin': 'godskills-release-pin.schema.json',
   'godskills-cycle-receipt': 'godskills-cycle-receipt.schema.json',
   'godskills-release-migration': 'godskills-release-migration.schema.json',
+  'cortex-binding-request': 'cortex-binding-request.schema.json',
+  'cortex-identity-envelope': 'cortex-identity-envelope.schema.json',
+  'cortex-model-projection': 'cortex-model-projection.schema.json',
+  'cortex-binding-candidate': 'cortex-binding-candidate.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

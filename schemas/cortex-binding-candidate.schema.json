@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["section", "digest", "reason"],
+      "properties": {
+        "section": { "enum": ["expression", "capability", "continuity"] },
+        "digest": { "$ref": "#/$defs/digest" },
+        "reason": { "const": "projection-budget" }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "status", "active", "bindingCandidateId", "fullEnvelope", "fullEnvelopeDigest", "modelProjection", "modelProjectionDigest", "compaction", "candidateDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-godagent-cortex-binding-v1" },
+    "status": { "const": "compiled-inert" },
+    "active": { "const": false },
+    "bindingCandidateId": { "$ref": "#/$defs/digest" },
+    "fullEnvelope": { "type": "object" },
+    "fullEnvelopeDigest": { "$ref": "#/$defs/digest" },
+    "modelProjection": { "type": "object" },
+    "modelProjectionDigest": { "$ref": "#/$defs/digest" },
+    "compaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy", "maxProjectionBytes", "fullEnvelopeBytes", "modelProjectionBytes", "referencedSections"],
+      "properties": {
+        "strategy": { "const": "priority-digest-reference-v1" },
+        "maxProjectionBytes": { "type": "integer", "minimum": 256, "maximum": 1048576 },
+        "fullEnvelopeBytes": { "type": "integer", "minimum": 1 },
+        "modelProjectionBytes": { "type": "integer", "minimum": 1 },
+        "referencedSections": { "type": "array", "maxItems": 3, "uniqueItems": true, "items": { "$ref": "#/$defs/reference" } }
+      }
+    },
+    "candidateDigest": { "$ref": "#/$defs/digest" }
+  }
+}

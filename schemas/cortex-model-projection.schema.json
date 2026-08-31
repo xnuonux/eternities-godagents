@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["section", "digest", "reason"],
+      "properties": {
+        "section": { "enum": ["expression", "capability", "continuity"] },
+        "digest": { "$ref": "#/$defs/digest" },
+        "reason": { "const": "projection-budget" }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "bindingCandidateId", "fullEnvelopeDigest", "binding", "identity", "mission", "authority", "causal", "sectionDigests", "digestReferences"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-godagent-cortex-binding-v1" },
+    "bindingCandidateId": { "$ref": "#/$defs/digest" },
+    "fullEnvelopeDigest": { "$ref": "#/$defs/digest" },
+    "binding": { "type": "object" },
+    "identity": { "type": "object" },
+    "expression": { "type": "object" },
+    "continuity": { "type": "object" },
+    "mission": { "type": "object" },
+    "capability": { "type": "object" },
+    "authority": { "type": "object" },
+    "causal": { "type": "object" },
+    "sectionDigests": { "type": "object" },
+    "digestReferences": { "type": "array", "maxItems": 3, "uniqueItems": true, "items": { "$ref": "#/$defs/reference" } }
+  }
+}

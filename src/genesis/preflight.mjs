@@ -1,20 +1,9 @@
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-
-import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
-import { verifyCreationBuild } from '../creation/compile.mjs';
+import { loadVerifiedCreationBuild } from '../creation/compile.mjs';
 import { loadVerifiedDistribution } from '../foundry/compile.mjs';
 import { createDormantSoulPort } from '../soul/dormant-port.mjs';
 import { deriveGenesisIdentity } from './identity.mjs';
-
-async function readCanonicalJson(path, label) {
-  const text = await readFile(path, 'utf8');
-  const value = JSON.parse(text);
-  if (text !== `${canonicalJson(value)}\n`) throw new IntegrityError(`${label} is not canonical`);
-  return value;
-}
 
 export async function verifyGenesisInputs({
   creationDir,
@@ -24,7 +13,8 @@ export async function verifyGenesisInputs({
   instanceId,
   creatorRef,
 }) {
-  const creation = await verifyCreationBuild(creationDir, { expectedPolicyDigest });
+  const creationSnapshot = await loadVerifiedCreationBuild(creationDir, { expectedPolicyDigest });
+  const creation = creationSnapshot.manifest;
   if (creation.buildId !== expectedCreationBuildId) {
     throw new IntegrityError('creation build id pin mismatch');
   }
@@ -38,10 +28,7 @@ export async function verifyGenesisInputs({
     throw new IntegrityError('creation and distribution artifact identity mismatch');
   }
 
-  const [genome, moduleManifest] = await Promise.all([
-    readCanonicalJson(join(creationDir, 'agent-genome.json'), 'creation genome'),
-    readCanonicalJson(join(creationDir, 'module-manifest.json'), 'creation module manifest'),
-  ]);
+  const { genome, moduleManifest } = creationSnapshot;
   const identity = deriveGenesisIdentity({
     instanceId,
     creatorRef,
@@ -57,6 +44,7 @@ export async function verifyGenesisInputs({
   }
   return Object.freeze({
     creation,
+    creationSnapshot,
     distribution,
     distributionSnapshot,
     genome,

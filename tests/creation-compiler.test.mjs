@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
-import { compileCreation, verifyCreationBuild } from '../src/creation/compile.mjs';
+import { compileCreation, loadVerifiedCreationBuild, verifyCreationBuild } from '../src/creation/compile.mjs';
 
 const root = new URL('../fixtures/creation/', import.meta.url);
 const expectedPolicyDigest = 'c4e3411726fcb32159678b65348e3e14e67f4b011ba73391d19988dee056158b';
@@ -52,6 +52,26 @@ test('identical creation inputs produce byte-identical verified artifacts', asyn
   assert.deepEqual(await byteManifest(left), await byteManifest(right));
   assert.equal(first.manifest.buildId, second.manifest.buildId);
   assert.equal((await verifyCreationBuild(left, { expectedPolicyDigest })).buildId, first.manifest.buildId);
+});
+
+test('verified creation loading returns one deeply immutable source snapshot', async (context) => {
+  const outputDir = await temporaryOutput(context);
+  const compiled = await compileCreation({ ...baseOptions, outputDir });
+  const loaded = await loadVerifiedCreationBuild(outputDir, { expectedPolicyDigest });
+
+  assert.deepEqual(Object.keys(loaded).sort(), [
+    'candidate', 'expression', 'genome', 'manifest', 'moduleManifest', 'policy',
+  ]);
+  assert.deepEqual(loaded.manifest, compiled.manifest);
+  assert.equal(loaded.candidate.blueprint.id, 'aether-architect');
+  assert.equal(loaded.expression.name, 'Aether Architect');
+  assert.equal(loaded.moduleManifest.modules.length, 9);
+  assert.equal(loaded.genome.blueprint.id, 'aether-architect');
+  assert.equal(loaded.policy.policyId, 'creation-ceiling-local-builder-v1');
+  assert.ok(Object.isFrozen(loaded));
+  assert.ok(Object.isFrozen(loaded.candidate.telos));
+  assert.ok(Object.isFrozen(loaded.moduleManifest.modules[0]));
+  assert.deepEqual(await verifyCreationBuild(outputDir, { expectedPolicyDigest }), loaded.manifest);
 });
 
 test('property order and formatting cannot change creation identity', async (context) => {

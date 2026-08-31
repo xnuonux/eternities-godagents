@@ -40,6 +40,7 @@ npm run certify:transactional-genesis
 npm run certify:creator-protocol
 npm run certify:visual-creator
 npm run certify:local-admission
+npm run certify:cortex-binding
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -223,6 +224,14 @@ The trusted local workspace is bound to that exact admission. An exact retry rec
 
 `npm run certify:local-admission` issues the separate append-only `local-admission-shell-v1` receipt. It runs the complete no-network suite, executes two fixed-clock admissions from independently compiled creation fixtures, compares every workspace byte and identity, and pins all six preceding receipts. Its exclusions preserve the trusted-local limitation and every non-runtime boundary above.
 
+### Cortex binding contracts v1
+
+The [Cortex Binding Protocol design](docs/superpowers/specs/2026-08-30-godagent-cortex-binding-protocol-design.md) separates an ordinary Codex task from a host-verified Godagent identity. Phase 1 now compiles one canonical full identity envelope and one budget-bounded model projection from an exact admitted genesis, immutable creation and distribution snapshots, and the current verified personal-keel head. The task request may provide only an opaque task surface, a bounded mission, and a projection-byte budget. It cannot provide identity, authority, transcripts, filesystem paths, credentials, or a model-selected persona.
+
+The result is deliberately `compiled-inert`: it reports `active: false`, grants no effects, exposes no launch or continuity writer, and binds the declared Realm ceiling without activating it. Every envelope section has its own digest. Compaction keeps binding, identity, mission, authority, causal state, and the section-digest map inline, then replaces expression, capability, and continuity as whole sections in that fixed order with exact digest references. It fails rather than truncating mandatory context.
+
+This phase proves deterministic compilation, identity separation, source-tamper refusal, impersonation resistance at the contract boundary, digest re-verification, and bounded compaction. It does not bind a live Codex task, acquire a writer lease, activate Godskills, admit continuity, invoke a Realm effect, or activate Soul. Those remain later protocol phases.
+
 ### Admitted local launch
 
 `launch:local` is the safe bridge from that inert admission to one networked mission. The host policy must name the exact admission-owned distribution, journal, snapshot, and instance. On first launch, an OS-account-local residency registry binds the identity to that canonical admission root so an ordinary copied tree cannot fork its history. Its location is derived from the operating-system account profile rather than launch environment variables. The launcher rejects changed bindings or runtime paths, verifies the transactional genesis receipt, journal, creation, distribution, and personal keel before runtime construction, then verifies them again through the persistent-vessel wake before the cycle. Its local reference Realm persists counter state and idempotency receipts beneath the admission-owned vessel directory instead of losing them at process exit.
@@ -239,7 +248,7 @@ npm run launch:local -- `
 
 One invocation runs at most one unseen mission and exits. An admission-owned live-owner lock serializes projection, recovery, and execution. Retrying the same request ID returns its recorded outcome or recovers its interrupted cycle without admitting a duplicate. Reusing that ID with changed mission or policy-derived authority fails closed. Explicit registry migration will be required before a legitimate relocation; copying the admission is not migration. The launcher does not daemonize, widen host authority, modify genesis, lift frozen evolution, integrate Lunari, activate Inspiration, or activate Soul. This implementation has not yet received a separate certification receipt.
 
-`npm run verify:certifications` audits the exact nine-file certification ledger. It requires canonical bytes, recomputes each internal receipt digest, verifies certified status, resolves every source commit as a Git commit in this repository, and checks the exact required historical file set and hashes across the versioned receipt formats. It returns one canonical ledger projection and digest. This is an integrity audit, not a substitute for rerunning a receipt at its pinned source commit.
+`npm run verify:certifications` audits the exact append-only certification ledger. It requires canonical bytes, recomputes each internal receipt digest, verifies certified status, resolves every source commit as a Git commit in this repository, and checks the exact required historical file set and hashes across the versioned receipt formats. It returns one canonical ledger projection and digest. This is an integrity audit, not a substitute for rerunning a receipt at its pinned source commit.
 
 `npm run verify:release-lineage` additionally resolves the current `HEAD` and proves that every registered certification source commit is its Git ancestor. It emits one content-addressed release-lineage projection. This closes source-history detachment; it still does not claim that current-head behavior has been recertified.
 

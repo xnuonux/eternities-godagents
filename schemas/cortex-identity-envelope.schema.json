@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "text": { "type": "string", "minLength": 1, "maxLength": 4096 },
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "identifierSet": { "type": "array", "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/identifier" } },
+    "textSet": { "type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": { "$ref": "#/$defs/text" } },
+    "module": {
+      "type": "object", "additionalProperties": false, "required": ["ref", "digest"],
+      "properties": { "ref": { "$ref": "#/$defs/identifier" }, "digest": { "$ref": "#/$defs/digest" } }
+    },
+    "mission": {
+      "type": "object", "additionalProperties": false,
+      "required": ["missionId", "objective", "successEvidence", "stopConditions", "budget", "observation"],
+      "properties": {
+        "missionId": { "$ref": "#/$defs/identifier" }, "objective": { "$ref": "#/$defs/text" },
+        "successEvidence": { "$ref": "#/$defs/textSet" }, "stopConditions": { "$ref": "#/$defs/textSet" },
+        "budget": {
+          "type": "object", "additionalProperties": false, "required": ["maxCycles", "maxCompletionTokens"],
+          "properties": {
+            "maxCycles": { "type": "integer", "minimum": 1 },
+            "maxCompletionTokens": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "observation": {
+          "type": "object", "additionalProperties": false, "required": ["observationId", "summary", "evidenceDigests"],
+          "properties": {
+            "observationId": { "$ref": "#/$defs/identifier" }, "summary": { "$ref": "#/$defs/text" },
+            "evidenceDigests": { "type": "array", "maxItems": 32, "uniqueItems": true, "items": { "$ref": "#/$defs/digest" } }
+          }
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "binding", "identity", "expression", "continuity", "mission", "capability", "authority", "causal", "sectionDigests"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-godagent-cortex-binding-v1" },
+    "binding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "active", "bindingCandidateId", "taskId", "hostAdapterId", "revocationEpoch", "instanceId", "genesisId", "keelId", "creationBuildId", "distributionBuildId", "creationCandidateDigest", "policyDigest", "expressionDigest", "moduleManifestDigest", "genomeValueDigest", "genomeContentDigest", "admissionReceiptDigest", "admissionKeelHeadDigest", "currentKeelHeadDigest"],
+      "properties": {
+        "status": { "const": "compiled-inert" }, "active": { "const": false },
+        "bindingCandidateId": { "$ref": "#/$defs/digest" }, "taskId": { "$ref": "#/$defs/identifier" },
+        "hostAdapterId": { "$ref": "#/$defs/identifier" }, "revocationEpoch": { "type": "integer", "minimum": 0 },
+        "instanceId": { "$ref": "#/$defs/identifier" }, "genesisId": { "$ref": "#/$defs/digest" },
+        "keelId": { "type": "string", "minLength": 69, "maxLength": 69 },
+        "creationBuildId": { "$ref": "#/$defs/digest" }, "distributionBuildId": { "$ref": "#/$defs/digest" },
+        "creationCandidateDigest": { "$ref": "#/$defs/digest" }, "policyDigest": { "$ref": "#/$defs/digest" },
+        "expressionDigest": { "$ref": "#/$defs/digest" }, "moduleManifestDigest": { "$ref": "#/$defs/digest" },
+        "genomeValueDigest": { "$ref": "#/$defs/digest" }, "genomeContentDigest": { "$ref": "#/$defs/digest" },
+        "admissionReceiptDigest": { "$ref": "#/$defs/digest" }, "admissionKeelHeadDigest": { "$ref": "#/$defs/digest" },
+        "currentKeelHeadDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["blueprint", "name", "pronouns", "genderPresentation", "voiceDisplayName", "lineage", "archetype", "personality", "voice", "telos", "constitution", "genesis"],
+      "properties": {
+        "blueprint": {
+          "type": "object", "additionalProperties": false, "required": ["id", "version"],
+          "properties": { "id": { "$ref": "#/$defs/identifier" }, "version": { "$ref": "#/$defs/identifier" } }
+        },
+        "name": { "$ref": "#/$defs/identifier" }, "pronouns": { "$ref": "#/$defs/identifierSet" },
+        "genderPresentation": { "$ref": "#/$defs/identifier" }, "voiceDisplayName": { "$ref": "#/$defs/identifier" },
+        "lineage": { "$ref": "#/$defs/module" }, "archetype": { "$ref": "#/$defs/module" },
+        "personality": { "$ref": "#/$defs/module" }, "voice": { "$ref": "#/$defs/module" },
+        "telos": {
+          "type": "object", "additionalProperties": false, "required": ["mission", "successConditions", "stopConditions"],
+          "properties": {
+            "mission": { "$ref": "#/$defs/text" }, "successConditions": { "$ref": "#/$defs/textSet" },
+            "stopConditions": { "$ref": "#/$defs/textSet" }
+          }
+        },
+        "constitution": {
+          "type": "object", "additionalProperties": false,
+          "required": ["id", "version", "principles", "allowedEffects", "amendmentPolicy"],
+          "properties": {
+            "id": { "$ref": "#/$defs/identifier" }, "version": { "$ref": "#/$defs/identifier" },
+            "principles": { "$ref": "#/$defs/textSet" }, "allowedEffects": { "$ref": "#/$defs/identifierSet" },
+            "amendmentPolicy": { "const": "frozen-v0" }
+          }
+        },
+        "genesis": {
+          "type": "object", "additionalProperties": false,
+          "required": ["createdBy", "creatorRef", "sourceManifest", "genesisId", "soulPortStatus"],
+          "properties": {
+            "createdBy": { "$ref": "#/$defs/identifier" }, "creatorRef": { "$ref": "#/$defs/identifier" },
+            "sourceManifest": { "$ref": "#/$defs/identifierSet" }, "genesisId": { "$ref": "#/$defs/digest" },
+            "soulPortStatus": { "const": "dormant" }
+          }
+        }
+      }
+    },
+    "expression": {
+      "type": "object", "additionalProperties": false,
+      "required": ["narrativeDescription", "visual", "presentationTags", "provenance"],
+      "properties": {
+        "narrativeDescription": { "$ref": "#/$defs/text" },
+        "visual": {
+          "type": "object", "additionalProperties": false, "required": ["sigil", "colors", "avatarSeed", "animationProfile"],
+          "properties": {
+            "sigil": { "$ref": "#/$defs/identifier" }, "colors": { "$ref": "#/$defs/identifierSet" },
+            "avatarSeed": { "$ref": "#/$defs/identifier" }, "animationProfile": { "$ref": "#/$defs/identifier" }
+          }
+        },
+        "presentationTags": { "$ref": "#/$defs/identifierSet" },
+        "provenance": {
+          "type": "object", "additionalProperties": false, "required": ["author", "source"],
+          "properties": { "author": { "$ref": "#/$defs/identifier" }, "source": { "$ref": "#/$defs/text" } }
+        }
+      }
+    },
+    "continuity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "historyIncluded", "keelId", "status", "stateDigest", "recordCount", "headDigest", "admittedHeadDigest", "entries"],
+      "properties": {
+        "source": { "const": "verified-keel-head-only" }, "historyIncluded": { "const": false },
+        "keelId": { "type": "string", "minLength": 69, "maxLength": 69 }, "status": { "const": "active" },
+        "stateDigest": { "$ref": "#/$defs/digest" }, "recordCount": { "type": "integer", "minimum": 6 },
+        "headDigest": { "$ref": "#/$defs/digest" }, "admittedHeadDigest": { "$ref": "#/$defs/digest" },
+        "entries": { "type": "array", "maxItems": 0 }
+      }
+    },
+    "mission": { "$ref": "#/$defs/mission" },
+    "capability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cortex", "promptOs", "godskills", "realmRequiredCapabilities", "modules"],
+      "properties": {
+        "cortex": {
+          "type": "object", "additionalProperties": false, "required": ["allowedAdapters", "requiredCapabilities"],
+          "properties": { "allowedAdapters": { "$ref": "#/$defs/identifierSet" }, "requiredCapabilities": { "$ref": "#/$defs/identifierSet" } }
+        },
+        "promptOs": {
+          "type": "object", "additionalProperties": false, "required": ["edition", "allowedAdapters", "requiredCapabilities"],
+          "properties": {
+            "edition": { "$ref": "#/$defs/identifier" }, "allowedAdapters": { "$ref": "#/$defs/identifierSet" },
+            "requiredCapabilities": { "$ref": "#/$defs/identifierSet" }
+          }
+        },
+        "godskills": {
+          "type": "object", "additionalProperties": false,
+          "required": ["protocolId", "profile", "preferredFamilies", "prohibitedFamilies", "prohibitedCapabilities", "maxComposition", "selectedIds", "selectedContractDigests"],
+          "properties": {
+            "protocolId": { "const": "eternities-godskills-adapter-v1" }, "profile": { "enum": ["all-rounder", "specialist"] },
+            "preferredFamilies": { "$ref": "#/$defs/identifierSet" }, "prohibitedFamilies": { "$ref": "#/$defs/identifierSet" },
+            "prohibitedCapabilities": { "$ref": "#/$defs/identifierSet" }, "maxComposition": { "type": "integer", "minimum": 1, "maximum": 3 },
+            "selectedIds": { "type": "array", "maxItems": 0 }, "selectedContractDigests": { "type": "array", "maxItems": 0 }
+          }
+        },
+        "realmRequiredCapabilities": { "$ref": "#/$defs/identifierSet" },
+        "modules": {
+          "type": "array", "minItems": 9, "maxItems": 9,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["kind", "ref", "digest"],
+            "properties": {
+              "kind": { "enum": ["lineage", "archetype", "attributes", "personality", "voice", "organs", "godskills", "cortex", "embodiment"] },
+              "ref": { "$ref": "#/$defs/identifier" }, "digest": { "$ref": "#/$defs/digest" }
+            }
+          }
+        }
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "grantedEffects", "declaredEffectCeiling", "realmId", "realmContractVersion", "realmContractDigest", "realmCapabilities", "resourceLimits", "activationRequirements", "blockedUntilActivation", "externalActionBoundary"],
+      "properties": {
+        "state": { "const": "inert" }, "grantedEffects": { "type": "array", "maxItems": 0 },
+        "declaredEffectCeiling": { "$ref": "#/$defs/identifierSet" }, "realmId": { "$ref": "#/$defs/identifier" },
+        "realmContractVersion": { "$ref": "#/$defs/identifier" }, "realmContractDigest": { "$ref": "#/$defs/digest" },
+        "realmCapabilities": { "$ref": "#/$defs/identifierSet" },
+        "resourceLimits": {
+          "type": "object", "additionalProperties": false, "required": ["maxActionsPerCycle"],
+          "properties": { "maxActionsPerCycle": { "type": "integer", "minimum": 1 } }
+        },
+        "activationRequirements": {
+          "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true,
+          "items": { "enum": ["verified-binding-registry", "exclusive-writer-lease", "host-issued-binding-receipt"] }
+        },
+        "blockedUntilActivation": { "$ref": "#/$defs/identifierSet" },
+        "externalActionBoundary": { "const": "host-validated-only" }
+      }
+    },
+    "causal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["runtimeState", "genesisReceiptDigest", "journalBindingBaseDigest", "journalHeadDigest", "admissionKeelHeadDigest", "currentKeelHeadDigest", "keelStateDigest", "priorDecisionReceipt", "pendingReconciliation"],
+      "properties": {
+        "runtimeState": { "const": "not-bound" }, "genesisReceiptDigest": { "$ref": "#/$defs/digest" },
+        "journalBindingBaseDigest": { "$ref": "#/$defs/digest" }, "journalHeadDigest": { "$ref": "#/$defs/digest" },
+        "admissionKeelHeadDigest": { "$ref": "#/$defs/digest" }, "currentKeelHeadDigest": { "$ref": "#/$defs/digest" },
+        "keelStateDigest": { "$ref": "#/$defs/digest" }, "priorDecisionReceipt": { "const": "none" },
+        "pendingReconciliation": { "const": false }
+      }
+    },
+    "sectionDigests": {
+      "type": "object", "additionalProperties": false,
+      "required": ["binding", "identity", "expression", "continuity", "mission", "capability", "authority", "causal"],
+      "properties": {
+        "binding": { "$ref": "#/$defs/digest" }, "identity": { "$ref": "#/$defs/digest" },
+        "expression": { "$ref": "#/$defs/digest" }, "continuity": { "$ref": "#/$defs/digest" },
+        "mission": { "$ref": "#/$defs/digest" }, "capability": { "$ref": "#/$defs/digest" },
+        "authority": { "$ref": "#/$defs/digest" }, "causal": { "$ref": "#/$defs/digest" }
+      }
+    }
+  }
+}
