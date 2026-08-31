@@ -1,0 +1,70 @@
+{
+  "$id": "urn:eternities:godagents:godskills-typed-composition-pin:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "expected": {
+      "additionalProperties": false,
+      "properties": {
+        "activationTrustRootDigest": { "pattern": "^[a-f0-9]{64}$", "type": "string" },
+        "capabilityLayerReceiptDigest": { "pattern": "^[a-f0-9]{64}$", "type": "string" },
+        "executionDigest": { "pattern": "^[a-f0-9]{64}$", "type": "string" },
+        "methodDigest": { "pattern": "^[a-f0-9]{64}$", "type": "string" },
+        "planDigest": { "pattern": "^[a-f0-9]{64}$", "type": "string" },
+        "registryDigest": { "pattern": "^[a-f0-9]{64}$", "type": "string" }
+      },
+      "required": [
+        "capabilityLayerReceiptDigest",
+        "activationTrustRootDigest",
+        "registryDigest",
+        "planDigest",
+        "methodDigest",
+        "executionDigest"
+      ],
+      "type": "object"
+    },
+    "module": {
+      "additionalProperties": false,
+      "properties": {
+        "path": { "const": "src/typed-composition.mjs" },
+        "sha256": { "const": "d2189dd88d0fad0d1255ff48f4429bdbb5baa9c06d14052551afd49d4bcef4f0" }
+      },
+      "required": ["path", "sha256"],
+      "type": "object"
+    },
+    "policy": {
+      "additionalProperties": false,
+      "properties": {
+        "path": { "const": "policies/typed-composition.v1.json" },
+        "sha256": { "const": "f5934f9b22fc3ede905fec359cc9697f40b23ede4f7144eb298f4cd184b005fd" }
+      },
+      "required": ["path", "sha256"],
+      "type": "object"
+    },
+    "protocolId": { "const": "eternities-godskills-typed-composition-consumer-v1" },
+    "releaseReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": { "const": 8349 },
+        "path": { "const": "receipts/typed-composition-v1.json" },
+        "receiptDigest": { "const": "da81b62ead231bdd89fd449e8a17d444685c92ad272a02a20a28e26e0563bc6a" },
+        "sha256": { "const": "bf311f1eebce635b5217ecb69fda6b8741889bc60f0be8186d14a3bcbe900f11" }
+      },
+      "required": ["path", "sha256", "bytes", "receiptDigest"],
+      "type": "object"
+    },
+    "repositoryRoot": { "minLength": 1, "type": "string" },
+    "sourceCommit": { "const": "7c1a183d55616310ac96255dd996536c53c8b577" }
+  },
+  "required": [
+    "protocolId",
+    "sourceCommit",
+    "repositoryRoot",
+    "releaseReceipt",
+    "module",
+    "policy",
+    "expected"
+  ],
+  "title": "Pinned Godskills typed-composition release v1",
+  "type": "object"
+}
