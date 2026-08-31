@@ -10,6 +10,7 @@ import { sha256Text, sha256Value } from '../core/digest.mjs';
 const registry = Object.freeze({
   'creation-forge-phase1-certification.json': 'creation-forge-phase1',
   'cortex-binding-contracts-v1.json': 'cortex-binding-contracts-v1',
+  'cortex-binding-registry-v1.json': 'cortex-binding-registry-v1',
   'creator-protocol-phase3-certification.json': 'creator-protocol-phase3',
   'godagent-v0-certification.json': 'godagent-v0',
   'godskills-adaptive-activation-v1.json': 'godskills-adaptive-activation-v1',
@@ -27,6 +28,19 @@ const requiredHistoricalLinks = Object.freeze({
     'receipts/networked-cortex-certification.json',
   ]),
   'cortex-binding-contracts-v1.json': Object.freeze([
+    'receipts/creation-forge-phase1-certification.json',
+    'receipts/creator-protocol-phase3-certification.json',
+    'receipts/godagent-v0-certification.json',
+    'receipts/godskills-adaptive-activation-v1.json',
+    'receipts/godskills-specialist-preference-v1.json',
+    'receipts/godskills-v3-integration.json',
+    'receipts/local-admission-shell-certification.json',
+    'receipts/networked-cortex-certification.json',
+    'receipts/transactional-genesis-phase2-certification.json',
+    'receipts/visual-creator-shell-certification.json',
+  ]),
+  'cortex-binding-registry-v1.json': Object.freeze([
+    'receipts/cortex-binding-contracts-v1.json',
     'receipts/creation-forge-phase1-certification.json',
     'receipts/creator-protocol-phase3-certification.json',
     'receipts/godagent-v0-certification.json',
