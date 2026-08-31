@@ -32,6 +32,7 @@ const registry = Object.freeze({
   'recoverable-mission-revision-executor-v1.json': 'recoverable-mission-revision-executor-v1',
   'recoverable-typed-execution-journal-v1.json': 'recoverable-typed-execution-journal-v1',
   'recoverable-typed-composition-compiler-v1.json': 'recoverable-typed-composition-compiler-v1',
+  'receipt-bound-typed-executor-bundle-v1.json': 'receipt-bound-typed-executor-bundle-v1',
   'resumable-mission-review-kernel-v1.json': 'resumable-mission-review-kernel-v1',
   'routing-evidence-activation-classifier-v1.json': 'routing-evidence-activation-classifier-v1',
   'sealed-local-godskills-transport-v1.json': 'sealed-local-godskills-transport-v1',
@@ -45,6 +46,9 @@ const registry = Object.freeze({
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
 const requiredHistoricalLinks = Object.freeze({
+  'receipt-bound-typed-executor-bundle-v1.json': Object.freeze(expectedFiles
+    .filter((file) => file !== 'receipt-bound-typed-executor-bundle-v1.json')
+    .map((file) => `receipts/${file}`)),
   'admitted-sealed-identity-host-v1.json': Object.freeze([
     'receipts/codex-bound-turn-v1.json',
     'receipts/codex-recoverable-turn-coordinator-v1.json',

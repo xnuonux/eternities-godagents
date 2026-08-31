@@ -31,8 +31,8 @@ runner hook.
 The verifier uses native filesystem operations. It rejects absolute,
 non-canonical, escaping, aliased, symbolic-link, duplicate, missing, or changed
 receipt and module paths. It reads each module once, verifies its exact bytes,
-and rejects local, external, dynamic, or CommonJS imports. Bundle modules are
-therefore closed single-file programs.
+and rejects static, dynamic, or CommonJS import syntax. Receipt-certified
+executor source remains trusted code inside the Node process.
 
 After verification, the exact already-read bytes are imported from a data URL.
 No filesystem module is imported after verification, closing the ordinary
@@ -90,6 +90,7 @@ must fail before any executor invocation.
 - bundle executors are deterministic certification implementations, not live
   provider or model-quality certification
 - imported code runs in the Node process and is not an operating-system sandbox
+- receipt-certified executor behavior remains trusted inside that process
 - hostile mutation of already executing process memory is not certified
 - executor return before durable publication may still repeat after process death
 - external exactly-once effects and general executor idempotency remain unproved

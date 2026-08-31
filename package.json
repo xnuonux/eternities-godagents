@@ -51,6 +51,7 @@
     "certify:routing-evidence-classifier": "node scripts/build-routing-evidence-activation-classifier-v1-receipt.mjs",
     "certify:admitted-sealed-identity-host": "node scripts/build-admitted-sealed-identity-host-v1-receipt.mjs",
     "certify:openai-compatible-phase-transport": "node scripts/build-sealed-openai-compatible-phase-transport-v1-receipt.mjs",
-    "certify:signed-phase-resolution": "node scripts/build-signed-openai-phase-resolution-v1-receipt.mjs"
+    "certify:signed-phase-resolution": "node scripts/build-signed-openai-phase-resolution-v1-receipt.mjs",
+    "certify:receipt-bound-executors": "node scripts/build-receipt-bound-typed-executor-bundle-v1-receipt.mjs"
   }
 }

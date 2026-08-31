@@ -61,10 +61,12 @@ export async function execute(input) {
 `;
 }
 
-export async function receiptBoundExecutorBundleFixture(context, { crashForgeOnce = false } = {}) {
+export async function receiptBoundExecutorBundleFixture(context, {
+  crashForgeOnce = false,
+  bundleId = `certification:${randomUUID()}`,
+} = {}) {
   const root = await mkdtemp(join(tmpdir(), 'godagents-receipt-bound-bundle-'));
   if (context) context.after(() => rm(root, { recursive: true, force: true }));
-  const bundleId = `certification:${randomUUID()}`;
   await mkdir(join(root, 'executors'), { recursive: true });
   await mkdir(join(root, 'receipts'), { recursive: true });
   const sources = {
@@ -113,6 +115,82 @@ export async function receiptBoundExecutorBundleFixture(context, { crashForgeOnc
     receipt,
     descriptors: executors.map(({ descriptor }) => structuredClone(descriptor)),
   };
+}
+
+export async function buildDeterministicReceiptBoundTypedExecutorBundleHostFixture() {
+  const cleanup = [];
+  const context = { after: (action) => cleanup.push(action) };
+  try {
+    const { admittedTypedExecutionHostFixture } = await import(
+      './admitted-sealed-typed-execution-host-fixture.mjs'
+    );
+    const { launchReceiptBoundAdmittedSealedTypedExecutionMission } = await import(
+      '../../src/host/receipt-bound-admitted-sealed-typed-execution-launch.mjs'
+    );
+    const admitted = await admittedTypedExecutionHostFixture(context, 'receipt-bound-certification');
+    const bundle = await receiptBoundExecutorBundleFixture(context, {
+      crashForgeOnce: true,
+      bundleId: 'certification:receipt-bound-typed-executor-bundle-v1',
+    });
+    const input = await bindBundleToAdmittedFixture(admitted, bundle);
+    let crashObserved = false;
+    try {
+      await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
+    } catch (error) {
+      if (error?.cause?.message !== 'receipt-bound certification crash after persisted Muse output') throw error;
+      crashObserved = true;
+    }
+    const recovered = await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
+    const replay = await launchReceiptBoundAdmittedSealedTypedExecutionMission(input);
+    const unsigned = {
+      schemaVersion: 1,
+      protocolId: 'eternities-receipt-bound-typed-executor-bundle-host-fixture-v1',
+      bundle: {
+        bundleId: bundle.receipt.bundleId,
+        receiptDigest: bundle.receipt.receiptDigest,
+        receiptSha256: bundle.expectedSha256,
+        executors: bundle.receipt.executors.map((row) => ({
+          capabilityId: row.capabilityId,
+          module: structuredClone(row.module),
+          descriptor: structuredClone(row.descriptor),
+        })),
+      },
+      policy: {
+        policyId: admitted.policy.policyId,
+        policyDigest: admitted.common.env.GODAGENT_TYPED_EXECUTION_POLICY_SHA256,
+        executorIds: admitted.policy.runtime.executors.map(({ executorId }) => executorId),
+      },
+      completion: {
+        receiptDigest: recovered.receipt.receiptDigest,
+        executionBindingDigest: recovered.receipt.executionBindingDigest,
+        compilationDigest: recovered.receipt.compilationDigest,
+        executionDigest: recovered.receipt.executionDigest,
+      },
+      recovery: {
+        crashObserved,
+        executedSteps: recovered.execution.execution.executedSteps,
+        recoveredSteps: recovered.execution.execution.recoveredSteps,
+        replayExecutedSteps: replay.execution.execution.executedSteps,
+        replayRecoveredSteps: replay.execution.execution.recoveredSteps,
+        replayReceiptMatched: replay.receipt.receiptDigest === recovered.receipt.receiptDigest,
+      },
+      guarantees: {
+        externalBundlePin: true,
+        canonicalReceipt: true,
+        exactVerifiedBytesExecuted: true,
+        callerExecutorsAccepted: false,
+        callerLoaderHooksAccepted: false,
+        policyDescriptorMatched: true,
+        authorityExpanded: false,
+        defaultLaunchEnabled: false,
+        externalExactlyOnce: false,
+      },
+      proofLimits: structuredClone(bundle.receipt.proofLimits),
+    };
+    return Object.freeze({ ...unsigned, fixtureDigest: sha256Value(unsigned) });
+  } finally {
+    for (const action of cleanup.reverse()) await action();
+  }
 }
 
 export async function bindBundleToAdmittedFixture(fixture, bundle) {

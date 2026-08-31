@@ -391,6 +391,12 @@ The reviewed deterministic path selects `eternities-muse`, interrupts after real
 
 The host itself remains provider-neutral and programmatic. Concrete cognition is an independently pinned optional dependency rather than ambient host behavior. It still exposes no CLI, does not switch `launch:local`, grant Realm or continuity writes, evolve identity, integrate Lunari, activate Inspiration, or activate Soul.
 
+### Receipt-bound typed executor bundle v1
+
+The [receipt-bound executor design](docs/superpowers/specs/2026-08-31-receipt-bound-typed-executor-bundle-v1-design.md) closes the admitted typed host's remaining caller-implementation gap on a new sibling path. `launchReceiptBoundAdmittedSealedTypedExecutionMission` accepts a canonical bundle root and receipt path but no executor functions. An independent `GODAGENT_TYPED_EXECUTOR_BUNDLE_SHA256` pins the receipt before any module is loaded.
+
+The native verifier rejects changed, escaping, aliased, symbolic-link, import-bearing, or noncanonical artifacts. It imports the exact bytes already verified through content-addressed data URLs, derives policy-matched executor identities from the bundle and module hashes, and passes only privately branded frozen handles to the certified admitted host. The crash fixture proves persisted Muse recovery invokes only Forge and terminal replay invokes no executor. Receipt-certified code remains trusted inside Node. This remains an opt-in programmatic mechanism, not a provider-quality claim, operating-system sandbox, external exactly-once guarantee, or default launch path.
+
 ### Sealed OpenAI-compatible phase transport v1
 
 The [phase transport design](docs/superpowers/specs/2026-08-31-sealed-openai-compatible-phase-transport-v1-design.md) supplies one concrete strict-JSON cognition boundary for the admitted identity host. A canonical provider policy independently pins one HTTPS endpoint, one exact model, one credential environment variable name, per-phase completion-token ceilings, and request, response, dispatch, and completion byte ceilings. Its digest is supplied through `GODAGENT_PHASE_TRANSPORT_POLICY_SHA256` and is embedded in all three existing transport descriptors.

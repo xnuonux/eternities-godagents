@@ -177,3 +177,29 @@ test('rejects imported dependencies, changed descriptors, and expanded public fi
     /input fields are invalid/,
   );
 });
+
+test('rejects changed module exports and noncanonical receipt paths', async (t) => {
+  const changed = await bundleFixture(t);
+  const source = `${moduleSources['eternities-forge']}\nexport const extra = true;\n`;
+  const row = changed.receipt.executors[0];
+  row.module.sha256 = sha256Text(source);
+  row.module.bytes = Buffer.byteLength(source);
+  row.descriptor.executorId = executorIdentity(row.capabilityId, row.module.sha256);
+  const { receiptDigest: ignored, ...unsigned } = changed.receipt;
+  changed.receipt.receiptDigest = sha256Value(unsigned);
+  const receiptText = `${canonicalJson(changed.receipt)}\n`;
+  changed.expectedSha256 = sha256Text(receiptText);
+  await writeFile(join(changed.repositoryRoot, ...row.module.path.split('/')), source);
+  await writeFile(join(changed.repositoryRoot, ...changed.receiptPath.split('/')), receiptText);
+  await assert.rejects(
+    verifyReceiptBoundTypedExecutorBundle(verificationInput(changed)),
+    /must export exactly one async execute function/,
+  );
+  await assert.rejects(
+    verifyReceiptBoundTypedExecutorBundle({
+      ...verificationInput(changed),
+      receiptPath: '../outside.json',
+    }),
+    /canonical repository-relative path/,
+  );
+});
