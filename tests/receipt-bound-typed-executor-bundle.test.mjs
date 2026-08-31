@@ -226,7 +226,7 @@ test('rejects credential-shaped content and prototype-affecting keys', async (t)
   assert.equal({}.polluted, undefined);
 });
 
-test('rejects output templates beyond bounded depth', async (t) => {
+test('rejects output templates beyond bounded depth or node count', async (t) => {
   const fixture = await bundleFixture(t);
   const value = fixturePrograms()['eternities-forge'];
   let cursor = value.outputTemplate.slots;
@@ -236,6 +236,24 @@ test('rejects output templates beyond bounded depth', async (t) => {
   }
   await rewriteProgram(fixture, 'eternities-forge', value);
   await assert.rejects(verifyReceiptBoundTypedExecutorBundle(verificationInput(fixture)), /structural limits/);
+
+  const wide = await bundleFixture(t, 'invalid-wide-template-v1');
+  const wideValue = fixturePrograms()['eternities-forge'];
+  wideValue.outputTemplate.slots.values = Array.from({ length: 513 }, (_, index) => index);
+  await rewriteProgram(wide, 'eternities-forge', wideValue);
+  await assert.rejects(verifyReceiptBoundTypedExecutorBundle(verificationInput(wide)), /structural limits/);
+});
+
+test('rejects changed and duplicate program paths before program loading', async (t) => {
+  const changed = await bundleFixture(t);
+  changed.receipt.executors[0].program.path = 'executors/../outside.json';
+  await rewriteReceipt(changed);
+  await assert.rejects(verifyReceiptBoundTypedExecutorBundle(verificationInput(changed)), /canonical repository-relative path/);
+
+  const duplicate = await bundleFixture(t, 'duplicate-program-path-v1');
+  duplicate.receipt.executors[1].program.path = duplicate.receipt.executors[0].program.path;
+  await rewriteReceipt(duplicate);
+  await assert.rejects(verifyReceiptBoundTypedExecutorBundle(verificationInput(duplicate)), /path is invalid or duplicated/);
 });
 
 test('bundle instances remain isolated and policy authorization precedes executor construction', async (t) => {
