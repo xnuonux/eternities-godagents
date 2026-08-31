@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "status", "missionId", "policyDigest", "admissionBindingDigest", "candidateDigest", "compilationDigest", "executionDigest", "authorityExpanded", "receiptDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-admitted-sealed-typed-execution-host-completion-v1" },
+    "status": { "const": "completed" },
+    "missionId": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "policyDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "admissionBindingDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "candidateDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "compilationDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "executionDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "authorityExpanded": { "const": false },
+    "receiptDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

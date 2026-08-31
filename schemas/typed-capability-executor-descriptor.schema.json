@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "executorId", "capabilityId", "authority", "maximumInputBytes", "maximumOutputBytes"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-typed-capability-executor-v1" },
+    "executorId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "capabilityId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "authority": { "type": "array", "maxItems": 0 },
+    "maximumInputBytes": { "type": "integer", "minimum": 256, "maximum": 16777216 },
+    "maximumOutputBytes": { "type": "integer", "minimum": 256, "maximum": 16777216 }
+  }
+}
