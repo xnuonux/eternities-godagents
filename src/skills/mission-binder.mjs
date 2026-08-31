@@ -4,6 +4,7 @@ import { assertSchema } from '../core/schema-validator.mjs';
 import { compileCapabilityEligibility } from './capability-policy.mjs';
 import {
   compileActivationResolution,
+  compileContractGuardrails,
   compileEmptyActivation,
   validateActivationResolver,
   validateStoredActivation,
@@ -216,12 +217,7 @@ async function loadAdaptivePackages(release, selected, activation) {
     }
     const contractBytes = await release.readSelectedArtifact(capability.contract, `selected contract ${id}`);
     const contract = parseContract(contractBytes, id);
-    const guardrails = deepFreeze({
-      successCondition: contract.successCondition,
-      failureModes: sorted(contract.failureModes),
-      effects: sorted(contract.effects),
-      terminationConditions: sorted(capability.terminationConditions),
-    });
+    const guardrails = compileContractGuardrails(contract, id);
     disclosureBytes += Buffer.byteLength(canonicalJson(guardrails), 'utf8');
     packages.push(deepFreeze({
       id,

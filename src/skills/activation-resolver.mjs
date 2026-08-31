@@ -53,6 +53,32 @@ function exactKeys(value, expected, label) {
   if (canonicalJson(actual) !== canonicalJson(wanted)) throw new Error(`${label} fields are invalid`);
 }
 
+function nonEmptyStringArray(value, label) {
+  if (!Array.isArray(value) || value.length === 0
+      || value.some((entry) => typeof entry !== 'string' || entry.length === 0)) {
+    throw new TypeError(`${label} must be a non-empty string array`);
+  }
+  return sorted(value);
+}
+
+export function compileContractGuardrails(contract, capabilityId) {
+  if (!contract || typeof contract !== 'object' || Array.isArray(contract)) {
+    throw new TypeError(`Godskills guardrail contract for ${capabilityId} is invalid`);
+  }
+  if (typeof contract.successCondition !== 'string' || contract.successCondition.length === 0) {
+    throw new TypeError(`Godskills guardrail contract successCondition for ${capabilityId} is invalid`);
+  }
+  return deepFreeze({
+    successCondition: contract.successCondition,
+    failureModes: nonEmptyStringArray(contract.failureModes, `contract.failureModes for ${capabilityId}`),
+    effects: nonEmptyStringArray(contract.effects, `contract.effects for ${capabilityId}`),
+    terminationConditions: nonEmptyStringArray(
+      contract.terminationConditions,
+      `contract.terminationConditions for ${capabilityId}`,
+    ),
+  });
+}
+
 function methodEvidence(profile) {
   if (!profile) {
     return {

@@ -3,6 +3,7 @@ import { readFile, realpath } from 'node:fs/promises';
 import test from 'node:test';
 
 import { createGodskillsAdapter } from '../src/skills/mission-binder.mjs';
+import { compileContractGuardrails } from '../src/skills/activation-resolver.mjs';
 
 const root = 'C:/dev/eternities-godskills';
 const policyDigest = 'bf9e6878399b4edeb4ff6bb77d234fdf646b53fd62ba6e1448b4374246d4c41d';
@@ -103,6 +104,24 @@ function resolver({ consequenceClass = 'consequential', reviewAvailable = true, 
     },
   } };
 }
+
+test('guardrail termination constraints come only from the verified contract', () => {
+  const contract = {
+    successCondition: 'contract success',
+    failureModes: ['contract failure'],
+    effects: ['read'],
+    terminationConditions: ['contract termination'],
+  };
+  const manifest = { terminationConditions: ['manifest termination'] };
+  const guardrails = compileContractGuardrails(contract, 'fixture-capability');
+
+  assert.deepEqual(guardrails.terminationConditions, ['contract termination']);
+  assert.equal(JSON.stringify(guardrails).includes(manifest.terminationConditions[0]), false);
+  assert.throws(
+    () => compileContractGuardrails({ ...contract, terminationConditions: undefined }, 'fixture-capability'),
+    /terminationConditions/i,
+  );
+});
 
 async function bind(mode) {
   const reads = [];
