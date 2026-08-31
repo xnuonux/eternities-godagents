@@ -91,10 +91,16 @@ async function writePolicy(t, policy, name = 'identity-policy.json') {
   return path;
 }
 
+async function loadVerifiedPolicy(module, path) {
+  const loaded = await module.loadIdentityHostPolicy(path);
+  const verifiedRoutingExecutable = await module.verifyIdentityHostPolicyRouting(loaded.policy);
+  return Object.freeze({ ...loaded, verifiedRoutingExecutable });
+}
+
 test('loads one canonical frozen identity-host policy with exact descriptor pins', async (t) => {
-  const { loadIdentityHostPolicy } = await policyModule();
+  const module = await policyModule();
   const policy = await validPolicy();
-  const loaded = await loadIdentityHostPolicy(await writePolicy(t, policy));
+  const loaded = await loadVerifiedPolicy(module, await writePolicy(t, policy));
 
   assert.deepEqual(loaded.policy, policy);
   assert.match(loaded.digest, /^[a-f0-9]{64}$/);
@@ -108,9 +114,9 @@ test('loads one canonical frozen identity-host policy with exact descriptor pins
 });
 
 test('accepts a no-review policy only when classifier and executor presence agree', async (t) => {
-  const { loadIdentityHostPolicy } = await policyModule();
+  const module = await policyModule();
   const noReview = await validPolicy({ reviewAvailable: false });
-  const loaded = await loadIdentityHostPolicy(await writePolicy(t, noReview, 'no-review.json'));
+  const loaded = await loadVerifiedPolicy(module, await writePolicy(t, noReview, 'no-review.json'));
   assert.equal(loaded.policy.runtime.activationClassifier.reviewAvailable, false);
   assert.equal(Object.hasOwn(loaded.policy.runtime, 'reviewExecutor'), false);
   assert.equal(Object.hasOwn(loaded.policy.runtime, 'revisionExecutor'), false);
@@ -122,12 +128,12 @@ test('accepts a no-review policy only when classifier and executor presence agre
   ]) {
     const changed = structuredClone(noReview);
     mutate(changed);
-    await assert.rejects(loadIdentityHostPolicy(await writePolicy(t, changed, `${name}.json`)), pattern, name);
+    await assert.rejects(loadVerifiedPolicy(module, await writePolicy(t, changed, `${name}.json`)), pattern, name);
   }
 });
 
 test('rejects forged descriptors executable roots authority expansions and incoherent limits', async (t) => {
-  const { loadIdentityHostPolicy } = await policyModule();
+  const module = await policyModule();
   const base = await validPolicy();
   const cases = [
     ['classifier digest', (policy) => { policy.runtime.activationClassifier.descriptorDigest = '0'.repeat(64); }, /classifier|descriptor|digest/i],
@@ -144,7 +150,7 @@ test('rejects forged descriptors executable roots authority expansions and incoh
   for (const [name, mutate, pattern] of cases) {
     const changed = structuredClone(base);
     mutate(changed);
-    await assert.rejects(loadIdentityHostPolicy(await writePolicy(t, changed, `${name}.json`)), pattern, name);
+    await assert.rejects(loadVerifiedPolicy(module, await writePolicy(t, changed, `${name}.json`)), pattern, name);
   }
 });
 

@@ -108,10 +108,7 @@ function validateSemantics(policy) {
   }
 }
 
-export async function loadIdentityHostPolicy(path, {
-  artifactCache = new Map(),
-  io = {},
-} = {}) {
+export async function loadIdentityHostPolicy(path) {
   let text;
   let policy;
   try {
@@ -125,20 +122,27 @@ export async function loadIdentityHostPolicy(path, {
   }
   assertSchema('identity-host-policy', policy);
   validateSemantics(policy);
-  const verifiedRoutingExecutable = await verifyGodskillsRoutingExecutable({
+  const frozen = deepFreeze(policy);
+  return Object.freeze({
+    policy: frozen,
+    digest: sha256Text(canonicalJson(frozen)),
+  });
+}
+
+export async function verifyIdentityHostPolicyRouting(policy, {
+  artifactCache = new Map(),
+  io = {},
+} = {}) {
+  assertSchema('identity-host-policy', policy);
+  validateSemantics(policy);
+  const verified = await verifyGodskillsRoutingExecutable({
     releasePin: policy.runtime.godskillsRelease,
     routingPin: policy.runtime.routingExecutable,
     artifactCache,
     io,
   });
-  if (verifiedRoutingExecutable.routing.trustRootDigest
-      !== policy.runtime.activationClassifier.routingTrustRootDigest) {
+  if (verified.routing.trustRootDigest !== policy.runtime.activationClassifier.routingTrustRootDigest) {
     throw new Error('identity host policy classifier differs from verified routing executable root');
   }
-  const frozen = deepFreeze(policy);
-  return Object.freeze({
-    policy: frozen,
-    digest: sha256Text(canonicalJson(frozen)),
-    verifiedRoutingExecutable,
-  });
+  return verified;
 }
