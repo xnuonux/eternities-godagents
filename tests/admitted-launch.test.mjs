@@ -8,7 +8,9 @@ import { canonicalJson } from '../src/core/canonical-json.mjs';
 import { sha256Text } from '../src/core/digest.mjs';
 import { compileCreation } from '../src/creation/compile.mjs';
 import { admitLocalCreation } from '../src/genesis/local-admission.mjs';
+import { acquireCortexBinding } from '../src/host/cortex-binding-registry.mjs';
 import { launchAdmittedLocalAgent, AdmittedLaunchError } from '../src/host/admitted-launch.mjs';
+import { createLocalKeelBackend } from '../src/keel/local-reference-backend.mjs';
 import { createFixtureRealm } from '../src/realm/fixture-realm.mjs';
 
 const creationRoot = new URL('../fixtures/creation/', import.meta.url);
@@ -214,6 +216,60 @@ test('a live launch lease blocks concurrent recovery or request admission', asyn
   );
   release();
   assert.equal((await first).status, 'completed');
+});
+
+test('an active cortex binding and admitted local launch share one personal-keel writer lock', async (context) => {
+  const fixture = await setup(context, 'cortex-binding-lock');
+  const binding = JSON.parse(await readFile(join(fixture.admissionRoot, 'binding.json'), 'utf8'));
+  const handle = await acquireCortexBinding({
+    registryRoot: join(fixture.root, 'cortex-binding-registry'),
+    instanceRegistryRoot: fixture.registryRoot,
+    admission: {
+      receiptPath: join(fixture.admissionRoot, 'transaction', 'genesis-receipt.json'),
+      creationDir: join(fixture.admissionRoot, 'creation'),
+      distributionDir: join(fixture.admissionRoot, 'distribution'),
+      expectedPolicyDigest: creationPolicyDigest,
+      expectedCreationBuildId: binding.creationBuildId,
+      instanceId: binding.instanceId,
+      creatorRef: binding.creatorRef,
+      transactionDir: join(fixture.admissionRoot, 'transaction'),
+      journalPath: join(fixture.admissionRoot, 'vessel', 'journal.jsonl'),
+      keelAdapter: createLocalKeelBackend({ root: join(fixture.admissionRoot, 'keels') }),
+    },
+    request: {
+      schemaVersion: 1,
+      task: {
+        taskId: 'codex-task-admitted-launch-lock',
+        hostAdapterId: 'codex-desktop-v1',
+        revocationEpoch: 0,
+      },
+      mission: {
+        missionId: 'mission-admitted-launch-lock',
+        objective: 'hold the verified identity without running a vessel cycle',
+        successEvidence: ['exclusive writer lock'],
+        stopConditions: ['binding is released'],
+        budget: { maxCycles: 1, maxCompletionTokens: 1024 },
+        observation: {
+          observationId: 'observation-admitted-launch-lock',
+          summary: 'the cortex binding host owns the writer lease',
+          evidenceDigests: ['a'.repeat(64)],
+        },
+      },
+      maxProjectionBytes: 65_536,
+    },
+    leaseDurationMs: 60_000,
+    clock: () => Date.parse(fixedClock()),
+  });
+  try {
+    await assert.rejects(
+      () => launchAdmittedLocalAgent({ ...fixture, clock: fixedClock }),
+      (error) => error instanceof AdmittedLaunchError && error.code === 'launch-busy',
+    );
+  } finally {
+    await handle.release();
+  }
+  const result = await launchAdmittedLocalAgent({ ...fixture, clock: fixedClock });
+  assert.equal(result.status, 'completed');
 });
 
 test('a request ID cannot be reused with changed mission content', async (context) => {

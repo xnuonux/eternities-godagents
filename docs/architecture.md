@@ -8,7 +8,7 @@ The optional [trusted adaptive activation design](superpowers/specs/2026-08-31-t
 
 The optional [specialist preference design](superpowers/specs/2026-08-31-specialist-preference-adapter-v1-design.md) adds a narrower ranking-only extension. A specialist forwards the exact preferred capability ids already derived from its genome and the verified portable manifest only when the host pins the separate Godskills preference receipt and complete executable closure. All-rounders and legacy releases emit no preference field. Non-preferred capabilities remain eligible and win every stronger ordinary comparison. The source envelope and cycle receipt bind the preference root, supplied ids, disposition, and selected identity; recovery validates that binding and never reroutes. The exact cross-repository proof is the [specialist preference receipt](../receipts/godskills-specialist-preference-v1.json).
 
-The [Cortex Binding Protocol design](superpowers/specs/2026-08-30-godagent-cortex-binding-protocol-design.md) defines how a replaceable Codex task can later host one persistent Godagent without treating shared instructions or prompt text as identity. Phase 1 implements only the pure contract boundary. It verifies one admitted genesis, immutable creation and distribution snapshots, and the current personal-keel head, then compiles a full identity envelope plus a deterministic byte-bounded model projection. The output is inert, grants no effects, and cannot bind a task or write continuity. Per-section digests support exact rehydration; lower-priority sections are removed whole and replaced by digest references rather than silently truncated.
+The [Cortex Binding Protocol design](superpowers/specs/2026-08-30-godagent-cortex-binding-protocol-design.md) defines how a replaceable Codex task can later host one persistent Godagent without treating shared instructions or prompt text as identity. Phase 1 verifies one admitted genesis, immutable creation and distribution snapshots, and the current personal-keel head, then compiles a full identity envelope plus a deterministic byte-bounded model projection. Phase 2 admits that inert candidate into one atomic digest-chained binding registry and holds the admission-owned launch lock as its exclusive personal-keel writer lease. Active receipts remain credential-free and grant no Realm effects.
 
 The model proposes. The constitutional arbiter commits. The Realm Contract governs effects. The journal preserves causal continuity. The Soul port remains dormant.
 
@@ -37,6 +37,7 @@ The model proposes. The constitutional arbiter commits. The Realm Contract gover
 | visual creator shell | presents fixed presets and exact review evidence over a token-gated loopback boundary, then confines approved finalization below one configured workspace |
 | local admission shell | snapshots one verified creation and compatible local distribution, then composes transactional genesis beneath one exact-bound workspace without starting runtime execution |
 | cortex binding compiler | derives one inert, content-addressed identity candidate and bounded model projection from a verified admission without task mutation, authority, or continuity writes |
+| cortex binding registry | serializes task and personal-keel ownership, issues credential-free active and lifecycle receipts, re-verifies renewal sources, records revocation and expiry, and shares the admitted-launch writer lock |
 
 ## Cortex binding phase 1 boundary
 
@@ -46,7 +47,15 @@ The canonical full envelope contains binding, identity, expression, continuity, 
 
 The model projection always keeps the binding header, identity, mission, inert authority, causal state, and section-digest map. If the declared byte budget requires compaction, expression, capability, and continuity are replaced in that order by exact digest references. A budget that cannot hold the mandatory projection fails closed. The candidate id excludes mission text, so a mission can change work without redefining the actor, while the current keel head and target task surface remain bound into the candidate identity.
 
-Phase 1 has no task-control adapter, binding registry, writer lease, provider call, Realm invocation, continuity admission, or Soul activation. A copied candidate remains powerless. Live binding, compaction recovery, Godskill activation, and cross-model acceptance remain subsequent phases with separate evidence.
+Phase 1 has no task-control adapter, binding registry, writer lease, provider call, Realm invocation, continuity admission, or Soul activation. A copied candidate remains powerless.
+
+## Cortex binding phase 2 boundary
+
+The phase 2 registry is one canonical atomically replaced event chain protected by a short-lived registry lock. Replaying the verified chain reconstructs all active and terminal records, task collisions, personal-keel and instance writer collisions, and revocation floors without a secondary index that could diverge after interruption. Every mutation first records any newly expired durable lease. A bounded registry input is rejected before JSON parsing, and semantic replay verifies exact payloads, monotonic ordering, linked event digests, lifecycle transitions, lease identity, and epoch progression.
+
+Acquisition verifies the inert candidate before taking the admission-owned `vessel/launch.lock`, claims the existing OS-account-local instance residency, then verifies the candidate again while holding that lock. Any changed candidate, identity, keel head, task claim, or epoch aborts before activation. The live handle alone retains the usable random lease credential and writer-lock capability. Registry state, active receipts, lifecycle receipts, and inspection projections expose only its digest or public lease identity.
+
+Renewal extends only the same binding after fresh admission verification. Release and revocation durably close the binding before releasing the process lock, and transient lock-release failure remains retryable from the same terminal handle. Expiry releases a live handle when inspection or renewal discovers it; abandoned-process recovery still requires dead-owner and stale-grace reclamation by the shared file-lock primitive. An active receipt grants only a host-held lease marker and no Realm effect. Phase 2 still has no Codex task-control adapter, model invocation, context injection, Godskill activation, continuity-content writer, task-migration protocol, Lunari integration, or Soul activation.
 
 ## Phase 1 creation boundary
 

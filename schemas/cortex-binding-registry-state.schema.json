@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 128 }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "events", "headDigest", "registryDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-godagent-cortex-binding-registry-v1" },
+    "events": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schemaVersion", "sequence", "previousDigest", "eventType", "bindingId", "recordedAt", "payload", "contentDigest"],
+        "properties": {
+          "schemaVersion": { "const": 1 },
+          "sequence": { "type": "integer", "minimum": 1, "maximum": 10000 },
+          "previousDigest": { "$ref": "#/$defs/digest" },
+          "eventType": { "enum": ["binding.acquired", "binding.renewed", "binding.released", "binding.revoked", "binding.expired"] },
+          "bindingId": { "$ref": "#/$defs/digest" },
+          "recordedAt": { "type": "string", "minLength": 20, "maxLength": 32 },
+          "payload": { "type": "object" },
+          "contentDigest": { "$ref": "#/$defs/digest" }
+        }
+      }
+    },
+    "headDigest": { "$ref": "#/$defs/digest" },
+    "registryDigest": { "$ref": "#/$defs/digest" }
+  }
+}

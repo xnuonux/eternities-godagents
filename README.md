@@ -2,7 +2,7 @@
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
-Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, and a headless Phase 3 creator protocol. The protocol turns manual choices or reusable presets into the same immutable reviewed draft and Phase 1 creation build. Transactional genesis remains a separate operation that binds one verified creation build and distribution to one journal, one isolated personal keel, and one canonical admission receipt before a persistent vessel may run. Evolution and Soul activation remain excluded.
+Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, a headless Phase 3 creator protocol, and the first two phases of the Cortex Binding Protocol. The binding path reconstructs one inert identity candidate from an admitted genesis, then admits it into one task and personal-keel writer lease without invoking a model or granting Realm effects. Evolution and Soul activation remain excluded.
 
 The canonical architecture is [ADR-0002](C:/dev/eternities-canon/.worktrees/godagents-inspiration-covenant/architecture/ADR-0002-godagent-v0-runtime-and-foundry.md).
 
@@ -41,6 +41,7 @@ npm run certify:creator-protocol
 npm run certify:visual-creator
 npm run certify:local-admission
 npm run certify:cortex-binding
+npm run certify:cortex-binding-registry
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -230,7 +231,15 @@ The [Cortex Binding Protocol design](docs/superpowers/specs/2026-08-30-godagent-
 
 The result is deliberately `compiled-inert`: it reports `active: false`, grants no effects, exposes no launch or continuity writer, and binds the declared Realm ceiling without activating it. Every envelope section has its own digest. Compaction keeps binding, identity, mission, authority, causal state, and the section-digest map inline, then replaces expression, capability, and continuity as whole sections in that fixed order with exact digest references. It fails rather than truncating mandatory context.
 
-This phase proves deterministic compilation, identity separation, source-tamper refusal, impersonation resistance at the contract boundary, digest re-verification, and bounded compaction. It does not bind a live Codex task, acquire a writer lease, activate Godskills, admit continuity, invoke a Realm effect, or activate Soul. Those remain later protocol phases.
+This phase proves deterministic compilation, identity separation, source-tamper refusal, impersonation resistance at the contract boundary, digest re-verification, and bounded compaction. It does not bind a live Codex task, acquire a writer lease, activate Godskills, admit continuity, invoke a Realm effect, or activate Soul.
+
+### Cortex binding registry and writer leases v1
+
+Phase 2 upgrades one verified inert candidate into a credential-free active host receipt. A canonical digest-chained registry admits one active identity per task, while the admission-owned `vessel/launch.lock` remains held by the returned host handle as the single-writer lease for that personal keel. Because admitted local launch uses the same lock, a bound host and an ordinary vessel cycle cannot write beside each other. The registry stores only the lease credential digest; usable credential material remains inside the live handle and never enters receipts or inspection output.
+
+Renewal re-verifies the admitted source and current keel head before extending the lease. Release frees task and writer claims without changing the revocation epoch. Revocation advances the monotonic task-and-instance epoch, so stale requests cannot rebind. Expired durable leases become explicit lifecycle events, and dead-host recovery additionally requires the existing process lock to satisfy dead-owner and stale-grace checks. Registry updates are serialized and atomically replaced, while every read verifies canonical bytes, outer state digest, event-chain digests, ordering, semantic transitions, collision rules, and a bounded file size.
+
+The active receipt grants only `continuity: host-lease-only` and `realmEffects: none`. It does not create or resume a Codex task, inject context, call a model, activate Godskills, admit continuity content, invoke a Realm effect, integrate Lunari, or activate Soul. Those remain later protocol phases with separate evidence.
 
 ### Admitted local launch
 

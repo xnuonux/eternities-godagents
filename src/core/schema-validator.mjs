@@ -34,6 +34,9 @@ const schemaFiles = {
   'cortex-identity-envelope': 'cortex-identity-envelope.schema.json',
   'cortex-model-projection': 'cortex-model-projection.schema.json',
   'cortex-binding-candidate': 'cortex-binding-candidate.schema.json',
+  'cortex-binding-registry-state': 'cortex-binding-registry-state.schema.json',
+  'cortex-binding-receipt': 'cortex-binding-receipt.schema.json',
+  'cortex-binding-lifecycle-receipt': 'cortex-binding-lifecycle-receipt.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {
