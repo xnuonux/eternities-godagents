@@ -55,6 +55,7 @@ test('rejects downgrade ambiguous endpoint version model and credential policy b
     ['wrong endpoint', (value) => { value.provider.endpointPath = '/v1/complete'; }, /messages|path/i],
     ['endpoint query', (value) => { value.provider.endpointPath = '/v1/messages?x=1'; }, /messages|path|query/i],
     ['api version', (value) => { value.provider.apiVersion = 'latest'; }, /version/i],
+    ['impossible API date', (value) => { value.provider.apiVersion = '2023-99-99'; }, /version/i],
     ['model control', (value) => { value.provider.modelId = 'model\nforged'; }, /model/i],
     ['credential variable', (value) => { value.provider.credentialEnv = 'anthropic-key'; }, /credential|variable/i],
     ['timeout ceiling', (value) => { value.provider.timeoutMs = 120_001; }, /timeout|maximum/i],

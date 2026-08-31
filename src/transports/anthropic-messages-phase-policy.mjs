@@ -55,7 +55,12 @@ function validateSemantics(policy) {
   if (policy.provider.endpointPath !== '/v1/messages') {
     throw new Error('provider endpointPath must be the query-free Messages path');
   }
-  if (!API_VERSION.test(policy.provider.apiVersion)) throw new Error('provider API version is invalid');
+  const apiVersion = policy.provider.apiVersion;
+  const parsedVersion = new Date(`${apiVersion}T00:00:00.000Z`);
+  if (!API_VERSION.test(apiVersion) || Number.isNaN(parsedVersion.valueOf())
+      || parsedVersion.toISOString().slice(0, 10) !== apiVersion) {
+    throw new Error('provider API version is invalid');
+  }
   if (CONTROL.test(policy.provider.modelId)) throw new Error('provider modelId contains control characters');
   if (!CREDENTIAL_ENV.test(policy.provider.credentialEnv)) {
     throw new Error('provider credential variable is invalid');

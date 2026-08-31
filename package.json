@@ -52,6 +52,8 @@
     "certify:admitted-sealed-identity-host": "node scripts/build-admitted-sealed-identity-host-v1-receipt.mjs",
     "certify:openai-compatible-phase-transport": "node scripts/build-sealed-openai-compatible-phase-transport-v1-receipt.mjs",
     "certify:signed-phase-resolution": "node scripts/build-signed-openai-phase-resolution-v1-receipt.mjs",
-    "certify:receipt-bound-executors": "node scripts/build-receipt-bound-typed-executor-bundle-v1-receipt.mjs"
+    "certify:receipt-bound-executors": "node scripts/build-receipt-bound-typed-executor-bundle-v1-receipt.mjs",
+    "build:provider-neutral-phase-fixture": "node scripts/build-provider-neutral-phase-protocol-v1-fixture.mjs",
+    "certify:provider-neutral-phase-protocol": "node scripts/build-provider-neutral-phase-protocol-v1-receipt.mjs"
   }
 }

@@ -27,6 +27,7 @@ const registry = Object.freeze({
   'identity-bound-mission-vessel-v1.json': 'identity-bound-mission-vessel-v1',
   'local-admission-shell-certification.json': 'local-admission-shell-v1',
   'networked-cortex-certification.json': 'networked-cortex-v1',
+  'provider-neutral-phase-protocol-v1.json': 'provider-neutral-phase-protocol-v1',
   'recoverable-godskills-admission-v1.json': 'recoverable-godskills-admission-v1',
   'recoverable-mission-native-executor-v1.json': 'recoverable-mission-native-executor-v1',
   'recoverable-mission-revision-executor-v1.json': 'recoverable-mission-revision-executor-v1',
@@ -46,8 +47,14 @@ const registry = Object.freeze({
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
 const requiredHistoricalLinks = Object.freeze({
+  'provider-neutral-phase-protocol-v1.json': Object.freeze(expectedFiles
+    .filter((file) => file !== 'provider-neutral-phase-protocol-v1.json')
+    .map((file) => `receipts/${file}`)),
   'receipt-bound-typed-executor-bundle-v1.json': Object.freeze(expectedFiles
-    .filter((file) => file !== 'receipt-bound-typed-executor-bundle-v1.json')
+    .filter((file) => ![
+      'provider-neutral-phase-protocol-v1.json',
+      'receipt-bound-typed-executor-bundle-v1.json',
+    ].includes(file))
     .map((file) => `receipts/${file}`)),
   'admitted-sealed-identity-host-v1.json': Object.freeze([
     'receipts/codex-bound-turn-v1.json',
@@ -785,6 +792,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(receiptBound.receipt)) {
       throw new Error('receipt-bound typed executor certification differs from exact source reconstruction');
+    }
+  }
+
+  const providerNeutral = loaded.get('provider-neutral-phase-protocol-v1.json');
+  if (providerNeutral) {
+    const { buildProviderNeutralPhaseProtocolReceiptFromSource } = await import(
+      '../../scripts/build-provider-neutral-phase-protocol-v1-receipt.mjs'
+    );
+    const rebuilt = await buildProviderNeutralPhaseProtocolReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: providerNeutral.receipt.source.commit,
+      testRuns: providerNeutral.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(providerNeutral.receipt)) {
+      throw new Error('provider-neutral phase protocol certification differs from exact source reconstruction');
     }
   }
 
