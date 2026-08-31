@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import test from 'node:test';
 
@@ -31,6 +31,19 @@ async function launcherModule() {
 
 function operationCount(calls) {
   return calls.filter(({ type }) => type !== 'descriptor').length;
+}
+
+async function findVesselAdmission(root) {
+  for (const entry of await readdir(root, { withFileTypes: true })) {
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) {
+      const found = await findVesselAdmission(path);
+      if (found) return found;
+    } else if (entry.name === 'admission.json') {
+      return path;
+    }
+  }
+  return null;
 }
 
 function fixedMissionClock() {
@@ -232,6 +245,12 @@ test('a policy without review descriptors admits only a launcher without live re
   const result = await launchAdmittedSealedIdentityMission(launchArgs(fixture));
   assert.equal(result.status, 'completed');
   assert.equal(result.mission.verdict.reason, 'native-no-review');
+  const admissionPath = await findVesselAdmission(
+    join(fixture.admissionRoot, 'vessel', 'sealed-identity-v1', 'vessel-admissions'),
+  );
+  const admission = JSON.parse(await readFile(admissionPath, 'utf8'));
+  assert.deepEqual(admission.godskills.receipt.selected.map(({ id }) => id), ['eternities-athena']);
+  assert.deepEqual(admission.godskills.receipt.activation.decisions.map(({ mode }) => mode), ['native']);
   assert.equal(fixture.review.calls.filter(({ type }) => type === 'execute').length, 0);
   assert.equal(fixture.revision.calls.filter(({ type }) => type === 'execute').length, 0);
 });

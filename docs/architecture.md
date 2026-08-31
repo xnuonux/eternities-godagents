@@ -163,6 +163,14 @@ The additive sealed vessel factory composes that local process adapter with the 
 
 The full-loop proof routes a consequential visual mission to `eternities-muse`, receives a real deferred-review decision from the pinned activation executable, interrupts after activation success, reconstructs without another child launch, and completes the identity-bound native, review, revision, and final-review sequence. Exact terminal replay performs no route, activation, classification, native, review, or revision operation. This is a programmatic construction boundary, not an admitted-host, CLI, host-policy, live-provider, Realm, continuity, evolution, Lunari, or Soul migration.
 
+## Admitted sealed identity host boundary
+
+The additive identity host turns the sealed vessel into one policy-admitted runtime without reinterpreting the historical networked launcher. A canonical operator policy pins the exact admitted instance and Realm, admission-owned distribution and journal paths, Godskills release and executable, routing-evidence classifier descriptor, native transport descriptor, optional paired review and revision executor descriptors, authority and routing context, and every mission and process ceiling. Its digest is supplied independently through `GODAGENT_IDENTITY_POLICY_SHA256` and is accepted before policy-selected repository artifacts are read.
+
+The launcher reuses one shared admission-tree and binding verifier, proves transactional genesis and personal-keel integrity, claims the existing local residency identity, derives the classifier from the verified routing executable, compares every live descriptor to policy, and constructs the sealed vessel only beneath `admission/vessel/sealed-identity-v1`. Requests may narrow policy budgets but cannot change host identity, revocation epoch, authority, routing context, or raise any ceiling. Review exists only when both review and revision descriptors and executors are present.
+
+The deterministic host proof covers reviewed execution, native-only execution, activation-process recovery, exact terminal replay, descriptor mismatch refusal, and all legacy launch regressions. Native, review, and revision transports are still injected. The boundary supplies no provider, endpoint, credential, CLI, hostile same-user isolation, Realm effect, continuity admission, personal-keel write, identity evolution, Lunari integration, Inspiration, or Soul activation.
+
 ## Phase 1 creation boundary
 
 Creation is a compiler boundary, not a birth event. A strict candidate selects one lineage, archetype, attribute set, personality, voice, organ loadout, Godskills bundle, cortex class, and embodiment. The loader resolves canonical references, rejects collisions and kind mismatches, and recursively blocks authority, credentials, provider routing, retry controls, Inspiration state, and Soul state from module payloads.

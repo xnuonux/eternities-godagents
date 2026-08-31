@@ -8,6 +8,7 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 
 const registry = Object.freeze({
+  'admitted-sealed-identity-host-v1.json': 'admitted-sealed-identity-host-v1',
   'codex-bound-turn-v1.json': 'codex-bound-turn-v1',
   'codex-recoverable-turn-coordinator-v1.json': 'codex-recoverable-turn-coordinator-v1',
   'codex-recoverable-turn-journal-v1.json': 'codex-recoverable-turn-journal-v1',
@@ -36,6 +37,33 @@ const registry = Object.freeze({
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
 const requiredHistoricalLinks = Object.freeze({
+  'admitted-sealed-identity-host-v1.json': Object.freeze([
+    'receipts/codex-bound-turn-v1.json',
+    'receipts/codex-recoverable-turn-coordinator-v1.json',
+    'receipts/codex-recoverable-turn-journal-v1.json',
+    'receipts/cortex-binding-contracts-v1.json',
+    'receipts/cortex-binding-registry-v1.json',
+    'receipts/creation-forge-phase1-certification.json',
+    'receipts/creator-protocol-phase3-certification.json',
+    'receipts/deferred-godskills-review-executor-v1.json',
+    'receipts/deferred-godskills-review-materializer-v1.json',
+    'receipts/godagent-v0-certification.json',
+    'receipts/godskills-adaptive-activation-v1.json',
+    'receipts/godskills-specialist-preference-v1.json',
+    'receipts/godskills-v3-integration.json',
+    'receipts/identity-bound-mission-vessel-v1.json',
+    'receipts/local-admission-shell-certification.json',
+    'receipts/networked-cortex-certification.json',
+    'receipts/recoverable-godskills-admission-v1.json',
+    'receipts/recoverable-mission-native-executor-v1.json',
+    'receipts/recoverable-mission-revision-executor-v1.json',
+    'receipts/resumable-mission-review-kernel-v1.json',
+    'receipts/routing-evidence-activation-classifier-v1.json',
+    'receipts/sealed-local-godskills-transport-v1.json',
+    'receipts/sealed-local-identity-vessel-v1.json',
+    'receipts/transactional-genesis-phase2-certification.json',
+    'receipts/visual-creator-shell-certification.json',
+  ]),
   'codex-bound-turn-v1.json': Object.freeze([
     'receipts/cortex-binding-contracts-v1.json',
     'receipts/cortex-binding-registry-v1.json',

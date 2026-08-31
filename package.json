@@ -46,6 +46,7 @@
     "certify:recoverable-godskills-admission": "node scripts/build-recoverable-godskills-admission-v1-receipt.mjs",
     "certify:sealed-local-godskills-transport": "node scripts/build-sealed-local-godskills-transport-v1-receipt.mjs",
     "certify:sealed-local-identity-vessel": "node scripts/build-sealed-local-identity-vessel-v1-receipt.mjs",
-    "certify:routing-evidence-classifier": "node scripts/build-routing-evidence-activation-classifier-v1-receipt.mjs"
+    "certify:routing-evidence-classifier": "node scripts/build-routing-evidence-activation-classifier-v1-receipt.mjs",
+    "certify:admitted-sealed-identity-host": "node scripts/build-admitted-sealed-identity-host-v1-receipt.mjs"
   }
 }
