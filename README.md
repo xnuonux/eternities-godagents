@@ -353,6 +353,14 @@ One execution identity owns a bounded canonical intent and a contiguous digest-l
 
 This is deterministic local prefix recovery, not external exactly-once execution. A process death after an executor returns but before the validated record is published may repeat that node. Executors, live providers, side-effect reconciliation, hostile same-user isolation, default host adoption, Realm, continuity, keel, evolution, Lunari, Inspiration, and Soul remain outside the certified boundary.
 
+### Sealed local typed execution runner v1
+
+The [sealed runner design](docs/superpowers/specs/2026-08-31-sealed-local-typed-execution-runner-v1-design.md) composes the exact local Godskills executables, recoverable topology compiler, certified stepper, and per-node journal behind one explicit factory. Callers cannot inject routing or activation transports, activation results, registries, typed methods, or execution handles.
+
+The historical compiler owns the durable topology intent and body-free compilation record. The runner rehydrates that exact binding, independently recompiles the plan and method through the pinned stepper adapter, requires digest parity with the compiler record, then enters the journal. The deterministic recovery proof interrupts after Muse is durable, reconstructs the entire factory, relaunches neither routing nor activation, and invokes only Forge. Exact terminal replay invokes no process and no node.
+
+The classifier and executors remain trusted, and the pre-publication node repeat window remains at-least-once. This additive programmatic runner is not adopted by an existing host, vessel, CLI, or launcher and grants no provider, Realm, continuity, keel, evolution, Lunari, Inspiration, or Soul authority.
+
 ### Sealed local Godskills transport v1
 
 The [sealed local transport design](docs/superpowers/specs/2026-08-31-sealed-local-godskills-transport-v1-design.md) supplies a concrete local implementation for the route and activation sides of recoverable admission. It verifies the exact pushed Godskills release and routing executable closure before construction, fixes routing mode from that release, and invokes both entrypoints as hidden shell-free child processes with a minimal environment plus an in-child scrub.

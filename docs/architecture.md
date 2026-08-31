@@ -173,6 +173,14 @@ Recovery does not trust those records directly. It creates a fresh private execu
 
 This closes repetition after a node output is durably published. It deliberately preserves the pre-publication ambiguity window: process death after an executor returns but before publication may repeat that node. The boundary is therefore at-least-once across that interval and does not claim external exactly-once effects, executor idempotency, provider reconciliation, hostile same-user isolation, or default host adoption.
 
+## Sealed local typed execution runner boundary
+
+The sealed runner privately shares one verified local route and activation process pair between the historical recoverable compiler and exact binding rehydration. The compiler remains the authority for durable topology collision detection and body-free compilation identity. A separately verified stepper adapter reconstructs the same plan and method and must match the compiler's activation, plan, and method digests before node execution begins.
+
+The per-node journal then owns validated output persistence and replay. Reconstruction recovers completed process work, recompiles the exact method, recommits the durable node prefix through fresh private steps, and invokes only the first unfinished node. Exact terminal replay performs no process or node call.
+
+This remains an explicit programmatic factory. The activation classifier and node executors are trusted, the pre-publication node interval is at-least-once, and no existing host, vessel, CLI, launcher, provider, Realm, continuity, keel, evolution, Lunari, Inspiration, or Soul path adopts the runner by default.
+
 ## Sealed local Godskills process boundary
 
 The optional local process adapter replaces the recoverable admission layer's assumed route and activation transports with the exact pushed Godskills executables. Construction first verifies the historical Godskills release and the additive routing executable receipt, including every declared local module, routing artifact, parent receipt, and entrypoint byte. The verified objects carry in-process provenance brands, so callers cannot assemble lookalike trust roots.
