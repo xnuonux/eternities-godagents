@@ -201,11 +201,13 @@ function verifyProviderEvidenceRecord(value, {
   ], 'durable phase provider evidence record');
   const { recordDigest, ...unsigned } = value;
   requireDigest(recordDigest, 'durable phase provider evidence record');
+  requireDigest(value.completionDigest, 'durable phase provider evidence completion');
   verifyProviderEvidence(value.providerUsage);
   if (value.schemaVersion !== 1 || value.protocolId !== EVIDENCE_PROTOCOL || value.phase !== phase
       || value.policyDigest !== policyDigest || value.dispatchDigest !== dispatch.dispatchDigest
       || value.requestDigest !== request.requestDigest || value.attemptId !== attempt.attemptId
-      || value.completionDigest !== completion.completionDigest || sha256Value(unsigned) !== recordDigest) {
+      || (completion && value.completionDigest !== completion.completionDigest)
+      || sha256Value(unsigned) !== recordDigest) {
     throw new IntegrityError('durable phase provider evidence record binding is invalid');
   }
   return value;
@@ -312,6 +314,11 @@ async function inspectOperation({
   if (failure && evidence) throw new IntegrityError('durable phase failure contradicts provider evidence');
   if (prepared) verifyPrepared(prepared, expectedPrepared);
   if (attempt) verifyAttempt(attempt, { phase, dispatch, request });
+  if (evidence && !completion) {
+    verifyProviderEvidenceRecord(evidence, {
+      phase, policyDigest, dispatch, request, attempt, completion: null, verifyProviderEvidence,
+    });
+  }
   if (completion) {
     verifyCompletion(phase, completion, dispatch, descriptor);
     verifyProviderEvidenceRecord(evidence, {

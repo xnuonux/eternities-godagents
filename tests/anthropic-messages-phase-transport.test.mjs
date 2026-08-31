@@ -397,6 +397,33 @@ test('interruption after provider evidence publication remains pending without r
   assert.equal(networkCalls, 1);
 });
 
+test('stranded provider evidence is still integrity-checked before pending reconciliation', async (t) => {
+  const state = await setup(t, {
+    checkpoint: async (label) => {
+      if (label === 'after-anthropic-phase-provider-evidence-persisted') {
+        throw new Error('fixture interruption before completion');
+      }
+    },
+  });
+  const dispatch = await nativeDispatch(t, state.suite.descriptors.native);
+  await assert.rejects(state.suite.native.execute(dispatch), (error) => error.code === 'operation-integrity');
+  const evidencePath = join(
+    state.root,
+    'operations',
+    'native',
+    dispatch.dispatchDigest,
+    'provider-evidence.json',
+  );
+  const evidence = JSON.parse(await readFile(evidencePath, 'utf8'));
+  evidence.providerUsage.cacheCreationInputTokens = -1;
+  await writeFile(evidencePath, `${canonicalJson(evidence)}\n`, 'utf8');
+
+  await assert.rejects(
+    state.suite.native.reconcile(dispatch),
+    (error) => error.code === 'operation-integrity',
+  );
+});
+
 test('bounded response overflow closes before raw response persistence', async (t) => {
   const policy = validAnthropicMessagesPhasePolicy();
   policy.provider.maximumResponseBytes = 256;
