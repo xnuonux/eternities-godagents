@@ -464,3 +464,8 @@ mission
 ```
 
 The model is a proposal source. It cannot write the journal, invoke a Realm hand, grant authority, amend the constitution, or activate the Soul port.
+### Admitted sealed typed execution host v1
+
+The [admitted typed host design](docs/superpowers/specs/2026-08-31-admitted-sealed-typed-execution-host-v1-design.md) places the certified sealed runner behind a sibling identity-bound programmatic host. A separate canonical policy pins the admitted instance and Realm, admission-owned paths, Godskills route and activation, typed composition and stepper releases, authority-empty executor descriptors, and all request and process ceilings. The operator supplies its independent `GODAGENT_TYPED_EXECUTION_POLICY_SHA256` digest before any policy-selected dependency runs. Native verifier I/O, lock policy, clocks, instrumentation, artifact caches, and the canonical OS-account residency registry remain host-owned. Executor output is snapshotted once and credential-screened before publication, and durable execution is isolated beneath a digest of the policy, admission binding, and exact executor descriptor set.
+
+`launchAdmittedSealedTypedExecutionMission` derives Godskills binding input from verified genesis and the existing cortex candidate, snapshots only descriptor-matched executor functions, and fixes recovery beneath the admission-owned `vessel/sealed-typed-execution-v1` root. It does not modify the existing identity host, CLI, provider, Realm, continuity, or default launch behavior, and it does not claim external exactly-once effects.

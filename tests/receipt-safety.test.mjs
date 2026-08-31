@@ -23,7 +23,14 @@ const requested = Object.freeze({
 });
 
 test('credential-shaped fields are rejected recursively without echoing values', () => {
-  for (const field of ['Authorization', 'apiKey', 'api_key', 'secret', 'credential', 'password', 'headers', 'rawRequest', 'rawResponse', 'environment']) {
+  for (const field of [
+    'Authorization', 'proxyAuthorization', 'authorizationHeader', 'apiKey', 'api_key',
+    'x-api-key', 'apiToken', 'oauthToken', 'sessionToken', 'accessTokens', 'tokens',
+    'auth', 'basicAuth', 'authHeader', 'authentication',
+    'secret', 'secrets', 'credential', 'credentials', 'password', 'passwords',
+    'privateKey', 'privateKeys', 'sessionCookie', 'headers', 'rawRequest',
+    'rawResponse', 'environment',
+  ]) {
     assert.throws(
       () => assertNoCredentialFields({ safe: [{ nested: { [field]: 'canary-secret-value' } }] }),
       (error) => error.message.includes('credential-shaped field')
@@ -34,7 +41,35 @@ test('credential-shaped fields are rejected recursively without echoing values',
 });
 
 test('ordinary usage counters are not mistaken for credentials', () => {
-  assert.doesNotThrow(() => assertNoCredentialFields({ usage: { inputTokens: 11, outputTokens: 7 } }));
+  assert.doesNotThrow(() => assertNoCredentialFields({
+    usage: {
+      cachedInputTokens: 3,
+      completionTokens: 7,
+      inputTokens: 11,
+      maxCompletionTokens: 100,
+      maxCycleCompletionTokens: 50,
+      maximumCompletionTokens: 100,
+      nativeCompletionTokens: 60,
+      outputTokens: 7,
+      promptTokens: 11,
+      reasoningTokens: 4,
+      reviewCompletionTokensPerRound: 10,
+      revisionCompletionTokens: 20,
+      totalCompletionTokens: 100,
+      visibleOutputTokens: 3,
+    },
+  }));
+  assert.doesNotThrow(() => assertNoCredentialFields({
+    slots: { 'visual-system': { visualPrimitives: ['design-system', 'motion'] } },
+    authority: [],
+    author: 'fixture-author',
+  }));
+  assert.throws(
+    () => assertNoCredentialFields({
+      slots: { implementation: { 'visual-system': { tokens: ['credential-canary'] } } },
+    }),
+    /credential-shaped field/i,
+  );
 });
 
 test('requested inference projection contains only fixed causal metadata', () => {

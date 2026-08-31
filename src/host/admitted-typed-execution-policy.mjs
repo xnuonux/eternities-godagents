@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
+import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text } from '../core/digest.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
@@ -107,6 +108,7 @@ export async function loadAdmittedTypedExecutionPolicy(path) {
   if (text !== `${canonicalJson(policy)}\n`) {
     throw new Error('typed execution host policy is not canonical JSON');
   }
+  assertNoCredentialFields(policy);
   assertSchema('admitted-typed-execution-host-policy', policy);
   validateSemantics(policy);
   const frozen = deepFreeze(policy);

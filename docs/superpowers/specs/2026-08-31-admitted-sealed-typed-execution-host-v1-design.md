@@ -80,6 +80,7 @@ The derived binding input uses:
   Realm-hand contract digest
 
 Caller-supplied Godskills binding input is never accepted.
+The registry location is host-owned and cannot be replaced by the caller.
 
 ## dependency verification
 
@@ -93,15 +94,22 @@ Before constructing the runner, the host independently verifies:
 - topology node capability ids against the exact executor set
 - every configured byte and count ceiling
 
+The production launcher owns verifier filesystem operations, lock policy,
+clocks, instrumentation callbacks, artifact caches, and the OS-account-local
+residency registry. Callers cannot replace these runtime dependencies.
+
 Review availability is derived rather than caller selected. It is true only
 when the policy's exact executor set includes the certified Muse capability.
 
 ## execution and recovery
 
 The runner root is fixed beneath the admitted tree at
-`vessel/sealed-typed-execution-v1`. The host calls the certified runner with the
-derived binding input, verified topology, verified mission inputs, and the
-snapshotted executor map.
+`vessel/sealed-typed-execution-v1/<execution-binding-digest>`. That digest binds
+the externally pinned policy, admission binding, and exact executor descriptor
+set. A repinned policy therefore receives a separate durable namespace and
+cannot relabel outputs recovered from an earlier policy. The host calls the
+certified runner with the derived binding input, verified topology, verified
+mission inputs, and the snapshotted executor map.
 
 The existing runner owns process terminals, compilation records, and typed node
 journals. Recovery therefore preserves these guarantees:
@@ -111,6 +119,11 @@ journals. Recovery therefore preserves these guarantees:
 - terminal execution replay performs no process or node work
 - reconstructed activation, plan, and method digests must equal durable records
 - private typed methods are never serialized
+
+The deterministic certification fixture hashes the durable file paths and byte
+counts as a structural manifest. Timestamp-bearing file contents are verified
+by their native runtime contracts rather than misrepresented as deterministic
+wall-clock bytes.
 
 The host returns one canonical completion receipt binding policy digest,
 admission binding digest, cortex candidate digest, runner compilation digest,
@@ -144,6 +157,9 @@ completion receipt.
   topology, executor descriptor, executor set, or release pin fails before the
   affected dependency executes
 - caller-owned binding input and runner-component injection are impossible
+- caller-owned verifier I/O and lock policy are impossible
+- accepted executor output is credential-screened before durable publication
+- durable state is namespaced by policy, admission, and executor descriptors
 - durable state contains no typed method body, credentials, or new authority
 - legacy admitted host, vessel, CLI, provider, Realm, and policy tests remain
   byte-compatible

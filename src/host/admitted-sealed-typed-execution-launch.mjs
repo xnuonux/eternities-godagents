@@ -2,7 +2,9 @@ import { timingSafeEqual } from 'node:crypto';
 import { join, resolve } from 'node:path';
 
 import { compileCortexBindingCandidate } from '../cortex/binding-compiler.mjs';
+import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { canonicalJson } from '../core/canonical-json.mjs';
+import { sha256Value } from '../core/digest.mjs';
 import { verifyGenesisAdmission } from '../genesis/verify.mjs';
 import { createLocalKeelBackend } from '../keel/local-reference-backend.mjs';
 import { createSealedLocalTypedExecutionRunner } from '../runtime/sealed-local-typed-execution-runner.mjs';
@@ -68,11 +70,7 @@ function deepFreeze(value) {
 function assertLaunchFields(value) {
   if (!object(value)) fail('input-invalid');
   const allowed = new Set([
-    'admissionRoot', 'policyPath', 'request', 'env', 'registryRoot', 'executors',
-    'clock', 'processClock', 'processCheckpoint', 'admissionCheckpoint',
-    'compilerCheckpoint', 'journalCheckpoint', 'processLockOptions',
-    'admissionLockOptions', 'compilerLockOptions', 'journalLockOptions',
-    'artifactCache', 'io', 'compositionIo', 'stepperIo',
+    'admissionRoot', 'policyPath', 'request', 'env', 'executors',
   ]);
   if (Object.keys(value).some((name) => !allowed.has(name))) fail('input-invalid');
 }
@@ -102,15 +100,7 @@ function validateInputs(value) {
   if (!object(value)
       || typeof value.admissionRoot !== 'string' || value.admissionRoot.length === 0 || /[\0\r\n]/.test(value.admissionRoot)
       || typeof value.policyPath !== 'string' || value.policyPath.length === 0 || /[\0\r\n]/.test(value.policyPath)
-      || !object(value.env)
-      || (value.registryRoot !== undefined && (typeof value.registryRoot !== 'string' || value.registryRoot.length === 0 || /[\0\r\n]/.test(value.registryRoot)))
-      || typeof value.clock !== 'function' || typeof value.processClock !== 'function'
-      || typeof value.processCheckpoint !== 'function' || typeof value.admissionCheckpoint !== 'function'
-      || typeof value.compilerCheckpoint !== 'function' || typeof value.journalCheckpoint !== 'function'
-      || !object(value.processLockOptions) || !object(value.admissionLockOptions)
-      || !object(value.compilerLockOptions) || !object(value.journalLockOptions)
-      || !(value.artifactCache instanceof Map) || !object(value.io)
-      || !object(value.compositionIo) || !object(value.stepperIo)) fail('input-invalid');
+      || !object(value.env)) fail('input-invalid');
 }
 
 function verifyRequestPolicy(policy, request) {
@@ -146,12 +136,11 @@ function verifyRequestPolicy(policy, request) {
   })) throw new Error('typed execution topology authority differs from mission ceiling');
 }
 
-async function verifyDependencies(policy, liveExecutors, artifactCache, io, compositionIo, stepperIo) {
+async function verifyDependencies(policy, liveExecutors, artifactCache) {
   const verifiedRouting = await verifyGodskillsRoutingExecutable({
     releasePin: policy.runtime.godskillsRelease,
     routingPin: policy.runtime.routingExecutable,
     artifactCache,
-    io,
   });
   const classifier = createRoutingEvidenceActivationClassifier({
     verifiedRoutingExecutable: verifiedRouting,
@@ -162,11 +151,9 @@ async function verifyDependencies(policy, liveExecutors, artifactCache, io, comp
   }
   await verifyGodskillsTypedCompositionRelease({
     releasePin: policy.runtime.typedCompositionRelease,
-    io: compositionIo,
   });
   await verifyGodskillsTypedExecutionStepperRelease({
     releasePin: policy.runtime.typedExecutionStepperRelease,
-    io: stepperIo,
   });
   const descriptors = liveExecutors.map(({ descriptor }) => descriptor);
   if (!same(descriptors, policy.runtime.executors)) {
@@ -203,21 +190,6 @@ export async function launchAdmittedSealedTypedExecutionMission(input = {}) {
     policyPath: input.policyPath,
     request: input.request,
     env: input.env,
-    registryRoot: input.registryRoot,
-    clock: input.clock ?? (() => new Date().toISOString()),
-    processClock: input.processClock ?? (() => new Date().toISOString()),
-    processCheckpoint: input.processCheckpoint ?? (async () => {}),
-    admissionCheckpoint: input.admissionCheckpoint ?? (async () => {}),
-    compilerCheckpoint: input.compilerCheckpoint ?? (async () => {}),
-    journalCheckpoint: input.journalCheckpoint ?? (async () => {}),
-    processLockOptions: input.processLockOptions ?? {},
-    admissionLockOptions: input.admissionLockOptions ?? {},
-    compilerLockOptions: input.compilerLockOptions ?? {},
-    journalLockOptions: input.journalLockOptions ?? {},
-    artifactCache: input.artifactCache ?? new Map(),
-    io: input.io ?? {},
-    compositionIo: input.compositionIo ?? {},
-    stepperIo: input.stepperIo ?? {},
   };
   validateInputs(options);
   const root = resolve(options.admissionRoot);
@@ -269,7 +241,7 @@ export async function launchAdmittedSealedTypedExecutionMission(input = {}) {
   }
   try {
     await claimLocalInstanceResidency({
-      registryRoot: options.registryRoot ?? defaultLocalInstanceRegistryRoot(),
+      registryRoot: defaultLocalInstanceRegistryRoot(),
       binding,
       admissionRoot: root,
     });
@@ -284,14 +256,12 @@ export async function launchAdmittedSealedTypedExecutionMission(input = {}) {
     fail('request-invalid', error);
   }
   let dependencies;
+  const artifactCache = new Map();
   try {
     dependencies = await verifyDependencies(
       loaded.policy,
       liveExecutors,
-      options.artifactCache,
-      options.io,
-      options.compositionIo,
-      options.stepperIo,
+      artifactCache,
     );
     const topologyCapabilities = [...new Set(request.topology.nodes.map(({ capabilityId }) => capabilityId))].sort();
     const executorCapabilities = loaded.policy.runtime.executors.map(({ capabilityId }) => capabilityId);
@@ -312,30 +282,24 @@ export async function launchAdmittedSealedTypedExecutionMission(input = {}) {
   }
   try {
     const limits = loaded.policy.runtime.limits;
+    const executionBindingDigest = sha256Value({
+      protocolId: 'eternities-admitted-sealed-typed-execution-binding-v1',
+      policyDigest: loaded.digest,
+      admissionBindingDigest: binding.bindingDigest,
+      executorDescriptors: liveExecutors.map(({ descriptor }) => descriptor),
+    });
     const runner = await createSealedLocalTypedExecutionRunner({
-      runtimeRoot: join(root, 'vessel', 'sealed-typed-execution-v1'),
+      runtimeRoot: join(root, 'vessel', 'sealed-typed-execution-v1', executionBindingDigest),
       releasePin: loaded.policy.runtime.godskillsRelease,
       routingPin: loaded.policy.runtime.routingExecutable,
       compositionReleasePin: loaded.policy.runtime.typedCompositionRelease,
       stepperReleasePin: loaded.policy.runtime.typedExecutionStepperRelease,
       activationClassifier: dependencies.classifier,
-      artifactCache: options.artifactCache,
-      io: options.io,
-      compositionIo: options.compositionIo,
-      stepperIo: options.stepperIo,
+      artifactCache,
       timeoutMs: limits.timeoutMs,
       maximumGodskillsDispatchBytes: limits.maximumGodskillsDispatchBytes,
       maximumGodskillsCompletionBytes: limits.maximumGodskillsCompletionBytes,
       maximumGodskillsResultBytes: limits.maximumGodskillsResultBytes,
-      processClock: options.processClock,
-      processCheckpoint: options.processCheckpoint,
-      admissionCheckpoint: options.admissionCheckpoint,
-      compilerCheckpoint: options.compilerCheckpoint,
-      journalCheckpoint: options.journalCheckpoint,
-      processLockOptions: options.processLockOptions,
-      admissionLockOptions: options.admissionLockOptions,
-      compilerLockOptions: options.compilerLockOptions,
-      journalLockOptions: options.journalLockOptions,
     });
     const executorMap = Object.fromEntries(liveExecutors.map(({ descriptor, execute }) => [
       descriptor.capabilityId,
@@ -343,11 +307,12 @@ export async function launchAdmittedSealedTypedExecutionMission(input = {}) {
         if (Buffer.byteLength(canonicalJson(executorInput), 'utf8') > descriptor.maximumInputBytes) {
           throw new Error('typed executor input exceeds descriptor ceiling');
         }
-        const output = await execute(deepFreeze(structuredClone(executorInput)));
+        const output = structuredClone(await execute(deepFreeze(structuredClone(executorInput))));
+        assertNoCredentialFields(output);
         if (Buffer.byteLength(canonicalJson(output), 'utf8') > descriptor.maximumOutputBytes) {
           throw new Error('typed executor output exceeds descriptor ceiling');
         }
-        return output;
+        return deepFreeze(output);
       },
     ]));
     const result = await runner.run({
@@ -361,6 +326,7 @@ export async function launchAdmittedSealedTypedExecutionMission(input = {}) {
       missionId: result.missionId,
       policyDigest: loaded.digest,
       admissionBindingDigest: binding.bindingDigest,
+      executionBindingDigest,
       candidateDigest: candidate.candidateDigest,
       compilationDigest: result.compilation.compilationDigest,
       executionDigest: result.execution.completion.result.receipt.executionDigest,

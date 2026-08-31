@@ -68,6 +68,7 @@ export function buildAdmittedTypedExecutionHostCompletion({
   missionId,
   policyDigest,
   admissionBindingDigest,
+  executionBindingDigest,
   candidateDigest,
   compilationDigest,
   executionDigest,
@@ -79,6 +80,7 @@ export function buildAdmittedTypedExecutionHostCompletion({
     missionId,
     policyDigest,
     admissionBindingDigest,
+    executionBindingDigest,
     candidateDigest,
     compilationDigest,
     executionDigest,
@@ -96,7 +98,7 @@ export function verifyAdmittedTypedExecutionHostCompletion(input) {
   assertSchema('admitted-typed-execution-host-completion', value);
   exactKeys(value, [
     'schemaVersion', 'protocolId', 'status', 'missionId', 'policyDigest',
-    'admissionBindingDigest', 'candidateDigest', 'compilationDigest',
+    'admissionBindingDigest', 'executionBindingDigest', 'candidateDigest', 'compilationDigest',
     'executionDigest', 'authorityExpanded', 'receiptDigest',
   ], 'admitted typed execution host completion');
   const { receiptDigest, ...unsigned } = value;

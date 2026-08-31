@@ -133,6 +133,35 @@ test('executor descriptor and policy reject authority fields drift and ordering 
   await assert.rejects(loadAdmittedTypedExecutionPolicy(path), /sorted|executor/i);
 });
 
+test('policy rejects credential-shaped fields even inside open release-pin schema slots', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'godagents-typed-policy-credential-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const path = join(root, 'policy.json');
+  for (const field of [
+    'credential', 'credentials', 'accessToken', 'clientSecret', 'privateKey',
+    'secretKey', 'bearerToken', 'refreshToken', 'x-api-key', 'apiToken',
+    'oauthToken', 'sessionToken',
+    'sessionCookie', 'proxyAuthorization', 'authorizationHeader', 'accessTokens',
+    'privateKeys', 'passwords', 'tokens', 'auth', 'basicAuth', 'authHeader',
+    'authentication',
+  ]) {
+    const policy = await policyFixture();
+    policy.runtime.typedCompositionRelease[field] = 'must-not-enter-policy';
+    await writeFile(path, `${canonicalJson(policy)}\n`, 'utf8');
+    await assert.rejects(
+      loadAdmittedTypedExecutionPolicy(path),
+      /credential|secret|token|key|sensitive|policy/i,
+      field,
+    );
+  }
+  const nestedPolicy = await policyFixture();
+  nestedPolicy.runtime.typedCompositionRelease['visual-system'] = {
+    tokens: ['credential-canary'],
+  };
+  await writeFile(path, `${canonicalJson(nestedPolicy)}\n`, 'utf8');
+  await assert.rejects(loadAdmittedTypedExecutionPolicy(path), /credential|token|policy/i);
+});
+
 test('host request reuses the identity request and closes topology plus mission inputs', async () => {
   const missionRequest = vesselRequest();
   const value = verifyAdmittedTypedExecutionHostRequest({

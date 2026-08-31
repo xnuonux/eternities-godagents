@@ -1,16 +1,54 @@
 const forbiddenKeys = new Set([
   'authorization',
   'apikey',
-  'api_key',
   'token',
   'secret',
   'credential',
+  'credentials',
   'password',
   'headers',
   'rawrequest',
   'rawresponse',
   'environment',
+  'accesstoken',
+  'authtoken',
+  'bearertoken',
+  'refreshtoken',
+  'clientsecret',
+  'privatekey',
+  'secretkey',
 ]);
+
+function normalizedSensitiveKey(value) {
+  return value.toLowerCase().replaceAll(/[^a-z0-9]/g, '');
+}
+
+const allowedTokenCounterKeys = new Set([
+  'cachedinputtokens',
+  'completiontokens',
+  'inputtokens',
+  'maxcompletiontokens',
+  'maxcyclecompletiontokens',
+  'maximumcompletiontokens',
+  'nativecompletiontokens',
+  'outputtokens',
+  'prompttokens',
+  'reasoningtokens',
+  'reviewcompletiontokensperround',
+  'revisioncompletiontokens',
+  'totalcompletiontokens',
+  'visibleoutputtokens',
+]);
+
+function credentialShapedKey(value) {
+  const normalized = normalizedSensitiveKey(value);
+  if (allowedTokenCounterKeys.has(normalized)) return false;
+  const withoutSemanticAuthor = normalized.replaceAll('authority', '').replaceAll('author', '');
+  return forbiddenKeys.has(normalized)
+    || withoutSemanticAuthor.includes('auth')
+    || ['authorization', 'apikey', 'bearer', 'cookie', 'credential', 'oauth', 'password', 'passwd', 'privatekey', 'secret', 'token']
+      .some((fragment) => normalized.includes(fragment));
+}
 
 const failureReasons = new Set([
   'connect-failed',
@@ -56,7 +94,7 @@ export function assertNoCredentialFields(value, seen = new WeakSet()) {
   if (seen.has(value)) return value;
   seen.add(value);
   for (const [key, child] of Object.entries(value)) {
-    if (forbiddenKeys.has(key.toLowerCase())) {
+    if (credentialShapedKey(key)) {
       throw new Error(`credential-shaped field rejected: ${key}`);
     }
     assertNoCredentialFields(child, seen);

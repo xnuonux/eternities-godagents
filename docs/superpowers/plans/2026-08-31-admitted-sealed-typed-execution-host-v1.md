@@ -85,7 +85,8 @@ git commit -m "feat: close admitted typed execution policy"
 **Interfaces:**
 
 - Consumes: Task 1 policy/contracts, existing genesis admission verification, cortex candidate compiler, residency registry, routing verifier/classifier, typed release pins, and `createSealedLocalTypedExecutionRunner(options)`.
-- Produces: `launchAdmittedSealedTypedExecutionMission({ admissionRoot, policyPath, request, env, registryRoot, executors, clock, processClock, checkpoints, lockOptions, artifactCache, io })`.
+- Produces: `launchAdmittedSealedTypedExecutionMission({ admissionRoot, policyPath, request, env, executors })`.
+- Host-owned only: canonical residency registry, verifier I/O, lock policy, clocks, checkpoints, and artifact caches.
 
 - [ ] **Step 1: Write the successful end-to-end failing test**
 
@@ -141,12 +142,12 @@ git commit -m "feat: admit sealed typed execution missions"
 
 **Interfaces:**
 
-- Consumes: Task 2 launcher and fixed admission-owned runtime root.
+- Consumes: Task 2 launcher and admission-owned execution-binding namespace.
 - Produces: exact recovery, replay, and negative-boundary evidence used by certification.
 
 - [ ] **Step 1: Add a failing persisted-node recovery test**
 
-Crash after the Muse node is durably published. Reconstruct the launcher with checkpoints that reject any local process relaunch. Assert that recovery invokes only Forge.
+Let Muse publish durably, then fail the trusted Forge executor. Snapshot the local process terminal state, reconstruct the launcher without privileged hooks, assert that recovery invokes only Forge, and prove the process terminal state remains byte-identical.
 
 - [ ] **Step 2: Verify the recovery test fails for the intended missing behavior or exposed defect**
 
@@ -154,7 +155,7 @@ Run: `node --test --test-name-pattern="persisted node" tests/admitted-sealed-typ
 
 - [ ] **Step 3: Make the smallest launcher correction required for recovery**
 
-Keep the runtime root fixed at `vessel/sealed-typed-execution-v1`; do not add a second host journal or copy typed methods into host state.
+Keep the runtime root fixed at `vessel/sealed-typed-execution-v1/<execution-binding-digest>`; do not add a second host journal or copy typed methods into host state. Bind that namespace to policy, admission, and exact executor descriptors.
 
 - [ ] **Step 4: Add terminal replay and negative-boundary tests one at a time**
 
