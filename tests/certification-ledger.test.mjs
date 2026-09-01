@@ -51,6 +51,7 @@ test('certification ledger verifies all forty canonical receipts and declared li
     'provider-neutral-phase-protocol-v1',
     'provider-neutral-phase-resolution-v1',
     'provider-phase-host-sdk-v1',
+    'provider-resolution-decision-preparer-v1',
     'provider-resolution-profile-v1',
     'receipt-bound-typed-executor-bundle-v1',
     'recoverable-godskills-admission-v1',

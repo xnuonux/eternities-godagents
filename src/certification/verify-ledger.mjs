@@ -31,6 +31,7 @@ const registry = Object.freeze({
   'provider-neutral-phase-protocol-v1.json': 'provider-neutral-phase-protocol-v1',
   'provider-neutral-phase-resolution-v1.json': 'provider-neutral-phase-resolution-v1',
   'provider-phase-host-sdk-v1.json': 'provider-phase-host-sdk-v1',
+  'provider-resolution-decision-preparer-v1.json': 'provider-resolution-decision-preparer-v1',
   'provider-resolution-profile-v1.json': 'provider-resolution-profile-v1',
   'recoverable-godskills-admission-v1.json': 'recoverable-godskills-admission-v1',
   'recoverable-mission-native-executor-v1.json': 'recoverable-mission-native-executor-v1',
@@ -57,6 +58,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-phase-host-sdk-v1.json',
       'provider-neutral-phase-protocol-v1.json',
       'provider-neutral-phase-resolution-v1.json',
+      'provider-resolution-decision-preparer-v1.json',
       'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
@@ -66,6 +68,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-phase-host-sdk-v1.json',
       'provider-neutral-phase-protocol-v1.json',
       'provider-neutral-phase-resolution-v1.json',
+      'provider-resolution-decision-preparer-v1.json',
       'provider-resolution-profile-v1.json',
       'receipt-bound-typed-executor-bundle-v1.json',
     ].includes(file))
@@ -75,22 +78,30 @@ const requiredHistoricalLinks = Object.freeze({
       'durable-anthropic-messages-phase-transport-v1.json',
       'provider-phase-host-sdk-v1.json',
       'provider-neutral-phase-resolution-v1.json',
+      'provider-resolution-decision-preparer-v1.json',
       'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
   'provider-phase-host-sdk-v1.json': Object.freeze(expectedFiles
     .filter((file) => ![
       'provider-phase-host-sdk-v1.json', 'provider-neutral-phase-resolution-v1.json',
+      'provider-resolution-decision-preparer-v1.json',
       'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
   'provider-neutral-phase-resolution-v1.json': Object.freeze(expectedFiles
     .filter((file) => ![
-      'provider-neutral-phase-resolution-v1.json', 'provider-resolution-profile-v1.json',
+      'provider-neutral-phase-resolution-v1.json',
+      'provider-resolution-decision-preparer-v1.json', 'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
   'provider-resolution-profile-v1.json': Object.freeze(expectedFiles
-    .filter((file) => file !== 'provider-resolution-profile-v1.json')
+    .filter((file) => ![
+      'provider-resolution-decision-preparer-v1.json', 'provider-resolution-profile-v1.json',
+    ].includes(file))
+    .map((file) => `receipts/${file}`)),
+  'provider-resolution-decision-preparer-v1.json': Object.freeze(expectedFiles
+    .filter((file) => file !== 'provider-resolution-decision-preparer-v1.json')
     .map((file) => `receipts/${file}`)),
   'admitted-sealed-identity-host-v1.json': Object.freeze([
     'receipts/codex-bound-turn-v1.json',
@@ -903,6 +914,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(providerResolutionProfile.receipt)) {
       throw new Error('provider resolution profile certification differs from exact source reconstruction');
+    }
+  }
+
+  const providerResolutionDecisionPreparer = loaded.get('provider-resolution-decision-preparer-v1.json');
+  if (providerResolutionDecisionPreparer) {
+    const { buildProviderResolutionDecisionPreparerReceiptFromSource } = await import(
+      '../../scripts/build-provider-resolution-decision-preparer-v1-receipt.mjs'
+    );
+    const rebuilt = await buildProviderResolutionDecisionPreparerReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: providerResolutionDecisionPreparer.receipt.source.commit,
+      testRuns: providerResolutionDecisionPreparer.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(providerResolutionDecisionPreparer.receipt)) {
+      throw new Error('provider resolution decision preparer certification differs from exact source reconstruction');
     }
   }
 

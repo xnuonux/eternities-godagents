@@ -62,6 +62,8 @@
     "build:provider-neutral-resolution-fixture": "node scripts/build-provider-neutral-phase-resolution-v1-fixture.mjs",
     "certify:provider-neutral-resolution": "node scripts/build-provider-neutral-phase-resolution-v1-receipt.mjs",
     "build:provider-resolution-profile-fixture": "node scripts/build-provider-resolution-profile-v1-fixture.mjs",
-    "certify:provider-resolution-profile": "node scripts/build-provider-resolution-profile-v1-receipt.mjs"
+    "certify:provider-resolution-profile": "node scripts/build-provider-resolution-profile-v1-receipt.mjs",
+    "build:provider-resolution-decision-preparer-fixture": "node scripts/build-provider-resolution-decision-preparer-v1-fixture.mjs",
+    "certify:provider-resolution-decision-preparer": "node scripts/build-provider-resolution-decision-preparer-v1-receipt.mjs"
   }
 }
