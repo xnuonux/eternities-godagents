@@ -13,6 +13,7 @@ import {
 } from '../src/host/provider-phase-host-sdk.mjs';
 import { validAnthropicMessagesPhasePolicy } from './helpers/anthropic-messages-phase-policy-fixture.mjs';
 import { validOpenAICompatiblePhasePolicy } from './helpers/openai-compatible-phase-policy-fixture.mjs';
+import { validOpenAICompatiblePhaseResolutionPolicy } from './helpers/openai-compatible-phase-resolution-fixture.mjs';
 import { nativeDispatch } from './helpers/openai-compatible-phase-operation-fixture.mjs';
 import { runProviderPhaseHostConformance } from './helpers/provider-phase-host-conformance.mjs';
 import { buildProviderPhaseResponseWitness } from '../src/transports/provider-phase-resolution.mjs';
@@ -23,6 +24,34 @@ import {
 } from './helpers/provider-phase-resolution-fixture.mjs';
 
 const PHASES = ['native', 'review', 'revision'];
+const RESOLUTION_PROFILES = Object.freeze({
+  'openai-compatible-chat-completions-v1': Object.freeze({
+    policyProtocolId: 'eternities-openai-compatible-phase-resolution-policy-v1',
+    decisionProtocolId: 'eternities-openai-compatible-phase-resolution-decision-v1',
+    responseWitnessProtocolId: 'eternities-openai-compatible-phase-response-witness-v1',
+    resolutionRecordProtocolId: 'eternities-openai-compatible-phase-resolution-record-v1',
+    externalPolicyPinVariable: 'GODAGENT_PHASE_RESOLUTION_POLICY_SHA256',
+    responseWitnessDigestField: 'responseDigest',
+    dispositions: ['adopt-response', 'abandon'],
+    providerEvidencePublicationProfile: 'completion-inline',
+    automaticRetry: false,
+    providerCallsDuringResolution: 0,
+    acceptedDecisionRecoveryAfterExpiry: true,
+  }),
+  'anthropic-messages-v1': Object.freeze({
+    policyProtocolId: 'eternities-provider-phase-resolution-policy-v1',
+    decisionProtocolId: 'eternities-provider-phase-resolution-decision-v1',
+    responseWitnessProtocolId: 'eternities-provider-phase-response-witness-v1',
+    resolutionRecordProtocolId: 'eternities-provider-phase-resolution-record-v1',
+    externalPolicyPinVariable: 'GODAGENT_PROVIDER_PHASE_RESOLUTION_POLICY_SHA256',
+    responseWitnessDigestField: 'responseWitnessDigest',
+    dispositions: ['adopt-response', 'abandon'],
+    providerEvidencePublicationProfile: 'completion-bound-sidecar',
+    automaticRetry: false,
+    providerCallsDuringResolution: 0,
+    acceptedDecisionRecoveryAfterExpiry: true,
+  }),
+});
 
 function phaseContent(phase) {
   if (phase === 'native') return { content: 'one portable sdk native artifact' };
@@ -151,6 +180,8 @@ test('both registered families expose one common credential-free host surface', 
     assert.deepEqual(Object.keys(description.descriptors), ['native', 'review', 'revision']);
     assert.equal(canonicalJson(description).includes(state.secret), false);
     assert.equal(description.capabilities.signedAmbiguityResolutionAvailable, true);
+    assert.deepEqual(description.capabilities.resolutionProfile, RESOLUTION_PROFILES[family]);
+    assert.equal(Object.isFrozen(description.capabilities.resolutionProfile), true);
     assert.equal(typeof state.host.createOperatorResolutionController, 'function');
     assert.equal(state.providerCalls, 0);
   }
@@ -199,6 +230,59 @@ test('description verification rejects cross-family descriptor substitution afte
   forged.descriptionDigest = sha256Value(unsigned);
 
   assert.throws(() => verifyProviderPhaseHostDescription(forged), /descriptor/i);
+});
+
+test('description verification rejects cross-family resolution-profile substitution after outer rehash', async (t) => {
+  const openAI = await setup(t, 'openai-compatible-chat-completions-v1');
+  const anthropic = await setup(t, 'anthropic-messages-v1');
+  const forged = structuredClone(anthropic.host.describe());
+  forged.capabilities.resolutionProfile = structuredClone(
+    openAI.host.describe().capabilities.resolutionProfile,
+  );
+  const { descriptionDigest: _old, ...unsigned } = forged;
+  forged.descriptionDigest = sha256Value(unsigned);
+  assert.throws(() => verifyProviderPhaseHostDescription(forged), /capabilit|resolution/i);
+});
+
+test('resolution profiles preserve shared safety invariants while exposing protocol differences', async (t) => {
+  const values = {};
+  for (const family of Object.keys(FAMILIES)) {
+    values[family] = (await setup(t, family)).host.describe().capabilities.resolutionProfile;
+  }
+  assert.equal(values['openai-compatible-chat-completions-v1'].automaticRetry, false);
+  assert.equal(values['anthropic-messages-v1'].automaticRetry, false);
+  assert.equal(values['openai-compatible-chat-completions-v1'].providerCallsDuringResolution, 0);
+  assert.equal(values['anthropic-messages-v1'].providerCallsDuringResolution, 0);
+  assert.notEqual(
+    values['openai-compatible-chat-completions-v1'].decisionProtocolId,
+    values['anthropic-messages-v1'].decisionProtocolId,
+  );
+  assert.notEqual(
+    values['openai-compatible-chat-completions-v1'].responseWitnessDigestField,
+    values['anthropic-messages-v1'].responseWitnessDigestField,
+  );
+});
+
+test('both family profiles lead to one common controller surface without protocol translation', async (t) => {
+  for (const family of Object.keys(FAMILIES)) {
+    const state = await setup(t, family);
+    const profile = state.host.describe().capabilities.resolutionProfile;
+    const policy = family === 'anthropic-messages-v1'
+      ? validProviderPhaseResolutionPolicy({ transportPolicyDigest: state.policyDigest })
+      : validOpenAICompatiblePhaseResolutionPolicy({ transportPolicyDigest: state.policyDigest });
+    const policyPath = join(state.root, 'resolution-policy.json');
+    const policyDigest = sha256Text(canonicalJson(policy));
+    await writeFile(policyPath, `${canonicalJson(policy)}\n`, 'utf8');
+    const controller = await state.host.createOperatorResolutionController({
+      policyPath,
+      env: { [profile.externalPolicyPinVariable]: policyDigest },
+    });
+    assert.deepEqual(Object.keys(controller).sort(), [
+      'authorityKeyId', 'inspect', 'policyDigest', 'resolve',
+    ]);
+    assert.equal(controller.policyDigest, policyDigest);
+    assert.equal(state.providerCalls, 0);
+  }
 });
 
 test('Anthropic host resolves one ambiguous native phase through its explicit signed controller', async (t) => {

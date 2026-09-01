@@ -31,6 +31,19 @@ const FAMILIES = Object.freeze({
       providerEvidenceProfile: 'normalized-completion-usage',
       credentialPreflight: true,
       signedAmbiguityResolutionAvailable: true,
+      resolutionProfile: Object.freeze({
+        policyProtocolId: 'eternities-openai-compatible-phase-resolution-policy-v1',
+        decisionProtocolId: 'eternities-openai-compatible-phase-resolution-decision-v1',
+        responseWitnessProtocolId: 'eternities-openai-compatible-phase-response-witness-v1',
+        resolutionRecordProtocolId: 'eternities-openai-compatible-phase-resolution-record-v1',
+        externalPolicyPinVariable: 'GODAGENT_PHASE_RESOLUTION_POLICY_SHA256',
+        responseWitnessDigestField: 'responseDigest',
+        dispositions: Object.freeze(['adopt-response', 'abandon']),
+        providerEvidencePublicationProfile: 'completion-inline',
+        automaticRetry: false,
+        providerCallsDuringResolution: 0,
+        acceptedDecisionRecoveryAfterExpiry: true,
+      }),
     }),
   }),
   'anthropic-messages-v1': Object.freeze({
@@ -45,6 +58,19 @@ const FAMILIES = Object.freeze({
       providerEvidenceProfile: 'completion-bound-sidecar',
       credentialPreflight: true,
       signedAmbiguityResolutionAvailable: true,
+      resolutionProfile: Object.freeze({
+        policyProtocolId: 'eternities-provider-phase-resolution-policy-v1',
+        decisionProtocolId: 'eternities-provider-phase-resolution-decision-v1',
+        responseWitnessProtocolId: 'eternities-provider-phase-response-witness-v1',
+        resolutionRecordProtocolId: 'eternities-provider-phase-resolution-record-v1',
+        externalPolicyPinVariable: 'GODAGENT_PROVIDER_PHASE_RESOLUTION_POLICY_SHA256',
+        responseWitnessDigestField: 'responseWitnessDigest',
+        dispositions: Object.freeze(['adopt-response', 'abandon']),
+        providerEvidencePublicationProfile: 'completion-bound-sidecar',
+        automaticRetry: false,
+        providerCallsDuringResolution: 0,
+        acceptedDecisionRecoveryAfterExpiry: true,
+      }),
     }),
   }),
 });
@@ -94,7 +120,7 @@ export function verifyProviderPhaseHostDescription(value) {
   exactKeys(value.capabilities, [
     'wireProfile', 'phases', 'structuredOutputs', 'durableExecution',
     'localDispatchSemantics', 'providerEvidenceProfile', 'credentialPreflight',
-    'signedAmbiguityResolutionAvailable',
+    'signedAmbiguityResolutionAvailable', 'resolutionProfile',
   ], 'provider phase host capabilities');
   if (canonicalJson(value.capabilities) !== canonicalJson(FAMILIES[value.family].capabilities)) {
     throw new TypeError('provider phase host capabilities are invalid');
