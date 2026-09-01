@@ -23,10 +23,10 @@ async function fixture(context) {
   return receipts;
 }
 
-test('certification ledger verifies all forty-three canonical receipts and declared links', async () => {
+test('certification ledger verifies all forty-four canonical receipts and declared links', async () => {
   const result = await verify(sourceReceipts);
   assert.equal(result.status, 'verified');
-  assert.equal(result.receipts.length, 43);
+  assert.equal(result.receipts.length, 44);
   assert.deepEqual(result.receipts.map((row) => row.certificationId), [
     'admitted-sealed-identity-host-v1',
     'admitted-sealed-typed-execution-host-v1',
@@ -48,6 +48,7 @@ test('certification ledger verifies all forty-three canonical receipts and decla
     'identity-bound-mission-vessel-v1',
     'local-admission-shell-v1',
     'networked-cortex-v1',
+    'provider-backed-mission-dependencies-v1',
     'provider-neutral-phase-protocol-v1',
     'provider-neutral-phase-resolution-v1',
     'provider-phase-host-sdk-v1',

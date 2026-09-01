@@ -68,6 +68,8 @@
     "build:provider-resolution-authority-handoff-fixture": "node scripts/build-provider-resolution-authority-handoff-v1-fixture.mjs",
     "certify:provider-resolution-authority-handoff": "node scripts/build-provider-resolution-authority-handoff-v1-receipt.mjs",
     "build:provider-resolution-authority-outbox-fixture": "node scripts/build-provider-resolution-authority-outbox-v1-fixture.mjs",
-    "certify:provider-resolution-authority-outbox": "node scripts/build-provider-resolution-authority-outbox-v1-receipt.mjs"
+    "certify:provider-resolution-authority-outbox": "node scripts/build-provider-resolution-authority-outbox-v1-receipt.mjs",
+    "build:provider-backed-mission-dependencies-fixture": "node scripts/build-provider-backed-mission-dependencies-v1-fixture.mjs",
+    "certify:provider-backed-mission-dependencies": "node scripts/build-provider-backed-mission-dependencies-v1-receipt.mjs"
   }
 }

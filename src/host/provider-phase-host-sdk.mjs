@@ -75,6 +75,7 @@ const FAMILIES = Object.freeze({
   }),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
+const issuedHosts = new WeakSet();
 
 function clone(value) {
   return structuredClone(value);
@@ -142,6 +143,13 @@ export function verifyProviderPhaseHostDescription(value) {
   return value;
 }
 
+export function assertProviderPhaseHostInstance(value) {
+  if (!value || typeof value !== 'object' || !issuedHosts.has(value)) {
+    throw new TypeError('provider phase host must be an SDK-issued certified host instance');
+  }
+  return verifyProviderPhaseHostDescription(clone(value.describe()));
+}
+
 export async function createProviderPhaseHost(options = {}) {
   if (!options || typeof options !== 'object' || Array.isArray(options)) {
     throw new TypeError('provider phase host configuration is invalid');
@@ -156,7 +164,7 @@ export async function createProviderPhaseHost(options = {}) {
   }
   const suite = await FAMILIES[family].create(configuration);
   const description = verifyProviderPhaseHostDescription(descriptionFor(family, suite));
-  return Object.freeze({
+  const host = Object.freeze({
     describe() {
       return deepFreeze(clone(description));
     },
@@ -170,4 +178,6 @@ export async function createProviderPhaseHost(options = {}) {
     review: suite.review,
     revision: suite.revision,
   });
+  issuedHosts.add(host);
+  return host;
 }

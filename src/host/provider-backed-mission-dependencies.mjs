@@ -3,7 +3,10 @@ import { sha256Value } from '../core/digest.mjs';
 import { verifyMissionExecutorDescriptor } from '../runtime/mission-phase-contracts.mjs';
 import { createMissionRevisionExecutor } from '../runtime/mission-revision-executor.mjs';
 import { createDeferredGodskillsReviewExecutor } from '../skills/deferred-review-executor.mjs';
-import { verifyProviderPhaseHostDescription } from './provider-phase-host-sdk.mjs';
+import {
+  assertProviderPhaseHostInstance,
+  verifyProviderPhaseHostDescription,
+} from './provider-phase-host-sdk.mjs';
 
 const PROTOCOL_ID = 'eternities-provider-backed-mission-dependencies-v1';
 const CONFIGURATION_FIELDS = Object.freeze([
@@ -32,6 +35,7 @@ function exactKeys(value, expected, label) {
   }
 }
 function verifyHost(host) {
+  const issuedDescription = assertProviderPhaseHostInstance(host);
   exactKeys(host, HOST_FIELDS, 'provider phase host');
   for (const method of ['describe', 'assertCredentialAbsent', 'createOperatorResolutionController']) {
     if (typeof host[method] !== 'function') throw new TypeError(`provider phase host ${method} is required`);
@@ -44,14 +48,20 @@ function verifyHost(host) {
       }
     }
   }
-  return verifyProviderPhaseHostDescription(clone(host.describe()));
+  const described = verifyProviderPhaseHostDescription(clone(host.describe()));
+  if (!same(issuedDescription, described)) {
+    throw new TypeError('SDK-issued provider phase host description changed');
+  }
+  return described;
 }
 function pinnedTransport(transport, descriptor) {
   const pinned = deepFreeze(clone(descriptor));
+  const reconcile = transport.reconcile.bind(transport);
+  const execute = transport.execute.bind(transport);
   return Object.freeze({
     descriptor() { return deepFreeze(clone(pinned)); },
-    reconcile(dispatch) { return transport.reconcile(dispatch); },
-    execute(dispatch) { return transport.execute(dispatch); },
+    reconcile(dispatch) { return reconcile(dispatch); },
+    execute(dispatch) { return execute(dispatch); },
   });
 }
 

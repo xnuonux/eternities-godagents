@@ -364,6 +364,12 @@ The data-only description binds family, policy digest, exact family-prefixed des
 
 The resolution profile closes the remaining discovery gap. It binds each family's policy, decision, response-witness, and resolution-record protocol ids, the external policy pin name, the witness-digest decision field, dispositions, and evidence-publication profile. It also makes the common `automaticRetry: false`, zero resolution-provider-call, and accepted-decision recovery semantics explicit. The outer host-description digest protects the complete profile, and family verification rejects profile substitution after rehash. This is protocol discovery only; signatures and policies are never translated across trust roots.
 
+## Provider-backed mission dependency boundary
+
+The provider-backed dependency bridge consumes one already certified host rather than selecting or constructing a family ambiently. It snapshots and verifies the live native, review, and revision descriptors against the host description, pins those descriptor bytes for the lifetime of the returned handles, and constructs the existing deferred Godskills review and mission revision executors over the pinned transports. Its immutable description binds the complete provider host description, exact Godskills release and activation roots, executor and materializer identities, transport descriptors, and materialization ceilings.
+
+The description is sufficient for an external authority to author the corresponding identity-host policy, but the bridge cannot author, pin, or launch that policy. Credentials remain lazy inside the provider transport, and construction performs no provider request. Ambiguous provider outcomes remain pending under the existing signed resolution controller and authority outbox. The bridge adds no retry, journal, Realm effect, identity mutation, continuity admission, evolution, Inspiration, Lunari, or Soul authority.
+
 ## Provider-neutral signed phase resolution boundary
 
 The neutral durable engine admits one optional operator port that is absent from ordinary native, review, and revision adapters. Its canonical externally pinned policy binds the exact provider transport policy, one Ed25519 public authority, a decision lifetime, and an adopted-response ceiling. The signed decision binds the exact phase, dispatch, request, original attempt, disposition, nonce, times, and provider-neutral response witness. Neither the private signing key nor provider credential enters durable state.

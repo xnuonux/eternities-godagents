@@ -30,6 +30,7 @@ const registry = Object.freeze({
   'networked-cortex-certification.json': 'networked-cortex-v1',
   'provider-neutral-phase-protocol-v1.json': 'provider-neutral-phase-protocol-v1',
   'provider-neutral-phase-resolution-v1.json': 'provider-neutral-phase-resolution-v1',
+  'provider-backed-mission-dependencies-v1.json': 'provider-backed-mission-dependencies-v1',
   'provider-phase-host-sdk-v1.json': 'provider-phase-host-sdk-v1',
   'provider-resolution-authority-handoff-v1.json': 'provider-resolution-authority-handoff-v1',
   'provider-resolution-authority-outbox-v1.json': 'provider-resolution-authority-outbox-v1',
@@ -62,6 +63,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-neutral-phase-resolution-v1.json',
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
+      'provider-backed-mission-dependencies-v1.json',
       'provider-resolution-decision-preparer-v1.json',
       'provider-resolution-profile-v1.json',
     ].includes(file))
@@ -74,6 +76,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-neutral-phase-resolution-v1.json',
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
+      'provider-backed-mission-dependencies-v1.json',
       'provider-resolution-decision-preparer-v1.json',
       'provider-resolution-profile-v1.json',
       'receipt-bound-typed-executor-bundle-v1.json',
@@ -86,6 +89,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-neutral-phase-resolution-v1.json',
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
+      'provider-backed-mission-dependencies-v1.json',
       'provider-resolution-decision-preparer-v1.json',
       'provider-resolution-profile-v1.json',
     ].includes(file))
@@ -95,6 +99,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-phase-host-sdk-v1.json', 'provider-neutral-phase-resolution-v1.json',
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
+      'provider-backed-mission-dependencies-v1.json',
       'provider-resolution-decision-preparer-v1.json',
       'provider-resolution-profile-v1.json',
     ].includes(file))
@@ -104,6 +109,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-neutral-phase-resolution-v1.json',
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
+      'provider-backed-mission-dependencies-v1.json',
       'provider-resolution-decision-preparer-v1.json', 'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
@@ -111,6 +117,7 @@ const requiredHistoricalLinks = Object.freeze({
     .filter((file) => ![
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
+      'provider-backed-mission-dependencies-v1.json',
       'provider-resolution-decision-preparer-v1.json', 'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
@@ -118,6 +125,7 @@ const requiredHistoricalLinks = Object.freeze({
     .filter((file) => ![
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
+      'provider-backed-mission-dependencies-v1.json',
       'provider-resolution-decision-preparer-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
@@ -125,10 +133,17 @@ const requiredHistoricalLinks = Object.freeze({
     .filter((file) => ![
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
+      'provider-backed-mission-dependencies-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
   'provider-resolution-authority-outbox-v1.json': Object.freeze(expectedFiles
-    .filter((file) => file !== 'provider-resolution-authority-outbox-v1.json')
+    .filter((file) => ![
+      'provider-resolution-authority-outbox-v1.json',
+      'provider-backed-mission-dependencies-v1.json',
+    ].includes(file))
+    .map((file) => `receipts/${file}`)),
+  'provider-backed-mission-dependencies-v1.json': Object.freeze(expectedFiles
+    .filter((file) => file !== 'provider-backed-mission-dependencies-v1.json')
     .map((file) => `receipts/${file}`)),
   'admitted-sealed-identity-host-v1.json': Object.freeze([
     'receipts/codex-bound-turn-v1.json',
@@ -986,6 +1001,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(providerResolutionAuthorityOutbox.receipt)) {
       throw new Error('provider resolution authority outbox certification differs from exact source reconstruction');
+    }
+  }
+
+  const providerBackedMissionDependencies = loaded.get('provider-backed-mission-dependencies-v1.json');
+  if (providerBackedMissionDependencies) {
+    const { buildProviderBackedMissionDependenciesReceiptFromSource } = await import(
+      '../../scripts/build-provider-backed-mission-dependencies-v1-receipt.mjs'
+    );
+    const rebuilt = await buildProviderBackedMissionDependenciesReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: providerBackedMissionDependencies.receipt.source.commit,
+      testRuns: providerBackedMissionDependencies.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(providerBackedMissionDependencies.receipt)) {
+      throw new Error('provider-backed mission dependency certification differs from exact source reconstruction');
     }
   }
 

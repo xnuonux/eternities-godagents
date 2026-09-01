@@ -46,6 +46,7 @@ npm run certify:codex-bound-turn
 npm run certify:codex-turn-journal
 npm run certify:codex-recoverable-turn
 npm run certify:openai-compatible-phase-transport
+npm run certify:provider-backed-mission-dependencies
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -525,3 +526,9 @@ The return envelope explicitly remains `cryptographicStatus: unverified` until t
 The [authority outbox design](docs/superpowers/specs/2026-08-31-provider-resolution-authority-outbox-v1-design.md) adds one local crash-safe lifecycle around the authority handoff. It exclusively publishes the canonical signing request, accepts exactly one matching signed return, delegates authentication and resolution to the existing provider-family controller, and records only a compact terminal projection. A restart can recover after request publication, signature publication, controller acceptance, or terminal publication without calling the provider again.
 
 The outbox never stores the caller-resupplied response body, dispatch body, credential, endpoint, private key, or model artifact. Exact input fields, canonical files, operation locks, unknown-entry rejection, reparse-point rejection, request and signature collisions, and controller-state rebinding close the local recovery boundary. `npm run certify:provider-resolution-authority-outbox` reproduces both provider families, adoption and abandonment, all adversarial recovery gates, protected prior trust roots, the 43-receipt ledger, and release lineage. This remains local at-most-once recovery, not provider-side truth or remote exactly-once execution.
+
+### Provider-backed mission dependencies v1
+
+The [provider-backed dependency design](docs/superpowers/specs/2026-08-31-provider-backed-mission-dependencies-v1-design.md) closes the missing production seam between the certified provider host and the recoverable identity vessel. One explicit provider host and one exact Godskills release become a native transport, deferred review executor, and revision executor with a self-verifying policy-ready description. Every live phase descriptor must equal the host description before the bridge pins it, and the review and revision executor identities mechanically bind their transport, materializer, release, and activation roots.
+
+Construction remains credential-lazy and performs no provider call. It does not choose a provider, author or launch an identity policy, resolve ambiguity, sign a decision, retry a model call, or gain Realm, identity, continuity, evolution, Inspiration, Lunari, or Soul authority. `npm run certify:provider-backed-mission-dependencies` runs both certified provider families through the real admitted identity mission, including native generation, review, revision, final review, and exact terminal replay with no repeated provider, routing, or activation work.

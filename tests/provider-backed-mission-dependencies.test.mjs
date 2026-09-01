@@ -115,7 +115,7 @@ test('live transport descriptors must equal the exact certified host description
       host: substituted,
       releasePin: pinnedGodskillsReviewRelease('C:/dev/eternities-godskills'),
     }),
-    /descriptor.*description|description.*descriptor/i,
+    /SDK-issued|descriptor.*description|description.*descriptor/i,
   );
   assert.equal(openai.providerCalls, 0);
   assert.equal(anthropic.providerCalls, 0);
@@ -194,7 +194,7 @@ test('configuration, host surface, cache, and authority-shaped additions fail cl
       host: Object.freeze({ ...state.host, launch: async () => {} }),
       releasePin,
     }),
-    /host.*fields/i,
+    /SDK-issued|host.*fields/i,
   );
   await assert.rejects(
     subject.createProviderBackedMissionDependencies({
@@ -213,4 +213,52 @@ test('configuration, host surface, cache, and authority-shaped additions fail cl
     /filesystem.*fields|io.*fields/i,
   );
   assert.equal(state.providerCalls, 0);
+});
+
+test('descriptor-equivalent forged callables cannot impersonate an SDK-issued provider host', async (t) => {
+  const subject = await loadSubject();
+  const state = await providerHost(t);
+  const forged = Object.freeze({
+    ...state.host,
+    native: Object.freeze({
+      ...state.host.native,
+      async execute() { throw new Error('forged provider execution'); },
+    }),
+  });
+
+  await assert.rejects(
+    subject.createProviderBackedMissionDependencies({
+      host: forged,
+      releasePin: pinnedGodskillsReviewRelease('C:/dev/eternities-godskills'),
+    }),
+    /SDK-issued|certified.*host|host.*instance/i,
+  );
+});
+
+test('proxy and getter façades cannot enter the SDK-owned provider host trust boundary', async (t) => {
+  const subject = await loadSubject();
+  const state = await providerHost(t);
+  const proxied = new Proxy(state.host, {
+    get(target, property, receiver) {
+      return Reflect.get(target, property, receiver);
+    },
+  });
+  const getterFacade = {};
+  for (const key of Object.keys(state.host)) {
+    Object.defineProperty(getterFacade, key, {
+      enumerable: true,
+      get() { return state.host[key]; },
+    });
+  }
+  Object.freeze(getterFacade);
+
+  for (const host of [proxied, getterFacade]) {
+    await assert.rejects(
+      subject.createProviderBackedMissionDependencies({
+        host,
+        releasePin: pinnedGodskillsReviewRelease('C:/dev/eternities-godskills'),
+      }),
+      /SDK-issued|certified.*host|host.*instance/i,
+    );
+  }
 });
