@@ -1,4 +1,4 @@
-import { mkdir, readFile } from 'node:fs/promises';
+import { lstat, mkdir, readFile, readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
@@ -18,6 +18,17 @@ const TERMINAL_PROTOCOL = 'eternities-provider-resolution-authority-outbox-termi
 const DIGEST = /^[a-f0-9]{64}$/;
 const CONFIGURATION_FIELDS = Object.freeze([
   'root', 'host', 'controller', 'checkpoint', 'lockOptions',
+]);
+const PREPARE_FIELDS = Object.freeze([
+  'phase', 'dispatch', 'disposition', 'response', 'issuedAt', 'expiresAt', 'nonce',
+]);
+const RECONCILE_FIELDS = Object.freeze(['phase', 'dispatch']);
+const SUBMIT_FIELDS = Object.freeze([
+  'phase', 'dispatch', 'requestDigest', 'signature', 'response',
+]);
+const OPERATION_ENTRIES = new Set([
+  'request.json', 'signed-return.json', 'terminal.json', 'operation.lock',
+  'request.json.writing', 'signed-return.json.writing', 'terminal.json.writing',
 ]);
 
 export class ProviderResolutionAuthorityOutboxError extends Error {
@@ -45,6 +56,44 @@ function exactKeys(value, expected, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)
       || !same(Object.keys(value).sort(), [...expected].sort())) {
     throw new TypeError(`${label} fields are invalid`);
+  }
+}
+function allowedKeys(value, allowed, label) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)
+      || Object.keys(value).some((key) => !allowed.includes(key))) {
+    throw new TypeError(`${label} fields are invalid`);
+  }
+}
+async function metadata(path) {
+  try { return await lstat(path); } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+async function requireDirectory(path, label) {
+  const value = await metadata(path);
+  if (!value || !value.isDirectory() || value.isSymbolicLink()) fail('state-invalid');
+}
+async function ensureOperation(root, operationRoot) {
+  const operationsRoot = join(root, 'operations');
+  await mkdir(root, { recursive: true });
+  await requireDirectory(root, 'authority outbox root');
+  await mkdir(operationsRoot, { recursive: true });
+  await requireDirectory(operationsRoot, 'authority outbox operations root');
+  await mkdir(operationRoot, { recursive: true });
+  await requireDirectory(operationRoot, 'authority outbox operation root');
+}
+async function verifyOperationEntries(operationRoot) {
+  let entries;
+  try { entries = await readdir(operationRoot, { withFileTypes: true }); } catch (error) {
+    fail('state-invalid', error);
+  }
+  for (const entry of entries) {
+    if (!OPERATION_ENTRIES.has(entry.name) || !entry.isFile() || entry.isSymbolicLink()) {
+      fail('state-invalid');
+    }
+    const value = await metadata(join(operationRoot, entry.name));
+    if (!value?.isFile() || value.isSymbolicLink()) fail('state-invalid');
   }
 }
 function verifyHost(value) {
@@ -88,11 +137,11 @@ function paths(root, operationId) {
   };
 }
 async function readCanonical(path, label, verify) {
+  const valueMetadata = await metadata(path);
+  if (!valueMetadata) return null;
+  if (!valueMetadata.isFile() || valueMetadata.isSymbolicLink()) fail('state-invalid');
   let text;
-  try { text = await readFile(path, 'utf8'); } catch (error) {
-    if (error.code === 'ENOENT') return null;
-    throw error;
-  }
+  try { text = await readFile(path, 'utf8'); } catch (error) { fail('record-invalid', error); }
   let value;
   try { value = JSON.parse(text); } catch (error) { fail('record-invalid', error); }
   if (text !== `${canonicalJson(value)}\n`) fail('record-invalid');
@@ -168,12 +217,17 @@ export async function createProviderResolutionAuthorityOutbox(options = {}) {
   async function withLock(phase, dispatch, callback) {
     const identity = operationIdentity(description, options.controller, phase, dispatch);
     const operationPaths = paths(root, identity.operationId);
-    await mkdir(operationPaths.operationRoot, { recursive: true });
+    await ensureOperation(root, operationPaths.operationRoot);
+    await verifyOperationEntries(operationPaths.operationRoot);
     const lock = await acquireFileLock({ ...lockOptions, lockPath: operationPaths.lock });
-    try { return await callback(operationPaths, identity); } finally { await lock.release(); }
+    try {
+      await verifyOperationEntries(operationPaths.operationRoot);
+      return await callback(operationPaths, identity);
+    } finally { await lock.release(); }
   }
 
   async function prepare(input = {}) {
+    allowedKeys(input, PREPARE_FIELDS, 'authority outbox prepare');
     const { phase, dispatch, ...decisionInput } = input;
     return withLock(phase, dispatch, async (operationPaths) => {
       const inspected = await options.controller.inspect({ phase, dispatch: clone(dispatch) });
@@ -195,11 +249,18 @@ export async function createProviderResolutionAuthorityOutbox(options = {}) {
     const raw = await readCanonical(operationPaths.request, 'signing request', (value) => value);
     if (!raw) return null;
     const requestContext = context(description, options.controller, raw);
-    const request = verifyProviderResolutionAuthoritySigningRequest({ request: raw, ...requestContext });
+    let request;
+    try {
+      request = verifyProviderResolutionAuthoritySigningRequest({ request: raw, ...requestContext });
+    } catch (error) {
+      fail('record-invalid', error);
+    }
     return { request, requestContext };
   }
 
-  async function reconcile({ phase, dispatch } = {}) {
+  async function reconcile(input = {}) {
+    allowedKeys(input, RECONCILE_FIELDS, 'authority outbox reconcile');
+    const { phase, dispatch } = input;
     return withLock(phase, dispatch, async (operationPaths) => {
       const stored = await inspectStored(operationPaths);
       if (!stored) return Object.freeze({ status: 'absent' });
@@ -232,7 +293,9 @@ export async function createProviderResolutionAuthorityOutbox(options = {}) {
     });
   }
 
-  async function submit({ phase, dispatch, requestDigest, signature, response } = {}) {
+  async function submit(input = {}) {
+    allowedKeys(input, SUBMIT_FIELDS, 'authority outbox submit');
+    const { phase, dispatch, requestDigest, signature, response } = input;
     return withLock(phase, dispatch, async (operationPaths) => {
       const stored = await inspectStored(operationPaths);
       if (!stored || requestDigest !== stored.request.requestDigest) fail('request-mismatch');
