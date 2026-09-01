@@ -16,10 +16,11 @@ absent -> awaiting-signature -> signed -> resolved
 ```
 
 The operation key is derived from the verified host-description digest,
-resolution-policy digest, phase, dispatch digest, request digest, and attempt id.
-Every record is canonical, self-digested, and exclusively published beneath that
-operation key. Changed requests, signatures, responses, or operation bindings
-collide rather than overwrite.
+resolution-policy digest, phase, and dispatch digest. The immutable request
+beneath that slot additionally binds the provider request digest and attempt id.
+Every record is canonical, self-digested, and exclusively published. Changed
+requests, signatures, responses, or operation bindings collide or fail
+verification rather than overwrite.
 
 `prepare` inspects the real controller, requires one unresolved pending attempt,
 builds the certified signing request, and publishes it before returning.
@@ -44,4 +45,3 @@ closed integrity error before mutation. `.writing` files are inert.
 The signed return remains structurally unverified until the existing provider
 controller authenticates it. The outbox cannot create signatures or expand
 authority. Provider truth and remote exactly-once execution remain outside proof.
-

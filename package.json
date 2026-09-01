@@ -66,6 +66,8 @@
     "build:provider-resolution-decision-preparer-fixture": "node scripts/build-provider-resolution-decision-preparer-v1-fixture.mjs",
     "certify:provider-resolution-decision-preparer": "node scripts/build-provider-resolution-decision-preparer-v1-receipt.mjs",
     "build:provider-resolution-authority-handoff-fixture": "node scripts/build-provider-resolution-authority-handoff-v1-fixture.mjs",
-    "certify:provider-resolution-authority-handoff": "node scripts/build-provider-resolution-authority-handoff-v1-receipt.mjs"
+    "certify:provider-resolution-authority-handoff": "node scripts/build-provider-resolution-authority-handoff-v1-receipt.mjs",
+    "build:provider-resolution-authority-outbox-fixture": "node scripts/build-provider-resolution-authority-outbox-v1-fixture.mjs",
+    "certify:provider-resolution-authority-outbox": "node scripts/build-provider-resolution-authority-outbox-v1-receipt.mjs"
   }
 }
