@@ -19,6 +19,7 @@ const reviewPath = 'docs/reviews/provider-backed-mission-dependencies-v1-terra-r
 const certificationPath = 'docs/provider-backed-mission-dependencies-v1-certification.md';
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
+const expectedReviewBase = 'b8d30b70b74a84f73aa248b65dce44289cc67576';
 
 const protectedTrustRoots = Object.freeze({
   'receipts/admitted-sealed-identity-host-v1.json': '98e904a14822fb9e66620030a5472c0b64a9948bf3ffa4c0e94a2f17274f2581',
@@ -262,7 +263,7 @@ function verifyReviewAttestation(value) {
       || value.reviewId !== 'provider-backed-mission-dependencies-v1-terra'
       || value.disposition !== 'ready-for-receipt-generation'
       || typeof value.summary !== 'string' || value.summary.length < 32
-      || value.summary.length > 2_048 || !COMMIT.test(value.baseCommit)
+      || value.summary.length > 2_048 || value.baseCommit !== expectedReviewBase
       || !COMMIT.test(value.reviewedCommit)) {
     throw new Error('provider-backed review attestation identity is invalid');
   }
@@ -381,6 +382,7 @@ export async function buildProviderBackedMissionDependenciesReceiptFromSource({
   }
   await assertCommit(root, attestation.baseCommit);
   await assertCommit(root, attestation.reviewedCommit);
+  await changedPathsBetween(root, attestation.baseCommit, attestation.reviewedCommit);
   if (!same(await changedPathsBetween(root, attestation.reviewedCommit, sourceCommit), [reviewPath])) {
     throw new Error('provider-backed source changed outside the reviewed attestation artifact');
   }

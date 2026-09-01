@@ -7,7 +7,7 @@ import {
   verifyProviderBackedMissionDependenciesReceipt,
 } from '../scripts/build-provider-backed-mission-dependencies-v1-receipt.mjs';
 import { canonicalJson } from '../src/core/canonical-json.mjs';
-import { sha256Value } from '../src/core/digest.mjs';
+import { sha256Text, sha256Value } from '../src/core/digest.mjs';
 import { buildDeterministicProviderBackedMissionDependenciesFixture } from './helpers/provider-backed-mission-dependencies-certification-fixture.mjs';
 
 test('provider-backed mission dependency fixture reproduces exact cross-family admitted recovery evidence', async () => {
@@ -91,5 +91,17 @@ test('provider-backed receipt cannot self-declare a clean independent review', a
   assert.throws(
     () => verifyProviderBackedMissionDependenciesReceipt(forged),
     /review.*unresolved|unresolved.*defect/i,
+  );
+
+  const wrongBase = structuredClone(receipt);
+  wrongBase.review.value.baseCommit = 'a'.repeat(40);
+  const { attestationDigest: _oldAttestation, ...wrongBaseUnsigned } = wrongBase.review.value;
+  wrongBase.review.value.attestationDigest = sha256Value(wrongBaseUnsigned);
+  wrongBase.review.fileSha256 = sha256Text(`${canonicalJson(wrongBase.review.value)}\n`);
+  const { receiptDigest: _oldReceipt, ...wrongReceiptUnsigned } = wrongBase;
+  wrongBase.receiptDigest = sha256Value(wrongReceiptUnsigned);
+  assert.throws(
+    () => verifyProviderBackedMissionDependenciesReceipt(wrongBase),
+    /review.*identity/i,
   );
 });
