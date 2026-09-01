@@ -75,3 +75,21 @@ test('provider-backed receipt rejects false replay and authority claims after ou
     );
   }
 });
+
+test('provider-backed receipt cannot self-declare a clean independent review', async () => {
+  const receipt = JSON.parse(await readFile(
+    new URL('../receipts/provider-backed-mission-dependencies-v1.json', import.meta.url),
+    'utf8',
+  ));
+  const forged = structuredClone(receipt);
+  forged.review.value.findings.critical = 1;
+  const { attestationDigest: _attestation, ...attestationUnsigned } = forged.review.value;
+  forged.review.value.attestationDigest = sha256Value(attestationUnsigned);
+  forged.review.unresolvedCriticalDefects = 1;
+  const { receiptDigest: _receipt, ...receiptUnsigned } = forged;
+  forged.receiptDigest = sha256Value(receiptUnsigned);
+  assert.throws(
+    () => verifyProviderBackedMissionDependenciesReceipt(forged),
+    /review.*unresolved|unresolved.*defect/i,
+  );
+});

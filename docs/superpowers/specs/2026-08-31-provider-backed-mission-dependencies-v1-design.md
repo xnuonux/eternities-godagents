@@ -18,6 +18,8 @@ identity host policy. The bridge does not author, pin, or launch that policy.
 
 - The provider phase host already exposes `native`, `review`, and `revision`
   handles with one common surface for both certified provider families.
+- The SDK owns an unforgeable process-local host brand. Descriptor-equivalent
+  caller objects, proxies, and getter facades are not certified host instances.
 - The native handle already satisfies the identity-bound native transport
   contract.
 - The review handle is the exact transport consumed by the certified deferred
@@ -55,8 +57,10 @@ Construction fails closed before returning a partial bundle when the host
 surface, host description, provider descriptors, release pin, limits, cache, or
 filesystem boundary is invalid. The bridge introduces no retry or journal. Each
 dependency retains its already certified reconciliation and crash-recovery
-semantics. Provider ambiguity remains pending and must pass through the existing
-signed resolution controller and authority outbox.
+semantics. Callable references are captured once from the SDK-issued frozen host
+rather than looked up dynamically after verification. Provider ambiguity
+remains pending and must pass through the existing signed resolution controller
+and authority outbox.
 
 ## authority boundaries
 

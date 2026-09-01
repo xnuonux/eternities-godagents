@@ -52,6 +52,18 @@ export async function historicalAtCommit(root, commit, paths) {
   return Object.fromEntries(rows);
 }
 
+export async function changedPathsBetween(root, fromCommit, toCommit) {
+  await assertCommit(root, fromCommit);
+  await assertCommit(root, toCommit);
+  await git(root, ['merge-base', '--is-ancestor', fromCommit, toCommit]);
+  const { stdout } = await git(
+    root,
+    ['diff', '--name-only', '--no-renames', `${fromCommit}..${toCommit}`],
+    { encoding: 'utf8' },
+  );
+  return stdout.split(/\r?\n/).filter(Boolean).sort();
+}
+
 export function runTests(files, cwd) {
   return new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(process.execPath, ['--test', '--test-reporter=tap', ...files], {

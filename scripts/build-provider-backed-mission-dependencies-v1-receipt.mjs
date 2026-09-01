@@ -5,8 +5,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { canonicalJson } from '../src/core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../src/core/digest.mjs';
 import {
-  assertCommit, gitText, headCommit, historicalAtCommit, manifestAtCommit,
-  requireCleanExcept, resolveSourceCommit, runTests,
+  assertCommit, changedPathsBetween, gitText, headCommit, historicalAtCommit,
+  manifestAtCommit, requireCleanExcept, resolveSourceCommit, runTests,
 } from './lib/certification-support.mjs';
 
 const certificationId = 'provider-backed-mission-dependencies-v1';
@@ -15,7 +15,7 @@ const fixturePath = 'fixtures/provider-backed-mission-dependencies-v1.json';
 const receiptPath = 'receipts/provider-backed-mission-dependencies-v1.json';
 const specificationPath = 'docs/superpowers/specs/2026-08-31-provider-backed-mission-dependencies-v1-design.md';
 const planPath = 'docs/superpowers/plans/2026-08-31-provider-backed-mission-dependencies-v1.md';
-const reviewPath = 'docs/reviews/provider-backed-mission-dependencies-v1-terra-review.md';
+const reviewPath = 'docs/reviews/provider-backed-mission-dependencies-v1-terra-review.json';
 const certificationPath = 'docs/provider-backed-mission-dependencies-v1-certification.md';
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
@@ -83,6 +83,8 @@ const implementationFiles = Object.freeze([
   'scripts/build-provider-backed-mission-dependencies-v1-fixture.mjs',
   'scripts/build-provider-backed-mission-dependencies-v1-receipt.mjs',
   'scripts/lib/certification-support.mjs',
+  'scripts/lib/pinned-godskills-review-release.mjs',
+  'scripts/lib/pinned-godskills-routing-executable.mjs',
   'src/certification/verify-ledger.mjs',
   'src/certification/verify-release-lineage.mjs',
   'src/core/canonical-json.mjs', 'src/core/digest.mjs',
@@ -94,6 +96,8 @@ const implementationFiles = Object.freeze([
   'src/runtime/mission-revision-executor.mjs',
   'src/skills/deferred-review-executor.mjs',
   'src/skills/release-verifier.mjs',
+  'src/skills/routing-evidence-activation-classifier.mjs',
+  'src/skills/routing-executable-verifier.mjs',
   'src/transports/anthropic-messages-phase-transport.mjs',
   'src/transports/openai-compatible-phase-transport.mjs',
 ].sort());
@@ -134,14 +138,6 @@ const expectedMetrics = Object.freeze({
   replayProviderCalls: 0,
   replayRouteLaunches: 0,
   reviewedPhases: 8,
-});
-const review = Object.freeze({
-  mode: 'independent-terra',
-  independent: true,
-  reportPath: reviewPath,
-  reviewerModel: 'gpt-5.6-terra',
-  unresolvedCriticalDefects: 0,
-  unresolvedImportantDefects: 0,
 });
 const proofLimits = Object.freeze([
   'the bridge does not choose or construct a provider family from ambient state',
@@ -255,6 +251,64 @@ function verifyFixture(value) {
   return value;
 }
 
+function verifyReviewAttestation(value) {
+  exactKeys(value, [
+    'schemaVersion', 'protocolId', 'reviewId', 'reviewer', 'baseCommit',
+    'reviewedCommit', 'findings', 'priorFindingsResolved', 'verification',
+    'disposition', 'summary', 'attestationDigest',
+  ], 'provider-backed review attestation');
+  if (value.schemaVersion !== 1
+      || value.protocolId !== 'eternities-independent-code-review-attestation-v1'
+      || value.reviewId !== 'provider-backed-mission-dependencies-v1-terra'
+      || value.disposition !== 'ready-for-receipt-generation'
+      || typeof value.summary !== 'string' || value.summary.length < 32
+      || value.summary.length > 2_048 || !COMMIT.test(value.baseCommit)
+      || !COMMIT.test(value.reviewedCommit)) {
+    throw new Error('provider-backed review attestation identity is invalid');
+  }
+  exactKeys(value.reviewer, ['agentId', 'model'], 'provider-backed reviewer');
+  if (value.reviewer.agentId !== '01a05a8a-055d-74d0-bf3f-217d59b8d920'
+      || value.reviewer.model !== 'gpt-5.6-terra') {
+    throw new Error('provider-backed reviewer identity is invalid');
+  }
+  exactKeys(value.findings, ['critical', 'important', 'minor'], 'provider-backed review findings');
+  if (value.findings.critical !== 0 || value.findings.important !== 0
+      || !Number.isSafeInteger(value.findings.minor) || value.findings.minor < 0) {
+    throw new Error('provider-backed review has unresolved defects');
+  }
+  if (!Array.isArray(value.priorFindingsResolved) || value.priorFindingsResolved.length < 1
+      || value.priorFindingsResolved.some((finding) => {
+        try {
+          exactKeys(finding, ['id', 'severity', 'status'], 'provider-backed resolved finding');
+          return !['critical', 'important'].includes(finding.severity)
+            || finding.status !== 'resolved'
+            || typeof finding.id !== 'string' || finding.id.length < 3;
+        } catch {
+          return true;
+        }
+      })) {
+    throw new Error('provider-backed prior finding resolution is invalid');
+  }
+  if (!Array.isArray(value.verification) || value.verification.length < 1
+      || value.verification.some((entry) => {
+        try {
+          exactKeys(entry, ['command', 'result'], 'provider-backed review verification');
+          return typeof entry.command !== 'string' || entry.command.length < 3
+            || typeof entry.result !== 'string' || entry.result.length < 3;
+        } catch {
+          return true;
+        }
+      })) {
+    throw new Error('provider-backed review verification is invalid');
+  }
+  const { attestationDigest, ...unsigned } = value;
+  digest(attestationDigest, 'provider-backed review attestation');
+  if (attestationDigest !== sha256Value(unsigned)) {
+    throw new Error('provider-backed review attestation digest mismatch');
+  }
+  return value;
+}
+
 export function verifyProviderBackedMissionDependenciesReceipt(value) {
   exactKeys(value, [
     'schemaVersion', 'certificationId', 'status', 'protocolId', 'source',
@@ -289,7 +343,18 @@ export function verifyProviderBackedMissionDependenciesReceipt(value) {
     throw new Error('provider-backed receipt evidence is invalid');
   }
   verifyTestRuns(value.testRuns);
-  if (!same(value.review, review)) throw new Error('provider-backed review is invalid');
+  exactKeys(value.review, [
+    'mode', 'independent', 'path', 'fileSha256', 'value',
+    'unresolvedCriticalDefects', 'unresolvedImportantDefects',
+  ], 'provider-backed review');
+  const attestation = verifyReviewAttestation(value.review.value);
+  if (value.review.mode !== 'independent-terra' || value.review.independent !== true
+      || value.review.path !== reviewPath || !DIGEST.test(value.review.fileSha256)
+      || value.review.fileSha256 !== sha256Text(`${canonicalJson(attestation)}\n`)
+      || value.review.unresolvedCriticalDefects !== attestation.findings.critical
+      || value.review.unresolvedImportantDefects !== attestation.findings.important) {
+    throw new Error('provider-backed review is invalid');
+  }
   if (!same(value.proofLimits, proofLimits)) throw new Error('provider-backed proof limits are invalid');
   const { receiptDigest, ...unsigned } = value;
   digest(receiptDigest, 'provider-backed receipt digest');
@@ -309,6 +374,16 @@ export async function buildProviderBackedMissionDependenciesReceiptFromSource({
   const actualRoots = Object.fromEntries(await Promise.all(Object.keys(protectedTrustRoots)
     .map(async (path) => [path, sha256Text(await gitText(root, sourceCommit, path))])));
   if (!same(actualRoots, protectedTrustRoots)) throw new Error('provider-backed protected trust root changed');
+  const reviewText = await gitText(root, sourceCommit, reviewPath);
+  const attestation = verifyReviewAttestation(JSON.parse(reviewText));
+  if (reviewText !== `${canonicalJson(attestation)}\n`) {
+    throw new Error('provider-backed review attestation is not canonical');
+  }
+  await assertCommit(root, attestation.baseCommit);
+  await assertCommit(root, attestation.reviewedCommit);
+  if (!same(await changedPathsBetween(root, attestation.reviewedCommit, sourceCommit), [reviewPath])) {
+    throw new Error('provider-backed source changed outside the reviewed attestation artifact');
+  }
   const unsigned = {
     schemaVersion: 1,
     certificationId,
@@ -330,7 +405,15 @@ export async function buildProviderBackedMissionDependenciesReceiptFromSource({
     requirements: structuredClone(requirements),
     metrics: structuredClone(fixture.assertions),
     testRuns: structuredClone(testRuns),
-    review: structuredClone(review),
+    review: {
+      mode: 'independent-terra',
+      independent: true,
+      path: reviewPath,
+      fileSha256: sha256Text(reviewText),
+      value: structuredClone(attestation),
+      unresolvedCriticalDefects: attestation.findings.critical,
+      unresolvedImportantDefects: attestation.findings.important,
+    },
     proofLimits: [...proofLimits],
   };
   return Object.freeze(verifyProviderBackedMissionDependenciesReceipt({
