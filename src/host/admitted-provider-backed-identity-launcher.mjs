@@ -4,6 +4,7 @@ import {
   createProviderBackedMissionDependencies,
   verifyProviderBackedMissionDependenciesDescription,
 } from './provider-backed-mission-dependencies.mjs';
+import { launchAdmittedSealedIdentityMission } from './admitted-sealed-identity-launch.mjs';
 
 const PROTOCOL_ID = 'eternities-admitted-provider-backed-identity-launcher-v1';
 const CONFIGURATION_FIELDS = Object.freeze([
@@ -28,6 +29,19 @@ const AUTHORITY = Object.freeze({
   lunari: false,
   soul: false,
 });
+const LAUNCH_FIELDS = Object.freeze([
+  'admissionRoot',
+  'policyPath',
+  'request',
+  'identityPolicyDigest',
+  'registryRoot',
+  'clock',
+  'godskillsClock',
+  'checkpoint',
+  'lockOptions',
+  'godskillsLockOptions',
+]);
+const DIGEST = /^[a-f0-9]{64}$/;
 
 function object(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -82,7 +96,13 @@ export async function createAdmittedProviderBackedIdentityLauncher(configuration
       || Object.keys(configuration).some((key) => !CONFIGURATION_FIELDS.includes(key))) {
     throw new TypeError('admitted provider-backed identity launcher configuration is invalid');
   }
-  const dependencies = await createProviderBackedMissionDependencies(configuration);
+  const artifactCache = configuration.artifactCache ?? new Map();
+  const io = configuration.io ?? {};
+  const dependencies = await createProviderBackedMissionDependencies({
+    ...configuration,
+    artifactCache,
+    io,
+  });
   const unsigned = {
     schemaVersion: 1,
     protocolId: PROTOCOL_ID,
@@ -97,8 +117,34 @@ export async function createAdmittedProviderBackedIdentityLauncher(configuration
     describe() {
       return deepFreeze(clone(description));
     },
-    async launch() {
-      throw new Error('admitted provider-backed identity launch is not implemented');
+    async launch(input = {}) {
+      if (!object(input)
+          || Object.keys(input).some((key) => !LAUNCH_FIELDS.includes(key))
+          || !['admissionRoot', 'policyPath', 'request', 'identityPolicyDigest']
+            .every((key) => Object.hasOwn(input, key))) {
+        throw new TypeError('admitted provider-backed identity launch request fields are invalid');
+      }
+      if (!DIGEST.test(input.identityPolicyDigest)) {
+        throw new TypeError('admitted provider-backed identity policy digest is invalid');
+      }
+      const request = clone(input.request);
+      return launchAdmittedSealedIdentityMission({
+        admissionRoot: input.admissionRoot,
+        policyPath: input.policyPath,
+        request,
+        env: { GODAGENT_IDENTITY_POLICY_SHA256: input.identityPolicyDigest },
+        registryRoot: input.registryRoot,
+        nativeTransport: dependencies.nativeTransport,
+        reviewExecutor: dependencies.reviewExecutor,
+        revisionExecutor: dependencies.revisionExecutor,
+        clock: input.clock,
+        godskillsClock: input.godskillsClock,
+        checkpoint: input.checkpoint,
+        lockOptions: input.lockOptions,
+        godskillsLockOptions: input.godskillsLockOptions,
+        artifactCache,
+        io,
+      });
     },
   });
 }

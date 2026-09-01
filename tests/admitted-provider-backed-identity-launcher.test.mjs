@@ -129,3 +129,48 @@ test('launcher description and construction reject dependency or authority subst
   );
   assert.equal(state.providerCalls, 0);
 });
+
+test('launch surface delegates only explicit policy-pinned inputs and rejects dependency injection', async (t) => {
+  const subject = await loadSubject();
+  const state = await providerHost(t);
+  const launcher = await subject.createAdmittedProviderBackedIdentityLauncher({
+    host: state.host,
+    releasePin: pinnedGodskillsReviewRelease('C:/dev/eternities-godskills'),
+  });
+  const base = {
+    admissionRoot: join(tmpdir(), 'missing-admitted-provider-backed-identity'),
+    policyPath: join(tmpdir(), 'missing-admitted-provider-backed-policy.json'),
+    request: {},
+    identityPolicyDigest: 'a'.repeat(64),
+  };
+
+  await assert.rejects(
+    launcher.launch(base),
+    (error) => error?.name === 'AdmittedSealedIdentityLaunchError'
+      && error.code === 'admission-invalid',
+  );
+  for (const [field, value] of [
+    ['env', { PROVIDER_SECRET: 'forbidden' }],
+    ['providerFamily', 'openai-compatible-chat-completions-v1'],
+    ['credentials', 'forbidden'],
+    ['releasePin', {}],
+    ['nativeTransport', {}],
+    ['reviewExecutor', {}],
+    ['revisionExecutor', {}],
+    ['activationClassifier', {}],
+    ['realm', {}],
+    ['continuity', {}],
+    ['soul', {}],
+  ]) {
+    await assert.rejects(
+      launcher.launch({ ...base, [field]: value }),
+      /launch request fields|launch request.*invalid/i,
+      field,
+    );
+  }
+  await assert.rejects(
+    launcher.launch({ ...base, identityPolicyDigest: 'A'.repeat(64) }),
+    /identity policy digest/i,
+  );
+  assert.equal(state.providerCalls, 0);
+});
