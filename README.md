@@ -47,6 +47,7 @@ npm run certify:codex-turn-journal
 npm run certify:codex-recoverable-turn
 npm run certify:openai-compatible-phase-transport
 npm run certify:provider-backed-mission-dependencies
+npm run certify:admitted-provider-backed-identity-launcher
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -532,3 +533,9 @@ The outbox never stores the caller-resupplied response body, dispatch body, cred
 The [provider-backed dependency design](docs/superpowers/specs/2026-08-31-provider-backed-mission-dependencies-v1-design.md) closes the missing production seam between the certified provider host and the recoverable identity vessel. One SDK-issued provider host and one exact Godskills release become a native transport, deferred review executor, and revision executor with a self-verifying policy-ready description. An unforgeable process-local brand rejects descriptor-equivalent caller objects, every live phase descriptor must equal the host description before the bridge pins it, and the review and revision executor identities mechanically bind their transport, materializer, release, and activation roots.
 
 Construction remains credential-lazy and performs no provider call. It does not choose a provider, author or launch an identity policy, resolve ambiguity, sign a decision, retry a model call, or gain Realm, identity, continuity, evolution, Inspiration, Lunari, or Soul authority. `npm run certify:provider-backed-mission-dependencies` runs both certified provider families through the real admitted identity mission, including native generation, review, revision, final review, and exact terminal replay with no repeated provider, routing, or activation work.
+
+### Admitted provider-backed identity launcher v1
+
+The [admitted launcher design](docs/superpowers/specs/2026-08-31-admitted-provider-backed-identity-launcher-v1-design.md) closes the remaining manual composition seam without absorbing policy authority. Construction captures one provider-backed dependency bundle and returns a deeply frozen description that an external authority can use to author the existing identity-host policy. The launch method accepts only the admission, policy path, mission request, explicit identity-policy digest, and bounded host controls; it cannot accept a provider family, credential, replacement release, direct transport, direct executor, classifier, Realm handle, continuity handle, or Soul handle.
+
+Every call delegates to the existing admitted sealed identity host with the exact native, review, and revision handles captured at construction. The host continues to enforce admission, policy, request, dependency, residency, recovery, and replay. `npm run certify:admitted-provider-backed-identity-launcher` reconstructs the launcher for both certified provider families, executes the complete reviewed mission, scans all durable files for the credential canary, and proves exact terminal replay with no repeated provider, routing, or activation work.

@@ -370,6 +370,12 @@ The provider-backed dependency bridge consumes one SDK-issued host rather than s
 
 The description is sufficient for an external authority to author the corresponding identity-host policy, but the bridge cannot author, pin, or launch that policy. Credentials remain lazy inside the provider transport, and construction performs no provider request. Ambiguous provider outcomes remain pending under the existing signed resolution controller and authority outbox. The bridge adds no retry, journal, Realm effect, identity mutation, continuity admission, evolution, Inspiration, Lunari, or Soul authority.
 
+## Admitted provider-backed identity launcher boundary
+
+The admitted provider-backed launcher captures one certified provider-backed dependency bundle and exposes its complete immutable description before launch. An external authority may use that description to author the existing identity-host policy, but the launcher cannot create or approve the policy. Its launch surface accepts one explicit identity-policy digest and the ordinary admitted-host request only; provider choice, credentials, release replacement, direct transports, direct executors, classifiers, Realm handles, continuity handles, and Soul handles are absent.
+
+Every launch delegates to the existing admitted sealed identity host with the exact native, review, and revision handles captured at construction. The existing host therefore retains admission, policy, request, routing, dependency, residency, recovery, and replay enforcement. Reconstructing the launcher with the same certified host and Godskills release reproduces the same description; terminal vessel replay performs no new provider, routing, or activation work.
+
 ## Provider-neutral signed phase resolution boundary
 
 The neutral durable engine admits one optional operator port that is absent from ordinary native, review, and revision adapters. Its canonical externally pinned policy binds the exact provider transport policy, one Ed25519 public authority, a decision lifetime, and an adopted-response ceiling. The signed decision binds the exact phase, dispatch, request, original attempt, disposition, nonce, times, and provider-neutral response witness. Neither the private signing key nor provider credential enters durable state.

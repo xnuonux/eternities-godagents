@@ -32,7 +32,7 @@ const protectedTrustRoots = Object.freeze({
   'src/skills/deferred-review-executor.mjs': '546d912f428de5cf61d16089ba657f023fb86949ff70c00c57d62644be451d4f',
 });
 
-const historicalReceiptPaths = Object.freeze([
+export const providerBackedMissionHistoricalReceiptPaths = Object.freeze([
   'admitted-sealed-identity-host-v1.json',
   'admitted-sealed-typed-execution-host-v1.json',
   'codex-bound-turn-v1.json',
@@ -325,7 +325,10 @@ export function verifyProviderBackedMissionDependenciesReceipt(value) {
     'implementationManifest', 'testManifest',
   ], 'provider-backed source');
   if (!COMMIT.test(value.source.commit)
-      || !same(Object.keys(value.source.historicalReceiptDigests), historicalReceiptPaths)) {
+      || !same(
+        Object.keys(value.source.historicalReceiptDigests),
+        providerBackedMissionHistoricalReceiptPaths,
+      )) {
     throw new Error('provider-backed source history is invalid');
   }
   Object.values(value.source.historicalReceiptDigests).forEach((entry) => digest(entry, 'historical receipt'));
@@ -393,7 +396,11 @@ export async function buildProviderBackedMissionDependenciesReceiptFromSource({
     protocolId,
     source: {
       commit: sourceCommit,
-      historicalReceiptDigests: await historicalAtCommit(root, sourceCommit, historicalReceiptPaths),
+      historicalReceiptDigests: await historicalAtCommit(
+        root,
+        sourceCommit,
+        providerBackedMissionHistoricalReceiptPaths,
+      ),
       protectedTrustRoots: structuredClone(protectedTrustRoots),
       implementationManifest: await manifestAtCommit(root, sourceCommit, implementationFiles),
       testManifest: await manifestAtCommit(root, sourceCommit, testFiles),

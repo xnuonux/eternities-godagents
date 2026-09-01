@@ -8,6 +8,7 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 
 const registry = Object.freeze({
+  'admitted-provider-backed-identity-launcher-v1.json': 'admitted-provider-backed-identity-launcher-v1',
   'admitted-sealed-identity-host-v1.json': 'admitted-sealed-identity-host-v1',
   'admitted-sealed-typed-execution-host-v1.json': 'admitted-sealed-typed-execution-host-v1',
   'codex-bound-turn-v1.json': 'codex-bound-turn-v1',
@@ -54,8 +55,11 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
+const expectedFilesBeforeAdmittedProviderLauncher = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'admitted-provider-backed-identity-launcher-v1.json',
+));
 const requiredHistoricalLinks = Object.freeze({
-  'provider-neutral-phase-protocol-v1.json': Object.freeze(expectedFiles
+  'provider-neutral-phase-protocol-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => ![
       'durable-anthropic-messages-phase-transport-v1.json',
       'provider-phase-host-sdk-v1.json',
@@ -68,7 +72,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
-  'receipt-bound-typed-executor-bundle-v1.json': Object.freeze(expectedFiles
+  'receipt-bound-typed-executor-bundle-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => ![
       'durable-anthropic-messages-phase-transport-v1.json',
       'provider-phase-host-sdk-v1.json',
@@ -82,7 +86,7 @@ const requiredHistoricalLinks = Object.freeze({
       'receipt-bound-typed-executor-bundle-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
-  'durable-anthropic-messages-phase-transport-v1.json': Object.freeze(expectedFiles
+  'durable-anthropic-messages-phase-transport-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => ![
       'durable-anthropic-messages-phase-transport-v1.json',
       'provider-phase-host-sdk-v1.json',
@@ -94,7 +98,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
-  'provider-phase-host-sdk-v1.json': Object.freeze(expectedFiles
+  'provider-phase-host-sdk-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => ![
       'provider-phase-host-sdk-v1.json', 'provider-neutral-phase-resolution-v1.json',
       'provider-resolution-authority-handoff-v1.json',
@@ -104,7 +108,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
-  'provider-neutral-phase-resolution-v1.json': Object.freeze(expectedFiles
+  'provider-neutral-phase-resolution-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => ![
       'provider-neutral-phase-resolution-v1.json',
       'provider-resolution-authority-handoff-v1.json',
@@ -113,7 +117,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-resolution-decision-preparer-v1.json', 'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
-  'provider-resolution-profile-v1.json': Object.freeze(expectedFiles
+  'provider-resolution-profile-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => ![
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
@@ -121,7 +125,7 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-resolution-decision-preparer-v1.json', 'provider-resolution-profile-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
-  'provider-resolution-decision-preparer-v1.json': Object.freeze(expectedFiles
+  'provider-resolution-decision-preparer-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => ![
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
@@ -129,21 +133,24 @@ const requiredHistoricalLinks = Object.freeze({
       'provider-resolution-decision-preparer-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
-  'provider-resolution-authority-handoff-v1.json': Object.freeze(expectedFiles
+  'provider-resolution-authority-handoff-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => ![
       'provider-resolution-authority-handoff-v1.json',
       'provider-resolution-authority-outbox-v1.json',
       'provider-backed-mission-dependencies-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
-  'provider-resolution-authority-outbox-v1.json': Object.freeze(expectedFiles
+  'provider-resolution-authority-outbox-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => ![
       'provider-resolution-authority-outbox-v1.json',
       'provider-backed-mission-dependencies-v1.json',
     ].includes(file))
     .map((file) => `receipts/${file}`)),
-  'provider-backed-mission-dependencies-v1.json': Object.freeze(expectedFiles
+  'provider-backed-mission-dependencies-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => file !== 'provider-backed-mission-dependencies-v1.json')
+    .map((file) => `receipts/${file}`)),
+  'admitted-provider-backed-identity-launcher-v1.json': Object.freeze(expectedFiles
+    .filter((file) => file !== 'admitted-provider-backed-identity-launcher-v1.json')
     .map((file) => `receipts/${file}`)),
   'admitted-sealed-identity-host-v1.json': Object.freeze([
     'receipts/codex-bound-turn-v1.json',
@@ -1016,6 +1023,23 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(providerBackedMissionDependencies.receipt)) {
       throw new Error('provider-backed mission dependency certification differs from exact source reconstruction');
+    }
+  }
+
+  const admittedProviderBackedIdentityLauncher = loaded.get(
+    'admitted-provider-backed-identity-launcher-v1.json',
+  );
+  if (admittedProviderBackedIdentityLauncher) {
+    const { buildAdmittedProviderBackedIdentityLauncherReceiptFromSource } = await import(
+      '../../scripts/build-admitted-provider-backed-identity-launcher-v1-receipt.mjs'
+    );
+    const rebuilt = await buildAdmittedProviderBackedIdentityLauncherReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: admittedProviderBackedIdentityLauncher.receipt.source.commit,
+      testRuns: admittedProviderBackedIdentityLauncher.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(admittedProviderBackedIdentityLauncher.receipt)) {
+      throw new Error('admitted provider-backed identity launcher certification differs from exact source reconstruction');
     }
   }
 
