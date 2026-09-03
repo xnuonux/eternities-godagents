@@ -1,0 +1,760 @@
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+import { canonicalJson } from '../core/canonical-json.mjs';
+import { sha256Text, sha256Value } from '../core/digest.mjs';
+
+const execFileAsync = promisify(execFile);
+
+export const CROSS_REPOSITORY_CURRENT_HEAD_PROTOCOL =
+  'eternities-godagents-cross-repository-current-head-certificate-v1';
+
+const COMMIT = /^[a-f0-9]{40}$/;
+const DIGEST = /^[a-f0-9]{64}$/;
+const ADAPTER_PROTOCOL = 'eternities-godskills-adapter-v1';
+const ACTIVATION_PROTOCOL = 'eternities-godskills-activation-v1';
+const SDK_PACKAGE_PATH = 'package.json';
+const SDK_ENTRYPOINT_PATH = 'src/sdk/index.mjs';
+const HOST_POLICY_PATH = 'fixtures/host-policy.json';
+const ADAPTIVE_SOURCE_PATH = 'scripts/lib/pinned-godskills-review-release.mjs';
+const BEACON_SNAPSHOT_PATH = 'receipts/eternities-beacon-release-v1-snapshot.json';
+const INTEGRATION_RECEIPT_PATH = 'receipts/godskills-v3-integration.json';
+const SDK_EXPORTS = Object.freeze([
+  'GODAGENT_SDK_PROTOCOL_ID',
+  'GODAGENT_SDK_VERSION',
+  'assertProviderPhaseHostInstance',
+  'createAdmittedProviderBackedIdentityLauncher',
+  'createProviderPhaseHost',
+  'describeGodagentSdk',
+  'verifyAdmittedProviderBackedIdentityLauncherDescription',
+  'verifyProviderPhaseHostDescription',
+]);
+const BOUNDARY_PATHS = Object.freeze([
+  'src/sdk/index.mjs',
+  'src/skills/godskills-adapter.mjs',
+  'src/skills/mission-binder.mjs',
+  'src/skills/release-verifier.mjs',
+  'tests/godskills-adaptive-activation.test.mjs',
+  'tests/godskills-mission-binder.test.mjs',
+  'tests/godskills-v3-integration.test.mjs',
+  'tests/portable-sdk-surface.test.mjs',
+].sort());
+const PROOF_LIMITS = Object.freeze([
+  'arbitrary-provider-or-model-quality',
+  'arbitrary-unseen-mission-routing-correctness',
+  'live-provider-quality',
+  'multi-host-distributed-activation',
+  'soul-or-inspiration-activation',
+  'this-certificate-is-stale-after-either-bound-head-moves',
+]);
+const ROOT_REFERENCES = Object.freeze([
+  ['systemReceipt', 'system-receipt'],
+  ['routerReceipt', 'router-receipt'],
+  ['compilerReceipt', 'compiler-receipt'],
+  ['portableReceipt', 'portable-receipt'],
+  ['portableManifest', 'portable-manifest'],
+]);
+const ACTIVATION_REFERENCES = Object.freeze([
+  ['executableReceipt', 'activation-executable-receipt'],
+  ['parentReceipt', 'activation-parent-receipt'],
+  ['entrypoint', 'activation-entrypoint'],
+  ['compiler', 'activation-compiler'],
+  ['policy', 'activation-policy'],
+  ['evidence', 'activation-evidence'],
+  ['contract', 'activation-contract'],
+]);
+const ACTIVATION_IDENTITY = Object.freeze({
+  executableReceipt: { id: 'adaptive-activation-executable-v1', status: 'verified-build' },
+  parentReceipt: { id: 'adaptive-activation-v1', status: 'experimental' },
+  policy: { id: 'adaptive-activation-policy-v1' },
+  evidence: { id: 'adaptive-activation-evidence-v1' },
+  contract: { id: 'adaptive-amplification-v1' },
+});
+const ROOT_IDENTITY = Object.freeze({
+  systemReceipt: { id: 'eternities-godskills-system-v3', status: 'certified' },
+  routerReceipt: { id: 'agent-native-router-v8', status: 'certified' },
+  compilerReceipt: { id: 'intent-compiler-v3', status: 'certified' },
+  portableReceipt: { status: 'certified-local-artifacts' },
+  portableManifest: { manifestId: 'portable-capabilities-v1', status: 'certified-local-artifacts' },
+});
+
+function cleanGitEnvironment() {
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.toUpperCase().startsWith('GIT_')),
+  );
+  env.GIT_CONFIG_GLOBAL = process.platform === 'win32' ? 'NUL' : '/dev/null';
+  env.GIT_CONFIG_NOSYSTEM = '1';
+  env.GIT_NO_REPLACE_OBJECTS = '1';
+  return env;
+}
+
+function deepFreeze(value) {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) deepFreeze(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
+function clone(value) {
+  return structuredClone(value);
+}
+
+function exactKeys(value, expected, label) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+  const actual = Object.keys(value).sort();
+  const wanted = [...expected].sort();
+  if (canonicalJson(actual) !== canonicalJson(wanted)) throw new Error(`${label} fields are invalid`);
+}
+
+function equal(left, right) {
+  return canonicalJson(left) === canonicalJson(right);
+}
+
+function requireDigest(value, label) {
+  if (typeof value !== 'string' || !DIGEST.test(value)) throw new Error(`${label} is not a SHA-256 digest`);
+}
+
+function requireCommit(value, label) {
+  if (typeof value !== 'string' || !COMMIT.test(value)) throw new Error(`${label} is not a full commit id`);
+}
+
+function requireRelativePath(value, label) {
+  if (typeof value !== 'string' || value.length === 0 || value.includes('\\')
+      || value.startsWith('/') || /^[a-zA-Z]:/.test(value) || /[\0\r\n?#]/.test(value)) {
+    throw new Error(`${label} must be repository-relative`);
+  }
+  const parts = value.split('/');
+  if (parts.some((part) => part.length === 0 || part === '.' || part === '..')) {
+    throw new Error(`${label} must be repository-relative`);
+  }
+}
+
+function parseJson(text, label) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`${label} is not valid JSON`);
+  }
+}
+
+function requireCanonicalJsonText(text, value, label) {
+  if (text !== `${canonicalJson(value)}\n`) throw new Error(`${label} is not canonical JSON`);
+}
+
+async function gitText(repositoryRoot, args, label) {
+  try {
+    const { stdout } = await execFileAsync('git', ['-C', repositoryRoot, ...args], {
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024,
+      windowsHide: true,
+      env: cleanGitEnvironment(),
+    });
+    return stdout;
+  } catch {
+    throw new Error(`${label} is unavailable`);
+  }
+}
+
+async function resolveCommit(repositoryRoot, ref, label) {
+  const commit = (await gitText(
+    repositoryRoot,
+    ['rev-parse', '--verify', `${ref}^{commit}`],
+    `${label} reference`,
+  )).trim();
+  requireCommit(commit, `${label} resolved commit`);
+  return commit;
+}
+
+async function requireCommitObject(repositoryRoot, commit, label) {
+  requireCommit(commit, label);
+  await gitText(repositoryRoot, ['cat-file', '-e', `${commit}^{commit}`], `${label} object`);
+}
+
+async function isAncestor(repositoryRoot, ancestor, descendant, label) {
+  requireCommit(ancestor, `${label} ancestor`);
+  requireCommit(descendant, `${label} descendant`);
+  try {
+    await execFileAsync('git', ['-C', repositoryRoot, 'merge-base', '--is-ancestor', ancestor, descendant], {
+      windowsHide: true,
+      env: cleanGitEnvironment(),
+    });
+  } catch {
+    throw new Error(`${label} is not an ancestor`);
+  }
+}
+
+async function readBlob(repositoryRoot, commit, path, label) {
+  requireRelativePath(path, `${label} path`);
+  return gitText(repositoryRoot, ['show', `${commit}:${path}`], label);
+}
+
+async function hashBlob(repositoryRoot, commit, path, label) {
+  return sha256Text(await readBlob(repositoryRoot, commit, path, label));
+}
+
+function parseSdkExports(source) {
+  const names = new Set();
+  for (const match of source.matchAll(/\bexport\s+(?:const|function|class)\s+([A-Za-z_$][\w$]*)/g)) {
+    names.add(match[1]);
+  }
+  for (const match of source.matchAll(/\bexport\s*\{([\s\S]*?)\}\s*from\s*/g)) {
+    for (const part of match[1].split(',')) {
+      const name = part.trim().split(/\s+as\s+/)[0];
+      if (/^[A-Za-z_$][\w$]*$/.test(name)) names.add(name);
+    }
+  }
+  return [...names].sort();
+}
+
+function referenceRows(pin) {
+  const rows = [];
+  for (const [key, role] of ROOT_REFERENCES) {
+    const reference = pin?.[key];
+    if (!reference) throw new Error(`Godskills release pin lacks ${key}`);
+    rows.push({ role, path: reference.path, sha256: reference.sha256 });
+  }
+  if (pin.activation !== undefined) {
+    for (const [key, role] of ACTIVATION_REFERENCES) {
+      const reference = pin.activation?.[key];
+      if (!reference) throw new Error(`Godskills activation pin lacks ${key}`);
+      rows.push({ role, path: reference.path, sha256: reference.sha256 });
+    }
+    for (const reference of pin.activation.dependencies ?? []) {
+      rows.push({ role: 'activation-dependency', path: reference.path, sha256: reference.sha256 });
+    }
+    for (const [key, role] of [['request', 'activation-request-schema'], ['result', 'activation-result-schema']]) {
+      const reference = pin.activation.schemas?.[key];
+      if (!reference) throw new Error(`Godskills activation pin lacks ${key} schema`);
+      rows.push({ role, path: reference.path, sha256: reference.sha256 });
+    }
+  }
+  return rows.sort((left, right) => left.path.localeCompare(right.path) || left.role.localeCompare(right.role));
+}
+
+function assertReferenceRows(rows, pin, label) {
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error(`${label} are required`);
+  const expected = referenceRows(pin);
+  if (!equal(rows, expected)) throw new Error(`${label} do not match the exact release pin`);
+  const paths = rows.map(({ path }) => path);
+  if (new Set(paths).size !== paths.length) throw new Error(`${label} contain duplicate paths`);
+  for (const row of rows) {
+    requireRelativePath(row.path, `${label} path`);
+    requireDigest(row.sha256, `${label} digest`);
+  }
+}
+
+function requireRootIdentity(value, key, label) {
+  const expected = ROOT_IDENTITY[key];
+  if (!value || typeof value !== 'object') throw new Error(`${label} identity is missing`);
+  for (const [field, wanted] of Object.entries(expected)) {
+    if (value[field] !== wanted) throw new Error(`${label} identity mismatch`);
+  }
+}
+
+function requireActivationIdentity(value, key, label) {
+  const expected = ACTIVATION_IDENTITY[key];
+  if (!value || typeof value !== 'object') throw new Error(`${label} identity is missing`);
+  for (const [field, wanted] of Object.entries(expected)) {
+    if (value[field] !== wanted) throw new Error(`${label} identity mismatch`);
+  }
+}
+
+function validateTestRuns(testRuns) {
+  exactKeys(testRuns, ['godagentsFocused', 'godagentsFull', 'godskillsFocused'], 'test runs');
+  for (const [name, run] of Object.entries(testRuns)) {
+    exactKeys(run, ['status', 'tests'], `${name} test run`);
+    if (run.status !== 'pass' || !Number.isInteger(run.tests) || run.tests < 1) {
+      throw new Error(`${name} test run is not passing`);
+    }
+  }
+}
+
+function validateProofLimits(proofLimits) {
+  if (!Array.isArray(proofLimits) || !equal(proofLimits, [...PROOF_LIMITS])) {
+    throw new Error('proof limits are incomplete or reordered');
+  }
+}
+
+async function verifyPinArtifacts(repositoryRoot, commit, profile, label) {
+  if (!profile || typeof profile !== 'object') throw new Error(`${label} profile is missing`);
+  if (profile.pin?.adapterProtocol !== ADAPTER_PROTOCOL) throw new Error(`${label} adapter protocol is unsupported`);
+  assertReferenceRows(profile.artifactRows, profile.pin, `${label} artifact rows`);
+  for (const row of profile.artifactRows) {
+    const actual = await hashBlob(repositoryRoot, commit, row.path, `${label} ${row.path}`);
+    if (actual !== row.sha256) throw new Error(`${label} artifact digest mismatch: ${row.path}`);
+  }
+  for (const [key, _role] of ROOT_REFERENCES) {
+    const reference = profile.pin[key];
+    const value = parseJson(
+      await readBlob(repositoryRoot, commit, reference.path, `${label} ${key}`),
+      `${label} ${key}`,
+    );
+    requireRootIdentity(value, key, `${label} ${key}`);
+  }
+  const manifest = parseJson(
+    await readBlob(repositoryRoot, commit, profile.pin.portableManifest.path, `${label} portable manifest`),
+    `${label} portable manifest`,
+  );
+  if (manifest.manifestId !== 'portable-capabilities-v1'
+      || manifest.status !== 'certified-local-artifacts'
+      || !Array.isArray(manifest.capabilities)
+      || manifest.capabilities.length !== 44) {
+    throw new Error(`${label} portable manifest count is invalid`);
+  }
+  if (profile.pin.activation !== undefined) {
+    if (profile.pin.activation.protocolId !== ACTIVATION_PROTOCOL) {
+      throw new Error(`${label} activation protocol is unsupported`);
+    }
+    for (const [key] of Object.entries(ACTIVATION_IDENTITY)) {
+      const reference = profile.pin.activation[key];
+      const value = parseJson(
+        await readBlob(repositoryRoot, commit, reference.path, `${label} ${key}`),
+        `${label} ${key}`,
+      );
+      requireActivationIdentity(value, key, `${label} ${key}`);
+    }
+  }
+}
+
+function validateBoundaryEvidence(boundaries, evidence, integration) {
+  exactKeys(boundaries, ['noAuthorityExpansion', 'noImplicitActivation'], 'boundary evidence');
+  exactKeys(boundaries.noImplicitActivation, [
+    'canonicalHostActivation', 'completeActivationTuple', 'evidencePaths',
+    'incompleteTupleFailsClosed', 'legacyOperationPreserved',
+  ], 'implicit activation boundary');
+  if (boundaries.noImplicitActivation.canonicalHostActivation !== 'absent'
+      || !equal(boundaries.noImplicitActivation.completeActivationTuple, [
+        'verified-root', 'classifier', 'transport',
+      ])
+      || boundaries.noImplicitActivation.incompleteTupleFailsClosed !== true
+      || boundaries.noImplicitActivation.legacyOperationPreserved !== true
+      || !equal(boundaries.noImplicitActivation.evidencePaths, [
+        'src/skills/mission-binder.mjs',
+        'tests/godskills-adaptive-activation.test.mjs',
+      ])) {
+    throw new Error('implicit activation boundary is not exact');
+  }
+  exactKeys(boundaries.noAuthorityExpansion, [
+    'authorityExpansions', 'evidencePaths', 'hostCeilingsRemainAuthoritative',
+    'unselectedBodyLoads',
+  ], 'authority boundary');
+  if (boundaries.noAuthorityExpansion.authorityExpansions !== 0
+      || boundaries.noAuthorityExpansion.unselectedBodyLoads !== 0
+      || boundaries.noAuthorityExpansion.hostCeilingsRemainAuthoritative !== true
+      || !equal(boundaries.noAuthorityExpansion.evidencePaths, [
+        'src/skills/godskills-adapter.mjs',
+        'src/skills/mission-binder.mjs',
+        'tests/godskills-mission-binder.test.mjs',
+        'tests/godskills-v3-integration.test.mjs',
+        INTEGRATION_RECEIPT_PATH,
+      ])) {
+    throw new Error('authority boundary is not exact');
+  }
+  if (integration.metrics.authorityExpansions !== 0
+      || integration.metrics.unselectedBodyLoads !== 0) {
+    throw new Error('integration evidence reports an authority or body-load expansion');
+  }
+  const boundEvidencePaths = new Set([
+    ...evidence.boundaryFiles.map(({ path }) => path),
+    evidence.integrationReceipt.path,
+  ]);
+  for (const path of [
+    ...boundaries.noImplicitActivation.evidencePaths,
+    ...boundaries.noAuthorityExpansion.evidencePaths,
+  ]) {
+    if (!boundEvidencePaths.has(path)) {
+      throw new Error(`boundary evidence path is not bound: ${path}`);
+    }
+  }
+}
+
+function validateReceiptShape(receipt) {
+  exactKeys(receipt, [
+    'schemaVersion', 'status', 'protocolId', 'source', 'godagents', 'godskills',
+    'boundaries', 'proofLimits', 'testRuns', 'receiptDigest',
+  ], 'cross-repository certificate');
+  if (receipt.schemaVersion !== 1 || receipt.status !== 'certified'
+      || receipt.protocolId !== CROSS_REPOSITORY_CURRENT_HEAD_PROTOCOL) {
+    throw new Error('cross-repository certificate identity is invalid');
+  }
+  requireDigest(receipt.receiptDigest, 'cross-repository certificate receipt digest');
+  const { receiptDigest, ...unsigned } = receipt;
+  if (receiptDigest !== sha256Value(unsigned)) throw new Error('cross-repository certificate receipt digest mismatch');
+  exactKeys(receipt.source, ['godagents', 'godskills'], 'certificate source');
+  for (const [name, source] of Object.entries(receipt.source)) {
+    exactKeys(source, ['commit', 'refs', 'repository'], `${name} source`);
+    requireCommit(source.commit, `${name} source commit`);
+    if (source.repository !== `eternities-${name}`) throw new Error(`${name} repository identity mismatch`);
+    exactKeys(source.refs, ['main', 'originMain'], `${name} source refs`);
+    requireCommit(source.refs.main, `${name} main ref`);
+    requireCommit(source.refs.originMain, `${name} origin main ref`);
+  }
+  validateTestRuns(receipt.testRuns);
+  validateProofLimits(receipt.proofLimits);
+}
+
+async function verifySdk(repositoryRoot, commit, sdk) {
+  exactKeys(sdk, ['entrypoint', 'packageExports', 'packageExportsDigest', 'packageSha256', 'rootExports'], 'SDK surface');
+  if (sdk.entrypoint.path !== SDK_ENTRYPOINT_PATH) throw new Error('SDK entrypoint path mismatch');
+  requireDigest(sdk.entrypoint.sha256, 'SDK entrypoint digest');
+  requireDigest(sdk.packageSha256, 'SDK package digest');
+  requireDigest(sdk.packageExportsDigest, 'SDK export-map digest');
+  const packageText = await readBlob(repositoryRoot, commit, SDK_PACKAGE_PATH, 'SDK package');
+  const packageValue = parseJson(packageText, 'SDK package');
+  if (sha256Text(packageText) !== sdk.packageSha256) throw new Error('SDK package digest mismatch');
+  if (packageValue.exports === undefined || !equal(packageValue.exports, sdk.packageExports)) {
+    throw new Error('SDK export map mismatch');
+  }
+  if (sha256Value(packageValue.exports) !== sdk.packageExportsDigest) throw new Error('SDK export-map digest mismatch');
+  if (!equal(packageValue.exports, { '.': `./${SDK_ENTRYPOINT_PATH}` })) {
+    throw new Error('SDK export map is not the closed root map');
+  }
+  const source = await readBlob(repositoryRoot, commit, SDK_ENTRYPOINT_PATH, 'SDK entrypoint');
+  if (sha256Text(source) !== sdk.entrypoint.sha256) throw new Error('SDK entrypoint digest mismatch');
+  if (!equal(parseSdkExports(source), sdk.rootExports) || !equal(sdk.rootExports, SDK_EXPORTS)) {
+    throw new Error('SDK root export set mismatch');
+  }
+}
+
+async function verifyHostRelease(repositoryRoot, commit, hostRelease) {
+  exactKeys(hostRelease, ['path', 'pin', 'pinDigest', 'repositoryRoot', 'sha256'], 'host release input');
+  if (hostRelease.path !== HOST_POLICY_PATH) throw new Error('host release path mismatch');
+  requireDigest(hostRelease.sha256, 'host policy digest');
+  requireDigest(hostRelease.pinDigest, 'host release pin digest');
+  const text = await readBlob(repositoryRoot, commit, hostRelease.path, 'host policy');
+  if (sha256Text(text) !== hostRelease.sha256) throw new Error('host policy digest mismatch');
+  const policy = parseJson(text, 'host policy');
+  const actual = policy?.runtime?.godskillsRelease;
+  if (!actual || !equal(actual, hostRelease.pin)) throw new Error('host release pin mismatch');
+  if (hostRelease.repositoryRoot !== actual.repositoryRoot
+      || hostRelease.pinDigest !== sha256Value(actual)) {
+    throw new Error('host release identity mismatch');
+  }
+  if (actual.activation !== undefined) throw new Error('canonical host unexpectedly enables adaptive activation');
+  return policy;
+}
+
+async function verifyAdaptiveSource(repositoryRoot, commit, source, godskillsRoot, godskillsCommit) {
+  exactKeys(source, ['path', 'sha256', 'sourceCommit'], 'adaptive release source');
+  if (source.path !== ADAPTIVE_SOURCE_PATH) throw new Error('adaptive release source path mismatch');
+  requireDigest(source.sha256, 'adaptive release source digest');
+  requireCommit(source.sourceCommit, 'adaptive release source commit');
+  const text = await readBlob(repositoryRoot, commit, source.path, 'adaptive release source');
+  if (sha256Text(text) !== source.sha256) throw new Error('adaptive release source digest mismatch');
+  const match = text.match(/pinnedGodskillsReviewSourceCommit\s*=\s*['"]([a-f0-9]{40})['"]/);
+  if (!match || match[1] !== source.sourceCommit) throw new Error('adaptive release source commit mismatch');
+  await requireCommitObject(godskillsRoot, source.sourceCommit, 'adaptive release source commit');
+  await isAncestor(godskillsRoot, source.sourceCommit, godskillsCommit, 'adaptive release source commit');
+}
+
+async function verifyBeacon(godskillsRoot, godskillsCommit, beacon) {
+  exactKeys(beacon, ['snapshot'], 'Beacon evidence');
+  exactKeys(beacon.snapshot, [
+    'currentHeadInterpretation', 'gitCommit', 'id', 'path', 'releaseReceiptPath',
+    'releaseReceiptSha256', 'schemaVersion', 'sha256', 'status',
+  ], 'Beacon snapshot');
+  const snapshot = beacon.snapshot;
+  if (snapshot.path !== BEACON_SNAPSHOT_PATH || snapshot.schemaVersion !== 1
+      || snapshot.id !== 'eternities-beacon-release-v1-snapshot'
+      || snapshot.status !== 'frozen-historical-snapshot'
+      || snapshot.currentHeadInterpretation !== 'historical receipt evidence only; current-head certification requires a new receipt') {
+    throw new Error('Beacon snapshot identity mismatch');
+  }
+  requireDigest(snapshot.sha256, 'Beacon snapshot digest');
+  requireDigest(snapshot.releaseReceiptSha256, 'Beacon release receipt digest');
+  requireCommit(snapshot.gitCommit, 'Beacon historical commit');
+  const snapshotText = await readBlob(godskillsRoot, godskillsCommit, snapshot.path, 'Beacon snapshot');
+  if (sha256Text(snapshotText) !== snapshot.sha256) throw new Error('Beacon snapshot digest mismatch');
+  const actual = parseJson(snapshotText, 'Beacon snapshot');
+  if (!equal(actual, {
+    schemaVersion: snapshot.schemaVersion,
+    id: snapshot.id,
+    status: snapshot.status,
+    releaseReceiptPath: snapshot.releaseReceiptPath,
+    releaseReceiptSha256: snapshot.releaseReceiptSha256,
+    gitCommit: snapshot.gitCommit,
+    currentHeadInterpretation: snapshot.currentHeadInterpretation,
+  })) throw new Error('Beacon snapshot content mismatch');
+  await requireCommitObject(godskillsRoot, snapshot.gitCommit, 'Beacon historical commit');
+  await isAncestor(godskillsRoot, snapshot.gitCommit, godskillsCommit, 'Beacon historical commit');
+  const releaseText = await readBlob(
+    godskillsRoot,
+    snapshot.gitCommit,
+    snapshot.releaseReceiptPath,
+    'Beacon historical release receipt',
+  );
+  if (sha256Text(releaseText) !== snapshot.releaseReceiptSha256) {
+    throw new Error('Beacon historical release receipt digest mismatch');
+  }
+}
+
+async function verifyEvidence(repositoryRoot, commit, godagents) {
+  exactKeys(godagents.evidence, ['boundaryFiles', 'integrationReceipt'], 'Godagents evidence');
+  if (!Array.isArray(godagents.evidence.boundaryFiles)
+      || !equal(godagents.evidence.boundaryFiles.map(({ path }) => path), [...BOUNDARY_PATHS])) {
+    throw new Error('Godagents boundary evidence paths are not canonical');
+  }
+  for (const row of godagents.evidence.boundaryFiles) {
+    exactKeys(row, ['path', 'sha256'], 'Godagents boundary evidence row');
+    requireRelativePath(row.path, 'Godagents boundary evidence path');
+    requireDigest(row.sha256, 'Godagents boundary evidence digest');
+    if (await hashBlob(repositoryRoot, commit, row.path, `Godagents evidence ${row.path}`) !== row.sha256) {
+      throw new Error(`Godagents boundary evidence drift: ${row.path}`);
+    }
+  }
+  exactKeys(godagents.evidence.integrationReceipt, ['metrics', 'path', 'receiptDigest', 'sha256'], 'integration evidence receipt');
+  const receiptRow = godagents.evidence.integrationReceipt;
+  if (receiptRow.path !== INTEGRATION_RECEIPT_PATH) throw new Error('integration evidence path mismatch');
+  requireDigest(receiptRow.sha256, 'integration evidence file digest');
+  requireDigest(receiptRow.receiptDigest, 'integration evidence receipt digest');
+  const text = await readBlob(repositoryRoot, commit, receiptRow.path, 'Godskills integration receipt');
+  if (sha256Text(text) !== receiptRow.sha256) throw new Error('Godskills integration receipt file digest mismatch');
+  const receipt = parseJson(text, 'Godskills integration receipt');
+  requireCanonicalJsonText(text, receipt, 'Godskills integration receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== 'godskills-v3-mission-binding'
+      || receipt.receiptDigest !== receiptRow.receiptDigest
+      || !equal(receipt.metrics, receiptRow.metrics)) {
+    throw new Error('Godskills integration evidence identity mismatch');
+  }
+  return receipt;
+}
+
+export async function verifyCrossRepositoryCurrentHeadCertificate(receipt, {
+  godagentsRoot,
+  godskillsRoot,
+  expectedGodagentsCommit,
+  expectedGodskillsCommit,
+  requireExactRefs = false,
+} = {}) {
+  validateReceiptShape(receipt);
+  const agentsSource = receipt.source.godagents;
+  const skillsSource = receipt.source.godskills;
+  if (expectedGodagentsCommit !== undefined) {
+    requireCommit(expectedGodagentsCommit, 'expected Godagents commit');
+    if (agentsSource.commit !== expectedGodagentsCommit) throw new Error('Godagents head does not match certificate');
+  }
+  if (expectedGodskillsCommit !== undefined) {
+    requireCommit(expectedGodskillsCommit, 'expected Godskills commit');
+    if (skillsSource.commit !== expectedGodskillsCommit) throw new Error('Godskills head does not match certificate');
+  }
+  await requireCommitObject(godagentsRoot, agentsSource.commit, 'Godagents source commit');
+  await requireCommitObject(godskillsRoot, skillsSource.commit, 'Godskills source commit');
+  for (const [name, root, source] of [
+    ['Godagents', godagentsRoot, agentsSource],
+    ['Godskills', godskillsRoot, skillsSource],
+  ]) {
+    if (requireExactRefs || source.refs.main !== source.commit || source.refs.originMain !== source.commit) {
+      if (await resolveCommit(root, 'main', `${name} main`) !== source.refs.main) {
+        throw new Error(`${name} main ref does not match certificate`);
+      }
+      if (await resolveCommit(root, 'origin/main', `${name} origin main`) !== source.refs.originMain) {
+        throw new Error(`${name} origin main ref does not match certificate`);
+      }
+    }
+    if (source.refs.main !== source.commit || source.refs.originMain !== source.commit) {
+      throw new Error(`${name} refs are not the certified current head`);
+    }
+  }
+
+  exactKeys(receipt.godagents, ['evidence', 'hostRelease', 'sdk'], 'Godagents certificate');
+  await verifySdk(godagentsRoot, agentsSource.commit, receipt.godagents.sdk);
+  await verifyHostRelease(godagentsRoot, agentsSource.commit, receipt.godagents.hostRelease);
+  const integration = await verifyEvidence(godagentsRoot, agentsSource.commit, receipt.godagents);
+
+  exactKeys(receipt.godskills, ['beacon', 'releaseInputs'], 'Godskills certificate');
+  exactKeys(receipt.godskills.releaseInputs, ['adaptiveReview', 'canonicalHost'], 'Godskills release inputs');
+  const canonicalHost = receipt.godskills.releaseInputs.canonicalHost;
+  exactKeys(canonicalHost, ['artifactRows', 'pin', 'pinDigest', 'profile'], 'canonical Godskills release input');
+  if (canonicalHost.profile !== 'canonical-host') throw new Error('canonical Godskills release profile mismatch');
+  requireDigest(canonicalHost.pinDigest, 'canonical Godskills pin digest');
+  if (canonicalHost.pinDigest !== sha256Value(canonicalHost.pin)) throw new Error('canonical Godskills pin digest mismatch');
+  await verifyPinArtifacts(godskillsRoot, skillsSource.commit, canonicalHost, 'canonical Godskills release');
+
+  const adaptiveReview = receipt.godskills.releaseInputs.adaptiveReview;
+  exactKeys(adaptiveReview, ['artifactRows', 'pin', 'pinDigest', 'profile', 'source'], 'adaptive Godskills release input');
+  if (adaptiveReview.profile !== 'adaptive-review') throw new Error('adaptive Godskills release profile mismatch');
+  requireDigest(adaptiveReview.pinDigest, 'adaptive Godskills pin digest');
+  if (adaptiveReview.pinDigest !== sha256Value(adaptiveReview.pin)) throw new Error('adaptive Godskills pin digest mismatch');
+  if (adaptiveReview.pin.activation === undefined) throw new Error('adaptive Godskills release lacks activation root');
+  await verifyPinArtifacts(godskillsRoot, skillsSource.commit, adaptiveReview, 'adaptive Godskills release');
+  await verifyAdaptiveSource(
+    godagentsRoot,
+    agentsSource.commit,
+    adaptiveReview.source,
+    godskillsRoot,
+    skillsSource.commit,
+  );
+  await verifyBeacon(godskillsRoot, skillsSource.commit, receipt.godskills.beacon);
+  validateBoundaryEvidence(receipt.boundaries, receipt.godagents.evidence, integration);
+
+  return Object.freeze({ status: 'verified', receiptDigest: receipt.receiptDigest });
+}
+
+async function collectSource(repositoryRoot, commit, refs, repository) {
+  const actualRefs = {
+    main: await resolveCommit(repositoryRoot, 'main', `${repository} main`),
+    originMain: await resolveCommit(repositoryRoot, 'origin/main', `${repository} origin main`),
+  };
+  if (!equal(actualRefs, refs)) throw new Error(`${repository} reconciled refs changed during certificate build`);
+  if (actualRefs.main !== commit || actualRefs.originMain !== commit) {
+    throw new Error(`${repository} commit is not the reconciled main head`);
+  }
+  return { repository, commit, refs: actualRefs };
+}
+
+async function collectIntegrationEvidence(repositoryRoot, commit) {
+  const boundaryFiles = [];
+  for (const path of BOUNDARY_PATHS) {
+    boundaryFiles.push({ path, sha256: await hashBlob(repositoryRoot, commit, path, `Godagents evidence ${path}`) });
+  }
+  const text = await readBlob(repositoryRoot, commit, INTEGRATION_RECEIPT_PATH, 'Godskills integration receipt');
+  const receipt = parseJson(text, 'Godskills integration receipt');
+  return {
+    boundaryFiles,
+    integrationReceipt: {
+      path: INTEGRATION_RECEIPT_PATH,
+      sha256: sha256Text(text),
+      receiptDigest: receipt.receiptDigest,
+      metrics: clone(receipt.metrics),
+    },
+  };
+}
+
+async function collectBeacon(godskillsRoot, godskillsCommit) {
+  const text = await readBlob(godskillsRoot, godskillsCommit, BEACON_SNAPSHOT_PATH, 'Beacon snapshot');
+  const snapshot = parseJson(text, 'Beacon snapshot');
+  return { snapshot: { path: BEACON_SNAPSHOT_PATH, sha256: sha256Text(text), ...snapshot } };
+}
+
+async function collectSdk(godagentsRoot, godagentsCommit) {
+  const packageText = await readBlob(godagentsRoot, godagentsCommit, SDK_PACKAGE_PATH, 'SDK package');
+  const packageValue = parseJson(packageText, 'SDK package');
+  const entrypointText = await readBlob(godagentsRoot, godagentsCommit, SDK_ENTRYPOINT_PATH, 'SDK entrypoint');
+  return {
+    entrypoint: { path: SDK_ENTRYPOINT_PATH, sha256: sha256Text(entrypointText) },
+    packageExports: clone(packageValue.exports),
+    packageExportsDigest: sha256Value(packageValue.exports),
+    packageSha256: sha256Text(packageText),
+    rootExports: parseSdkExports(entrypointText),
+  };
+}
+
+async function collectHostRelease(godagentsRoot, godagentsCommit) {
+  const text = await readBlob(godagentsRoot, godagentsCommit, HOST_POLICY_PATH, 'host policy');
+  const policy = parseJson(text, 'host policy');
+  const pin = policy?.runtime?.godskillsRelease;
+  if (!pin) throw new Error('host policy lacks Godskills release pin');
+  return {
+    path: HOST_POLICY_PATH,
+    sha256: sha256Text(text),
+    pinDigest: sha256Value(pin),
+    repositoryRoot: pin.repositoryRoot,
+    pin: clone(pin),
+  };
+}
+
+export async function buildCrossRepositoryCurrentHeadCertificate({
+  godagentsRoot,
+  godskillsRoot,
+  godagentsCommit,
+  godskillsCommit,
+  refs,
+  adaptiveReviewPin,
+  adaptiveReviewSource,
+  testRuns,
+} = {}) {
+  requireCommit(godagentsCommit, 'Godagents build commit');
+  requireCommit(godskillsCommit, 'Godskills build commit');
+  if (!refs?.godagents || !refs?.godskills) throw new Error('reconciled refs are required');
+  if (!adaptiveReviewPin || !adaptiveReviewSource) throw new Error('adaptive review input is required');
+  validateTestRuns(testRuns);
+  await requireCommitObject(godagentsRoot, godagentsCommit, 'Godagents build commit');
+  await requireCommitObject(godskillsRoot, godskillsCommit, 'Godskills build commit');
+  const [agents, skills, sdk, hostRelease, evidence, beacon, adaptiveSourceText] = await Promise.all([
+    collectSource(godagentsRoot, godagentsCommit, refs.godagents, 'eternities-godagents'),
+    collectSource(godskillsRoot, godskillsCommit, refs.godskills, 'eternities-godskills'),
+    collectSdk(godagentsRoot, godagentsCommit),
+    collectHostRelease(godagentsRoot, godagentsCommit),
+    collectIntegrationEvidence(godagentsRoot, godagentsCommit),
+    collectBeacon(godskillsRoot, godskillsCommit),
+    readBlob(godagentsRoot, godagentsCommit, adaptiveReviewSource.path, 'adaptive release source'),
+  ]);
+  const match = adaptiveSourceText.match(/pinnedGodskillsReviewSourceCommit\s*=\s*['"]([a-f0-9]{40})['"]/);
+  if (!match || match[1] !== adaptiveReviewSource.sourceCommit) {
+    throw new Error('adaptive review source does not declare the supplied Godskills commit');
+  }
+  const integration = JSON.parse(await readBlob(godagentsRoot, godagentsCommit, INTEGRATION_RECEIPT_PATH, 'Godskills integration receipt'));
+  const boundaries = {
+    noImplicitActivation: {
+      canonicalHostActivation: hostRelease.pin.activation === undefined ? 'absent' : 'present',
+      completeActivationTuple: ['verified-root', 'classifier', 'transport'],
+      evidencePaths: [
+        'src/skills/mission-binder.mjs',
+        'tests/godskills-adaptive-activation.test.mjs',
+      ],
+      incompleteTupleFailsClosed: true,
+      legacyOperationPreserved: true,
+    },
+    noAuthorityExpansion: {
+      authorityExpansions: integration.metrics.authorityExpansions,
+      evidencePaths: [
+        'src/skills/godskills-adapter.mjs',
+        'src/skills/mission-binder.mjs',
+        'tests/godskills-mission-binder.test.mjs',
+        'tests/godskills-v3-integration.test.mjs',
+        INTEGRATION_RECEIPT_PATH,
+      ],
+      hostCeilingsRemainAuthoritative: true,
+      unselectedBodyLoads: integration.metrics.unselectedBodyLoads,
+    },
+  };
+  const unsigned = {
+    schemaVersion: 1,
+    status: 'certified',
+    protocolId: CROSS_REPOSITORY_CURRENT_HEAD_PROTOCOL,
+    source: { godagents: agents, godskills: skills },
+    godagents: {
+      sdk,
+      hostRelease,
+      evidence,
+    },
+    godskills: {
+      beacon,
+      releaseInputs: {
+        canonicalHost: {
+          profile: 'canonical-host',
+          pin: clone(hostRelease.pin),
+          pinDigest: hostRelease.pinDigest,
+          artifactRows: referenceRows(hostRelease.pin),
+        },
+        adaptiveReview: {
+          profile: 'adaptive-review',
+          source: {
+            path: adaptiveReviewSource.path,
+            sha256: sha256Text(adaptiveSourceText),
+            sourceCommit: adaptiveReviewSource.sourceCommit,
+          },
+          pin: clone(adaptiveReviewPin),
+          pinDigest: sha256Value(adaptiveReviewPin),
+          artifactRows: referenceRows(adaptiveReviewPin),
+        },
+      },
+    },
+    boundaries,
+    proofLimits: [...PROOF_LIMITS],
+    testRuns: clone(testRuns),
+  };
+  const receipt = deepFreeze({ ...unsigned, receiptDigest: sha256Value(unsigned) });
+  await verifyCrossRepositoryCurrentHeadCertificate(receipt, {
+    godagentsRoot,
+    godskillsRoot,
+    expectedGodagentsCommit: godagentsCommit,
+    expectedGodskillsCommit: godskillsCommit,
+    requireExactRefs: true,
+  });
+  return receipt;
+}
