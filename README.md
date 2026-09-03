@@ -46,10 +46,10 @@ npm run certify:codex-bound-turn
 npm run certify:codex-turn-journal
 npm run certify:codex-recoverable-turn
 npm run certify:openai-compatible-phase-transport
-  npm run certify:provider-backed-mission-dependencies
-  npm run certify:admitted-provider-backed-identity-launcher
-  npm run build:provider-backed-identity-cli-fixture
-  npm run certify:provider-backed-identity-cli
+npm run certify:provider-backed-mission-dependencies
+npm run certify:admitted-provider-backed-identity-launcher
+npm run build:provider-backed-identity-cli-fixture
+npm run certify:provider-backed-identity-cli
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
