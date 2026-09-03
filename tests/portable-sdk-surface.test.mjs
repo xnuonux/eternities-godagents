@@ -84,6 +84,10 @@ test('package root exposes only the closed portable SDK surface', async () => {
     'createAnthropicMessagesPhaseTransportSuite',
     'createCredentialResolver',
   ]) assert.equal(Object.hasOwn(sdk, forbidden), false, forbidden);
+  await assert.rejects(
+    import('@eternities/godagents/package.json'),
+    (error) => error?.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED',
+  );
 });
 
 test('SDK descriptor is deterministic, deeply frozen, and honest about proof limits', async () => {
@@ -144,10 +148,55 @@ test('SDK launch factory preserves the closed admitted-launcher configuration', 
     sdk.createAdmittedProviderBackedIdentityLauncher({ unknown: true }),
     /configuration/i,
   );
+
+  const launcher = await sdk.createAdmittedProviderBackedIdentityLauncher({
+    host: state.host,
+    releasePin: pinnedGodskillsReviewRelease('C:/dev/eternities-godskills'),
+    maximumReviewMaterializedBytes: 65_536,
+    maximumRevisionMaterializedBytes: 32_768,
+    executorIdPrefix: 'portable-sdk-launcher-test',
+  });
+  const description = launcher.describe();
+  assert.deepEqual(Object.keys(launcher).sort(), ['describe', 'launch']);
+  assert.deepEqual(
+    sdk.verifyAdmittedProviderBackedIdentityLauncherDescription(description),
+    description,
+  );
+  assert.equal(Object.isFrozen(description), true);
+  assert.equal(state.providerCalls, 0);
+
+  const changedDescription = structuredClone(description);
+  changedDescription.bindingDigest = '0'.repeat(64);
+  assert.throws(
+    () => sdk.verifyAdmittedProviderBackedIdentityLauncherDescription(changedDescription),
+    /binding digest|description/i,
+  );
+
+  const launchRequest = {
+    admissionRoot: join(tmpdir(), 'missing-portable-sdk-admission'),
+    policyPath: join(tmpdir(), 'missing-portable-sdk-policy.json'),
+    request: {},
+    identityPolicyDigest: 'a'.repeat(64),
+  };
+  await assert.rejects(
+    launcher.launch(launchRequest),
+    (error) => error?.name === 'AdmittedSealedIdentityLaunchError'
+      && error.code === 'admission-invalid',
+  );
+  await assert.rejects(
+    launcher.launch({ ...launchRequest, reviewExecutor: {} }),
+    /launch request fields|launch request.*invalid/i,
+  );
   assert.equal(state.providerCalls, 0);
   assert.throws(
     () => sdk.verifyProviderPhaseHostDescription({ schemaVersion: 1 }),
     /fields|identity/i,
+  );
+  const changedHostDescription = structuredClone(state.host.describe());
+  changedHostDescription.descriptionDigest = '0'.repeat(64);
+  assert.throws(
+    () => sdk.verifyProviderPhaseHostDescription(changedHostDescription),
+    /digest|identity/i,
   );
   assert.equal(typeof pinnedGodskillsReviewRelease, 'function');
 });

@@ -623,4 +623,6 @@ Codex, Claude Code, local-model, or MCP adapter. It does not change default
 launch behavior and exposes no Realm, continuity, personal-keel, evolution,
 Inspiration, Lunari, or Soul operation. Future adapters must earn their own
 protocol and conformance evidence rather than being inferred from this
-surface.
+surface. Constructing a host or launcher reads the caller-selected policy and
+may create the caller-selected runtime directory; credential resolution and
+provider calls remain lazy and are not implied by construction.

@@ -16,7 +16,8 @@ are already interchangeable.
 
 The package root is `@eternities/godagents` and is mapped to
 `src/sdk/index.mjs`. The package remains private and has no runtime
-dependencies. The root export set is closed to these names:
+dependencies, and it exposes no package metadata subpath. The root export set
+is closed to these names:
 
 - `GODAGENT_SDK_PROTOCOL_ID`
 - `GODAGENT_SDK_VERSION`
@@ -51,6 +52,9 @@ rules:
 - Godskills release and activation roots remain caller-pinned and verified by
   the existing launcher;
 - no SDK descriptor field creates or expands authority;
+- construction may read the caller-selected policy and create the
+  caller-selected runtime directory, but it does not resolve credentials or
+  call a provider;
 - no SDK call silently selects a provider, model, retry policy, Realm hand,
   identity mutation, continuity write, evolution, Inspiration, Lunari, or
   Soul operation.

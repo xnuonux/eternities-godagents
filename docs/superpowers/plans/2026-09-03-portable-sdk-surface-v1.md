@@ -33,7 +33,7 @@
 - Consumes: `createProviderPhaseHost`, `verifyProviderPhaseHostDescription`, and `assertProviderPhaseHostInstance` from `src/host/provider-phase-host-sdk.mjs`; `createAdmittedProviderBackedIdentityLauncher` and its verifier from `src/host/admitted-provider-backed-identity-launcher.mjs`.
 - Produces: `GODAGENT_SDK_PROTOCOL_ID`, `GODAGENT_SDK_VERSION`, `describeGodagentSdk()`, and the five existing verified host/launcher functions from `src/sdk/index.mjs`; package self-reference `@eternities/godagents` resolves to that façade.
 
-- [ ] **Step 1: Write the failing export and descriptor tests**
+- [x] **Step 1: Write the failing export and descriptor tests**
 
 Add tests that import `@eternities/godagents` and assert the exact export list, descriptor fields, deep freezing, and absence of credential/path/provider-response/authority operation keys. Add a second test that calls `describeGodagentSdk()` twice, mutates neither result, and asserts canonical equality with distinct object identity.
 
@@ -47,7 +47,7 @@ node --test tests/portable-sdk-surface.test.mjs
 
 Expected: FAIL because the package has no `exports` map or SDK façade yet.
 
-- [ ] **Step 2: Implement the minimal façade**
+- [x] **Step 2: Implement the minimal façade**
 
 Create `src/sdk/index.mjs` with the following closed root exports:
 
@@ -70,14 +70,14 @@ Add the package export map:
 
 ```json
 "exports": {
-  ".": "./src/sdk/index.mjs",
-  "./package.json": "./package.json"
+  ".": "./src/sdk/index.mjs"
 }
 ```
 
-Do not add wildcard exports or alter the existing scripts.
+Do not add wildcard or metadata subpath exports, or alter the existing
+scripts.
 
-- [ ] **Step 3: Run the focused tests to verify green**
+- [x] **Step 3: Run the focused tests to verify green**
 
 Run:
 
@@ -98,17 +98,17 @@ fetch function is never called during either host construction.
 - Consumes: the package façade and the exact current provider host/launcher contracts from Task 1.
 - Produces: an operator-readable SDK section that names the supported scope and proof limits without implying a universal adapter product.
 
-- [ ] **Step 1: Add the compatibility assertions**
+- [x] **Step 1: Add the compatibility assertions**
 
 Extend the focused test with one assertion that the package root does not
 expose `createPersistentVessel`, `launchAdmittedSealedIdentityMission`, raw
 transport factories, credential resolvers, or any key containing `secret`,
 `credential`, `realm`, `keel`, `continuity`, `evolution`, `soul`, `lunari`, or
-`inspiration`. Assert that the two exported verifier functions reject a
-descriptor with a changed digest, preserving the existing fail-closed
-behavior through the façade.
+`inspiration`. Assert that the package metadata subpath is not exported and
+that the two exported verifier functions reject a descriptor with a changed
+digest, preserving the existing fail-closed behavior through the façade.
 
-- [ ] **Step 2: Run the focused regression tests**
+- [x] **Step 2: Run the focused regression tests**
 
 Run:
 
@@ -118,7 +118,7 @@ node --test tests/portable-sdk-surface.test.mjs tests/provider-phase-host-sdk.te
 
 Expected: all focused tests pass with zero failures.
 
-- [ ] **Step 3: Document the surface**
+- [x] **Step 3: Document the surface**
 
 Add a `Portable SDK surface v1` section after the provider-backed CLI section
 in `README.md`. Show a short import example, identify the two supported
@@ -126,7 +126,7 @@ provider families, state that the package remains private and experimental,
 and list the explicit non-goals: live quality, new adapters, default launch
 changes, public publication, and all authority-bearing systems.
 
-- [ ] **Step 4: Run the full verification**
+- [x] **Step 4: Run the full verification**
 
 Run:
 
@@ -151,21 +151,21 @@ remain valid, diff checking is clean, and only the planned files are changed.
 - Consumes: the exact candidate commit, focused and full test results, and the package façade design.
 - Produces: an independent review of export closure, descriptor honesty, authority preservation, and compatibility.
 
-- [ ] **Step 1: Request an independent review**
+- [x] **Step 1: Request an independent review**
 
 Give a reviewer the exact base and candidate commits plus the spec path. Ask
 for critical, important, and minor findings, with special attention to
 accidental internal exports, descriptor claims, environment or credential
 reads, and launch-path changes.
 
-- [ ] **Step 2: Resolve review findings**
+- [x] **Step 2: Resolve review findings**
 
 For every critical or important finding, add a regression test first, observe
 the failure, apply the smallest fix, and rerun the focused and full gates.
 Record any valid minor finding as a bounded follow-up rather than expanding
 this slice.
 
-- [ ] **Step 3: Decide integration without changing main implicitly**
+- [x] **Step 3: Decide integration without changing main implicitly**
 
 Only after fresh verification and review, report the exact branch, commit,
 files, test counts, and proof limits. Do not create a certification receipt or

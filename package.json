@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/sdk/index.mjs",
-    "./package.json": "./package.json"
+    ".": "./src/sdk/index.mjs"
   },
   "engines": {
     "node": ">=24"
