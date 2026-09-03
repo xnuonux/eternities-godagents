@@ -599,3 +599,28 @@ projection, malformed-result rejection, parser failure with empty stdout, and
 zero disclosure of credentials, paths, artifacts, or provider bodies. The
 source-bound receipt preserves all forty-five historical receipt files and
 adds `receipts/provider-backed-identity-cli-v1.json` as the forty-sixth entry.
+
+### Portable SDK surface v1
+
+The package root `@eternities/godagents` now exposes a small experimental
+import surface over the existing provider-neutral host and admitted
+provider-backed launcher:
+
+```js
+import {
+  createProviderPhaseHost,
+  createAdmittedProviderBackedIdentityLauncher,
+  describeGodagentSdk,
+} from '@eternities/godagents';
+```
+
+The surface names the two currently registered provider-phase families,
+`openai-compatible-chat-completions-v1` and `anthropic-messages-v1`, and
+returns an explicit descriptor of its proof limits. The package remains
+private and experimental. This import root does not claim live provider
+quality, remote exactly-once execution, public publication, a new provider,
+Codex, Claude Code, local-model, or MCP adapter. It does not change default
+launch behavior and exposes no Realm, continuity, personal-keel, evolution,
+Inspiration, Lunari, or Soul operation. Future adapters must earn their own
+protocol and conformance evidence rather than being inferred from this
+surface.
