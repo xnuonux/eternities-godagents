@@ -53,6 +53,7 @@ const protectedTrustRoots = Object.freeze({
 
 const historicalReceiptPaths = Object.freeze([
   ...providerBackedMissionHistoricalReceiptPaths,
+  'receipts/provider-backed-mission-dependencies-v1.json',
   parentReceiptPath,
 ].sort());
 
