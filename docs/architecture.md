@@ -376,6 +376,38 @@ The admitted provider-backed launcher captures one certified provider-backed dep
 
 Every launch delegates to the existing admitted sealed identity host with the exact native, review, and revision handles captured at construction. The existing host therefore retains admission, policy, request, routing, dependency, residency, recovery, and replay enforcement. Reconstructing the launcher with the same certified host and Godskills release reproduces the same description; terminal vessel replay performs no new provider, routing, or activation work.
 
+## Provider-backed identity CLI boundary
+
+`launch:provider-backed` is a closed operator entrypoint over the programmatic
+launcher. It accepts one explicit provider family, canonical provider policy,
+admission root, identity-host policy and independently supplied policy digest,
+canonical structured `IdentityBoundMissionVesselRequest` JSON, request id, and
+the bounded review and revision materialization values required to recreate
+the policy-bound executor descriptors. It does not synthesize authority,
+budgets, observations, stop conditions, or success evidence from prose.
+
+The runner asserts the symlink-free admission tree, binds the identity policy
+to its admission, verifies the identity digest with a timing-safe comparison,
+binds the request id, and validates the provider policy before constructing an
+SDK-issued host. The provider policy and mission request are operator-controlled
+named inputs and are not required to live beneath admission; the identity
+runtime paths and host-owned provider runtime path remain admission-bound. It
+derives one common executor prefix from the paired policy descriptors and
+refuses an unpaired or incoherent policy. Provider choice is
+consumed only by the explicit host SDK family registry; the launcher receives
+the resulting certified host and the existing sealed launch surface supplies
+the identity-policy environment pin.
+
+The process boundary has no credential, arbitrary environment, endpoint,
+model, retry, Realm, continuity, keel, evolution, Inspiration, Lunari, or Soul
+option. The provider policy's named credential remains process-local and is
+never written to argv, canonical output, or durable records. Success projects
+only the verified identity-vessel completion and linked mission verdict
+digests. Failure output contains only a closed error code. This is an
+operator-surface proof and integration path, not a live-provider quality,
+availability, or remote exactly-once certification and it does not alter the
+append-only certification ledger.
+
 ## Provider-neutral signed phase resolution boundary
 
 The neutral durable engine admits one optional operator port that is absent from ordinary native, review, and revision adapters. Its canonical externally pinned policy binds the exact provider transport policy, one Ed25519 public authority, a decision lifetime, and an adopted-response ceiling. The signed decision binds the exact phase, dispatch, request, original attempt, disposition, nonce, times, and provider-neutral response witness. Neither the private signing key nor provider credential enters durable state.

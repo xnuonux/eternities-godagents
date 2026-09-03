@@ -391,7 +391,7 @@ The [admitted identity host design](docs/superpowers/specs/2026-08-31-admitted-s
 
 The reviewed deterministic path selects `eternities-muse`, interrupts after real activation success, recovers without another routing or activation process, and completes native generation, review, revision, and final review. Exact replay performs no external work. A separate no-review policy completes a low-risk Athena mission natively, proving that review availability is policy-bound rather than ambient. `npm run certify:admitted-sealed-identity-host` issues the twenty-sixth append-only receipt.
 
-The host itself remains provider-neutral and programmatic. Concrete cognition is an independently pinned optional dependency rather than ambient host behavior. It still exposes no CLI, does not switch `launch:local`, grant Realm or continuity writes, evolve identity, integrate Lunari, activate Inspiration, or activate Soul.
+The host itself remains provider-neutral and programmatic. Concrete cognition is an independently pinned optional dependency rather than ambient host behavior. The certified launcher remains programmatic and does not switch `launch:local`, grant Realm or continuity writes, evolve identity, integrate Lunari, activate Inspiration, or activate Soul. A later operator CLI adopts that launcher without changing those boundaries.
 
 ### Receipt-bound typed executor bundle v1
 
@@ -430,6 +430,39 @@ npm run launch:local -- `
 ```
 
 One invocation runs at most one unseen mission and exits. An admission-owned live-owner lock serializes projection, recovery, and execution. Retrying the same request ID returns its recorded outcome or recovers its interrupted cycle without admitting a duplicate. Reusing that ID with changed mission or policy-derived authority fails closed. Explicit registry migration will be required before a legitimate relocation; copying the admission is not migration. The launcher does not daemonize, widen host authority, modify genesis, lift frozen evolution, integrate Lunari, activate Inspiration, or activate Soul. This implementation has not yet received a separate certification receipt.
+
+### Provider-backed identity CLI v1
+
+`launch:provider-backed` is the narrow operator shell over the certified
+provider-backed identity launcher. It requires an explicit provider family,
+canonical provider policy, admission root, identity-host policy and digest,
+canonical structured `IdentityBoundMissionVesselRequest` JSON, request id, and
+the review and revision materialization ceilings used to reconstruct the
+provider-backed dependency descriptors:
+
+```powershell
+npm run launch:provider-backed -- `
+  --family anthropic-messages-v1 `
+  --provider-policy C:\path\provider-policy.json `
+  --admission C:\path\agent-workspace\admission `
+  --policy C:\path\identity-host-policy.json `
+  --identity-policy-digest <64-lowercase-hex-digest> `
+  --mission C:\path\mission-request.json `
+  --request-id operator:20260829:001 `
+  --review-materialized-bytes 65536 `
+  --revision-materialized-bytes 32768
+```
+
+The mission file is the complete structured vessel request, not free-form
+prose. The CLI rejects unknown or credential-shaped options, derives the
+family-specific provider-policy pin from canonical bytes, preflights admission
+and identity policy before constructing the provider host, and delegates only
+through the certified launcher. Credentials remain available only through the
+policy-named process environment and are never printed or persisted by this
+shell. Success emits only the verified terminal receipt and verdict digests;
+failure emits a closed code. This phase does not certify live provider quality,
+availability, remote exactly-once behavior, or change the certification
+ledger.
 
 `npm run verify:certifications` audits the exact append-only certification ledger. It requires canonical bytes, recomputes each internal receipt digest, verifies certified status, resolves every source commit as a Git commit in this repository, and checks the exact required historical file set and hashes across the versioned receipt formats. It returns one canonical ledger projection and digest. This is an integrity audit, not a substitute for rerunning a receipt at its pinned source commit.
 
