@@ -405,8 +405,13 @@ never written to argv, canonical output, or durable records. Success projects
 only the verified identity-vessel completion and linked mission verdict
 digests. Failure output contains only a closed error code. This is an
 operator-surface proof and integration path, not a live-provider quality,
-availability, or remote exactly-once certification and it does not alter the
-append-only certification ledger.
+availability, or remote exactly-once certification. The separate
+`provider-backed-identity-cli-v1` certificate binds the deterministic
+no-network fixture, real admission and identity-policy preflight, SDK-issued
+host construction, closed output and failure behavior, direct
+admitted-launcher parent, and exact source manifests as the forty-sixth
+append-only ledger entry. It does not alter any historical receipt or adopt
+the CLI as the default launch path.
 
 ## Provider-neutral signed phase resolution boundary
 

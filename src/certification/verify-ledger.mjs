@@ -29,6 +29,7 @@ const registry = Object.freeze({
   'identity-bound-mission-vessel-v1.json': 'identity-bound-mission-vessel-v1',
   'local-admission-shell-certification.json': 'local-admission-shell-v1',
   'networked-cortex-certification.json': 'networked-cortex-v1',
+  'provider-backed-identity-cli-v1.json': 'provider-backed-identity-cli-v1',
   'provider-neutral-phase-protocol-v1.json': 'provider-neutral-phase-protocol-v1',
   'provider-neutral-phase-resolution-v1.json': 'provider-neutral-phase-resolution-v1',
   'provider-backed-mission-dependencies-v1.json': 'provider-backed-mission-dependencies-v1',
@@ -55,7 +56,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeAdmittedProviderLauncher = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeProviderBackedIdentityCli = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'provider-backed-identity-cli-v1.json',
+));
+const expectedFilesBeforeAdmittedProviderLauncher = Object.freeze(expectedFilesBeforeProviderBackedIdentityCli.filter(
   (file) => file !== 'admitted-provider-backed-identity-launcher-v1.json',
 ));
 const requiredHistoricalLinks = Object.freeze({
@@ -150,7 +154,10 @@ const requiredHistoricalLinks = Object.freeze({
     .filter((file) => file !== 'provider-backed-mission-dependencies-v1.json')
     .map((file) => `receipts/${file}`)),
   'admitted-provider-backed-identity-launcher-v1.json': Object.freeze(expectedFiles
-    .filter((file) => file !== 'admitted-provider-backed-identity-launcher-v1.json')
+    .filter((file) => file !== 'admitted-provider-backed-identity-launcher-v1.json'
+      && file !== 'provider-backed-identity-cli-v1.json')
+    .map((file) => `receipts/${file}`)),
+  'provider-backed-identity-cli-v1.json': Object.freeze(expectedFilesBeforeProviderBackedIdentityCli
     .map((file) => `receipts/${file}`)),
   'admitted-sealed-identity-host-v1.json': Object.freeze([
     'receipts/codex-bound-turn-v1.json',
@@ -1040,6 +1047,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(admittedProviderBackedIdentityLauncher.receipt)) {
       throw new Error('admitted provider-backed identity launcher certification differs from exact source reconstruction');
+    }
+  }
+
+  const providerBackedIdentityCli = loaded.get('provider-backed-identity-cli-v1.json');
+  if (providerBackedIdentityCli) {
+    const { buildProviderBackedIdentityCliReceiptFromSource } = await import(
+      '../../scripts/build-provider-backed-identity-cli-v1-receipt.mjs'
+    );
+    const rebuilt = await buildProviderBackedIdentityCliReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: providerBackedIdentityCli.receipt.source.commit,
+      testRuns: providerBackedIdentityCli.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(providerBackedIdentityCli.receipt)) {
+      throw new Error('provider-backed identity cli certification differs from exact source reconstruction');
     }
   }
 

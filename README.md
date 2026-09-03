@@ -46,8 +46,10 @@ npm run certify:codex-bound-turn
 npm run certify:codex-turn-journal
 npm run certify:codex-recoverable-turn
 npm run certify:openai-compatible-phase-transport
-npm run certify:provider-backed-mission-dependencies
-npm run certify:admitted-provider-backed-identity-launcher
+  npm run certify:provider-backed-mission-dependencies
+  npm run certify:admitted-provider-backed-identity-launcher
+  npm run build:provider-backed-identity-cli-fixture
+  npm run certify:provider-backed-identity-cli
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -55,6 +57,15 @@ npm run certify:admitted-provider-backed-identity-launcher
 `npm run certify` requires a clean worktree. It reruns the complete suite, rebuilds the fixture distribution twice in a verified temporary directory, compares exact artifacts, and writes `receipts/godagent-v0-certification.json`.
 
 `npm run certify:networked-cortex` preserves the historical v0 receipt, runs the complete suite under a fail-closed Node-process-tree network guard, verifies credential-canary containment, and writes a separate `receipts/networked-cortex-certification.json`. It does not claim OS-level isolation for arbitrary non-Node child processes.
+
+`npm run certify:provider-backed-identity-cli` issues the separate
+`provider-backed-identity-cli-v1` receipt. It rebuilds both registered provider
+families through real admission and identity-policy preflight, constructs
+SDK-issued hosts without a provider request, verifies closed success and
+failure output, binds the direct admitted-launcher parent, and adds the receipt
+as the forty-sixth append-only ledger entry. This certifies the deterministic
+operator boundary only, not live provider quality, credentials, or remote
+exactly-once execution.
 
 ## Godskills System v3 mission binding
 
@@ -572,3 +583,19 @@ Construction remains credential-lazy and performs no provider call. It does not 
 The [admitted launcher design](docs/superpowers/specs/2026-08-31-admitted-provider-backed-identity-launcher-v1-design.md) closes the remaining manual composition seam without absorbing policy authority. Construction captures one provider-backed dependency bundle and returns a deeply frozen description that an external authority can use to author the existing identity-host policy. The launch method accepts only the admission, policy path, mission request, explicit identity-policy digest, and bounded host controls; it cannot accept a provider family, credential, replacement release, direct transport, direct executor, classifier, Realm handle, continuity handle, or Soul handle.
 
 Every call delegates to the existing admitted sealed identity host with the exact native, review, and revision handles captured at construction. The host continues to enforce admission, policy, request, dependency, residency, recovery, and replay. `npm run certify:admitted-provider-backed-identity-launcher` reconstructs the launcher for both certified provider families, executes the complete reviewed mission, scans all durable files for the credential canary, and proves exact terminal replay with no repeated provider, routing, or activation work.
+
+### Provider-backed identity CLI certification v1
+
+The CLI certification is an append-only operator-surface certificate over the
+launcher described above. Its deterministic fixture runs both provider-family
+registrations with canonical policy files, a real symlink-free admitted tree,
+the production identity-policy loader and admission binding check, and
+SDK-issued provider hosts. A counting fetch guard makes any accidental provider
+request fail the build rather than merely being inferred from a zero counter.
+
+The fixture also proves exact request and policy-digest binding, explicit
+review and revision ceilings, paired executor-prefix derivation, safe terminal
+projection, malformed-result rejection, parser failure with empty stdout, and
+zero disclosure of credentials, paths, artifacts, or provider bodies. The
+source-bound receipt preserves all forty-five historical receipt files and
+adds `receipts/provider-backed-identity-cli-v1.json` as the forty-sixth entry.
