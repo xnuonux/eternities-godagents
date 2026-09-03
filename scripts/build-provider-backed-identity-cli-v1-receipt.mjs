@@ -32,7 +32,7 @@ const parentCertificationId = 'admitted-provider-backed-identity-launcher-v1';
 const parentReceiptDigest = 'd860d89672179bbe99e3bc28a74142c95731d638d257d2ea28506c85f01314d2';
 const parentFileSha256 = '132228297621de4fc2f0e6413cb1c39ee6cb8125904166944a96398238d6827c';
 const expectedReviewModel = 'gpt-5.6-terra';
-const expectedReviewAgentId = 'pending-terra-reviewer';
+const expectedReviewAgentId = '01a04a0c-ae62-7c83-8f77-9d7b1614f390';
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
 
