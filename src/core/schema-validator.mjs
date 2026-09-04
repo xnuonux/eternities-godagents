@@ -14,6 +14,7 @@ const schemaFiles = {
   'organ-proposal': 'organ-proposal.schema.json',
   'decision-commit': 'decision-commit.schema.json',
   'action-receipt': 'action-receipt.schema.json',
+  'recoverable-realm-consequence-receipt': 'recoverable-realm-consequence-receipt.schema.json',
   'cortex-attempt': 'cortex-attempt.schema.json',
   'host-policy': 'host-policy.schema.json',
   'identity-host-policy': 'identity-host-policy.schema.json',

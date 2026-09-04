@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "protocolId", "executionId", "inputDigest", "instanceId", "missionId",
+    "stateEpoch", "consequenceDigest", "consequenceReceiptDigest", "actionReceiptDigest",
+    "resultEventDigest", "invocationStatus", "discrepancyClass", "disposition", "receiptDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-recoverable-realm-consequence-v1" },
+    "executionId": { "$ref": "#/$defs/digest" },
+    "inputDigest": { "$ref": "#/$defs/digest" },
+    "instanceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "missionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "stateEpoch": { "type": "integer", "minimum": 0 },
+    "consequenceDigest": { "$ref": "#/$defs/digest" },
+    "consequenceReceiptDigest": { "$ref": "#/$defs/digest" },
+    "actionReceiptDigest": { "$ref": "#/$defs/digest" },
+    "resultEventDigest": { "$ref": "#/$defs/digest" },
+    "invocationStatus": { "enum": ["applied", "denied", "uncertain", "failed"] },
+    "discrepancyClass": { "enum": ["none", "unexpected-state", "unverified-effect", "denied", "failed"] },
+    "disposition": { "enum": ["complete", "repair", "escalate", "terminal"] },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  }
+}

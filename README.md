@@ -730,3 +730,32 @@ portable SDK surface and default vessel causal loop remain unchanged, and the
 seam does not add live connectors, rollback, delegation, scheduling,
 Godskills, keel, memory, identity, evolution, Soul, Lunari, or phenomenological
 core behavior.
+
+## Realm consequence vessel recovery v1
+
+The [Realm consequence vessel recovery design](docs/superpowers/specs/2026-09-04-realm-consequence-vessel-recovery-v1-design.md)
+adds the first durable host boundary around that explicit consequence seam.
+`createRecoverableRealmConsequenceHost` is opt-in and provider-neutral. It
+derives one input digest and execution id, persists a bounded canonical
+admission, result, and receipt chain, and exposes explicit `execute`,
+`recover`, and bounded `inspect` operations. The Realm port is a constructor
+dependency and is never serialized.
+
+Recovery is deliberately narrow. A process boundary after admission resumes
+the exact input. A boundary after the external effect re-enters the existing
+deterministic action idempotency path, allowing the action gateway to
+reconcile instead of duplicating the effect. Once the consequence result is
+durable, recovery publishes only the missing host receipt. Terminal replay
+performs no Realm call. The host adds no authority, hand, effect, budget,
+credential, rollback, compensation, delegation, or scheduler behavior.
+
+`npm run build:recoverable-realm-consequence-fixture` rebuilds the four-case
+deterministic fixture. `npm run certify:recoverable-realm-consequence` binds
+the host, fixture, focused tests, complete suite, and prior receipt chain in
+`receipts/recoverable-realm-consequence-vessel-v1.json`.
+
+This proves only a local durable host seam over the fixture Realm. It is not
+wired into the default vessel or portable SDK root and does not establish a
+live Realm connector, remote durability or exactly-once effect, Godskills
+integration, keel or memory ownership, identity evolution, Soul, Lunari, or
+the Luna phenomenological core.

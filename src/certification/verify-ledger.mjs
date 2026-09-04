@@ -42,6 +42,7 @@ const registry = Object.freeze({
   'recoverable-godskills-admission-v1.json': 'recoverable-godskills-admission-v1',
   'recoverable-mission-native-executor-v1.json': 'recoverable-mission-native-executor-v1',
   'recoverable-mission-revision-executor-v1.json': 'recoverable-mission-revision-executor-v1',
+  'recoverable-realm-consequence-vessel-v1.json': 'recoverable-realm-consequence-vessel-v1',
   'recoverable-typed-execution-journal-v1.json': 'recoverable-typed-execution-journal-v1',
   'realm-action-adapter-v1.json': 'realm-action-adapter-v1',
   'realm-consequence-executor-v1.json': 'realm-consequence-executor-v1',
@@ -60,7 +61,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeLatestConsequence = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeRecoverableRealmConsequence = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'recoverable-realm-consequence-vessel-v1.json',
+));
+const expectedFilesBeforeLatestConsequence = Object.freeze(expectedFilesBeforeRecoverableRealmConsequence.filter(
   (file) => file !== 'realm-consequence-executor-v1.json',
 ));
 const expectedFilesBeforeRealmNegotiation = Object.freeze(expectedFilesBeforeLatestConsequence.filter(
@@ -805,11 +809,13 @@ const requiredHistoricalLinks = Object.freeze({
   ]),
   'realm-negotiation-v1.json': Object.freeze(expectedFilesBeforeRealmNegotiation
     .map((file) => `receipts/${file}`)),
-  'realm-action-adapter-v1.json': Object.freeze(expectedFiles
+  'realm-action-adapter-v1.json': Object.freeze(expectedFilesBeforeRecoverableRealmConsequence
     .filter((file) => !['realm-action-adapter-v1.json', 'realm-consequence-executor-v1.json'].includes(file))
     .map((file) => `receipts/${file}`)),
-  'realm-consequence-executor-v1.json': Object.freeze(expectedFiles
+  'realm-consequence-executor-v1.json': Object.freeze(expectedFilesBeforeRecoverableRealmConsequence
     .filter((file) => file !== 'realm-consequence-executor-v1.json')
+    .map((file) => `receipts/${file}`)),
+  'recoverable-realm-consequence-vessel-v1.json': Object.freeze(expectedFilesBeforeRecoverableRealmConsequence
     .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -1086,6 +1092,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(providerBackedIdentityCli.receipt)) {
       throw new Error('provider-backed identity cli certification differs from exact source reconstruction');
+    }
+  }
+
+  const recoverableRealmConsequence = loaded.get('recoverable-realm-consequence-vessel-v1.json');
+  if (recoverableRealmConsequence) {
+    const { buildRecoverableRealmConsequenceReceiptFromSource } = await import(
+      '../../scripts/build-recoverable-realm-consequence-v1-receipt.mjs'
+    );
+    const rebuilt = await buildRecoverableRealmConsequenceReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: recoverableRealmConsequence.receipt.source.commit,
+      testRuns: recoverableRealmConsequence.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(recoverableRealmConsequence.receipt)) {
+      throw new Error('recoverable Realm consequence certification differs from exact source reconstruction');
     }
   }
 

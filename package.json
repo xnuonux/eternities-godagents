@@ -94,6 +94,8 @@
     "build:realm-action-adapter-fixture": "node scripts/build-realm-action-adapter-v1-fixture.mjs",
     "certify:realm-action-adapter": "node scripts/build-realm-action-adapter-v1-receipt.mjs",
     "build:realm-consequence-executor-fixture": "node scripts/build-realm-consequence-executor-v1-fixture.mjs",
-    "certify:realm-consequence-executor": "node scripts/build-realm-consequence-executor-v1-receipt.mjs"
+    "certify:realm-consequence-executor": "node scripts/build-realm-consequence-executor-v1-receipt.mjs",
+    "build:recoverable-realm-consequence-fixture": "node scripts/build-recoverable-realm-consequence-v1-fixture.mjs",
+    "certify:recoverable-realm-consequence": "node scripts/build-recoverable-realm-consequence-v1-receipt.mjs"
   }
 }

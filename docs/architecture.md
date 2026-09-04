@@ -547,3 +547,39 @@ identity, evolution, Inspiration, Soul, Lunari, or Luna phenomenological-core
 boundary. The [consequence executor design](superpowers/specs/2026-09-04-realm-consequence-executor-v1-design.md)
 and [implementation plan](superpowers/plans/2026-09-04-realm-consequence-executor-v1.md)
 define the acceptance and proof boundary.
+
+## Realm consequence vessel recovery v1
+
+The recoverable host is an additive provider-neutral adapter above the
+consequence executor. It does not replace the vessel journal or alter the
+default causal loop. A caller explicitly constructs it with a real journal
+root and a Realm port, then submits one closed mission, proposal, Contract,
+authority, constitution, and execution-state value. The port remains a
+runtime dependency and never enters durable state.
+
+The host derives one canonical input digest and execution id. Its operation
+directory contains one bounded JSONL chain with exactly three legal events:
+`consequence.admitted`, `consequence.resulted`, and `consequence.receipted`.
+The admission carries the exact effect-free input, the result binds the
+existing negotiation, constitutional decision, action, and child receipt to
+the admission digest, and the final event carries a compact host receipt bound
+to the result event. Directory aliases, unexpected entries, oversized files,
+unverified tails, gaps, reordering, changed bindings, and credential-shaped
+fields fail closed.
+
+The recovery state machine has three explicit resumable positions. Admission
+alone re-enters the existing consequence executor. If an external mutation
+has already occurred but the result was not published, the deterministic
+child action idempotency key lets the existing action gateway reconcile the
+effect. A durable result needs only host receipt publication. A terminal
+operation is read-only on exact retry. No compensation or rollback is claimed,
+and non-uncertain execution failures remain pending for an explicit recovery
+call.
+
+The source-bound [recovery design](superpowers/specs/2026-09-04-realm-consequence-vessel-recovery-v1-design.md),
+[implementation plan](superpowers/plans/2026-09-04-realm-consequence-vessel-recovery-v1.md),
+and [certification](recoverable-realm-consequence-vessel-v1-certification.md)
+prove local crash-boundary behavior only. Default vessel wiring, portable SDK
+exports, Godskills runtime, delegation, scheduler, credentials, live
+connectors, keel, memory, identity, evolution, Inspiration, Soul, Lunari, and
+Luna phenomenological-core authority remain outside this release.
