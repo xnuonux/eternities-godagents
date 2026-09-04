@@ -9,6 +9,7 @@ const schemaFiles = {
   'realm-contract': 'realm-contract.schema.json',
   'realm-negotiation': 'realm-negotiation.schema.json',
   'realm-negotiated-action': 'realm-negotiated-action.schema.json',
+  'realm-negotiated-consequence': 'realm-negotiated-consequence.schema.json',
   'vessel-event': 'vessel-event.schema.json',
   'organ-proposal': 'organ-proposal.schema.json',
   'decision-commit': 'decision-commit.schema.json',

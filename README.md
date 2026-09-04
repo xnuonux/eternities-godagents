@@ -704,3 +704,29 @@ future boundaries.
 retry evidence. `npm run certify:realm-action-adapter` binds the adapter
 implementation, fixture, focused tests, complete suite, and prior receipt
 chain in `receipts/realm-action-adapter-v1.json`.
+
+`npm run build:realm-consequence-executor-fixture` rebuilds the explicit
+proposal-to-consequence fixture. `npm run certify:realm-consequence-executor`
+binds the executor, fixture, focused tests, complete suite, and prior receipt
+chain in `receipts/realm-consequence-executor-v1.json`.
+
+### Realm consequence executor v1
+
+The [Realm consequence executor design](docs/superpowers/specs/2026-09-04-realm-consequence-executor-v1-design.md)
+adds an explicit host seam above the negotiation and action adapters. The
+caller supplies one verified mission proposal, host authority ceiling,
+constitution, Realm Contract, and current execution state. The seam narrows
+authority and permitted effects to the mission, host, constitution, and
+selected proposal effect, commits the proposal through the existing arbiter,
+derives one deterministic action, and delegates the consequence only through
+`executeNegotiatedAction`.
+
+The returned bundle contains the exact negotiation, decision, action, detailed
+child action receipt, and a compact
+`eternities-realm-negotiated-consequence-v1` receipt binding their digests.
+The wrapper has no raw mission text, payload, Realm handle, callable,
+credential, or provider response. It is direct-module and opt-in. The
+portable SDK surface and default vessel causal loop remain unchanged, and the
+seam does not add live connectors, rollback, delegation, scheduling,
+Godskills, keel, memory, identity, evolution, Soul, Lunari, or phenomenological
+core behavior.

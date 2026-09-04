@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "protocolId", "instanceId", "missionId", "proposalDigest",
+    "stateEpoch", "negotiationDigest", "contractDigest", "authorityCeilingDigest",
+    "decisionDigest", "actionDigest", "actionReceiptDigest", "realmId", "handId",
+    "decisionId", "actionId", "invocationStatus", "discrepancyClass", "disposition",
+    "receiptDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-realm-negotiated-consequence-v1" },
+    "instanceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "missionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "proposalDigest": { "$ref": "#/$defs/digest" },
+    "stateEpoch": { "type": "integer", "minimum": 0 },
+    "negotiationDigest": { "$ref": "#/$defs/digest" },
+    "contractDigest": { "$ref": "#/$defs/digest" },
+    "authorityCeilingDigest": { "$ref": "#/$defs/digest" },
+    "decisionDigest": { "$ref": "#/$defs/digest" },
+    "actionDigest": { "$ref": "#/$defs/digest" },
+    "actionReceiptDigest": { "$ref": "#/$defs/digest" },
+    "realmId": { "type": "string", "minLength": 1 },
+    "handId": { "type": "string", "minLength": 1 },
+    "decisionId": { "type": "string", "minLength": 1 },
+    "actionId": { "type": "string", "minLength": 1 },
+    "invocationStatus": { "enum": ["applied", "denied", "uncertain", "failed"] },
+    "discrepancyClass": { "enum": ["none", "unexpected-state", "unverified-effect", "denied", "failed"] },
+    "disposition": { "enum": ["complete", "repair", "escalate", "terminal"] },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 }
+  }
+}

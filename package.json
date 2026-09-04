@@ -92,6 +92,8 @@
     "build:realm-negotiation-fixture": "node scripts/build-realm-negotiation-v1-fixture.mjs",
     "certify:realm-negotiation": "node scripts/build-realm-negotiation-v1-receipt.mjs",
     "build:realm-action-adapter-fixture": "node scripts/build-realm-action-adapter-v1-fixture.mjs",
-    "certify:realm-action-adapter": "node scripts/build-realm-action-adapter-v1-receipt.mjs"
+    "certify:realm-action-adapter": "node scripts/build-realm-action-adapter-v1-receipt.mjs",
+    "build:realm-consequence-executor-fixture": "node scripts/build-realm-consequence-executor-v1-fixture.mjs",
+    "certify:realm-consequence-executor": "node scripts/build-realm-consequence-executor-v1-receipt.mjs"
   }
 }

@@ -517,3 +517,33 @@ rollback, external tools, delegation, public SDK adoption, keel or memory
 ownership, evolution, Inspiration, Soul, Lunari, or entry into Luna's
 phenomenological core. The source-bound [Realm action adapter certification](realm-action-adapter-v1-certification.md)
 proves the local action handoff and exact retry evidence only.
+
+## Realm consequence executor v1
+
+The negotiated consequence executor is a separate direct-module host seam above
+the read-only negotiation projection and the action adapter. It consumes one
+schema-verified organ proposal plus a narrow mission identity and authority
+projection, a constitution, the exact Realm Contract, and an explicit current
+execution state. Before any Realm method call it checks the proposal epoch,
+mission authority subset, proposal hand/effect identity, constitution and host
+effect ceilings, and the deterministic action shape. It then commits the
+proposal through the constitutional arbiter and invokes the only existing
+effect path, `executeNegotiatedAction`.
+
+The returned bundle publishes the exact negotiation, decision, derived action,
+detailed child action receipt, and a compact
+`eternities-realm-negotiated-consequence-v1` receipt. That receipt binds the
+proposal, state epoch, effective authority, negotiation, Contract, decision,
+action, and child receipt by digest, while omitting mission prose, payload,
+observations, Realm handles, callables, credentials, and provider responses.
+The deterministic idempotency key leaves exact replay to the existing action
+gateway's reconciliation behavior.
+
+This seam is explicitly opt-in and is not wired into default vessel launch or
+the portable SDK root, preserving the historical causal loop and its receipts.
+It is a local fixture reachability proof, not a live Realm, remote exactly-once,
+durable host journal, delegation, scheduler, Godskills, keel, memory,
+identity, evolution, Inspiration, Soul, Lunari, or Luna phenomenological-core
+boundary. The [consequence executor design](superpowers/specs/2026-09-04-realm-consequence-executor-v1-design.md)
+and [implementation plan](superpowers/plans/2026-09-04-realm-consequence-executor-v1.md)
+define the acceptance and proof boundary.
