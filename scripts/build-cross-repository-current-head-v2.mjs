@@ -141,10 +141,10 @@ async function main() {
   }));
 
   // Both gates use the same checkout and several tests create bounded
-  // temporary roots. Keep them sequential so certification cannot create an
-  // order-dependent lock or cleanup race.
-  const godagentsFocused = await runTests(FINAL_GODAGENTS_TESTS, repositoryRoot);
+  // temporary roots. Run the full suite from the seeded checkout first, then
+  // run the focused receipt-aware set so cleanup cannot cross gate boundaries.
   const godagentsFull = await runTests([], repositoryRoot);
+  const godagentsFocused = await runTests(FINAL_GODAGENTS_TESTS, repositoryRoot);
   const receipt = await buildReceipt({
     repositoryRoot,
     godagentsCommit,
