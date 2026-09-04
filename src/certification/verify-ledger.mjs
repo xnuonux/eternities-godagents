@@ -36,6 +36,7 @@ const registry = Object.freeze({
   'provider-backed-mission-dependencies-v1.json': 'provider-backed-mission-dependencies-v1',
   'provider-phase-host-sdk-v1.json': 'provider-phase-host-sdk-v1',
   'portable-phase-host-conformance-v1.json': 'portable-phase-host-conformance-v1',
+  'portable-realm-consequence-sdk-v1.json': 'portable-realm-consequence-sdk-v1',
   'provider-resolution-authority-handoff-v1.json': 'provider-resolution-authority-handoff-v1',
   'provider-resolution-authority-outbox-v1.json': 'provider-resolution-authority-outbox-v1',
   'provider-resolution-decision-preparer-v1.json': 'provider-resolution-decision-preparer-v1',
@@ -62,7 +63,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeAdmittedLocalLaunch = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforePortableRealmConsequenceSdk = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'portable-realm-consequence-sdk-v1.json',
+));
+const expectedFilesBeforeAdmittedLocalLaunch = Object.freeze(expectedFilesBeforePortableRealmConsequenceSdk.filter(
   (file) => file !== 'admitted-local-launch-v1.json',
 ));
 const expectedFilesBeforeRecoverableRealmConsequence = Object.freeze(expectedFilesBeforeAdmittedLocalLaunch.filter(
@@ -811,6 +815,8 @@ const requiredHistoricalLinks = Object.freeze({
   'portable-phase-host-conformance-v1.json': Object.freeze([
     'receipts/provider-phase-host-sdk-v1.json',
   ]),
+  'portable-realm-consequence-sdk-v1.json': Object.freeze(expectedFilesBeforePortableRealmConsequenceSdk
+    .map((file) => `receipts/${file}`)),
   'realm-negotiation-v1.json': Object.freeze(expectedFilesBeforeRealmNegotiation
     .map((file) => `receipts/${file}`)),
   'realm-action-adapter-v1.json': Object.freeze(expectedFilesBeforeRecoverableRealmConsequence

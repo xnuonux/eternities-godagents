@@ -14,7 +14,10 @@ const DESCRIPTION = deepFreeze({
   protocolId: PROTOCOL_ID,
   version: VERSION,
   status: 'experimental',
-  supportedAdapterProtocols: ['eternities-portable-phase-host-v1'],
+  supportedAdapterProtocols: [
+    'eternities-portable-phase-host-v1',
+    'eternities-recoverable-realm-consequence-v1',
+  ],
   supportedProviderFamilies: [
     'anthropic-messages-v1',
     'openai-compatible-chat-completions-v1',
@@ -50,6 +53,12 @@ export {
   createAdmittedProviderBackedIdentityLauncher,
   verifyAdmittedProviderBackedIdentityLauncherDescription,
 } from '../host/admitted-provider-backed-identity-launcher.mjs';
+
+export {
+  RECOVERABLE_REALM_CONSEQUENCE_PROTOCOL_ID,
+  assertRecoverableRealmConsequenceHost,
+  createRecoverableRealmConsequenceHost,
+} from '../realm/recoverable-consequence-host.mjs';
 
 export {
   PORTABLE_PHASE_HOST_PROTOCOL_ID,

@@ -539,12 +539,14 @@ observations, Realm handles, callables, credentials, and provider responses.
 The deterministic idempotency key leaves exact replay to the existing action
 gateway's reconciliation behavior.
 
-This seam is explicitly opt-in and is not wired into default vessel launch or
-the portable SDK root, preserving the historical causal loop and its receipts.
-It is a local fixture reachability proof, not a live Realm, remote exactly-once,
-durable host journal, delegation, scheduler, Godskills, keel, memory,
-identity, evolution, Inspiration, Soul, Lunari, or Luna phenomenological-core
-boundary. The [consequence executor design](superpowers/specs/2026-09-04-realm-consequence-executor-v1-design.md)
+This seam is explicitly opt-in and is not wired into default vessel launch.
+Its existing recoverable host is exposed through a separate, explicit portable
+SDK export, preserving the historical causal loop and its receipts. That
+export is certified independently and does not make the host a default runtime
+path. This remains a local fixture reachability proof, not a live Realm,
+remote exactly-once, durable host journal, delegation, scheduler, Godskills,
+keel, memory, identity, evolution, Inspiration, Soul, Lunari, or Luna
+phenomenological-core boundary. The [consequence executor design](superpowers/specs/2026-09-04-realm-consequence-executor-v1-design.md)
 and [implementation plan](superpowers/plans/2026-09-04-realm-consequence-executor-v1.md)
 define the acceptance and proof boundary.
 
@@ -580,6 +582,8 @@ The source-bound [recovery design](superpowers/specs/2026-09-04-realm-consequenc
 [implementation plan](superpowers/plans/2026-09-04-realm-consequence-vessel-recovery-v1.md),
 and [certification](recoverable-realm-consequence-vessel-v1-certification.md)
 prove local crash-boundary behavior only. Default vessel wiring, portable SDK
-exports, Godskills runtime, delegation, scheduler, credentials, live
-connectors, keel, memory, identity, evolution, Inspiration, Soul, Lunari, and
-Luna phenomenological-core authority remain outside this release.
+default launch wiring, Godskills runtime, delegation, scheduler, credentials,
+live connectors, keel, memory, identity, evolution, Inspiration, Soul, Lunari,
+and Luna phenomenological-core authority remain outside this release. The
+explicit package-root exposure is covered by the separate
+[portable SDK certification](portable-realm-consequence-sdk-v1-certification.md).

@@ -14,12 +14,15 @@ const EXPECTED_EXPORTS = [
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
   'PORTABLE_PHASE_HOST_PROTOCOL_ID',
+  'RECOVERABLE_REALM_CONSEQUENCE_PROTOCOL_ID',
   'assertPortablePhaseHostInstance',
   'assertProviderPhaseHostInstance',
+  'assertRecoverableRealmConsequenceHost',
   'buildPortablePhaseHostDescription',
   'createAdmittedProviderBackedIdentityLauncher',
   'createPortablePhaseHostAdapter',
   'createProviderPhaseHost',
+  'createRecoverableRealmConsequenceHost',
   'describeGodagentSdk',
   'verifyAdmittedProviderBackedIdentityLauncherDescription',
   'verifyPortablePhaseHostDescription',
@@ -80,7 +83,7 @@ test('package root exposes only the closed portable SDK surface', async () => {
   assert.equal(sdk.GODAGENT_SDK_PROTOCOL_ID, 'eternities-godagents-sdk-v1');
   assert.equal(sdk.GODAGENT_SDK_VERSION, '0.1.0');
   for (const key of Object.keys(sdk)) {
-    assert.equal(/secret|credential|realm|keel|continuity|evolution|soul|lunari|inspiration/i.test(key), false);
+    assert.equal(/secret|credential|keel|continuity|evolution|soul|lunari|inspiration/i.test(key), false);
   }
   for (const forbidden of [
     'createPersistentVessel',
@@ -106,7 +109,10 @@ test('SDK descriptor is deterministic, deeply frozen, and honest about proof lim
     protocolId: 'eternities-godagents-sdk-v1',
     version: '0.1.0',
     status: 'experimental',
-    supportedAdapterProtocols: ['eternities-portable-phase-host-v1'],
+    supportedAdapterProtocols: [
+      'eternities-portable-phase-host-v1',
+      'eternities-recoverable-realm-consequence-v1',
+    ],
     supportedProviderFamilies: [
       'anthropic-messages-v1',
       'openai-compatible-chat-completions-v1',

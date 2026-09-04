@@ -620,12 +620,19 @@ returns an explicit descriptor of its proof limits. The package remains
 private and experimental. This import root does not claim live provider
 quality, remote exactly-once execution, public publication, a new provider,
 Codex, Claude Code, local-model, or MCP adapter. It does not change default
-launch behavior and exposes no Realm, continuity, personal-keel, evolution,
-Inspiration, Lunari, or Soul operation. Future adapters must earn their own
-protocol and conformance evidence rather than being inferred from this
-surface. Constructing a host or launcher reads the caller-selected policy and
-may create the caller-selected runtime directory; credential resolution and
-provider calls remain lazy and are not implied by construction.
+launch behavior and exposes no continuity, personal-keel, evolution,
+Inspiration, Lunari, or Soul operation. The root also exposes the already
+certified, optional `eternities-recoverable-realm-consequence-v1` host through
+`createRecoverableRealmConsequenceHost`, `assertRecoverableRealmConsequenceHost`,
+and `RECOVERABLE_REALM_CONSEQUENCE_PROTOCOL_ID`. This is an explicit package
+surface for the existing local durable consequence boundary, not default Realm
+wiring or a live connector. The host still requires a caller-supplied Realm
+port, persists no credentials, expands no authority, and does not support
+rollback. Future adapters must earn their own protocol and conformance
+evidence rather than being inferred from this surface. Constructing a host or
+launcher reads the caller-selected policy and may create the caller-selected
+runtime directory; credential resolution and provider calls remain lazy and
+are not implied by construction.
 
 ### Portable phase-host conformance v1
 
@@ -755,7 +762,8 @@ the host, fixture, focused tests, complete suite, and prior receipt chain in
 `receipts/recoverable-realm-consequence-vessel-v1.json`.
 
 This proves only a local durable host seam over the fixture Realm. It is not
-wired into the default vessel or portable SDK root and does not establish a
-live Realm connector, remote durability or exactly-once effect, Godskills
-integration, keel or memory ownership, identity evolution, Soul, Lunari, or
-the Luna phenomenological core.
+wired into the default vessel, and does not establish a live Realm connector,
+remote durability or exactly-once effect, Godskills integration, keel or
+memory ownership, identity evolution, Soul, Lunari, or the Luna
+phenomenological core. The explicit package-root export is certified separately
+as `receipts/portable-realm-consequence-sdk-v1.json`.
