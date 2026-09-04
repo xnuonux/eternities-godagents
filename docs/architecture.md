@@ -491,3 +491,29 @@ compensation, rollback, delegation, scheduling, public SDK adoption, keel or
 memory writes, Soul, and Lunari remain separate future boundaries. The
 source-bound [Realm negotiation certification](realm-negotiation-v1-certification.md)
 proves only the local fixture projection and its integrity limits.
+
+## Realm action adapter v1
+
+The negotiated action adapter is the first bounded execution seam above the
+read-only negotiation projection. It re-verifies the complete negotiation
+against the exact source Contract and host authority ceiling, verifies that the
+committed decision names an available contract-identical idempotent hand, and
+checks the hand payload before calling the existing action gateway. The gateway
+remains the sole mutation path and remains responsible for pre-action
+observation, idempotency, reconciliation, and repair or escalation
+dispositions.
+
+The adapter returns the unchanged `action-receipt` plus a separate compact
+`eternities-realm-negotiated-action-v1` receipt. The latter binds the
+negotiation, Contract, normalized authority ceiling, decision, action, and
+child receipt by digest while omitting raw payloads, observations, Realm
+handles, credentials, and callable fields. Stale source or ceiling bytes,
+omitted or non-idempotent hands, malformed inputs, and authority or effect
+expansion fail before a Realm method is called.
+
+This is an opt-in local fixture boundary, not default vessel wiring or a live
+world adapter. It does not establish credentials, leases, compensation,
+rollback, external tools, delegation, public SDK adoption, keel or memory
+ownership, evolution, Inspiration, Soul, Lunari, or entry into Luna's
+phenomenological core. The source-bound [Realm action adapter certification](realm-action-adapter-v1-certification.md)
+proves the local action handoff and exact retry evidence only.

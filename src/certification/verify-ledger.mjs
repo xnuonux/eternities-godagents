@@ -43,6 +43,7 @@ const registry = Object.freeze({
   'recoverable-mission-native-executor-v1.json': 'recoverable-mission-native-executor-v1',
   'recoverable-mission-revision-executor-v1.json': 'recoverable-mission-revision-executor-v1',
   'recoverable-typed-execution-journal-v1.json': 'recoverable-typed-execution-journal-v1',
+  'realm-action-adapter-v1.json': 'realm-action-adapter-v1',
   'realm-negotiation-v1.json': 'realm-negotiation-v1',
   'recoverable-typed-composition-compiler-v1.json': 'recoverable-typed-composition-compiler-v1',
   'receipt-bound-typed-executor-bundle-v1.json': 'receipt-bound-typed-executor-bundle-v1',
@@ -59,7 +60,7 @@ const registry = Object.freeze({
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
 const expectedFilesBeforeRealmNegotiation = Object.freeze(expectedFiles.filter(
-  (file) => file !== 'realm-negotiation-v1.json',
+  (file) => !['realm-action-adapter-v1.json', 'realm-negotiation-v1.json'].includes(file),
 ));
 const expectedFilesBeforePortablePhaseHost = Object.freeze(expectedFilesBeforeRealmNegotiation.filter(
   (file) => file !== 'portable-phase-host-conformance-v1.json',
@@ -799,6 +800,9 @@ const requiredHistoricalLinks = Object.freeze({
     'receipts/provider-phase-host-sdk-v1.json',
   ]),
   'realm-negotiation-v1.json': Object.freeze(expectedFilesBeforeRealmNegotiation
+    .map((file) => `receipts/${file}`)),
+  'realm-action-adapter-v1.json': Object.freeze(expectedFiles
+    .filter((file) => file !== 'realm-action-adapter-v1.json')
     .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;

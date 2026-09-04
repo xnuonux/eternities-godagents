@@ -680,3 +680,27 @@ binding, invocation, reconciliation, compensation, and rollback.
 fixture projections. `npm run certify:realm-negotiation` binds the source
 manifests, fixture, focused tests, complete suite, and prior certification
 receipts in `receipts/realm-negotiation-v1.json`.
+
+### Realm action adapter v1
+
+The [Realm action adapter design](docs/superpowers/specs/2026-09-03-realm-action-adapter-v1-design.md)
+adds the first actionable seam above negotiation. `executeNegotiatedAction`
+re-verifies the exact negotiation against the current Realm Contract and host
+authority ceiling, requires an available and idempotent hand, checks the
+committed decision and payload, and then delegates to the existing action
+gateway. It returns the unchanged detailed action receipt together with a
+compact wrapper that binds the negotiation, contract, authority ceiling,
+decision, action, and child receipt by digest.
+
+The wrapper is opt-in and not wired into default vessel launch. It does not
+carry a Realm handle, payload, credential, provider response, or authority
+grant, and it does not retry uncertain effects. The current certified boundary
+is still the local fixture Realm. Live connectors, tool discovery, credentials,
+leases, compensation, rollback, delegation, public SDK exposure, keel,
+memory, Soul, Lunari, and the Luna phenomenological core remain separate
+future boundaries.
+
+`npm run build:realm-action-adapter-fixture` rebuilds the applied and exact
+retry evidence. `npm run certify:realm-action-adapter` binds the adapter
+implementation, fixture, focused tests, complete suite, and prior receipt
+chain in `receipts/realm-action-adapter-v1.json`.
