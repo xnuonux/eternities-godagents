@@ -37,7 +37,7 @@ const PRELIMINARY_GODAGENTS_TESTS = [
 ];
 const FINAL_GODAGENTS_TESTS = [...PRELIMINARY_GODAGENTS_TESTS, RECEIPT_TEST];
 const EXPECTED_FINAL_GODAGENTS_TEST_RUNS = Object.freeze({
-  focused: { status: 'pass', tests: 18 },
+  focused: { status: 'pass', tests: 22 },
   full: { status: 'pass', tests: 948 },
 });
 const GODSKILLS_TESTS = [

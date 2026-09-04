@@ -20,7 +20,7 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 18 },
+  godagentsFocused: { status: 'pass', tests: 22 },
   godagentsFull: { status: 'pass', tests: 948 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
