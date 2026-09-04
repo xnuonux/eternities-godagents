@@ -3,17 +3,17 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
-import { verifyCrossRepositoryCurrentHeadCertificate } from '../src/integration/current-head-certificate.mjs';
+import { verifyCrossRepositoryIssuanceSnapshot } from '../src/integration/current-head-certificate.mjs';
 
 const GODSKILLS_ROOT = resolve('C:/dev/eternities-godskills');
-const CERTIFICATE_PATH = 'integrations/cross-repository-current-head-v1.json';
+const CERTIFICATE_PATH = 'integrations/cross-repository-issuance-snapshot-v1.json';
 
 async function main() {
   const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const text = await readFile(join(repositoryRoot, CERTIFICATE_PATH), 'utf8');
   const receipt = JSON.parse(text);
   if (text !== `${canonicalJson(receipt)}\n`) throw new Error('cross-repository certificate is not canonical');
-  const result = await verifyCrossRepositoryCurrentHeadCertificate(receipt, {
+  const result = await verifyCrossRepositoryIssuanceSnapshot(receipt, {
     godagentsRoot: repositoryRoot,
     godskillsRoot: GODSKILLS_ROOT,
   });

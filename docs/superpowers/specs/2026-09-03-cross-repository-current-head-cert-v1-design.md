@@ -1,5 +1,11 @@
 # cross-repository current-head certificate v1
 
+> **historical note:** this document describes the preserved v1 issuance
+> artifact. the active contract is the explicit issuance-time snapshot in
+> `2026-09-03-cross-repository-issuance-snapshot-v1-design.md`; it keeps the
+> strict staging check but does not require moving refs to remain at the
+> source after publication.
+
 - **status:** architecture ready for implementation
 - **recorded:** 2026-09-03
 - **implementation repository:** `C:\dev\eternities-godagents`

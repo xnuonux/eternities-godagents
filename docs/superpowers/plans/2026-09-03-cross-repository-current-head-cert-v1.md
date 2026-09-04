@@ -1,5 +1,10 @@
 # cross-repository current-head certificate v1 implementation plan
 
+> **historical note:** this plan produced the preserved v1 artifact. the
+> active follow-up uses
+> `2026-09-03-cross-repository-issuance-snapshot-v1-rebind.md` and the
+> issuance-snapshot CLI.
+
 > **status:** ready for execution
 
 **Goal:** publish and verify a digest-bound current-head integration certificate

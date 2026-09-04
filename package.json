@@ -83,7 +83,7 @@
     "certify:admitted-provider-backed-identity-launcher": "node scripts/build-admitted-provider-backed-identity-launcher-v1-receipt.mjs",
     "build:provider-backed-identity-cli-fixture": "node scripts/build-provider-backed-identity-cli-v1-fixture.mjs",
     "certify:provider-backed-identity-cli": "node scripts/build-provider-backed-identity-cli-v1-receipt.mjs",
-    "build:cross-repository-current-head": "node scripts/build-cross-repository-current-head-certificate.mjs",
-    "verify:cross-repository-current-head": "node scripts/verify-cross-repository-current-head-certificate.mjs"
+    "build:cross-repository-issuance-snapshot": "node scripts/build-cross-repository-issuance-snapshot.mjs",
+    "verify:cross-repository-issuance-snapshot": "node scripts/verify-cross-repository-issuance-snapshot.mjs"
   }
 }

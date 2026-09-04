@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { promisify } from 'node:util';
 import test from 'node:test';
 
 import { sha256Value } from '../src/core/digest.mjs';
@@ -7,28 +12,57 @@ import {
   pinnedGodskillsReviewSourceCommit,
 } from '../scripts/lib/pinned-godskills-review-release.mjs';
 import {
-  buildCrossRepositoryCurrentHeadCertificate,
-  verifyCrossRepositoryCurrentHeadCertificate,
+  buildCrossRepositoryIssuanceSnapshot,
+  verifyCrossRepositoryIssuanceSnapshot,
 } from '../src/integration/current-head-certificate.mjs';
 
 const godagentsRoot = 'C:/dev/eternities-godagents';
 const godskillsRoot = 'C:/dev/eternities-godskills';
-const godagentsCommit = '95a93f1a115d72f7b25a725e7da42ea4b684faae';
+const godagentsCommit = 'ddd1a231f23ca341103009ff648de891527096cb';
 const godskillsCommit = '753db46dee767c167ce15ae7eb4129c3a2075689';
+const execFileAsync = promisify(execFile);
 const refs = Object.freeze({
   godagents: { main: godagentsCommit, originMain: godagentsCommit },
   godskills: { main: godskillsCommit, originMain: godskillsCommit },
 });
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 18 },
-  godagentsFull: { status: 'pass', tests: 891 },
-  godskillsFocused: { status: 'pass', tests: 8 },
+  godagentsFocused: { status: 'pass', tests: 33 },
+  godagentsFull: { status: 'pass', tests: 894 },
+  godskillsFocused: { status: 'pass', tests: 12 },
 });
 const adaptiveReviewPin = pinnedGodskillsReviewRelease(godskillsRoot);
+let isolatedRootPromise;
+
+async function isolatedGodagentsRoot() {
+  if (!isolatedRootPromise) {
+    isolatedRootPromise = (async () => {
+      const root = await mkdtemp(join(tmpdir(), 'godagents-cross-head-rebind-'));
+      await execFileAsync('git', ['clone', '--no-local', godagentsRoot, root], {
+        encoding: 'utf8',
+        windowsHide: true,
+      });
+      await execFileAsync('git', ['-C', root, 'update-ref', 'refs/heads/main', godagentsCommit], {
+        encoding: 'utf8',
+        windowsHide: true,
+      });
+      await execFileAsync('git', ['-C', root, 'update-ref', 'refs/remotes/origin/main', godagentsCommit], {
+        encoding: 'utf8',
+        windowsHide: true,
+      });
+      return root;
+    })();
+  }
+  return isolatedRootPromise;
+}
+
+test.after(async () => {
+  if (isolatedRootPromise) await rm(await isolatedRootPromise, { recursive: true, force: true });
+});
 
 async function certificate() {
-  return buildCrossRepositoryCurrentHeadCertificate({
-    godagentsRoot,
+  const sourceRoot = await isolatedGodagentsRoot();
+  const receipt = await buildCrossRepositoryIssuanceSnapshot({
+    godagentsRoot: sourceRoot,
     godskillsRoot,
     godagentsCommit,
     godskillsCommit,
@@ -40,6 +74,7 @@ async function certificate() {
     },
     testRuns,
   });
+  return { receipt, sourceRoot };
 }
 
 function rehash(value) {
@@ -47,15 +82,16 @@ function rehash(value) {
   return { ...value, receiptDigest: sha256Value(unsigned) };
 }
 
-test('builds and verifies the exact reconciled Godagents and Godskills heads', async () => {
-  const receipt = await certificate();
-  assert.equal(receipt.status, 'certified');
+test('builds and verifies an issuance-time reconciled source snapshot', async () => {
+  const { receipt, sourceRoot } = await certificate();
+  assert.equal(receipt.status, 'certified-issuance-snapshot');
   assert.match(receipt.receiptDigest, /^[a-f0-9]{64}$/);
   assert.equal(receipt.source.godagents.commit, godagentsCommit);
   assert.equal(receipt.source.godskills.commit, godskillsCommit);
+  assert.deepEqual(receipt.testRuns, testRuns);
   assert.deepEqual(
-    await verifyCrossRepositoryCurrentHeadCertificate(receipt, {
-      godagentsRoot,
+    await verifyCrossRepositoryIssuanceSnapshot(receipt, {
+      godagentsRoot: sourceRoot,
       godskillsRoot,
       expectedGodagentsCommit: godagentsCommit,
       expectedGodskillsCommit: godskillsCommit,
@@ -81,7 +117,7 @@ test('builds and verifies the exact reconciled Godagents and Godskills heads', a
 });
 
 test('fails closed on exact-head, SDK, Beacon, trust-root, boundary, and digest drift', async () => {
-  const original = await certificate();
+  const { receipt: original, sourceRoot } = await certificate();
   const cases = [
     ['outer receipt digest', () => ({ ...original, receiptDigest: '0'.repeat(64) }), /receipt digest/i],
     ['Godagents head expectation', () => original, /Godagents.*head|head.*Godagents/i, { expectedGodagentsCommit: '0'.repeat(40) }],
@@ -135,8 +171,8 @@ test('fails closed on exact-head, SDK, Beacon, trust-root, boundary, and digest 
 
   for (const [label, mutate, pattern, options = {}] of cases) {
     await assert.rejects(
-      () => verifyCrossRepositoryCurrentHeadCertificate(mutate(), {
-        godagentsRoot,
+      () => verifyCrossRepositoryIssuanceSnapshot(mutate(), {
+        godagentsRoot: sourceRoot,
         godskillsRoot,
         expectedGodagentsCommit: godagentsCommit,
         expectedGodskillsCommit: godskillsCommit,

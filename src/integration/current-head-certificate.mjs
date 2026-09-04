@@ -8,6 +8,8 @@ const execFileAsync = promisify(execFile);
 
 export const CROSS_REPOSITORY_CURRENT_HEAD_PROTOCOL =
   'eternities-godagents-cross-repository-current-head-certificate-v1';
+export const CROSS_REPOSITORY_ISSUANCE_SNAPSHOT_PROTOCOL =
+  'eternities-godagents-cross-repository-issuance-snapshot-v1';
 
 const COMMIT = /^[a-f0-9]{40}$/;
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -371,13 +373,13 @@ function validateBoundaryEvidence(boundaries, evidence, integration) {
   }
 }
 
-function validateReceiptShape(receipt) {
+function validateReceiptShape(receipt, { protocolId, status }) {
   exactKeys(receipt, [
     'schemaVersion', 'status', 'protocolId', 'source', 'godagents', 'godskills',
     'boundaries', 'proofLimits', 'testRuns', 'receiptDigest',
   ], 'cross-repository certificate');
-  if (receipt.schemaVersion !== 1 || receipt.status !== 'certified'
-      || receipt.protocolId !== CROSS_REPOSITORY_CURRENT_HEAD_PROTOCOL) {
+  if (receipt.schemaVersion !== 1 || receipt.status !== status
+      || receipt.protocolId !== protocolId) {
     throw new Error('cross-repository certificate identity is invalid');
   }
   requireDigest(receipt.receiptDigest, 'cross-repository certificate receipt digest');
@@ -523,14 +525,16 @@ async function verifyEvidence(repositoryRoot, commit, godagents) {
   return receipt;
 }
 
-export async function verifyCrossRepositoryCurrentHeadCertificate(receipt, {
+async function verifyCertificate(receipt, {
   godagentsRoot,
   godskillsRoot,
   expectedGodagentsCommit,
   expectedGodskillsCommit,
   requireExactRefs = false,
+  protocolId,
+  status,
 } = {}) {
-  validateReceiptShape(receipt);
+  validateReceiptShape(receipt, { protocolId, status });
   const agentsSource = receipt.source.godagents;
   const skillsSource = receipt.source.godskills;
   if (expectedGodagentsCommit !== undefined) {
@@ -592,6 +596,22 @@ export async function verifyCrossRepositoryCurrentHeadCertificate(receipt, {
   validateBoundaryEvidence(receipt.boundaries, receipt.godagents.evidence, integration);
 
   return Object.freeze({ status: 'verified', receiptDigest: receipt.receiptDigest });
+}
+
+export async function verifyCrossRepositoryCurrentHeadCertificate(receipt, options = {}) {
+  return verifyCertificate(receipt, {
+    ...options,
+    protocolId: CROSS_REPOSITORY_CURRENT_HEAD_PROTOCOL,
+    status: 'certified',
+  });
+}
+
+export async function verifyCrossRepositoryIssuanceSnapshot(receipt, options = {}) {
+  return verifyCertificate(receipt, {
+    ...options,
+    protocolId: CROSS_REPOSITORY_ISSUANCE_SNAPSHOT_PROTOCOL,
+    status: 'certified-issuance-snapshot',
+  });
 }
 
 async function collectSource(repositoryRoot, commit, refs, repository) {
@@ -657,7 +677,7 @@ async function collectHostRelease(godagentsRoot, godagentsCommit) {
   };
 }
 
-export async function buildCrossRepositoryCurrentHeadCertificate({
+async function buildCertificate({
   godagentsRoot,
   godskillsRoot,
   godagentsCommit,
@@ -666,6 +686,8 @@ export async function buildCrossRepositoryCurrentHeadCertificate({
   adaptiveReviewPin,
   adaptiveReviewSource,
   testRuns,
+  protocolId,
+  status,
 } = {}) {
   requireCommit(godagentsCommit, 'Godagents build commit');
   requireCommit(godskillsCommit, 'Godskills build commit');
@@ -714,8 +736,8 @@ export async function buildCrossRepositoryCurrentHeadCertificate({
   };
   const unsigned = {
     schemaVersion: 1,
-    status: 'certified',
-    protocolId: CROSS_REPOSITORY_CURRENT_HEAD_PROTOCOL,
+    status,
+    protocolId,
     source: { godagents: agents, godskills: skills },
     godagents: {
       sdk,
@@ -749,12 +771,30 @@ export async function buildCrossRepositoryCurrentHeadCertificate({
     testRuns: clone(testRuns),
   };
   const receipt = deepFreeze({ ...unsigned, receiptDigest: sha256Value(unsigned) });
-  await verifyCrossRepositoryCurrentHeadCertificate(receipt, {
+  await verifyCertificate(receipt, {
     godagentsRoot,
     godskillsRoot,
     expectedGodagentsCommit: godagentsCommit,
     expectedGodskillsCommit: godskillsCommit,
     requireExactRefs: true,
+    protocolId,
+    status,
   });
   return receipt;
+}
+
+export async function buildCrossRepositoryCurrentHeadCertificate(options = {}) {
+  return buildCertificate({
+    ...options,
+    protocolId: CROSS_REPOSITORY_CURRENT_HEAD_PROTOCOL,
+    status: 'certified',
+  });
+}
+
+export async function buildCrossRepositoryIssuanceSnapshot(options = {}) {
+  return buildCertificate({
+    ...options,
+    protocolId: CROSS_REPOSITORY_ISSUANCE_SNAPSHOT_PROTOCOL,
+    status: 'certified-issuance-snapshot',
+  });
 }

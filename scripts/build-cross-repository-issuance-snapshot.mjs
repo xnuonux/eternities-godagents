@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
 import { canonicalJson } from '../src/core/canonical-json.mjs';
-import { buildCrossRepositoryCurrentHeadCertificate } from '../src/integration/current-head-certificate.mjs';
+import { buildCrossRepositoryIssuanceSnapshot } from '../src/integration/current-head-certificate.mjs';
 import {
   pinnedGodskillsReviewRelease,
   pinnedGodskillsReviewSourceCommit,
@@ -13,9 +13,9 @@ import {
 
 const execFileAsync = promisify(execFile);
 const GODSKILLS_ROOT = resolve('C:/dev/eternities-godskills');
-const OUTPUT_PATH = 'integrations/cross-repository-current-head-v1.json';
+const OUTPUT_PATH = 'integrations/cross-repository-issuance-snapshot-v1.json';
 const FOCUSED_GODAGENTS_TESTS = [
-  'tests/cross-repository-current-head-certificate.test.mjs',
+  'tests/cross-repository-issuance-snapshot.test.mjs',
   'tests/godskills-adaptive-activation.test.mjs',
   'tests/godskills-mission-binder.test.mjs',
   'tests/godskills-v3-integration.test.mjs',
@@ -99,7 +99,7 @@ async function main() {
     GODSKILLS_ROOT,
     'Godskills focused tests',
   );
-  const receipt = await buildCrossRepositoryCurrentHeadCertificate({
+  const receipt = await buildCrossRepositoryIssuanceSnapshot({
     godagentsRoot: repositoryRoot,
     godskillsRoot: GODSKILLS_ROOT,
     godagentsCommit,
