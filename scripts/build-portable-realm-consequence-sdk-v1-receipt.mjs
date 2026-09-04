@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -10,6 +10,7 @@ import {
   headCommit,
   historicalAtCommit,
   manifestAtCommit,
+  pathsAtCommit,
   requireCleanExcept,
   resolveSourceCommit,
   runTests,
@@ -242,11 +243,9 @@ export function verifyPortableRealmConsequenceSdkReceipt(value) {
   return value;
 }
 
-async function historicalReceiptPaths(root) {
-  const names = (await readdir(join(root, 'receipts')))
-    .filter((name) => name.endsWith('.json') && name !== receiptFilename)
-    .sort();
-  return names.map((name) => `receipts/${name}`);
+async function historicalReceiptPaths(root, sourceCommit) {
+  return (await pathsAtCommit(root, sourceCommit, 'receipts'))
+    .filter((path) => path.endsWith('.json') && path !== receiptPath);
 }
 
 export async function buildPortableRealmConsequenceSdkReceiptFromSource({
@@ -262,7 +261,7 @@ export async function buildPortableRealmConsequenceSdkReceiptFromSource({
   if (fixtureText !== `${canonicalJson(fixture)}\n`) throw new Error('portable Realm consequence SDK fixture is not canonical');
   const implementationManifest = await manifestAtCommit(root, sourceCommit, implementationFiles);
   const testManifest = await manifestAtCommit(root, sourceCommit, testFiles);
-  const history = await historicalReceiptPaths(root);
+  const history = await historicalReceiptPaths(root, sourceCommit);
   const unsigned = {
     schemaVersion: 1,
     certificationId,

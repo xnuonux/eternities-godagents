@@ -46,6 +46,13 @@ export async function manifestAtCommit(root, commit, paths) {
   return { paths: [...paths], entries, digest: sha256Value(entries) };
 }
 
+export async function pathsAtCommit(root, commit, directory) {
+  const { stdout } = await git(root, ['ls-tree', '-r', '--name-only', commit, '--', directory], {
+    encoding: 'utf8',
+  });
+  return stdout.split(/\r?\n/).filter(Boolean).sort();
+}
+
 export async function historicalAtCommit(root, commit, paths) {
   const rows = [];
   for (const path of paths) rows.push([path, sha256Text(await gitText(root, commit, path))]);
