@@ -34,6 +34,10 @@ const PRELIMINARY_GODAGENTS_TESTS = [
   'tests/portable-sdk-surface.test.mjs',
 ];
 const FINAL_GODAGENTS_TESTS = [...PRELIMINARY_GODAGENTS_TESTS, RECEIPT_TEST];
+const EXPECTED_FINAL_GODAGENTS_TEST_RUNS = Object.freeze({
+  focused: { status: 'pass', tests: 18 },
+  full: { status: 'pass', tests: 908 },
+});
 const GODSKILLS_TESTS = [
   'tests/eternities-beacon-release.test.mjs',
   'tests/godskills-system-v3-certification.test.mjs',
@@ -119,17 +123,17 @@ async function main() {
   const godskillsFocused = await runTests(GODSKILLS_TESTS, GODSKILLS_ROOT);
   const preliminaryFocused = await runTests(PRELIMINARY_GODAGENTS_TESTS, repositoryRoot);
 
-  // The receipt test needs a committed artifact. Seed the artifact with the
-  // pre-receipt gate, then rerun the complete gates and replace it atomically
-  // at the logical-file level with the final evidence.
+  // The receipt test needs an artifact before the final gates can run. Seed it
+  // with the expected final cardinalities, then rerun the complete gates and
+  // replace it with the measured evidence.
   await writeReceipt(repositoryRoot, await buildReceipt({
     repositoryRoot,
     godagentsCommit,
     godskillsCommit,
     refs,
     testRuns: {
-      godagentsFocused: preliminaryFocused,
-      godagentsFull: preliminaryFocused,
+      godagentsFocused: EXPECTED_FINAL_GODAGENTS_TEST_RUNS.focused,
+      godagentsFull: EXPECTED_FINAL_GODAGENTS_TEST_RUNS.full,
       godskillsFocused,
     },
   }));
