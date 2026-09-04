@@ -57,4 +57,3 @@ same durable boundary.
   Soul capability;
 - the prior recoverable Realm consequence receipt remains byte-identical;
 - the append-only ledger and release lineage include the new surface receipt.
-
