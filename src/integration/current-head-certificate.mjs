@@ -330,7 +330,7 @@ function validateTestRuns(testRuns) {
   }
 }
 
-function validateProofLimits(proofLimits, profile = LEGACY_PROFILE) {
+function validateProofLimits(proofLimits) {
   if (!Array.isArray(proofLimits) || !equal(proofLimits, [...PROOF_LIMITS])) {
     throw new Error('proof limits are incomplete or reordered');
   }
@@ -451,7 +451,7 @@ function validateReceiptShape(receipt, { protocolId, status, profile = LEGACY_PR
     requireCommit(source.refs.originMain, `${name} origin main ref`);
   }
   validateTestRuns(receipt.testRuns);
-  validateProofLimits(receipt.proofLimits, profile);
+  validateProofLimits(receipt.proofLimits);
 }
 
 async function verifyAppendOnlyGodagentsTip(repositoryRoot, receipt, source, profile) {
