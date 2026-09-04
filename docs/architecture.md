@@ -364,6 +364,34 @@ The data-only description binds family, policy digest, exact family-prefixed des
 
 The resolution profile closes the remaining discovery gap. It binds each family's policy, decision, response-witness, and resolution-record protocol ids, the external policy pin name, the witness-digest decision field, dispositions, and evidence-publication profile. It also makes the common `automaticRetry: false`, zero resolution-provider-call, and accepted-decision recovery semantics explicit. The outer host-description digest protects the complete profile, and family verification rejects profile substitution after rehash. This is protocol discovery only; signatures and policies are never translated across trust roots.
 
+## Portable phase-host conformance boundary
+
+`eternities-portable-phase-host-v1` is the provider-neutral migration boundary
+for a future Codex, Claude Code, local-model, MCP, or other host adapter. A
+portable description binds one adapter id and version, one non-secret policy
+digest, the exact native, review, and revision descriptors, and the common
+phase capabilities. The authority projection is deliberately false for Realm
+effects, continuity admission, personal-keel writes, identity ownership,
+evolution, Inspiration, and Soul operation.
+
+`createPortablePhaseHostAdapter` calls each source descriptor once, compares
+the result with the description, and returns only the pinned descriptor,
+reconcile, and execute ports for the three phases. Credential-absence
+preflight and the explicit operator-resolution controller remain separate
+ports. Unknown configuration, descriptor drift, forged capability or
+authority fields, credential-shaped inputs, unbranded lookalikes, and
+composition outside this surface fail closed. Construction makes no provider
+request and does not translate provider policy.
+
+The v1 fixture proves that the existing OpenAI-compatible and Anthropic
+provider hosts can be wrapped through the same boundary with six phase ports,
+zero construction-time provider calls, zero credential leaks, no authority
+expansion, and common-surface parity. This proves a reusable conformance seam,
+not a live external adapter, provider quality, remote exactly-once behavior,
+default host adoption, or any new Realm, continuity, identity, evolution,
+Inspiration, Lunari, or Soul authority. Godskills remain an external,
+receipt-bound capability dependency and are not copied into this package.
+
 ## Provider-backed mission dependency boundary
 
 The provider-backed dependency bridge consumes one SDK-issued host rather than selecting or constructing a family ambiently. A module-private process-local brand rejects descriptor-equivalent caller objects, proxies, and getter facades. The bridge snapshots and verifies the live native, review, and revision descriptors against the host description, captures the genuine callable references once, pins those descriptor bytes for the lifetime of the returned handles, and constructs the existing deferred Godskills review and mission revision executors over the pinned transports. Its immutable description binds the complete provider host description, exact Godskills release and activation roots, executor and materializer identities, transport descriptors, and materialization ceilings.

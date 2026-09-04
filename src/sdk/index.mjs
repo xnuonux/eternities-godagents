@@ -14,6 +14,7 @@ const DESCRIPTION = deepFreeze({
   protocolId: PROTOCOL_ID,
   version: VERSION,
   status: 'experimental',
+  supportedAdapterProtocols: ['eternities-portable-phase-host-v1'],
   supportedProviderFamilies: [
     'anthropic-messages-v1',
     'openai-compatible-chat-completions-v1',
@@ -49,3 +50,11 @@ export {
   createAdmittedProviderBackedIdentityLauncher,
   verifyAdmittedProviderBackedIdentityLauncherDescription,
 } from '../host/admitted-provider-backed-identity-launcher.mjs';
+
+export {
+  PORTABLE_PHASE_HOST_PROTOCOL_ID,
+  assertPortablePhaseHostInstance,
+  buildPortablePhaseHostDescription,
+  createPortablePhaseHostAdapter,
+  verifyPortablePhaseHostDescription,
+} from './portable-phase-host.mjs';

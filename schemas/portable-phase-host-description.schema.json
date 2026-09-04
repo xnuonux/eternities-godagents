@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "realmEffects",
+        "continuityAdmission",
+        "personalKeelWrite",
+        "identityOwnership",
+        "evolution",
+        "inspiration",
+        "soul"
+      ],
+      "properties": {
+        "realmEffects": { "const": false },
+        "continuityAdmission": { "const": false },
+        "personalKeelWrite": { "const": false },
+        "identityOwnership": { "const": false },
+        "evolution": { "const": false },
+        "inspiration": { "const": false },
+        "soul": { "const": false }
+      }
+    },
+    "phaseSet": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "protocolId",
+    "adapterId",
+    "adapterVersion",
+    "policyDigest",
+    "capabilities",
+    "descriptors",
+    "authority",
+    "descriptionDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-portable-phase-host-v1" },
+    "adapterId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "adapterVersion": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "policyDigest": { "$ref": "#/$defs/digest" },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phases",
+        "structuredOutputs",
+        "durableExecution",
+        "localDispatchSemantics",
+        "terminalReconciliation",
+        "credentialPreflight"
+      ],
+      "properties": {
+        "phases": { "$ref": "#/$defs/phaseSet" },
+        "structuredOutputs": { "const": true },
+        "durableExecution": { "const": true },
+        "localDispatchSemantics": { "const": "at-most-once" },
+        "terminalReconciliation": { "const": "by-dispatch-digest" },
+        "credentialPreflight": { "const": true }
+      }
+    },
+    "descriptors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["native", "review", "revision"],
+      "properties": {
+        "native": { "type": "object" },
+        "review": { "type": "object" },
+        "revision": { "type": "object" }
+      }
+    },
+    "authority": { "$ref": "#/$defs/authority" },
+    "descriptionDigest": { "$ref": "#/$defs/digest" }
+  }
+}

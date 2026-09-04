@@ -13,11 +13,16 @@ import { validOpenAICompatiblePhasePolicy } from './helpers/openai-compatible-ph
 const EXPECTED_EXPORTS = [
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
+  'PORTABLE_PHASE_HOST_PROTOCOL_ID',
+  'assertPortablePhaseHostInstance',
   'assertProviderPhaseHostInstance',
+  'buildPortablePhaseHostDescription',
   'createAdmittedProviderBackedIdentityLauncher',
+  'createPortablePhaseHostAdapter',
   'createProviderPhaseHost',
   'describeGodagentSdk',
   'verifyAdmittedProviderBackedIdentityLauncherDescription',
+  'verifyPortablePhaseHostDescription',
   'verifyProviderPhaseHostDescription',
 ];
 
@@ -101,6 +106,7 @@ test('SDK descriptor is deterministic, deeply frozen, and honest about proof lim
     protocolId: 'eternities-godagents-sdk-v1',
     version: '0.1.0',
     status: 'experimental',
+    supportedAdapterProtocols: ['eternities-portable-phase-host-v1'],
     supportedProviderFamilies: [
       'anthropic-messages-v1',
       'openai-compatible-chat-completions-v1',

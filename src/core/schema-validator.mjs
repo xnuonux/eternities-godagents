@@ -93,6 +93,7 @@ const schemaFiles = {
   'anthropic-messages-phase-transport-policy': 'anthropic-messages-phase-transport-policy.schema.json',
   'openai-compatible-phase-resolution-policy': 'openai-compatible-phase-resolution-policy.schema.json',
   'provider-phase-resolution-policy': 'provider-phase-resolution-policy.schema.json',
+  'portable-phase-host-description': 'portable-phase-host-description.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

@@ -34,6 +34,7 @@ const registry = Object.freeze({
   'provider-neutral-phase-resolution-v1.json': 'provider-neutral-phase-resolution-v1',
   'provider-backed-mission-dependencies-v1.json': 'provider-backed-mission-dependencies-v1',
   'provider-phase-host-sdk-v1.json': 'provider-phase-host-sdk-v1',
+  'portable-phase-host-conformance-v1.json': 'portable-phase-host-conformance-v1',
   'provider-resolution-authority-handoff-v1.json': 'provider-resolution-authority-handoff-v1',
   'provider-resolution-authority-outbox-v1.json': 'provider-resolution-authority-outbox-v1',
   'provider-resolution-decision-preparer-v1.json': 'provider-resolution-decision-preparer-v1',
@@ -786,6 +787,9 @@ const requiredHistoricalLinks = Object.freeze({
     'receipts/godagent-v0-certification.json',
     'receipts/networked-cortex-certification.json',
     'receipts/transactional-genesis-phase2-certification.json',
+  ]),
+  'portable-phase-host-conformance-v1.json': Object.freeze([
+    'receipts/provider-phase-host-sdk-v1.json',
   ]),
 });
 const DIGEST = /^[a-f0-9]{64}$/;

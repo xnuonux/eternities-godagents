@@ -626,3 +626,33 @@ protocol and conformance evidence rather than being inferred from this
 surface. Constructing a host or launcher reads the caller-selected policy and
 may create the caller-selected runtime directory; credential resolution and
 provider calls remain lazy and are not implied by construction.
+
+### Portable phase-host conformance v1
+
+The package also exposes a provider-neutral adapter boundary for hosts that
+can implement the existing native, review, and revision phase contracts:
+
+```js
+import {
+  buildPortablePhaseHostDescription,
+  createPortablePhaseHostAdapter,
+} from '@eternities/godagents';
+```
+
+The `eternities-portable-phase-host-v1` contract pins one adapter description,
+its policy digest, all three phase descriptors, and a common durable
+at-most-once dispatch profile. The adapter exposes only the pinned phase
+ports, credential-absence preflight, and the explicit operator-resolution
+controller factory. Its authority projection is empty for Realm effects,
+continuity admission, personal-keel writes, identity ownership, evolution,
+Inspiration, and Soul operation. The certified fixture wraps the existing
+OpenAI-compatible and Anthropic hosts without provider calls or policy
+translation.
+
+This is a conformance and migration boundary, not a claim that Codex, Claude
+Code, local-model, MCP, or another external host is already implemented or
+qualified. It does not select a provider, launch a mission, copy Godskills,
+change default behavior, or add Realm, continuity, identity, evolution,
+Inspiration, Lunari, or Soul authority. Verify the boundary with
+`npm run certify:portable-phase-host-conformance`; the resulting receipt is
+`receipts/portable-phase-host-conformance-v1.json`.
