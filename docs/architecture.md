@@ -619,3 +619,27 @@ automatic rollback, silent retry, credential persistence, generic saga,
 provider adapter, tool adapter, delegation, scheduler, or default runtime
 wiring. The source-bound certification proves the local fixture boundary and
 its crash recovery behavior only.
+
+## Bounded delegation lifecycle v1
+
+Bounded delegation is the first executable lifecycle for the existing
+temporary-worker envelope. It is an opt-in provider-neutral host with one to
+three constructor-owned worker adapters. Each admitted worker receives only a
+provenance-labelled excerpt set and the authority subset `observe`, `propose`,
+and `analyze`. Worker output is a typed observation artifact, not an organ
+proposal, constitutional decision, Realm hand, or identity mutation.
+
+The host persists `delegation.admitted`, one `worker.prepared` and
+`worker.committed` pair per worker, and one `delegation.completed` aggregate.
+Each dispatch binds the canonical admission, assignment, envelope, worker
+descriptor, and completion ceiling. Reconciliation precedes execution, so a
+completed external worker can be committed after a process boundary without
+redispatch, while `pending` remains unresolved. The aggregate is ordered by
+worker id and uses the final durable worker-commit time, making recovery
+before aggregate publication deterministic.
+
+This is a local lifecycle over injected adapters. It does not spawn child
+processes, claim sandbox isolation, select providers, retry, form a quorum,
+permit nested delegation, write a personal keel or memory, invoke a Realm,
+or change the default vessel. Its receipt proves bounded mechanism and
+recovery, not live multi-agent quality or product readiness.

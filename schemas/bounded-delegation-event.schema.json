@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sequence", "previousDigest", "eventType", "delegationId", "recordedAt", "payload", "contentDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sequence": { "type": "integer", "minimum": 1, "maximum": 16 },
+    "previousDigest": { "$ref": "#/$defs/digest" },
+    "eventType": { "enum": ["delegation.admitted", "worker.prepared", "worker.committed", "delegation.completed"] },
+    "delegationId": { "$ref": "#/$defs/digest" },
+    "recordedAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$" },
+    "payload": { "type": "object" },
+    "contentDigest": { "$ref": "#/$defs/digest" }
+  }
+}

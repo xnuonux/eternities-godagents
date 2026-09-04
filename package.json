@@ -102,6 +102,8 @@
     "build:realm-compensation-fixture": "node scripts/build-realm-compensation-v1-fixture.mjs",
     "certify:realm-compensation": "node scripts/build-realm-compensation-v1-receipt.mjs",
     "build:admitted-local-launch-fixture": "node scripts/build-admitted-local-launch-v1-fixture.mjs",
-    "certify:admitted-local-launch": "node scripts/build-admitted-local-launch-v1-receipt.mjs"
+    "certify:admitted-local-launch": "node scripts/build-admitted-local-launch-v1-receipt.mjs",
+    "build:bounded-delegation-fixture": "node scripts/build-bounded-delegation-fixture.mjs",
+    "certify:bounded-delegation": "node scripts/build-bounded-delegation-v1-receipt.mjs"
   }
 }

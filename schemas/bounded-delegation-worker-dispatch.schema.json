@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workerId", "role", "maxCompletionTokens"],
+      "properties": {
+        "workerId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+        "role": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$" },
+        "maxCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 100000 }
+      }
+    },
+    "excerpt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceRef", "provenance", "content"],
+      "properties": {
+        "sourceRef": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "provenance": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "content": { "type": "string", "minLength": 1, "maxLength": 8192 }
+      }
+    },
+    "envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "role", "taskId", "lead", "authority", "excerpts"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "role": { "const": "temporary-worker" },
+        "taskId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+        "lead": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["instanceId", "relation"],
+          "properties": {
+            "instanceId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+            "relation": { "const": "external-provenance-only" }
+          }
+        },
+        "authority": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "enum": ["observe", "propose", "analyze"] }
+        },
+        "excerpts": {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/excerpt" }
+        }
+      }
+    },
+    "descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "protocolId", "adapterId", "version"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "protocolId": { "const": "eternities-bounded-delegation-worker-v1" },
+        "adapterId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+        "version": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$" }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "delegationId", "dispatchId", "dispatchDigest", "workerId", "assignment", "envelope", "descriptor"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-bounded-delegation-v1" },
+    "delegationId": { "$ref": "#/$defs/digest" },
+    "dispatchId": { "$ref": "#/$defs/digest" },
+    "dispatchDigest": { "$ref": "#/$defs/digest" },
+    "workerId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+    "assignment": { "$ref": "#/$defs/assignment" },
+    "envelope": { "$ref": "#/$defs/envelope" },
+    "descriptor": { "$ref": "#/$defs/descriptor" }
+  }
+}

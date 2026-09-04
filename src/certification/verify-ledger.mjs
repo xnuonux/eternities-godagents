@@ -64,6 +64,9 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
+const expectedFilesBeforeBoundedDelegation = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'bounded-delegation-lifecycle-v1.json',
+));
 const legacyExpectedFiles = Object.freeze(expectedFiles.filter(
   (file) => file !== 'realm-compensation-v1.json',
 ));
@@ -835,6 +838,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'admitted-local-launch-v1.json': Object.freeze(expectedFilesBeforeAdmittedLocalLaunch
     .map((file) => `receipts/${file}`)),
+  'bounded-delegation-lifecycle-v1.json': Object.freeze(expectedFilesBeforeBoundedDelegation
+    .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
@@ -1155,6 +1160,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(admittedLocalLaunch.receipt)) {
       throw new Error('admitted local launch certification differs from exact source reconstruction');
+    }
+  }
+
+  const boundedDelegation = loaded.get('bounded-delegation-lifecycle-v1.json');
+  if (boundedDelegation) {
+    const { buildBoundedDelegationReceiptFromSource } = await import(
+      '../../scripts/build-bounded-delegation-v1-receipt.mjs'
+    );
+    const rebuilt = await buildBoundedDelegationReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: boundedDelegation.receipt.source.commit,
+      testRuns: boundedDelegation.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(boundedDelegation.receipt)) {
+      throw new Error('bounded delegation certification differs from exact source reconstruction');
     }
   }
 

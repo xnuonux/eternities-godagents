@@ -100,6 +100,14 @@ const schemaFiles = {
   'openai-compatible-phase-resolution-policy': 'openai-compatible-phase-resolution-policy.schema.json',
   'provider-phase-resolution-policy': 'provider-phase-resolution-policy.schema.json',
   'portable-phase-host-description': 'portable-phase-host-description.schema.json',
+  'bounded-delegation-admission': 'bounded-delegation-admission.schema.json',
+  'bounded-delegation-input': 'bounded-delegation-input.schema.json',
+  'bounded-delegation-worker-descriptor': 'bounded-delegation-worker-descriptor.schema.json',
+  'bounded-delegation-worker-dispatch': 'bounded-delegation-worker-dispatch.schema.json',
+  'bounded-delegation-worker-completion': 'bounded-delegation-worker-completion.schema.json',
+  'bounded-delegation-event': 'bounded-delegation-event.schema.json',
+  'bounded-delegation-state': 'bounded-delegation-state.schema.json',
+  'bounded-delegation-completion': 'bounded-delegation-completion.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

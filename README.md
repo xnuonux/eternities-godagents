@@ -50,6 +50,8 @@ npm run certify:provider-backed-mission-dependencies
 npm run certify:admitted-provider-backed-identity-launcher
 npm run build:provider-backed-identity-cli-fixture
 npm run certify:provider-backed-identity-cli
+npm run build:bounded-delegation-fixture
+npm run certify:bounded-delegation
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -799,3 +801,34 @@ rebuilds the local proof fixture and
 `npm run certify:realm-compensation` binds its source manifests, focused and
 full tests, and prior receipt chain in
 `receipts/realm-compensation-v1.json`.
+
+## Bounded delegation lifecycle v1
+
+The [bounded delegation design](docs/superpowers/specs/2026-09-04-bounded-delegation-lifecycle-v1-design.md)
+turns the authority-empty temporary-worker envelope into an opt-in durable
+coordinator. A lead may admit one to three independent worker adapters, each
+with a strict role and completion ceiling. Worker context contains only
+provenance-labelled excerpts and the bounded `observe`, `propose`, and
+`analyze` authority projection. The coordinator returns typed observations in
+stable worker-id order and never interprets them as Realm actions or
+constitutional decisions.
+
+Each delegation has a content-addressed journal and artifact directory. A
+prepared dispatch is reconciled before execution, completed results are
+published once, pending work remains pending, and a terminal delegation
+replays without adapter calls. The aggregate time is derived from the final
+durable worker commit, so a process boundary before aggregate publication
+cannot create a second aggregate identity. Descriptor changes, unknown or
+authority-shaped fields, credentials, identity, keel, Realm, nested
+delegation, oversized state, and changed journal evidence fail closed.
+
+`npm run build:bounded-delegation-fixture` rebuilds the three-worker local
+fixture. `npm run certify:bounded-delegation` binds the coordinator, fixture,
+focused tests, complete suite, and prior receipt chain in
+`receipts/bounded-delegation-lifecycle-v1.json`.
+
+This certifies a deterministic local lifecycle over injected worker adapters.
+It does not claim live provider quality, child-process isolation, remote
+exactly-once execution, quorum, nested delegation, scheduler behavior,
+default-vessel wiring, Realm action, keel or memory ownership, evolution,
+Inspiration, Soul, Lunari, or Luna phenomenological-core behavior.
