@@ -21,7 +21,7 @@ const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
   godagentsFocused: { status: 'pass', tests: 18 },
-  godagentsFull: { status: 'pass', tests: 908 },
+  godagentsFull: { status: 'pass', tests: 948 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -87,12 +87,15 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     'GODAGENT_SDK_PROTOCOL_ID',
     'GODAGENT_SDK_VERSION',
     'PORTABLE_PHASE_HOST_PROTOCOL_ID',
+    'RECOVERABLE_REALM_CONSEQUENCE_PROTOCOL_ID',
     'assertPortablePhaseHostInstance',
     'assertProviderPhaseHostInstance',
+    'assertRecoverableRealmConsequenceHost',
     'buildPortablePhaseHostDescription',
     'createAdmittedProviderBackedIdentityLauncher',
     'createPortablePhaseHostAdapter',
     'createProviderPhaseHost',
+    'createRecoverableRealmConsequenceHost',
     'describeGodagentSdk',
     'verifyAdmittedProviderBackedIdentityLauncherDescription',
     'verifyPortablePhaseHostDescription',
@@ -100,10 +103,15 @@ test('v2 names the current-head protocol and binds the merged portable surface',
   ]);
   assert.deepEqual(receipt.godagents.sdk.supportedAdapterProtocols, [
     'eternities-portable-phase-host-v1',
+    'eternities-recoverable-realm-consequence-v1',
   ]);
   assert.equal(receipt.godagents.evidence.portablePhaseHost.certificationId, 'portable-phase-host-conformance-v1');
   assert.equal(receipt.godagents.evidence.portablePhaseHost.sourceCommit, '6680b64cf8c820e04a0045e445956f2c13e8afdf');
   assert.match(receipt.godagents.evidence.portablePhaseHost.receiptDigest, /^[a-f0-9]{64}$/);
+  assert.equal(receipt.godagents.evidence.portableRealmConsequenceSdk.certificationId, 'portable-realm-consequence-sdk-v1');
+  assert.equal(receipt.godagents.evidence.portableRealmConsequenceSdk.sourceCommit, 'a0ebffe1373cd3af06b0aec8a392724d939e49b0');
+  assert.equal(receipt.godagents.evidence.portableRealmConsequenceSdk.fullTests, 948);
+  assert.match(receipt.godagents.evidence.portableRealmConsequenceSdk.receiptDigest, /^[a-f0-9]{64}$/);
 });
 
 test('v2 verification fails closed on old heads, SDK drift, portable receipt drift, and ref movement', async () => {
@@ -143,6 +151,22 @@ test('v2 verification fails closed on old heads, SDK drift, portable receipt dri
       },
     }), { godagentsRoot: repositoryRoot, godskillsRoot }),
     /portable|receipt|digest/i,
+  );
+  await assert.rejects(
+    () => verifyCrossRepositoryCurrentHeadCertificateV2(rehash({
+      ...structuredClone(original),
+      godagents: {
+        ...structuredClone(original.godagents),
+        evidence: {
+          ...structuredClone(original.godagents.evidence),
+          portableRealmConsequenceSdk: {
+            ...structuredClone(original.godagents.evidence.portableRealmConsequenceSdk),
+            receiptDigest: 'f'.repeat(64),
+          },
+        },
+      },
+    }), { godagentsRoot: repositoryRoot, godskillsRoot }),
+    /portable|Realm|receipt|digest/i,
   );
   await assert.rejects(
     () => buildCrossRepositoryCurrentHeadCertificateV2({

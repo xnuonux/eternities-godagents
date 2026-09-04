@@ -73,7 +73,7 @@ async function buildReceipt() {
     },
     testRuns: {
       godagentsFocused: { status: 'pass', tests: 18 },
-      godagentsFull: { status: 'pass', tests: 944 },
+      godagentsFull: { status: 'pass', tests: 948 },
       godskillsFocused: { status: 'pass', tests: 12 },
     },
   });
@@ -159,9 +159,12 @@ test('the committed v2 certificate binds the exact current heads and portable re
   assert.match(receipt.source.godskills.commit, /^[a-f0-9]{40}$/);
   assert.equal(receipt.godagents.evidence.portablePhaseHost.certificationId, 'portable-phase-host-conformance-v1');
   assert.equal(receipt.godagents.evidence.portablePhaseHost.sourceCommit, '6680b64cf8c820e04a0045e445956f2c13e8afdf');
+  assert.equal(receipt.godagents.evidence.portableRealmConsequenceSdk.certificationId, 'portable-realm-consequence-sdk-v1');
+  assert.equal(receipt.godagents.evidence.portableRealmConsequenceSdk.sourceCommit, 'a0ebffe1373cd3af06b0aec8a392724d939e49b0');
+  assert.equal(receipt.godagents.evidence.portableRealmConsequenceSdk.fullTests, 948);
   assert.deepEqual(receipt.testRuns, {
     godagentsFocused: { status: 'pass', tests: 18 },
-    godagentsFull: { status: 'pass', tests: 944 },
+    godagentsFull: { status: 'pass', tests: 948 },
     godskillsFocused: { status: 'pass', tests: 12 },
   });
 });

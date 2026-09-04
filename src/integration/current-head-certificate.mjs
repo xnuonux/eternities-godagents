@@ -40,6 +40,10 @@ const INTEGRATION_RECEIPT_PATH = 'receipts/godskills-v3-integration.json';
 const PORTABLE_CONFORMANCE_RECEIPT_PATH = 'receipts/portable-phase-host-conformance-v1.json';
 const PORTABLE_CONFORMANCE_CERTIFICATION_ID = 'portable-phase-host-conformance-v1';
 const PORTABLE_CONFORMANCE_PROTOCOL = 'eternities-portable-phase-host-v1';
+const PORTABLE_REALM_CONSEQUENCE_SDK_RECEIPT_PATH = 'receipts/portable-realm-consequence-sdk-v1.json';
+const PORTABLE_REALM_CONSEQUENCE_SDK_CERTIFICATION_ID = 'portable-realm-consequence-sdk-v1';
+const PORTABLE_REALM_CONSEQUENCE_SDK_CERTIFICATION_PROTOCOL = 'eternities-portable-realm-consequence-sdk-certification-v1';
+const PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL = 'eternities-recoverable-realm-consequence-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -51,14 +55,22 @@ const SDK_EXPORTS = Object.freeze([
   'verifyProviderPhaseHostDescription',
 ]);
 const V2_SDK_EXPORTS = Object.freeze([
-  ...SDK_EXPORTS.slice(0, 2),
+  'GODAGENT_SDK_PROTOCOL_ID',
+  'GODAGENT_SDK_VERSION',
   'PORTABLE_PHASE_HOST_PROTOCOL_ID',
+  'RECOVERABLE_REALM_CONSEQUENCE_PROTOCOL_ID',
   'assertPortablePhaseHostInstance',
-  ...SDK_EXPORTS.slice(2, 5),
+  'assertProviderPhaseHostInstance',
+  'assertRecoverableRealmConsequenceHost',
   'buildPortablePhaseHostDescription',
+  'createAdmittedProviderBackedIdentityLauncher',
   'createPortablePhaseHostAdapter',
-  ...SDK_EXPORTS.slice(5),
+  'createProviderPhaseHost',
+  'createRecoverableRealmConsequenceHost',
+  'describeGodagentSdk',
   'verifyPortablePhaseHostDescription',
+  'verifyAdmittedProviderBackedIdentityLauncherDescription',
+  'verifyProviderPhaseHostDescription',
 ].sort());
 const BOUNDARY_PATHS = Object.freeze([
   'src/sdk/index.mjs',
@@ -73,11 +85,16 @@ const BOUNDARY_PATHS = Object.freeze([
 const V2_BOUNDARY_PATHS = Object.freeze([
   ...new Set([
     ...BOUNDARY_PATHS,
+    'fixtures/portable-realm-consequence-sdk-v1.json',
     'schemas/portable-phase-host-description.schema.json',
+    'src/realm/recoverable-consequence-host.mjs',
     'src/sdk/portable-phase-host.mjs',
     'tests/portable-phase-host-conformance-certification.test.mjs',
     'tests/portable-phase-host-conformance.test.mjs',
+    'tests/portable-realm-consequence-sdk-certification.test.mjs',
+    'tests/portable-realm-consequence-sdk.test.mjs',
     PORTABLE_CONFORMANCE_RECEIPT_PATH,
+    PORTABLE_REALM_CONSEQUENCE_SDK_RECEIPT_PATH,
   ]),
 ].sort());
 const PROOF_LIMITS = Object.freeze([
@@ -127,6 +144,12 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   sdkExports: V2_SDK_EXPORTS,
   boundaryPaths: V2_BOUNDARY_PATHS,
   portableConformance: true,
+  portableRealmConsequenceSdk: true,
+  portableRealmConsequenceSdkFullTests: 948,
+  supportedAdapterProtocols: Object.freeze([
+    PORTABLE_CONFORMANCE_PROTOCOL,
+    PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
+  ]),
   appendOnlyPaths: Object.freeze([
     CROSS_REPOSITORY_CURRENT_HEAD_V2_ARTIFACT_PATH,
     CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH,
@@ -514,11 +537,18 @@ async function verifySdk(repositoryRoot, commit, sdk, profile = LEGACY_PROFILE) 
     throw new Error('SDK root export set mismatch');
   }
   if (profile.portableConformance) {
-    if (!equal(sdk.supportedAdapterProtocols, [PORTABLE_CONFORMANCE_PROTOCOL])) {
+    const supportedAdapterProtocols = profile.supportedAdapterProtocols ?? [PORTABLE_CONFORMANCE_PROTOCOL];
+    if (!equal(sdk.supportedAdapterProtocols, supportedAdapterProtocols)) {
       throw new Error('SDK supported adapter protocol set mismatch');
     }
-    if (!/supportedAdapterProtocols\s*:\s*\[\s*['"]eternities-portable-phase-host-v1['"]\s*\]/.test(source)) {
+    if (!source.includes(`'${PORTABLE_CONFORMANCE_PROTOCOL}'`)
+        && !source.includes(`"${PORTABLE_CONFORMANCE_PROTOCOL}"`)) {
       throw new Error('SDK portable adapter protocol declaration is missing');
+    }
+    if (profile.portableRealmConsequenceSdk
+        && !source.includes(`'${PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL}'`)
+        && !source.includes(`"${PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL}"`)) {
+      throw new Error('SDK Realm consequence adapter protocol declaration is missing');
     }
   }
 }
@@ -622,10 +652,46 @@ async function verifyPortableConformanceEvidence(repositoryRoot, commit, evidenc
   await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'portable conformance source commit');
 }
 
+async function verifyPortableRealmConsequenceSdkEvidence(repositoryRoot, commit, evidence, profile) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'fullTests', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'portable Realm consequence SDK evidence');
+  if (evidence.certificationId !== PORTABLE_REALM_CONSEQUENCE_SDK_CERTIFICATION_ID
+      || evidence.path !== PORTABLE_REALM_CONSEQUENCE_SDK_RECEIPT_PATH) {
+    throw new Error('portable Realm consequence SDK evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'portable Realm consequence SDK fixture digest');
+  requireDigest(evidence.receiptDigest, 'portable Realm consequence SDK receipt digest');
+  requireDigest(evidence.sha256, 'portable Realm consequence SDK receipt file digest');
+  requireCommit(evidence.sourceCommit, 'portable Realm consequence SDK source commit');
+  if (!Number.isInteger(evidence.fullTests)
+      || evidence.fullTests !== profile.portableRealmConsequenceSdkFullTests) {
+    throw new Error('portable Realm consequence SDK full test evidence mismatch');
+  }
+  const text = await readBlob(repositoryRoot, commit, evidence.path, 'portable Realm consequence SDK receipt');
+  if (sha256Text(text) !== evidence.sha256) throw new Error('portable Realm consequence SDK receipt file digest mismatch');
+  const receipt = parseJson(text, 'portable Realm consequence SDK receipt');
+  requireCanonicalJsonText(text, receipt, 'portable Realm consequence SDK receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== PORTABLE_REALM_CONSEQUENCE_SDK_CERTIFICATION_ID
+      || receipt.protocolId !== PORTABLE_REALM_CONSEQUENCE_SDK_CERTIFICATION_PROTOCOL
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest
+      || receipt.testRuns?.full?.status !== 'pass'
+      || receipt.testRuns.full.tests !== evidence.fullTests) {
+    throw new Error('portable Realm consequence SDK receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'portable Realm consequence SDK source commit');
+  await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'portable Realm consequence SDK source commit');
+}
+
 async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
-  exactKeys(godagents.evidence, profile.portableConformance
-    ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost']
-    : ['boundaryFiles', 'integrationReceipt'], 'Godagents evidence');
+  const expectedEvidenceKeys = profile.portableConformance
+    ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost',
+      ...(profile.portableRealmConsequenceSdk ? ['portableRealmConsequenceSdk'] : [])]
+    : ['boundaryFiles', 'integrationReceipt'];
+  exactKeys(godagents.evidence, expectedEvidenceKeys, 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
       || !equal(godagents.evidence.boundaryFiles.map(({ path }) => path), [...profile.boundaryPaths])) {
     throw new Error('Godagents boundary evidence paths are not canonical');
@@ -655,6 +721,14 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
   }
   if (profile.portableConformance) {
     await verifyPortableConformanceEvidence(repositoryRoot, commit, godagents.evidence.portablePhaseHost);
+  }
+  if (profile.portableRealmConsequenceSdk) {
+    await verifyPortableRealmConsequenceSdkEvidence(
+      repositoryRoot,
+      commit,
+      godagents.evidence.portableRealmConsequenceSdk,
+      profile,
+    );
   }
   return receipt;
 }
@@ -806,6 +880,24 @@ async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGA
       sourceCommit: portable.source.commit,
     };
   }
+  if (profile.portableRealmConsequenceSdk) {
+    const portableRealmText = await readBlob(
+      repositoryRoot,
+      commit,
+      PORTABLE_REALM_CONSEQUENCE_SDK_RECEIPT_PATH,
+      'portable Realm consequence SDK receipt',
+    );
+    const portableRealm = parseJson(portableRealmText, 'portable Realm consequence SDK receipt');
+    evidence.portableRealmConsequenceSdk = {
+      certificationId: portableRealm.certificationId,
+      fixtureDigest: portableRealm.fixture.logicalDigest,
+      fullTests: portableRealm.testRuns.full.tests,
+      path: PORTABLE_REALM_CONSEQUENCE_SDK_RECEIPT_PATH,
+      receiptDigest: portableRealm.receiptDigest,
+      sha256: sha256Text(portableRealmText),
+      sourceCommit: portableRealm.source.commit,
+    };
+  }
   return evidence;
 }
 
@@ -826,7 +918,9 @@ async function collectSdk(godagentsRoot, godagentsCommit, profile = LEGACY_PROFI
     packageSha256: sha256Text(packageText),
     rootExports: parseSdkExports(entrypointText),
   };
-  if (profile.portableConformance) sdk.supportedAdapterProtocols = [PORTABLE_CONFORMANCE_PROTOCOL];
+  if (profile.portableConformance) {
+    sdk.supportedAdapterProtocols = [...(profile.supportedAdapterProtocols ?? [PORTABLE_CONFORMANCE_PROTOCOL])];
+  }
   return sdk;
 }
 

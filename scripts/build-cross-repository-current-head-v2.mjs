@@ -29,6 +29,8 @@ const OUTPUT_PATH = CROSS_REPOSITORY_CURRENT_HEAD_V2_ARTIFACT_PATH;
 const RECEIPT_TEST = 'tests/cross-repository-current-head-v2-receipt.test.mjs';
 const PRELIMINARY_GODAGENTS_TESTS = [
   'tests/cross-repository-current-head-v2.test.mjs',
+  'tests/portable-realm-consequence-sdk-certification.test.mjs',
+  'tests/portable-realm-consequence-sdk.test.mjs',
   'tests/portable-phase-host-conformance-certification.test.mjs',
   'tests/portable-phase-host-conformance.test.mjs',
   'tests/portable-sdk-surface.test.mjs',
@@ -36,7 +38,7 @@ const PRELIMINARY_GODAGENTS_TESTS = [
 const FINAL_GODAGENTS_TESTS = [...PRELIMINARY_GODAGENTS_TESTS, RECEIPT_TEST];
 const EXPECTED_FINAL_GODAGENTS_TEST_RUNS = Object.freeze({
   focused: { status: 'pass', tests: 18 },
-  full: { status: 'pass', tests: 944 },
+  full: { status: 'pass', tests: 948 },
 });
 const GODSKILLS_TESTS = [
   'tests/eternities-beacon-release.test.mjs',
