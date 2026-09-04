@@ -69,7 +69,8 @@
                   "required": ["observationField", "addInputField"],
                   "properties": {
                     "observationField": { "type": "string", "minLength": 1 },
-                    "addInputField": { "type": "string", "minLength": 1 }
+                    "addInputField": { "type": "string", "minLength": 1 },
+                    "operation": { "enum": ["add", "subtract"] }
                   }
                 }
               }

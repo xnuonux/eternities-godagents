@@ -47,7 +47,11 @@ export function deriveExpectedOutcome(hand, payload, observation) {
     if (!Number.isFinite(base) || !Number.isFinite(delta)) {
       throw new AuthorityError('Realm hand expected outcome cannot be derived');
     }
-    return [outputField, base + delta];
+    const operation = rule.operation ?? 'add';
+    if (operation !== 'add' && operation !== 'subtract') {
+      throw new AuthorityError('Realm hand expected outcome operation is unsupported');
+    }
+    return [outputField, operation === 'subtract' ? base - delta : base + delta];
   }));
 }
 
@@ -58,4 +62,3 @@ export function assertExpectedOutcome(hand, payload, observation, expectedOutcom
   }
   return derived;
 }
-

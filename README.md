@@ -767,3 +767,35 @@ remote durability or exactly-once effect, Godskills integration, keel or
 memory ownership, identity evolution, Soul, Lunari, or the Luna
 phenomenological core. The explicit package-root export is certified separately
 as `receipts/portable-realm-consequence-sdk-v1.json`.
+
+### Realm compensation boundary v1
+
+The [Realm compensation design](docs/superpowers/specs/2026-09-04-realm-compensation-boundary-v1-design.md)
+adds a deliberately narrow, opt-in inverse-action boundary above the
+recoverable consequence host. `buildRealmCompensationRelation` can bind two
+already-declared idempotent hands from one exact Realm Contract when every
+required payload field and every observation-delta outcome field is covered,
+the payload values are equal, and the two operations are algebraic opposites.
+Historical observation-delta hands remain additive when their optional
+`operation` field is absent.
+
+`createRecoverableRealmCompensationHost` accepts only a branded recoverable
+primary host and a separate compensating consequence input. Before durable
+admission it performs an effect-free preflight, inspects the primary journal,
+and requires an exact completed primary with `applied`, `none`, and `complete`
+status. It never treats an uncertain, pending, denied, or caller-supplied
+primary receipt as eligible. The compensation journal has exactly three
+events, `compensation.admitted`, `compensation.resulted`, and
+`compensation.receipted`, and recovery reuses the existing idempotency and
+reconciliation boundary.
+
+This is explicit compensation, not automatic rollback. A failed or
+unexpected compensating consequence is reported as `repair` or `escalate`;
+the host does not retry silently, expand authority, persist credentials, or
+invent a generic saga. It adds no default launch, provider, tool, delegation,
+scheduler, keel, memory, Godskills, evolution, Soul, Lunari, or Luna
+phenomenological-core behavior. `npm run build:realm-compensation-fixture`
+rebuilds the local proof fixture and
+`npm run certify:realm-compensation` binds its source manifests, focused and
+full tests, and prior receipt chain in
+`receipts/realm-compensation-v1.json`.

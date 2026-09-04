@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "minLength": 64, "maxLength": 64 }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "protocolId", "executionId", "primaryExecutionId",
+    "inputDigest", "relationDigest", "instanceId", "missionId", "stateEpoch",
+    "primaryHandId", "compensatingHandId", "primaryReceiptDigest",
+    "primaryActionReceiptDigest", "primaryConsequenceReceiptDigest",
+    "compensationConsequenceDigest", "compensationReceiptDigest",
+    "resultEventDigest", "restorationStatus", "disposition", "receiptDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-realm-compensation-v1" },
+    "executionId": { "$ref": "#/$defs/digest" },
+    "primaryExecutionId": { "$ref": "#/$defs/digest" },
+    "inputDigest": { "$ref": "#/$defs/digest" },
+    "relationDigest": { "$ref": "#/$defs/digest" },
+    "instanceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "missionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "stateEpoch": { "type": "integer", "minimum": 0 },
+    "primaryHandId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "compensatingHandId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "primaryReceiptDigest": { "$ref": "#/$defs/digest" },
+    "primaryActionReceiptDigest": { "$ref": "#/$defs/digest" },
+    "primaryConsequenceReceiptDigest": { "$ref": "#/$defs/digest" },
+    "compensationConsequenceDigest": { "$ref": "#/$defs/digest" },
+    "compensationReceiptDigest": { "$ref": "#/$defs/digest" },
+    "resultEventDigest": { "$ref": "#/$defs/digest" },
+    "restorationStatus": { "enum": ["restored", "repair", "escalate"] },
+    "disposition": { "enum": ["complete", "repair", "escalate", "terminal"] },
+    "receiptDigest": { "$ref": "#/$defs/digest" }
+  }
+}

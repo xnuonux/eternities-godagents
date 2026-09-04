@@ -19,6 +19,8 @@ const expectedCommands = Object.freeze({
     'node scripts/build-recoverable-typed-execution-journal-v1-receipt.mjs',
   'certify:recoverable-realm-consequence':
     'node scripts/build-recoverable-realm-consequence-v1-receipt.mjs',
+  'certify:realm-compensation':
+    'node scripts/build-realm-compensation-v1-receipt.mjs',
   'certify:sealed-local-typed-execution-runner':
     'node scripts/build-sealed-local-typed-execution-runner-v1-receipt.mjs',
 });

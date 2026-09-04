@@ -47,6 +47,7 @@ const registry = Object.freeze({
   'recoverable-realm-consequence-vessel-v1.json': 'recoverable-realm-consequence-vessel-v1',
   'recoverable-typed-execution-journal-v1.json': 'recoverable-typed-execution-journal-v1',
   'realm-action-adapter-v1.json': 'realm-action-adapter-v1',
+  'realm-compensation-v1.json': 'realm-compensation-v1',
   'realm-consequence-executor-v1.json': 'realm-consequence-executor-v1',
   'realm-negotiation-v1.json': 'realm-negotiation-v1',
   'recoverable-typed-composition-compiler-v1.json': 'recoverable-typed-composition-compiler-v1',
@@ -63,7 +64,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforePortableRealmConsequenceSdk = Object.freeze(expectedFiles.filter(
+const legacyExpectedFiles = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'realm-compensation-v1.json',
+));
+const expectedFilesBeforePortableRealmConsequenceSdk = Object.freeze(legacyExpectedFiles.filter(
   (file) => file !== 'portable-realm-consequence-sdk-v1.json',
 ));
 const expectedFilesBeforeAdmittedLocalLaunch = Object.freeze(expectedFilesBeforePortableRealmConsequenceSdk.filter(
@@ -827,6 +831,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'recoverable-realm-consequence-vessel-v1.json': Object.freeze(expectedFilesBeforeRecoverableRealmConsequence
     .map((file) => `receipts/${file}`)),
+  'realm-compensation-v1.json': Object.freeze(legacyExpectedFiles
+    .map((file) => `receipts/${file}`)),
   'admitted-local-launch-v1.json': Object.freeze(expectedFilesBeforeAdmittedLocalLaunch
     .map((file) => `receipts/${file}`)),
 });
@@ -1119,6 +1125,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(recoverableRealmConsequence.receipt)) {
       throw new Error('recoverable Realm consequence certification differs from exact source reconstruction');
+    }
+  }
+
+  const realmCompensation = loaded.get('realm-compensation-v1.json');
+  if (realmCompensation) {
+    const { buildRealmCompensationReceiptFromSource } = await import(
+      '../../scripts/build-realm-compensation-v1-receipt.mjs'
+    );
+    const rebuilt = await buildRealmCompensationReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: realmCompensation.receipt.source.commit,
+      testRuns: realmCompensation.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(realmCompensation.receipt)) {
+      throw new Error('Realm compensation certification differs from exact source reconstruction');
     }
   }
 

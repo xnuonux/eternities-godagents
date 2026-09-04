@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "realmId": "fixture-compensation-workbench",
+  "version": "1",
+  "trustModel": "fixture-local",
+  "capabilities": ["counter.observe", "counter.increment", "counter.decrement"],
+  "observations": [
+    { "id": "counter.state", "freshness": "cycle" }
+  ],
+  "hands": [
+    {
+      "id": "counter.decrement",
+      "effect": "local-write",
+      "requiredAuthority": ["realm:write"],
+      "idempotent": true,
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["amount"],
+        "properties": {
+          "amount": { "type": "integer", "minimum": 1, "maximum": 1 }
+        }
+      },
+      "expectedOutcome": {
+        "type": "observation-delta",
+        "fields": {
+          "counter": {
+            "observationField": "counter",
+            "addInputField": "amount",
+            "operation": "subtract"
+          }
+        }
+      }
+    },
+    {
+      "id": "counter.increment",
+      "effect": "local-write",
+      "requiredAuthority": ["realm:write"],
+      "idempotent": true,
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["amount"],
+        "properties": {
+          "amount": { "type": "integer", "minimum": 1, "maximum": 1 }
+        }
+      },
+      "expectedOutcome": {
+        "type": "observation-delta",
+        "fields": {
+          "counter": {
+            "observationField": "counter",
+            "addInputField": "amount",
+            "operation": "add"
+          }
+        }
+      }
+    }
+  ],
+  "resources": {
+    "maxActionsPerCycle": 1
+  },
+  "privacy": {
+    "retention": "test-only"
+  },
+  "lifecycle": {
+    "entry": "explicit",
+    "suspension": "fail-closed",
+    "recovery": "reconcile",
+    "exit": "receipt-required"
+  },
+  "compatibleDistributions": ["0.1.x"]
+}

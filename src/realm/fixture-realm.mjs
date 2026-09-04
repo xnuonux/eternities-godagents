@@ -35,10 +35,14 @@ export function createFixtureRealm({
       if (!hand) throw new AuthorityError(`Realm hand ${handId} is not declared`);
       if (outcomes.has(idempotencyKey)) return outcomes.get(idempotencyKey);
       if (!Number.isInteger(payload.amount) || payload.amount < 1) {
-        throw new TypeError('counter increment amount must be a positive integer');
+        throw new TypeError('counter transition amount must be a positive integer');
       }
 
-      counter += payload.amount;
+      const operation = hand.expectedOutcome?.fields?.counter?.operation ?? 'add';
+      if (operation !== 'add' && operation !== 'subtract') {
+        throw new AuthorityError('fixture counter transition operation is unsupported');
+      }
+      counter += operation === 'subtract' ? -payload.amount : payload.amount;
       invocationCount += 1;
       const result = {
         status: 'applied',

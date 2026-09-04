@@ -99,6 +99,8 @@
     "certify:realm-consequence-executor": "node scripts/build-realm-consequence-executor-v1-receipt.mjs",
     "build:recoverable-realm-consequence-fixture": "node scripts/build-recoverable-realm-consequence-v1-fixture.mjs",
     "certify:recoverable-realm-consequence": "node scripts/build-recoverable-realm-consequence-v1-receipt.mjs",
+    "build:realm-compensation-fixture": "node scripts/build-realm-compensation-v1-fixture.mjs",
+    "certify:realm-compensation": "node scripts/build-realm-compensation-v1-receipt.mjs",
     "build:admitted-local-launch-fixture": "node scripts/build-admitted-local-launch-v1-fixture.mjs",
     "certify:admitted-local-launch": "node scripts/build-admitted-local-launch-v1-receipt.mjs"
   }

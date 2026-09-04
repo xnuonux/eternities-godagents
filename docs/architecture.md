@@ -587,3 +587,35 @@ live connectors, keel, memory, identity, evolution, Inspiration, Soul, Lunari,
 and Luna phenomenological-core authority remain outside this release. The
 explicit package-root exposure is covered by the separate
 [portable SDK certification](portable-realm-consequence-sdk-v1-certification.md).
+
+## Realm compensation boundary v1
+
+Realm compensation is an explicit inverse-action adapter, not a generalized
+rollback engine. It is constructed above a branded recoverable consequence
+host and consumes one exact Contract, one inverse relation, and one ordinary
+consequence input for the compensating hand. The relation is valid only when
+both hands are declared, idempotent, and covered by the same Contract digest;
+all required payload fields are bound one-to-one with equal values; all
+outcome fields are bound one-to-one to the same observation fields; and each
+paired observation-delta operation is one `add` and one `subtract`.
+
+The primary action is not caller evidence. Before writing the compensation
+admission, the adapter inspects the branded primary host and then reads its
+terminal, fully verified journal. Only an `applied`, discrepancy-free,
+`complete` primary is eligible. Pending, uncertain, denied, failed, stale,
+missing, or changed primary state fails closed before a compensating Realm
+call. The compensating hand still passes through the existing negotiated
+consequence executor, so mission, host, constitution, effect, authority,
+precondition, budget, identity, and state ceilings remain authoritative.
+
+The new host owns a separate bounded JSONL journal with the exact lifecycle
+`compensation.admitted -> compensation.resulted -> compensation.receipted`.
+Its receipt binds the primary witness, relation, compensating consequence,
+and result event. Recovery revalidates all source and journal bindings, uses
+the existing child idempotency and reconciliation path after a possible
+external effect, and performs no Realm call for terminal replay. A mismatch
+after compensation is classified as `repair` or `escalate`; there is no
+automatic rollback, silent retry, credential persistence, generic saga,
+provider adapter, tool adapter, delegation, scheduler, or default runtime
+wiring. The source-bound certification proves the local fixture boundary and
+its crash recovery behavior only.
