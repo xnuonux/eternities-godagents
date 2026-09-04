@@ -6,8 +6,9 @@ import { sha256Value } from '../core/digest.mjs';
 import { IntegrityError } from '../core/errors.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
 import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
+import { commitDecision } from '../runtime/arbiter.mjs';
 import { executeNegotiatedConsequence } from './negotiated-consequence-executor.mjs';
-import { verifyRealmNegotiation } from './negotiation.mjs';
+import { buildRealmNegotiation } from './negotiation.mjs';
 import { appendEvent, readVerifiedJournal } from '../state/journal.mjs';
 import { acquireFileLock } from '../state/file-lock.mjs';
 
@@ -233,10 +234,42 @@ function verifyConsequenceResult(value, input, label = 'recoverable consequence 
       throw new IntegrityError(`${label} action ${key} is invalid`);
     }
   }
-  const negotiation = verifyRealmNegotiation(value.negotiation, {
-    contract: input.contract,
-    authority: value.negotiation.authorityCeiling,
+  const intent = input.proposal.intent;
+  const expectedAuthority = {
+    availableAuthority: [...input.mission.authority].sort(),
+    permittedEffects: input.authority.permittedEffects
+      .filter((effect) => effect === intent.effect && input.constitution.allowedEffects.includes(effect))
+      .sort(),
+  };
+  const negotiation = buildRealmNegotiation({ contract: input.contract, authority: expectedAuthority });
+  if (canonicalJson(value.negotiation) !== canonicalJson(negotiation)) {
+    throw new IntegrityError(`${label} negotiation binding is invalid`);
+  }
+  const expectedDecision = commitDecision({
+    proposals: [input.proposal],
+    state: {
+      epoch: input.state.epoch,
+      missionId: input.mission.missionId,
+      now: input.state.now,
+      preconditions: input.state.preconditions,
+    },
+    constitution: input.constitution,
+    authority: expectedAuthority.availableAuthority,
   });
+  if (canonicalJson(value.decision) !== canonicalJson(expectedDecision)) {
+    throw new IntegrityError(`${label} decision binding is invalid`);
+  }
+  const { effect: ignoredEffect, handId, ...payload } = expectedDecision.committedIntent;
+  void ignoredEffect;
+  const expectedAction = {
+    actionId: `action:${input.state.instanceId}:${input.mission.missionId}:${input.state.epoch}`,
+    idempotencyKey: `consequence:${input.state.instanceId}:${expectedDecision.decisionId}`,
+    handId,
+    payload,
+  };
+  if (canonicalJson(value.action) !== canonicalJson(expectedAction)) {
+    throw new IntegrityError(`${label} action binding is invalid`);
+  }
   if (value.receipt.proposalDigest !== sha256Value(input.proposal)
       || value.receipt.instanceId !== input.state.instanceId
       || value.receipt.missionId !== input.mission.missionId

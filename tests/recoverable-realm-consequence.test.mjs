@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
+import { canonicalJson } from '../src/core/canonical-json.mjs';
 import { sha256Value } from '../src/core/digest.mjs';
 import { assertSchema } from '../src/core/schema-validator.mjs';
 import { readVerifiedJournal } from '../src/state/journal.mjs';
@@ -220,6 +221,37 @@ test('tampered journal bytes fail closed before recovery can reach the Realm', a
     await writeFile(journalPath, original.replace('mission-recoverable-consequence-1', 'tampered-mission'), 'utf8');
     await assert.rejects(() => host.recover(executionId), /journal digest mismatch|journal integrity/i);
     assert.equal(realm.inspect().invocationCount, 0);
+  });
+});
+
+test('a semantically expanded persisted action fails closed even when journal digests are recomputed', async () => {
+  let crashed = false;
+  await withHost({
+    checkpoint: async (stage) => {
+      if (!crashed && stage === 'after-result-publish') {
+        crashed = true;
+        throw new Error('leave result for semantic tamper');
+      }
+    },
+  }, async ({ host, realm, root }) => {
+    const input = await inputFor();
+    const executionId = host.executionIdFor(input);
+    await assert.rejects(() => host.execute(input), /leave result for semantic tamper/);
+    const journalPath = join(root, 'executions', executionId, 'journal.jsonl');
+    const events = (await readFile(journalPath, 'utf8')).trim().split('\n').map((line) => JSON.parse(line));
+    events[1].payload.consequence.action.payload.amount = 2;
+    events[1].payload.consequence.receipt.actionDigest = sha256Value(events[1].payload.consequence.action);
+    const { receiptDigest, ...unsignedReceipt } = events[1].payload.consequence.receipt;
+    void receiptDigest;
+    events[1].payload.consequence.receipt.receiptDigest = sha256Value(unsignedReceipt);
+    events[1].payload.consequenceDigest = sha256Value(events[1].payload.consequence);
+    const { contentDigest, ...unsignedEvent } = events[1];
+    void contentDigest;
+    events[1].contentDigest = sha256Value(unsignedEvent);
+    await writeFile(journalPath, `${events.map((event) => canonicalJson(event)).join('\n')}\n`, 'utf8');
+
+    await assert.rejects(() => host.recover(executionId), /action binding/);
+    assert.equal(realm.inspect().invocationCount, 1);
   });
 });
 
