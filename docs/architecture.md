@@ -466,3 +466,28 @@ The authority outbox is a local durable shell around the portable authority hand
 Three canonical files form the outbox lifecycle: `request.json`, `signed-return.json`, and `terminal.json`. One per-operation lock serializes state transitions. Recovery re-verifies the complete stored request, the current controller operation, and any signed return before reporting or mutating state. If controller acceptance survived but terminal publication did not, reconciliation projects the exact completed or abandoned controller result without needing the response body or another provider call.
 
 Raw response bytes exist only in the caller's in-memory `prepare` and `submit` calls for adoption. The durable request carries only the family-native response witness, and the terminal carries only request, decision, and controller resolution digests. Unknown entries, noncanonical records, changed operation bindings, signature collisions, unsafe files, and reparse-point operation roots fail closed. This proves local crash recovery and at-most-once provider dispatch across the two certified families. It does not create signing authority, authenticate an external signer independently, prove provider truth, or establish remote exactly-once execution.
+
+## Realm capability negotiation boundary
+
+The Realm negotiation adapter is a read-only discovery projection between a
+host's current authority ceiling and one verified Realm Contract. It validates
+the existing fixture contract plus the semantic links needed by the action
+gateway, then returns the declared observations, declared hand contracts that
+fit both permitted effects and available authority, and the sorted complement
+of omitted hands. Its `contractDigest` binds the exact source contract and its
+`negotiationDigest` binds the complete unsigned projection.
+
+The projection is deeply frozen and strict-schema validated. It contains no
+Realm object, callable operation, credential, lease, or authority grant. A
+specialist or all-rounder profile is not interpreted here, and discovery cannot
+expand a Godagent's host ceiling. Verification requires the original contract
+and authority input and reconstructs the same canonical bytes, so changed
+source, ceiling, hand, protocol, or digest data fails closed.
+
+This is the first narrow discovery seam for a future inhabited digital world,
+but it is not that world and it does not enter Luna's phenomenological core.
+Invocation, observation transport, credential binding, external tools,
+compensation, rollback, delegation, scheduling, public SDK adoption, keel or
+memory writes, Soul, and Lunari remain separate future boundaries. The
+source-bound [Realm negotiation certification](realm-negotiation-v1-certification.md)
+proves only the local fixture projection and its integrity limits.

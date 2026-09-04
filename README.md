@@ -656,3 +656,27 @@ change default behavior, or add Realm, continuity, identity, evolution,
 Inspiration, Lunari, or Soul authority. Verify the boundary with
 `npm run certify:portable-phase-host-conformance`; the resulting receipt is
 `receipts/portable-phase-host-conformance-v1.json`.
+
+### Realm negotiation v1
+
+The [Realm negotiation design](docs/superpowers/specs/2026-09-03-realm-negotiation-v1-design.md)
+adds a small read-only discovery boundary between a host authority ceiling and
+a declared Realm Contract. `buildRealmNegotiation` validates the exact fixture
+contract, checks outcome references, and returns a deeply frozen projection of
+the declared observations and the hands that fit both the host's permitted
+effects and available authority. The source contract digest and negotiation
+digest bind the exact bytes, while omitted hands remain visible as a closed
+complement.
+
+The projection exposes no Realm handle, invocation function, credentials, lease,
+or authority grant. It does not invoke a Realm, select a provider, load
+Godskill bodies, write a keel or memory, delegate, schedule, evolve identity,
+activate Soul, or enter the Luna phenomenological core. The existing Realm
+execution paths and all default launches remain unchanged. Future external
+Realm adapters must earn separate contracts for tool discovery, credential
+binding, invocation, reconciliation, compensation, and rollback.
+
+`npm run build:realm-negotiation-fixture` rebuilds the writable and read-only
+fixture projections. `npm run certify:realm-negotiation` binds the source
+manifests, fixture, focused tests, complete suite, and prior certification
+receipts in `receipts/realm-negotiation-v1.json`.

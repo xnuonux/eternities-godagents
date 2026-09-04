@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "protocolId", "contractDigest", "realmId", "version", "trustModel",
+    "capabilities", "observations", "availableHands", "omittedHandIds", "resources", "privacy",
+    "lifecycle", "compatibleDistributions", "authorityCeiling", "negotiationDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-realm-negotiation-v1" },
+    "contractDigest": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "realmId": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "trustModel": { "const": "fixture-local" },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "observations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "freshness"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "freshness": { "enum": ["cycle", "event"] }
+        }
+      }
+    },
+    "availableHands": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/hand" }
+    },
+    "omittedHandIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxActionsPerCycle"],
+      "properties": { "maxActionsPerCycle": { "type": "integer", "minimum": 1 } }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retention"],
+      "properties": { "retention": { "const": "test-only" } }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry", "suspension", "recovery", "exit"],
+      "properties": {
+        "entry": { "const": "explicit" },
+        "suspension": { "const": "fail-closed" },
+        "recovery": { "const": "reconcile" },
+        "exit": { "const": "receipt-required" }
+      }
+    },
+    "compatibleDistributions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "authorityCeiling": { "$ref": "#/$defs/authorityCeiling" },
+    "negotiationDigest": { "type": "string", "minLength": 64, "maxLength": 64 }
+  },
+  "$defs": {
+    "authorityCeiling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["availableAuthority", "permittedEffects"],
+      "properties": {
+        "availableAuthority": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "permittedEffects": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "hand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "effect", "requiredAuthority", "idempotent", "inputSchema", "expectedOutcome"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "effect": { "type": "string", "minLength": 1 },
+        "requiredAuthority": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "idempotent": { "type": "boolean" },
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "additionalProperties", "required", "properties"],
+          "properties": {
+            "type": { "const": "object" },
+            "additionalProperties": { "const": false },
+            "required": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "properties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "minimum", "maximum"],
+                "properties": {
+                  "type": { "enum": ["integer", "number", "string", "boolean"] },
+                  "minimum": { "type": "integer" },
+                  "maximum": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "expectedOutcome": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "fields"],
+          "properties": {
+            "type": { "const": "observation-delta" },
+            "fields": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["observationField", "addInputField"],
+                "properties": {
+                  "observationField": { "type": "string", "minLength": 1 },
+                  "addInputField": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

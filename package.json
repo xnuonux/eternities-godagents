@@ -88,6 +88,8 @@
     "build:portable-phase-host-conformance-fixture": "node scripts/build-portable-phase-host-conformance-v1-fixture.mjs",
     "certify:portable-phase-host-conformance": "node scripts/build-portable-phase-host-conformance-v1-receipt.mjs",
     "build:cross-repository-current-head-v2": "node scripts/build-cross-repository-current-head-v2.mjs",
-    "verify:cross-repository-current-head-v2": "node scripts/verify-cross-repository-current-head-v2.mjs"
+    "verify:cross-repository-current-head-v2": "node scripts/verify-cross-repository-current-head-v2.mjs",
+    "build:realm-negotiation-fixture": "node scripts/build-realm-negotiation-v1-fixture.mjs",
+    "certify:realm-negotiation": "node scripts/build-realm-negotiation-v1-receipt.mjs"
   }
 }

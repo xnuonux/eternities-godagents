@@ -43,6 +43,7 @@ const registry = Object.freeze({
   'recoverable-mission-native-executor-v1.json': 'recoverable-mission-native-executor-v1',
   'recoverable-mission-revision-executor-v1.json': 'recoverable-mission-revision-executor-v1',
   'recoverable-typed-execution-journal-v1.json': 'recoverable-typed-execution-journal-v1',
+  'realm-negotiation-v1.json': 'realm-negotiation-v1',
   'recoverable-typed-composition-compiler-v1.json': 'recoverable-typed-composition-compiler-v1',
   'receipt-bound-typed-executor-bundle-v1.json': 'receipt-bound-typed-executor-bundle-v1',
   'resumable-mission-review-kernel-v1.json': 'resumable-mission-review-kernel-v1',
@@ -57,7 +58,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforePortablePhaseHost = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeRealmNegotiation = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'realm-negotiation-v1.json',
+));
+const expectedFilesBeforePortablePhaseHost = Object.freeze(expectedFilesBeforeRealmNegotiation.filter(
   (file) => file !== 'portable-phase-host-conformance-v1.json',
 ));
 const expectedFilesBeforeProviderBackedIdentityCli = Object.freeze(expectedFilesBeforePortablePhaseHost.filter(
@@ -794,6 +798,8 @@ const requiredHistoricalLinks = Object.freeze({
   'portable-phase-host-conformance-v1.json': Object.freeze([
     'receipts/provider-phase-host-sdk-v1.json',
   ]),
+  'realm-negotiation-v1.json': Object.freeze(expectedFilesBeforeRealmNegotiation
+    .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
