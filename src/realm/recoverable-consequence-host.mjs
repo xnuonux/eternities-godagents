@@ -222,6 +222,12 @@ async function validateInputWithoutEffect(input) {
   throw new IntegrityError('recoverable consequence preflight crossed no Realm boundary');
 }
 
+function assertRuntimeContract(realm, expectedContract) {
+  if (canonicalJson(realm.contract) !== canonicalJson(expectedContract)) {
+    throw new IntegrityError('recoverable consequence runtime Realm Contract differs from admitted Contract');
+  }
+}
+
 function verifyConsequenceResult(value, input, label = 'recoverable consequence result') {
   exactKeys(value, RESULT_KEYS, label);
   assertNoCredentialFields(value);
@@ -532,6 +538,7 @@ async function resumeLocked({
   clock,
   recovered,
 }) {
+  assertRuntimeContract(realm, state.input.contract);
   if (state.status === 'completed') return returnCompleted(state, recovered);
   await validateInputWithoutEffect(state.input);
   let current = state;

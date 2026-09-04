@@ -181,6 +181,63 @@ test('a process boundary after durable result publication finishes from the jour
   });
 });
 
+test('a different host Realm Contract fails closed before resulted or completed replay', async () => {
+  const root = await temporaryRoot();
+  try {
+    let crashed = false;
+    const realmA = createFixtureRealm({ contract });
+    const hostA = await createRecoverableRealmConsequenceHost({
+      root,
+      realm: realmA,
+      checkpoint: async (stage) => {
+        if (!crashed && stage === 'after-result-publish') {
+          crashed = true;
+          throw new Error('leave resulted operation for contract drift');
+        }
+      },
+    });
+    const input = await inputFor();
+    const executionId = hostA.executionIdFor(input);
+    await assert.rejects(() => hostA.execute(input), /leave resulted operation for contract drift/);
+    assert.deepEqual((await journalFor(root, executionId)).events.map(({ eventType }) => eventType), [
+      'consequence.admitted',
+      'consequence.resulted',
+    ]);
+
+    const driftedContract = structuredClone(contract);
+    driftedContract.version = '2';
+    const realmB = createFixtureRealm({ contract: driftedContract });
+    const hostB = await createRecoverableRealmConsequenceHost({ root, realm: realmB });
+    await assert.rejects(
+      () => hostB.recover(executionId),
+      /runtime Realm Contract differs from admitted Contract/,
+    );
+    assert.deepEqual(realmB.inspect(), {
+      counter: 0,
+      invocationCount: 0,
+      reconciliationCount: 0,
+      idempotencyCount: 0,
+    });
+
+    const completed = await hostA.recover(executionId);
+    assert.equal(completed.status, 'completed');
+    const realmC = createFixtureRealm({ contract: driftedContract });
+    const hostC = await createRecoverableRealmConsequenceHost({ root, realm: realmC });
+    await assert.rejects(
+      () => hostC.recover(executionId),
+      /runtime Realm Contract differs from admitted Contract/,
+    );
+    assert.deepEqual(realmC.inspect(), {
+      counter: 0,
+      invocationCount: 0,
+      reconciliationCount: 0,
+      idempotencyCount: 0,
+    });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('invalid authority and credential-shaped inputs fail before admission or Realm use', async () => {
   await withHost({}, async ({ host, realm, root }) => {
     const input = await inputFor();
