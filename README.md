@@ -440,7 +440,7 @@ npm run launch:local -- `
   --request-id operator:20260829:001
 ```
 
-One invocation runs at most one unseen mission and exits. An admission-owned live-owner lock serializes projection, recovery, and execution. Retrying the same request ID returns its recorded outcome or recovers its interrupted cycle without admitting a duplicate. Reusing that ID with changed mission or policy-derived authority fails closed. Explicit registry migration will be required before a legitimate relocation; copying the admission is not migration. The launcher does not daemonize, widen host authority, modify genesis, lift frozen evolution, integrate Lunari, activate Inspiration, or activate Soul. This implementation has not yet received a separate certification receipt.
+One invocation runs at most one unseen mission and exits. An admission-owned live-owner lock serializes projection, recovery, and execution. Retrying the same request ID returns its recorded outcome or recovers its interrupted cycle without admitting a duplicate. Reusing that ID with changed mission or policy-derived authority fails closed. Explicit registry migration will be required before a legitimate relocation; copying the admission is not migration. The launcher does not daemonize, widen host authority, modify genesis, lift frozen evolution, integrate Lunari, activate Inspiration, or activate Soul. The source-bound `admitted-local-launch-v1` receipt certifies this deterministic local shell and its exact exclusions; it is not a live-provider, hostile-sandbox, or production-launch certification.
 
 ### Provider-backed identity CLI v1
 

@@ -7,6 +7,10 @@ import test from 'node:test';
 const repositoryRoot = fileURLToPath(new URL('..', import.meta.url));
 
 const expectedCommands = Object.freeze({
+  'build:admitted-local-launch-fixture':
+    'node scripts/build-admitted-local-launch-v1-fixture.mjs',
+  'certify:admitted-local-launch':
+    'node scripts/build-admitted-local-launch-v1-receipt.mjs',
   'certify:admitted-sealed-typed-execution-host':
     'node scripts/build-admitted-sealed-typed-execution-host-v1-receipt.mjs',
   'certify:godskills-typed-composition-consumer':

@@ -8,6 +8,7 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 
 const registry = Object.freeze({
+  'admitted-local-launch-v1.json': 'admitted-local-launch-v1',
   'admitted-provider-backed-identity-launcher-v1.json': 'admitted-provider-backed-identity-launcher-v1',
   'admitted-sealed-identity-host-v1.json': 'admitted-sealed-identity-host-v1',
   'admitted-sealed-typed-execution-host-v1.json': 'admitted-sealed-typed-execution-host-v1',
@@ -61,7 +62,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeRecoverableRealmConsequence = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeAdmittedLocalLaunch = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'admitted-local-launch-v1.json',
+));
+const expectedFilesBeforeRecoverableRealmConsequence = Object.freeze(expectedFilesBeforeAdmittedLocalLaunch.filter(
   (file) => file !== 'recoverable-realm-consequence-vessel-v1.json',
 ));
 const expectedFilesBeforeLatestConsequence = Object.freeze(expectedFilesBeforeRecoverableRealmConsequence.filter(
@@ -817,6 +821,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'recoverable-realm-consequence-vessel-v1.json': Object.freeze(expectedFilesBeforeRecoverableRealmConsequence
     .map((file) => `receipts/${file}`)),
+  'admitted-local-launch-v1.json': Object.freeze(expectedFilesBeforeAdmittedLocalLaunch
+    .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
@@ -1107,6 +1113,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(recoverableRealmConsequence.receipt)) {
       throw new Error('recoverable Realm consequence certification differs from exact source reconstruction');
+    }
+  }
+
+  const admittedLocalLaunch = loaded.get('admitted-local-launch-v1.json');
+  if (admittedLocalLaunch) {
+    const { buildAdmittedLocalLaunchReceiptFromSource } = await import(
+      '../../scripts/build-admitted-local-launch-v1-receipt.mjs'
+    );
+    const rebuilt = await buildAdmittedLocalLaunchReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: admittedLocalLaunch.receipt.source.commit,
+      testRuns: admittedLocalLaunch.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(admittedLocalLaunch.receipt)) {
+      throw new Error('admitted local launch certification differs from exact source reconstruction');
     }
   }
 
