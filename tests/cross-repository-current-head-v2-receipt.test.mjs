@@ -18,7 +18,7 @@ import {
   pinnedGodskillsReviewSourceCommit,
 } from '../scripts/lib/pinned-godskills-review-release.mjs';
 
-const repositoryRoot = new URL('../', import.meta.url);
+const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const godagentsCommit = '0eae73e37c7e2286958f4f9c5efcfbffd256a6ee';
 const godskillsCommit = '753db46dee767c167ce15ae7eb4129c3a2075689';
@@ -92,7 +92,7 @@ test.after(async () => {
 
 async function buildReceipt() {
   return buildCrossRepositoryCurrentHeadCertificateV2({
-    godagentsRoot: fileURLToPath(repositoryRoot),
+    godagentsRoot: repositoryRoot,
     godskillsRoot,
     godagentsCommit,
     godskillsCommit,
