@@ -157,7 +157,7 @@ const requiredHistoricalLinks = Object.freeze({
   'provider-backed-mission-dependencies-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => file !== 'provider-backed-mission-dependencies-v1.json')
     .map((file) => `receipts/${file}`)),
-  'admitted-provider-backed-identity-launcher-v1.json': Object.freeze(expectedFiles
+  'admitted-provider-backed-identity-launcher-v1.json': Object.freeze(expectedFilesBeforePortablePhaseHost
     .filter((file) => file !== 'admitted-provider-backed-identity-launcher-v1.json'
       && file !== 'provider-backed-identity-cli-v1.json')
     .map((file) => `receipts/${file}`)),
