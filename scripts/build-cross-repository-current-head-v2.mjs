@@ -140,10 +140,11 @@ async function main() {
     },
   }));
 
-  const [godagentsFocused, godagentsFull] = await Promise.all([
-    runTests(FINAL_GODAGENTS_TESTS, repositoryRoot),
-    runTests([], repositoryRoot),
-  ]);
+  // Both gates use the same checkout and several tests create bounded
+  // temporary roots. Keep them sequential so certification cannot create an
+  // order-dependent lock or cleanup race.
+  const godagentsFocused = await runTests(FINAL_GODAGENTS_TESTS, repositoryRoot);
+  const godagentsFull = await runTests([], repositoryRoot);
   const receipt = await buildReceipt({
     repositoryRoot,
     godagentsCommit,
