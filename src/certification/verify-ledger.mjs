@@ -57,7 +57,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeProviderBackedIdentityCli = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforePortablePhaseHost = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'portable-phase-host-conformance-v1.json',
+));
+const expectedFilesBeforeProviderBackedIdentityCli = Object.freeze(expectedFilesBeforePortablePhaseHost.filter(
   (file) => file !== 'provider-backed-identity-cli-v1.json',
 ));
 const expectedFilesBeforeAdmittedProviderLauncher = Object.freeze(expectedFilesBeforeProviderBackedIdentityCli.filter(
