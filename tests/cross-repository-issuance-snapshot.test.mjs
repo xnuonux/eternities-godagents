@@ -30,12 +30,12 @@ const testRuns = Object.freeze({
   godagentsFull: { status: 'pass', tests: 894 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
-const adaptiveReviewPin = pinnedGodskillsReviewRelease(godskillsRoot);
-let isolatedRootPromise;
+let isolatedGodagentsRootPromise;
+let isolatedGodskillsRootPromise;
 
 async function isolatedGodagentsRoot() {
-  if (!isolatedRootPromise) {
-    isolatedRootPromise = (async () => {
+  if (!isolatedGodagentsRootPromise) {
+    isolatedGodagentsRootPromise = (async () => {
       const root = await mkdtemp(join(tmpdir(), 'godagents-cross-head-rebind-'));
       await execFileAsync('git', ['clone', '--no-local', godagentsRoot, root], {
         encoding: 'utf8',
@@ -52,29 +52,57 @@ async function isolatedGodagentsRoot() {
       return root;
     })();
   }
-  return isolatedRootPromise;
+  return isolatedGodagentsRootPromise;
+}
+
+async function isolatedGodskillsRoot() {
+  if (!isolatedGodskillsRootPromise) {
+    isolatedGodskillsRootPromise = (async () => {
+      const root = await mkdtemp(join(tmpdir(), 'godskills-cross-head-rebind-'));
+      await execFileAsync('git', ['clone', '--no-local', godskillsRoot, root], {
+        encoding: 'utf8',
+        windowsHide: true,
+      });
+      await execFileAsync('git', ['-C', root, 'update-ref', 'refs/heads/main', godskillsCommit], {
+        encoding: 'utf8',
+        windowsHide: true,
+      });
+      await execFileAsync('git', ['-C', root, 'update-ref', 'refs/remotes/origin/main', godskillsCommit], {
+        encoding: 'utf8',
+        windowsHide: true,
+      });
+      return root;
+    })();
+  }
+  return isolatedGodskillsRootPromise;
 }
 
 test.after(async () => {
-  if (isolatedRootPromise) await rm(await isolatedRootPromise, { recursive: true, force: true });
+  await Promise.all([
+    isolatedGodagentsRootPromise,
+    isolatedGodskillsRootPromise,
+  ].filter(Boolean).map(async (promise) => rm(await promise, { recursive: true, force: true })));
 });
 
 async function certificate() {
-  const sourceRoot = await isolatedGodagentsRoot();
+  const [sourceRoot, sourceSkillsRoot] = await Promise.all([
+    isolatedGodagentsRoot(),
+    isolatedGodskillsRoot(),
+  ]);
   const receipt = await buildCrossRepositoryIssuanceSnapshot({
     godagentsRoot: sourceRoot,
-    godskillsRoot,
+    godskillsRoot: sourceSkillsRoot,
     godagentsCommit,
     godskillsCommit,
     refs,
-    adaptiveReviewPin,
+    adaptiveReviewPin: pinnedGodskillsReviewRelease(sourceSkillsRoot),
     adaptiveReviewSource: {
       path: 'scripts/lib/pinned-godskills-review-release.mjs',
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
     testRuns,
   });
-  return { receipt, sourceRoot };
+  return { receipt, sourceRoot, sourceSkillsRoot };
 }
 
 function rehash(value) {
@@ -83,7 +111,7 @@ function rehash(value) {
 }
 
 test('builds and verifies an issuance-time reconciled source snapshot', async () => {
-  const { receipt, sourceRoot } = await certificate();
+  const { receipt, sourceRoot, sourceSkillsRoot } = await certificate();
   assert.equal(receipt.status, 'certified-issuance-snapshot');
   assert.match(receipt.receiptDigest, /^[a-f0-9]{64}$/);
   assert.equal(receipt.source.godagents.commit, godagentsCommit);
@@ -92,7 +120,7 @@ test('builds and verifies an issuance-time reconciled source snapshot', async ()
   assert.deepEqual(
     await verifyCrossRepositoryIssuanceSnapshot(receipt, {
       godagentsRoot: sourceRoot,
-      godskillsRoot,
+      godskillsRoot: sourceSkillsRoot,
       expectedGodagentsCommit: godagentsCommit,
       expectedGodskillsCommit: godskillsCommit,
       requireExactRefs: true,
@@ -117,7 +145,7 @@ test('builds and verifies an issuance-time reconciled source snapshot', async ()
 });
 
 test('fails closed on exact-head, SDK, Beacon, trust-root, boundary, and digest drift', async () => {
-  const { receipt: original, sourceRoot } = await certificate();
+  const { receipt: original, sourceRoot, sourceSkillsRoot } = await certificate();
   const cases = [
     ['outer receipt digest', () => ({ ...original, receiptDigest: '0'.repeat(64) }), /receipt digest/i],
     ['Godagents head expectation', () => original, /Godagents.*head|head.*Godagents/i, { expectedGodagentsCommit: '0'.repeat(40) }],
@@ -173,7 +201,7 @@ test('fails closed on exact-head, SDK, Beacon, trust-root, boundary, and digest 
     await assert.rejects(
       () => verifyCrossRepositoryIssuanceSnapshot(mutate(), {
         godagentsRoot: sourceRoot,
-        godskillsRoot,
+        godskillsRoot: sourceSkillsRoot,
         expectedGodagentsCommit: godagentsCommit,
         expectedGodskillsCommit: godskillsCommit,
         requireExactRefs: true,
