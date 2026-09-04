@@ -86,6 +86,8 @@
     "build:cross-repository-issuance-snapshot": "node scripts/build-cross-repository-issuance-snapshot.mjs",
     "verify:cross-repository-issuance-snapshot": "node scripts/verify-cross-repository-issuance-snapshot.mjs",
     "build:portable-phase-host-conformance-fixture": "node scripts/build-portable-phase-host-conformance-v1-fixture.mjs",
-    "certify:portable-phase-host-conformance": "node scripts/build-portable-phase-host-conformance-v1-receipt.mjs"
+    "certify:portable-phase-host-conformance": "node scripts/build-portable-phase-host-conformance-v1-receipt.mjs",
+    "build:cross-repository-current-head-v2": "node scripts/build-cross-repository-current-head-v2.mjs",
+    "verify:cross-repository-current-head-v2": "node scripts/verify-cross-repository-current-head-v2.mjs"
   }
 }

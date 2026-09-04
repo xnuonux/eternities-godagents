@@ -8,6 +8,22 @@ const execFileAsync = promisify(execFile);
 
 export const CROSS_REPOSITORY_CURRENT_HEAD_PROTOCOL =
   'eternities-godagents-cross-repository-current-head-certificate-v1';
+export const CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL =
+  'eternities-godagents-cross-repository-current-head-certificate-v2';
+export const CROSS_REPOSITORY_CURRENT_HEAD_V2_ARTIFACT_PATH =
+  'integrations/cross-repository-current-head-v2.json';
+export const CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH =
+  'docs/cross-repository-current-head-v2-certification.md';
+export const CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_DOCUMENT = [
+  '# cross-repository current-head certificate v2',
+  '',
+  'this document certifies the adjacent canonical v2 integration artifact.',
+  '',
+  `protocol: ${CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL}`,
+  '',
+  'it binds exact source commits, refs, manifests, boundary evidence, and test gates.',
+  '',
+].join('\n');
 export const CROSS_REPOSITORY_ISSUANCE_SNAPSHOT_PROTOCOL =
   'eternities-godagents-cross-repository-issuance-snapshot-v1';
 
@@ -21,6 +37,9 @@ const HOST_POLICY_PATH = 'fixtures/host-policy.json';
 const ADAPTIVE_SOURCE_PATH = 'scripts/lib/pinned-godskills-review-release.mjs';
 const BEACON_SNAPSHOT_PATH = 'receipts/eternities-beacon-release-v1-snapshot.json';
 const INTEGRATION_RECEIPT_PATH = 'receipts/godskills-v3-integration.json';
+const PORTABLE_CONFORMANCE_RECEIPT_PATH = 'receipts/portable-phase-host-conformance-v1.json';
+const PORTABLE_CONFORMANCE_CERTIFICATION_ID = 'portable-phase-host-conformance-v1';
+const PORTABLE_CONFORMANCE_PROTOCOL = 'eternities-portable-phase-host-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -31,6 +50,16 @@ const SDK_EXPORTS = Object.freeze([
   'verifyAdmittedProviderBackedIdentityLauncherDescription',
   'verifyProviderPhaseHostDescription',
 ]);
+const V2_SDK_EXPORTS = Object.freeze([
+  ...SDK_EXPORTS.slice(0, 2),
+  'PORTABLE_PHASE_HOST_PROTOCOL_ID',
+  'assertPortablePhaseHostInstance',
+  ...SDK_EXPORTS.slice(2, 5),
+  'buildPortablePhaseHostDescription',
+  'createPortablePhaseHostAdapter',
+  ...SDK_EXPORTS.slice(5),
+  'verifyPortablePhaseHostDescription',
+].sort());
 const BOUNDARY_PATHS = Object.freeze([
   'src/sdk/index.mjs',
   'src/skills/godskills-adapter.mjs',
@@ -40,6 +69,16 @@ const BOUNDARY_PATHS = Object.freeze([
   'tests/godskills-mission-binder.test.mjs',
   'tests/godskills-v3-integration.test.mjs',
   'tests/portable-sdk-surface.test.mjs',
+].sort());
+const V2_BOUNDARY_PATHS = Object.freeze([
+  ...new Set([
+    ...BOUNDARY_PATHS,
+    'schemas/portable-phase-host-description.schema.json',
+    'src/sdk/portable-phase-host.mjs',
+    'tests/portable-phase-host-conformance-certification.test.mjs',
+    'tests/portable-phase-host-conformance.test.mjs',
+    PORTABLE_CONFORMANCE_RECEIPT_PATH,
+  ]),
 ].sort());
 const PROOF_LIMITS = Object.freeze([
   'arbitrary-provider-or-model-quality',
@@ -78,6 +117,23 @@ const ROOT_IDENTITY = Object.freeze({
   compilerReceipt: { id: 'intent-compiler-v3', status: 'certified' },
   portableReceipt: { status: 'certified-local-artifacts' },
   portableManifest: { manifestId: 'portable-capabilities-v1', status: 'certified-local-artifacts' },
+});
+const LEGACY_PROFILE = Object.freeze({
+  sdkExports: SDK_EXPORTS,
+  boundaryPaths: BOUNDARY_PATHS,
+  portableConformance: false,
+});
+const CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  sdkExports: V2_SDK_EXPORTS,
+  boundaryPaths: V2_BOUNDARY_PATHS,
+  portableConformance: true,
+  appendOnlyPaths: Object.freeze([
+    CROSS_REPOSITORY_CURRENT_HEAD_V2_ARTIFACT_PATH,
+    CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH,
+  ]),
+  artifactPath: CROSS_REPOSITORY_CURRENT_HEAD_V2_ARTIFACT_PATH,
+  certificationPath: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH,
+  certificationDocument: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_DOCUMENT,
 });
 
 function cleanGitEnvironment() {
@@ -274,7 +330,7 @@ function validateTestRuns(testRuns) {
   }
 }
 
-function validateProofLimits(proofLimits) {
+function validateProofLimits(proofLimits, profile = LEGACY_PROFILE) {
   if (!Array.isArray(proofLimits) || !equal(proofLimits, [...PROOF_LIMITS])) {
     throw new Error('proof limits are incomplete or reordered');
   }
@@ -373,7 +429,7 @@ function validateBoundaryEvidence(boundaries, evidence, integration) {
   }
 }
 
-function validateReceiptShape(receipt, { protocolId, status }) {
+function validateReceiptShape(receipt, { protocolId, status, profile = LEGACY_PROFILE }) {
   exactKeys(receipt, [
     'schemaVersion', 'status', 'protocolId', 'source', 'godagents', 'godskills',
     'boundaries', 'proofLimits', 'testRuns', 'receiptDigest',
@@ -395,11 +451,49 @@ function validateReceiptShape(receipt, { protocolId, status }) {
     requireCommit(source.refs.originMain, `${name} origin main ref`);
   }
   validateTestRuns(receipt.testRuns);
-  validateProofLimits(receipt.proofLimits);
+  validateProofLimits(receipt.proofLimits, profile);
 }
 
-async function verifySdk(repositoryRoot, commit, sdk) {
-  exactKeys(sdk, ['entrypoint', 'packageExports', 'packageExportsDigest', 'packageSha256', 'rootExports'], 'SDK surface');
+async function verifyAppendOnlyGodagentsTip(repositoryRoot, receipt, source, profile) {
+  const [main, originMain] = await Promise.all([
+    resolveCommit(repositoryRoot, 'main', 'Godagents current main'),
+    resolveCommit(repositoryRoot, 'origin/main', 'Godagents current origin main'),
+  ]);
+  if (main !== originMain) throw new Error('Godagents append-only tip refs are not reconciled');
+  await isAncestor(repositoryRoot, source.commit, main, 'Godagents append-only source');
+  const changed = (await gitText(
+    repositoryRoot,
+    ['diff', '--name-only', '--no-renames', `${source.commit}..${main}`],
+    'Godagents append-only diff',
+  )).split(/\r?\n/).filter(Boolean).sort();
+  const allowed = [...profile.appendOnlyPaths].sort();
+  if (changed.length === 0 || changed.some((path) => !allowed.includes(path))) {
+    throw new Error('Godagents current tip contains changes outside the v2 append-only paths');
+  }
+  const artifactText = await readBlob(
+    repositoryRoot,
+    main,
+    profile.artifactPath,
+    'Godagents v2 certificate artifact',
+  );
+  const artifact = parseJson(artifactText, 'Godagents v2 certificate artifact');
+  requireCanonicalJsonText(artifactText, artifact, 'Godagents v2 certificate artifact');
+  if (!equal(artifact, receipt)) throw new Error('Godagents v2 certificate artifact does not match receipt');
+  const certificationText = await readBlob(
+    repositoryRoot,
+    main,
+    profile.certificationPath,
+    'Godagents v2 certification document',
+  );
+  if (certificationText !== profile.certificationDocument) {
+    throw new Error('Godagents v2 certification document is not canonical');
+  }
+}
+
+async function verifySdk(repositoryRoot, commit, sdk, profile = LEGACY_PROFILE) {
+  exactKeys(sdk, profile.portableConformance
+    ? ['entrypoint', 'packageExports', 'packageExportsDigest', 'packageSha256', 'rootExports', 'supportedAdapterProtocols']
+    : ['entrypoint', 'packageExports', 'packageExportsDigest', 'packageSha256', 'rootExports'], 'SDK surface');
   if (sdk.entrypoint.path !== SDK_ENTRYPOINT_PATH) throw new Error('SDK entrypoint path mismatch');
   requireDigest(sdk.entrypoint.sha256, 'SDK entrypoint digest');
   requireDigest(sdk.packageSha256, 'SDK package digest');
@@ -416,8 +510,16 @@ async function verifySdk(repositoryRoot, commit, sdk) {
   }
   const source = await readBlob(repositoryRoot, commit, SDK_ENTRYPOINT_PATH, 'SDK entrypoint');
   if (sha256Text(source) !== sdk.entrypoint.sha256) throw new Error('SDK entrypoint digest mismatch');
-  if (!equal(parseSdkExports(source), sdk.rootExports) || !equal(sdk.rootExports, SDK_EXPORTS)) {
+  if (!equal(parseSdkExports(source), sdk.rootExports) || !equal(sdk.rootExports, profile.sdkExports)) {
     throw new Error('SDK root export set mismatch');
+  }
+  if (profile.portableConformance) {
+    if (!equal(sdk.supportedAdapterProtocols, [PORTABLE_CONFORMANCE_PROTOCOL])) {
+      throw new Error('SDK supported adapter protocol set mismatch');
+    }
+    if (!/supportedAdapterProtocols\s*:\s*\[\s*['"]eternities-portable-phase-host-v1['"]\s*\]/.test(source)) {
+      throw new Error('SDK portable adapter protocol declaration is missing');
+    }
   }
 }
 
@@ -493,10 +595,39 @@ async function verifyBeacon(godskillsRoot, godskillsCommit, beacon) {
   }
 }
 
-async function verifyEvidence(repositoryRoot, commit, godagents) {
-  exactKeys(godagents.evidence, ['boundaryFiles', 'integrationReceipt'], 'Godagents evidence');
+async function verifyPortableConformanceEvidence(repositoryRoot, commit, evidence) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'portable conformance evidence');
+  if (evidence.certificationId !== PORTABLE_CONFORMANCE_CERTIFICATION_ID
+      || evidence.path !== PORTABLE_CONFORMANCE_RECEIPT_PATH) {
+    throw new Error('portable conformance evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'portable conformance fixture digest');
+  requireDigest(evidence.receiptDigest, 'portable conformance receipt digest');
+  requireDigest(evidence.sha256, 'portable conformance receipt file digest');
+  requireCommit(evidence.sourceCommit, 'portable conformance source commit');
+  const text = await readBlob(repositoryRoot, commit, evidence.path, 'portable conformance receipt');
+  if (sha256Text(text) !== evidence.sha256) throw new Error('portable conformance receipt file digest mismatch');
+  const receipt = parseJson(text, 'portable conformance receipt');
+  requireCanonicalJsonText(text, receipt, 'portable conformance receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== PORTABLE_CONFORMANCE_CERTIFICATION_ID
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest) {
+    throw new Error('portable conformance receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'portable conformance source commit');
+  await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'portable conformance source commit');
+}
+
+async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
+  exactKeys(godagents.evidence, profile.portableConformance
+    ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost']
+    : ['boundaryFiles', 'integrationReceipt'], 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
-      || !equal(godagents.evidence.boundaryFiles.map(({ path }) => path), [...BOUNDARY_PATHS])) {
+      || !equal(godagents.evidence.boundaryFiles.map(({ path }) => path), [...profile.boundaryPaths])) {
     throw new Error('Godagents boundary evidence paths are not canonical');
   }
   for (const row of godagents.evidence.boundaryFiles) {
@@ -522,6 +653,9 @@ async function verifyEvidence(repositoryRoot, commit, godagents) {
       || !equal(receipt.metrics, receiptRow.metrics)) {
     throw new Error('Godskills integration evidence identity mismatch');
   }
+  if (profile.portableConformance) {
+    await verifyPortableConformanceEvidence(repositoryRoot, commit, godagents.evidence.portablePhaseHost);
+  }
   return receipt;
 }
 
@@ -533,8 +667,9 @@ async function verifyCertificate(receipt, {
   requireExactRefs = false,
   protocolId,
   status,
+  profile = LEGACY_PROFILE,
 } = {}) {
-  validateReceiptShape(receipt, { protocolId, status });
+  validateReceiptShape(receipt, { protocolId, status, profile });
   const agentsSource = receipt.source.godagents;
   const skillsSource = receipt.source.godskills;
   if (expectedGodagentsCommit !== undefined) {
@@ -552,11 +687,23 @@ async function verifyCertificate(receipt, {
     ['Godskills', godskillsRoot, skillsSource],
   ]) {
     if (requireExactRefs || source.refs.main !== source.commit || source.refs.originMain !== source.commit) {
-      if (await resolveCommit(root, 'main', `${name} main`) !== source.refs.main) {
-        throw new Error(`${name} main ref does not match certificate`);
-      }
-      if (await resolveCommit(root, 'origin/main', `${name} origin main`) !== source.refs.originMain) {
-        throw new Error(`${name} origin main ref does not match certificate`);
+      const [actualMain, actualOriginMain] = await Promise.all([
+        resolveCommit(root, 'main', `${name} main`),
+        resolveCommit(root, 'origin/main', `${name} origin main`),
+      ]);
+      if (actualMain !== source.refs.main || actualOriginMain !== source.refs.originMain) {
+        const appendOnlyGodagents = profile.appendOnlyPaths !== undefined
+          && name === 'Godagents'
+          && requireExactRefs
+          && source.refs.main === source.commit
+          && source.refs.originMain === source.commit;
+        if (!appendOnlyGodagents) {
+          if (actualMain !== source.refs.main) {
+            throw new Error(`${name} main ref does not match certificate`);
+          }
+          throw new Error(`${name} origin main ref does not match certificate`);
+        }
+        await verifyAppendOnlyGodagentsTip(root, receipt, source, profile);
       }
     }
     if (source.refs.main !== source.commit || source.refs.originMain !== source.commit) {
@@ -565,9 +712,9 @@ async function verifyCertificate(receipt, {
   }
 
   exactKeys(receipt.godagents, ['evidence', 'hostRelease', 'sdk'], 'Godagents certificate');
-  await verifySdk(godagentsRoot, agentsSource.commit, receipt.godagents.sdk);
+  await verifySdk(godagentsRoot, agentsSource.commit, receipt.godagents.sdk, profile);
   await verifyHostRelease(godagentsRoot, agentsSource.commit, receipt.godagents.hostRelease);
-  const integration = await verifyEvidence(godagentsRoot, agentsSource.commit, receipt.godagents);
+  const integration = await verifyEvidence(godagentsRoot, agentsSource.commit, receipt.godagents, profile);
 
   exactKeys(receipt.godskills, ['beacon', 'releaseInputs'], 'Godskills certificate');
   exactKeys(receipt.godskills.releaseInputs, ['adaptiveReview', 'canonicalHost'], 'Godskills release inputs');
@@ -626,14 +773,14 @@ async function collectSource(repositoryRoot, commit, refs, repository) {
   return { repository, commit, refs: actualRefs };
 }
 
-async function collectIntegrationEvidence(repositoryRoot, commit) {
+async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGACY_PROFILE) {
   const boundaryFiles = [];
-  for (const path of BOUNDARY_PATHS) {
+  for (const path of profile.boundaryPaths) {
     boundaryFiles.push({ path, sha256: await hashBlob(repositoryRoot, commit, path, `Godagents evidence ${path}`) });
   }
   const text = await readBlob(repositoryRoot, commit, INTEGRATION_RECEIPT_PATH, 'Godskills integration receipt');
   const receipt = parseJson(text, 'Godskills integration receipt');
-  return {
+  const evidence = {
     boundaryFiles,
     integrationReceipt: {
       path: INTEGRATION_RECEIPT_PATH,
@@ -642,6 +789,24 @@ async function collectIntegrationEvidence(repositoryRoot, commit) {
       metrics: clone(receipt.metrics),
     },
   };
+  if (profile.portableConformance) {
+    const portableText = await readBlob(
+      repositoryRoot,
+      commit,
+      PORTABLE_CONFORMANCE_RECEIPT_PATH,
+      'portable conformance receipt',
+    );
+    const portable = parseJson(portableText, 'portable conformance receipt');
+    evidence.portablePhaseHost = {
+      certificationId: portable.certificationId,
+      fixtureDigest: portable.fixture.logicalDigest,
+      path: PORTABLE_CONFORMANCE_RECEIPT_PATH,
+      receiptDigest: portable.receiptDigest,
+      sha256: sha256Text(portableText),
+      sourceCommit: portable.source.commit,
+    };
+  }
+  return evidence;
 }
 
 async function collectBeacon(godskillsRoot, godskillsCommit) {
@@ -650,17 +815,19 @@ async function collectBeacon(godskillsRoot, godskillsCommit) {
   return { snapshot: { path: BEACON_SNAPSHOT_PATH, sha256: sha256Text(text), ...snapshot } };
 }
 
-async function collectSdk(godagentsRoot, godagentsCommit) {
+async function collectSdk(godagentsRoot, godagentsCommit, profile = LEGACY_PROFILE) {
   const packageText = await readBlob(godagentsRoot, godagentsCommit, SDK_PACKAGE_PATH, 'SDK package');
   const packageValue = parseJson(packageText, 'SDK package');
   const entrypointText = await readBlob(godagentsRoot, godagentsCommit, SDK_ENTRYPOINT_PATH, 'SDK entrypoint');
-  return {
+  const sdk = {
     entrypoint: { path: SDK_ENTRYPOINT_PATH, sha256: sha256Text(entrypointText) },
     packageExports: clone(packageValue.exports),
     packageExportsDigest: sha256Value(packageValue.exports),
     packageSha256: sha256Text(packageText),
     rootExports: parseSdkExports(entrypointText),
   };
+  if (profile.portableConformance) sdk.supportedAdapterProtocols = [PORTABLE_CONFORMANCE_PROTOCOL];
+  return sdk;
 }
 
 async function collectHostRelease(godagentsRoot, godagentsCommit) {
@@ -688,6 +855,7 @@ async function buildCertificate({
   testRuns,
   protocolId,
   status,
+  profile = LEGACY_PROFILE,
 } = {}) {
   requireCommit(godagentsCommit, 'Godagents build commit');
   requireCommit(godskillsCommit, 'Godskills build commit');
@@ -699,9 +867,9 @@ async function buildCertificate({
   const [agents, skills, sdk, hostRelease, evidence, beacon, adaptiveSourceText] = await Promise.all([
     collectSource(godagentsRoot, godagentsCommit, refs.godagents, 'eternities-godagents'),
     collectSource(godskillsRoot, godskillsCommit, refs.godskills, 'eternities-godskills'),
-    collectSdk(godagentsRoot, godagentsCommit),
+    collectSdk(godagentsRoot, godagentsCommit, profile),
     collectHostRelease(godagentsRoot, godagentsCommit),
-    collectIntegrationEvidence(godagentsRoot, godagentsCommit),
+    collectIntegrationEvidence(godagentsRoot, godagentsCommit, profile),
     collectBeacon(godskillsRoot, godskillsCommit),
     readBlob(godagentsRoot, godagentsCommit, adaptiveReviewSource.path, 'adaptive release source'),
   ]);
@@ -779,6 +947,7 @@ async function buildCertificate({
     requireExactRefs: true,
     protocolId,
     status,
+    profile,
   });
   return receipt;
 }
@@ -788,6 +957,24 @@ export async function buildCrossRepositoryCurrentHeadCertificate(options = {}) {
     ...options,
     protocolId: CROSS_REPOSITORY_CURRENT_HEAD_PROTOCOL,
     status: 'certified',
+  });
+}
+
+export async function verifyCrossRepositoryCurrentHeadCertificateV2(receipt, options = {}) {
+  return verifyCertificate(receipt, {
+    ...options,
+    protocolId: CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL,
+    status: 'certified',
+    profile: CURRENT_HEAD_V2_PROFILE,
+  });
+}
+
+export async function buildCrossRepositoryCurrentHeadCertificateV2(options = {}) {
+  return buildCertificate({
+    ...options,
+    protocolId: CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL,
+    status: 'certified',
+    profile: CURRENT_HEAD_V2_PROFILE,
   });
 }
 
