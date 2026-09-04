@@ -18,22 +18,34 @@ import {
 
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
-const godagentsCommit = '0eae73e37c7e2286958f4f9c5efcfbffd256a6ee';
-const godskillsCommit = '753db46dee767c167ce15ae7eb4129c3a2075689';
-const refs = Object.freeze({
-  godagents: { main: godagentsCommit, originMain: godagentsCommit },
-  godskills: { main: godskillsCommit, originMain: godskillsCommit },
-});
+const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
   godagentsFocused: { status: 'pass', tests: 18 },
   godagentsFull: { status: 'pass', tests: 908 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
-const execFileAsync = promisify(execFile);
 const oldArtifacts = Object.freeze([
   'integrations/cross-repository-current-head-v1.json',
   'integrations/cross-repository-issuance-snapshot-v1.json',
 ]);
+
+async function reconciledHead(root, label) {
+  const [main, originMain] = await Promise.all([
+    execFileAsync('git', ['-C', root, 'rev-parse', 'main'], { encoding: 'utf8', windowsHide: true }),
+    execFileAsync('git', ['-C', root, 'rev-parse', 'origin/main'], { encoding: 'utf8', windowsHide: true }),
+  ]);
+  const mainCommit = main.stdout.trim();
+  const originCommit = originMain.stdout.trim();
+  assert.equal(mainCommit, originCommit, `${label} refs must be reconciled`);
+  return mainCommit;
+}
+
+const godagentsCommit = await reconciledHead(repositoryRoot, 'Godagents');
+const godskillsCommit = await reconciledHead(godskillsRoot, 'Godskills');
+const refs = Object.freeze({
+  godagents: { main: godagentsCommit, originMain: godagentsCommit },
+  godskills: { main: godskillsCommit, originMain: godskillsCommit },
+});
 
 async function sourceArtifact(path) {
   const { stdout } = await execFileAsync('git', ['show', `main:${path}`], {
