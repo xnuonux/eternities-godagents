@@ -15,6 +15,7 @@ import {
   resolveSourceCommit,
   runTests,
 } from './lib/certification-support.mjs';
+import { runReleaseGates } from './lib/release-gates.mjs';
 
 const certificationId = 'realm-negotiation-v1';
 const protocolId = 'eternities-realm-negotiation-certification-v1';
@@ -22,6 +23,8 @@ const fixturePath = 'fixtures/realm-negotiation-v1.json';
 const receiptPath = 'receipts/realm-negotiation-v1.json';
 const specificationPath = 'docs/superpowers/specs/2026-09-03-realm-negotiation-v1-design.md';
 const planPath = 'docs/superpowers/plans/2026-09-03-realm-negotiation-v1.md';
+const releaseGateSpecificationPath = 'docs/superpowers/specs/2026-09-03-certification-release-gate-v1-design.md';
+const releaseGatePlanPath = 'docs/superpowers/plans/2026-09-03-certification-release-gate-v1.md';
 const certificationPath = 'docs/realm-negotiation-v1-certification.md';
 const historicalReceiptPaths = Object.freeze([
   'receipts/admitted-provider-backed-identity-launcher-v1.json',
@@ -85,15 +88,19 @@ const implementationFiles = Object.freeze([
   'scripts/build-realm-negotiation-v1-fixture.mjs',
   'scripts/build-realm-negotiation-v1-receipt.mjs',
   'scripts/lib/certification-support.mjs',
+  'scripts/lib/release-gates.mjs',
   'src/certification/verify-ledger.mjs',
   'src/core/canonical-json.mjs',
   'src/core/digest.mjs',
   'src/core/schema-validator.mjs',
   'src/cortex/receipt-safety.mjs',
   'src/realm/negotiation.mjs',
+  releaseGatePlanPath,
+  releaseGateSpecificationPath,
 ].sort());
 const testFiles = Object.freeze([
   'tests/certification-ledger.test.mjs',
+  'tests/certification-release-gates.test.mjs',
   'tests/realm-negotiation-certification.test.mjs',
   'tests/realm-negotiation.test.mjs',
   'tests/release-lineage.test.mjs',
@@ -345,12 +352,12 @@ async function main() {
     testRuns: { focused, full },
   });
   await writeFile(outputPath, `${canonicalJson(receipt)}\n`, 'utf8');
-  const release = await runTests([
-    'tests/realm-negotiation-certification.test.mjs',
-    'tests/certification-ledger.test.mjs',
-    'tests/release-lineage.test.mjs',
-  ], root);
-  const markdown = `# Realm negotiation v1 certification\n\n- status: certified\n- source commit: \`${sourceCommit}\`\n- receipt digest: \`${receipt.receiptDigest}\`\n- fixture digest: \`${receipt.fixture.logicalDigest}\`\n- focused tests: ${focused.tests}\n- full tests: ${full.tests}\n- release tests: ${release.tests}\n\nThis certifies the read-only, authority-ceiling-bound Realm negotiation projection over the fixture contract. It does not certify a live Realm connector, execution, rollback, or Luna integration.\n`;
+  const release = await runReleaseGates({
+    root,
+    certificationTestFile: 'tests/realm-negotiation-certification.test.mjs',
+  });
+  const [ledgerEvidence, lineageEvidence] = release.directVerifiers;
+  const markdown = `# Realm negotiation v1 certification\n\n- status: certified\n- source commit: \`${sourceCommit}\`\n- receipt digest: \`${receipt.receiptDigest}\`\n- fixture digest: \`${receipt.fixture.logicalDigest}\`\n- focused tests: ${focused.tests}\n- full tests: ${full.tests}\n- release gate: ${release.gateCount} bounded commands\n- release focused tests: ${release.focused.tests}\n- release receipt count: ${lineageEvidence.receiptCount}\n- release head: \`${lineageEvidence.headCommit}\`\n- release ledger digest: \`${ledgerEvidence.ledgerDigest}\`\n- release lineage digest: \`${lineageEvidence.releaseLineageDigest}\`\n\nThis certifies the read-only, authority-ceiling-bound Realm negotiation projection over the fixture contract. It does not certify a live Realm connector, execution, rollback, or Luna integration.\n`;
   await writeFile(join(root, ...certificationPath.split('/')), markdown, 'utf8');
   process.stdout.write(`${canonicalJson({
     status: 'certified',
