@@ -1,4 +1,5 @@
 import { assertSchema } from '../core/schema-validator.mjs';
+import { validateGodagentProfilePolicy } from '../agent/profile.mjs';
 
 export const MODULE_KINDS = Object.freeze([
   'lineage', 'archetype', 'attributes', 'personality', 'voice',
@@ -178,15 +179,24 @@ function validatePayload(kind, payload) {
     if (new Set(organs.map((organ) => organ.id)).size !== organs.length) throw new TypeError('organ ids must be unique');
     return { organs };
   }
-  if (kind === 'godskills') return {
-    protocolId: payload.protocolId === 'eternities-godskills-adapter-v1' ? payload.protocolId : (() => { throw new TypeError('unsupported godskills protocolId'); })(),
-    profile: ['all-rounder', 'specialist'].includes(payload.profile) ? payload.profile : (() => { throw new TypeError('invalid godskills profile'); })(),
-    preferredFamilies: sortedIdentifiers(payload.preferredFamilies, 'godskills preferredFamilies'),
-    prohibitedFamilies: sortedIdentifiers(payload.prohibitedFamilies, 'godskills prohibitedFamilies'),
-    prohibitedCapabilities: sortedIdentifiers(payload.prohibitedCapabilities, 'godskills prohibitedCapabilities', { capability: true }),
-    maxComposition: assertInteger(payload.maxComposition, 1, 3, 'godskills maxComposition'),
-    entrypointIds: sortedIdentifiers(payload.entrypointIds, 'godskills entrypointIds'),
-  };
+  if (kind === 'godskills') {
+    const profile = validateGodagentProfilePolicy({
+      profile: payload.profile,
+      preferredFamilies: payload.preferredFamilies,
+      prohibitedFamilies: payload.prohibitedFamilies,
+      prohibitedCapabilities: payload.prohibitedCapabilities,
+      maxComposition: payload.maxComposition,
+    });
+    return {
+      protocolId: payload.protocolId === 'eternities-godskills-adapter-v1' ? payload.protocolId : (() => { throw new TypeError('unsupported godskills protocolId'); })(),
+      profile: profile.profile,
+      preferredFamilies: profile.preferredFamilies,
+      prohibitedFamilies: profile.prohibitedFamilies,
+      prohibitedCapabilities: profile.prohibitedCapabilities,
+      maxComposition: profile.maxComposition,
+      entrypointIds: sortedIdentifiers(payload.entrypointIds, 'godskills entrypointIds'),
+    };
+  }
   if (kind === 'cortex') return {
     allowedAdapters: sortedIdentifiers(payload.allowedAdapters, 'cortex allowedAdapters'),
     requiredCapabilities: sortedIdentifiers(payload.requiredCapabilities, 'cortex requiredCapabilities', { capability: true }),

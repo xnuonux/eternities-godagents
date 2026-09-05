@@ -5,6 +5,7 @@ import { SchemaError } from './errors.mjs';
 
 const schemaFiles = {
   'agent-genome': 'agent-genome.schema.json',
+  'godagent-profile': 'godagent-profile.schema.json',
   'distribution-manifest': 'distribution-manifest.schema.json',
   'realm-contract': 'realm-contract.schema.json',
   'realm-negotiation': 'realm-negotiation.schema.json',

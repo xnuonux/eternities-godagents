@@ -14,6 +14,7 @@ const registry = Object.freeze({
   'admitted-provider-backed-identity-launcher-v1.json': 'admitted-provider-backed-identity-launcher-v1',
   'admitted-sealed-identity-host-v1.json': 'admitted-sealed-identity-host-v1',
   'admitted-sealed-typed-execution-host-v1.json': 'admitted-sealed-typed-execution-host-v1',
+  'agent-profile-contract-v1.json': 'agent-profile-contract-v1',
   'codex-bound-turn-v1.json': 'codex-bound-turn-v1',
   'codex-recoverable-turn-coordinator-v1.json': 'codex-recoverable-turn-coordinator-v1',
   'codex-recoverable-turn-journal-v1.json': 'codex-recoverable-turn-journal-v1',
@@ -69,7 +70,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeMissionProgramForensics = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeAgentProfileContract = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'agent-profile-contract-v1.json',
+));
+const expectedFilesBeforeMissionProgramForensics = Object.freeze(expectedFilesBeforeAgentProfileContract.filter(
   (file) => file !== 'mission-program-forensics-v1.json',
 ));
 const expectedFilesBeforeMissionProgram = Object.freeze(expectedFilesBeforeMissionProgramForensics.filter(
@@ -112,6 +116,8 @@ const expectedFilesBeforeAdmittedProviderLauncher = Object.freeze(expectedFilesB
   (file) => file !== 'admitted-provider-backed-identity-launcher-v1.json',
 ));
 const requiredHistoricalLinks = Object.freeze({
+  'agent-profile-contract-v1.json': Object.freeze(expectedFilesBeforeAgentProfileContract
+    .map((file) => `receipts/${file}`)),
   'provider-neutral-phase-protocol-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
     .filter((file) => ![
       'durable-anthropic-messages-phase-transport-v1.json',
@@ -1267,6 +1273,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(missionProgramForensics.receipt)) {
       throw new Error('mission program forensics certification differs from exact source reconstruction');
+    }
+  }
+
+  const agentProfileContract = loaded.get('agent-profile-contract-v1.json');
+  if (agentProfileContract) {
+    const { buildAgentProfileContractReceiptFromSource } = await import(
+      '../../scripts/build-agent-profile-contract-v1-receipt.mjs'
+    );
+    const rebuilt = await buildAgentProfileContractReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: agentProfileContract.receipt.source.commit,
+      testRuns: agentProfileContract.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(agentProfileContract.receipt)) {
+      throw new Error('agent profile contract certification differs from exact source reconstruction');
     }
   }
 

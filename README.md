@@ -111,6 +111,24 @@ package without routing again. the deterministic
 certifies `GSP-001` through `GSP-012`; it proves mechanism and compatibility,
 not specialist quality superiority on unseen work.
 
+### Godagent profile contract
+
+The [Godagent profile contract](docs/superpowers/specs/2026-09-05-agent-profile-contract-v1-design.md)
+gives the creation genome one provider-neutral meaning for its all-rounder and
+specialist Godskills policy. An all-rounder is complete over the supplied
+metadata catalog by default. Legacy preferred-family values on an all-rounder
+are inert, while explicit prohibited families or capability ids remain
+authoritative. A specialist may prefer families, but preference never removes
+non-prohibited capabilities; explicit prohibitions apply to both profiles.
+
+The evaluator consumes only unique capability ids and family ids, uses
+locale-independent ordering, preserves the existing Godskills eligibility
+shape, and accepts the legacy empty-catalog result. The
+[profile contract receipt](receipts/agent-profile-contract-v1.json) certifies
+the deterministic creation and eligibility boundary. It does not claim live
+routing quality, model quality, authority, Realm, identity, continuity, keel,
+memory, evolution, Soul, Inspiration, Lunari, or default host adoption.
+
 ## Modular creation forge
 
 The Phase 1 forge accepts one strict candidate, one independently pinned creation-policy ceiling, one presentation-only expression overlay, and exactly nine selected module kinds: lineage, archetype, attributes, personality, voice, organs, Godskills, cortex, and embodiment. The compiler and verifier both require the expected policy SHA-256 from a trust path separate from the policy file; calculating a digest after accepting an arbitrary policy is not sufficient.
