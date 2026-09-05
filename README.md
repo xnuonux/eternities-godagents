@@ -56,6 +56,8 @@ npm run build:mission-program-fixture
 npm run certify:mission-program
 npm run build:mission-program-forensics-fixture
 npm run certify:mission-program-forensics
+npm run build:mission-operation-adapter-fixture
+npm run certify:mission-operation-adapter
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -750,6 +752,25 @@ and the source-bound proof is
 `receipts/mission-program-forensics-v1.json`. Rebuild the deterministic
 fixture with `npm run build:mission-program-forensics-fixture` and the
 certificate with `npm run certify:mission-program-forensics`.
+
+### Descriptor-bound mission-operation adapter v1
+
+The descriptor-bound mission-operation adapter is a narrow migration boundary
+over the existing mission-program step contract. It pins one source descriptor
+to one mission-step descriptor, sends only body-free dispatch metadata across
+the boundary, revalidates the source before each call, and preserves explicit
+`absent`, `pending`, and `completed` outcomes. Completed outcomes and compact
+receipts remain bound to the exact dispatch and completion ceilings admitted by
+the mission program.
+
+The adapter owns no journal, lock, retry, recovery, ordering, terminal replay,
+provider, Realm, Godskills, delegation, review, keel, memory, identity,
+evolution, Soul, or Lunari surface. Its source-bound certification is
+`receipts/mission-operation-adapter-v1.json`; rebuild the deterministic fixture
+with `npm run build:mission-operation-adapter-fixture` and the certificate with
+`npm run certify:mission-operation-adapter`. The certificate proves only the
+bounded local migration boundary and its explicit fail-closed invariants, not a
+live host or model integration.
 
 ### Portable phase-host conformance v1
 

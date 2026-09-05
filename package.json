@@ -115,6 +115,8 @@
     "build:mission-program-forensics-fixture": "node scripts/build-mission-program-forensics-fixture.mjs",
     "certify:mission-program-forensics": "node scripts/build-mission-program-forensics-v1-receipt.mjs",
     "build:agent-profile-contract-fixture": "node scripts/build-agent-profile-contract-v1-fixture.mjs",
-    "certify:agent-profile-contract": "node scripts/build-agent-profile-contract-v1-receipt.mjs"
+    "certify:agent-profile-contract": "node scripts/build-agent-profile-contract-v1-receipt.mjs",
+    "build:mission-operation-adapter-fixture": "node scripts/build-mission-operation-adapter-v1-fixture.mjs",
+    "certify:mission-operation-adapter": "node scripts/build-mission-operation-adapter-v1-receipt.mjs"
   }
 }

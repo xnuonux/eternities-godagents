@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+    "version": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:+-]{0,63}$" },
+    "missionAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["realmEffects", "continuityWrites", "identityMutation", "evolution", "soul"],
+      "properties": {
+        "realmEffects": { "const": 0 },
+        "continuityWrites": { "const": 0 },
+        "identityMutation": { "const": 0 },
+        "evolution": { "const": 0 },
+        "soul": { "const": 0 }
+      }
+    },
+    "missionStepDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "protocolId", "kind", "adapterId", "adapterVersion", "authority", "descriptorDigest"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "protocolId": { "const": "eternities-mission-program-step-adapter-v1" },
+        "kind": { "$ref": "#/$defs/identifier" },
+        "adapterId": { "$ref": "#/$defs/identifier" },
+        "adapterVersion": { "$ref": "#/$defs/version" },
+        "authority": { "$ref": "#/$defs/missionAuthority" },
+        "descriptorDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["descriptorRevalidation", "payloadFreeRequests", "missionProgramProjection", "reconcileBeforeExecute"],
+      "properties": {
+        "descriptorRevalidation": { "const": true },
+        "payloadFreeRequests": { "const": true },
+        "missionProgramProjection": { "const": true },
+        "reconcileBeforeExecute": { "const": true }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "protocolId", "operationKind", "sourceDescriptorDigest",
+    "missionStepDescriptor", "capabilities", "authority", "descriptionDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-operation-adapter-v1" },
+    "operationKind": { "$ref": "#/$defs/identifier" },
+    "sourceDescriptorDigest": { "$ref": "#/$defs/digest" },
+    "missionStepDescriptor": { "$ref": "#/$defs/missionStepDescriptor" },
+    "capabilities": { "$ref": "#/$defs/capabilities" },
+    "authority": { "$ref": "#/$defs/missionAuthority" },
+    "descriptionDigest": { "$ref": "#/$defs/digest" }
+  }
+}
