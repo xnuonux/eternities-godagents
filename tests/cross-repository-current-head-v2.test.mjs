@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 107 },
-  godagentsFull: { status: 'pass', tests: 1059 },
+  godagentsFocused: { status: 'pass', tests: 114 },
+  godagentsFull: { status: 'pass', tests: 1066 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -353,6 +353,47 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     );
     assert.match(
       receipt.godagents.evidence.delegationMissionOperationAdapter.sourceCommit,
+      /^[a-f0-9]{40}$/,
+    );
+  }
+  const realmConsequenceMissionOperationCommitted = await hasCommittedPath(
+    godagentsCommit,
+    'receipts/realm-consequence-mission-operation-adapter-v1.json',
+  );
+  assert.equal(
+    receipt.godagents.evidence.realmConsequenceMissionOperationAdapter !== undefined,
+    realmConsequenceMissionOperationCommitted,
+    'v2 builder profile must follow the committed Realm consequence adapter boundary',
+  );
+  if (receipt.godagents.evidence.realmConsequenceMissionOperationAdapter !== undefined) {
+    assert.ok(
+      receipt.godagents.evidence.boundaryFiles.some(
+        ({ path }) => path === 'tests/realm-consequence-mission-operation-adapter.test.mjs',
+      ),
+      'current v2 profile must bind the Realm consequence adapter boundary paths',
+    );
+    assert.equal(
+      receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.certificationId,
+      'realm-consequence-mission-operation-adapter-v1',
+    );
+    assert.equal(
+      receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.fullTests,
+      1066,
+    );
+    assert.equal(
+      receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.path,
+      'receipts/realm-consequence-mission-operation-adapter-v1.json',
+    );
+    assert.match(
+      receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.fixtureDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.receiptDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.sourceCommit,
       /^[a-f0-9]{40}$/,
     );
   }

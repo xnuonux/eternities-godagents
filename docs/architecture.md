@@ -836,3 +836,32 @@ processes, claim sandbox isolation, select providers, retry, form a quorum,
 permit nested delegation, write a personal keel or memory, invoke a Realm,
 or change the default vessel. Its receipt proves bounded mechanism and
 recovery, not live multi-agent quality or product readiness.
+
+## Realm consequence mission-operation adapter v1
+
+The Realm consequence mission-operation adapter is the narrow mission-program
+bridge above the certified recoverable Realm consequence host. It is opt-in:
+it does not change default vessel construction or make Realm authority part of
+the generic mission-operation layer.
+
+Construction freezes one exact consequence input and derives a body-free source
+descriptor containing only host, mission, instance, state, proposal, Contract,
+authority, constitution, execution, and ceiling digests. The generic mission
+request carries no Realm port, proposal body, Contract body, observation,
+credential, callable, or effect handle. Its generic authority remains empty,
+and the operation admits exactly one completion-token ceiling because no model
+inference occurs at this boundary.
+
+The adapter delegates durable lifecycle ownership to the recoverable host.
+Absent state is the only executable state; admitted or resulted state is
+recovered through the host before completion projection. The result is a
+compact digest-only mission completion with zero token usage. The deterministic
+fixture proves that terminal replay does not call the host or Realm again, an
+admission-boundary interruption recovers without a duplicate Realm effect, and
+runtime Contract drift fails closed before any Realm method. The
+[design](superpowers/specs/2026-09-05-realm-consequence-mission-operation-adapter-v1-design.md),
+[plan](superpowers/plans/2026-09-05-realm-consequence-mission-operation-adapter-v1.md),
+and [certification](realm-consequence-mission-operation-adapter-v1-certification.md)
+bind this adapter to the recoverable host receipt. Remote Realm behavior,
+rollback, compensation policy, scheduling, live model quality, credentials,
+keel, memory, identity, evolution, Soul, and Lunari remain outside the proof.

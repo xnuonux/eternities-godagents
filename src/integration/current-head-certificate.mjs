@@ -69,6 +69,9 @@ const REVISION_MISSION_OPERATION_ADAPTER_CERTIFICATION_PROTOCOL = 'eternities-re
 const DELEGATION_MISSION_OPERATION_ADAPTER_RECEIPT_PATH = 'receipts/delegation-mission-operation-adapter-v1.json';
 const DELEGATION_MISSION_OPERATION_ADAPTER_CERTIFICATION_ID = 'delegation-mission-operation-adapter-v1';
 const DELEGATION_MISSION_OPERATION_ADAPTER_CERTIFICATION_PROTOCOL = 'eternities-delegation-mission-operation-adapter-certification-v1';
+const REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH = 'receipts/realm-consequence-mission-operation-adapter-v1.json';
+const REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CERTIFICATION_ID = 'realm-consequence-mission-operation-adapter-v1';
+const REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CERTIFICATION_PROTOCOL = 'eternities-realm-consequence-mission-operation-adapter-certification-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -181,6 +184,13 @@ const V2_BOUNDARY_PATHS = Object.freeze([
      'tests/delegation-mission-operation-adapter-certification.test.mjs',
      'tests/delegation-mission-operation-adapter.test.mjs',
      DELEGATION_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+     'fixtures/realm-consequence-mission-operation-adapter-v1.json',
+     'scripts/build-realm-consequence-mission-operation-adapter-v1-fixture.mjs',
+     'scripts/build-realm-consequence-mission-operation-adapter-v1-receipt.mjs',
+     'src/runtime/realm-consequence-mission-operation-adapter.mjs',
+     'tests/realm-consequence-mission-operation-adapter-certification.test.mjs',
+     'tests/realm-consequence-mission-operation-adapter.test.mjs',
+     REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
    'fixtures/admitted-portable-identity-launcher-v1.json',
     'receipts/admitted-portable-identity-launcher-v1.json',
     'src/host/admitted-portable-identity-launcher.mjs',
@@ -256,6 +266,8 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   revisionMissionOperationAdapterFullTests: 1051,
   delegationMissionOperationAdapter: true,
   delegationMissionOperationAdapterFullTests: 1059,
+  realmConsequenceMissionOperationAdapter: true,
+  realmConsequenceMissionOperationAdapterFullTests: 1066,
   supportedAdapterProtocols: Object.freeze([
     PORTABLE_CONFORMANCE_PROTOCOL,
     PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
@@ -294,7 +306,14 @@ const PRE_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((pa
   'tests/revision-mission-operation-adapter-certification.test.mjs',
   'tests/revision-mission-operation-adapter.test.mjs',
   REVISION_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
-].includes(path)));
+  'fixtures/realm-consequence-mission-operation-adapter-v1.json',
+  'scripts/build-realm-consequence-mission-operation-adapter-v1-fixture.mjs',
+  'scripts/build-realm-consequence-mission-operation-adapter-v1-receipt.mjs',
+  'src/runtime/realm-consequence-mission-operation-adapter.mjs',
+  'tests/realm-consequence-mission-operation-adapter-certification.test.mjs',
+  'tests/realm-consequence-mission-operation-adapter.test.mjs',
+  REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+ ].includes(path)));
 const PRE_REVISION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/revision-mission-operation-adapter-v1.json',
   'scripts/build-revision-mission-operation-adapter-v1-fixture.mjs',
@@ -310,7 +329,14 @@ const PRE_REVISION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(V
   'tests/delegation-mission-operation-adapter-certification.test.mjs',
   'tests/delegation-mission-operation-adapter.test.mjs',
   DELEGATION_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
-].includes(path)));
+  'fixtures/realm-consequence-mission-operation-adapter-v1.json',
+  'scripts/build-realm-consequence-mission-operation-adapter-v1-fixture.mjs',
+  'scripts/build-realm-consequence-mission-operation-adapter-v1-receipt.mjs',
+  'src/runtime/realm-consequence-mission-operation-adapter.mjs',
+  'tests/realm-consequence-mission-operation-adapter-certification.test.mjs',
+  'tests/realm-consequence-mission-operation-adapter.test.mjs',
+  REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+ ].includes(path)));
 const PRE_REVIEW_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(PRE_REVISION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/review-mission-operation-adapter-v1.json',
   'scripts/build-review-mission-operation-adapter-v1-fixture.mjs',
@@ -329,6 +355,8 @@ const PRE_REVIEW_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.free
   revisionMissionOperationAdapterFullTests: undefined,
   delegationMissionOperationAdapter: false,
   delegationMissionOperationAdapterFullTests: undefined,
+  realmConsequenceMissionOperationAdapter: false,
+  realmConsequenceMissionOperationAdapterFullTests: undefined,
 });
 const PRE_REVISION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
@@ -337,6 +365,8 @@ const PRE_REVISION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.fr
   revisionMissionOperationAdapterFullTests: undefined,
   delegationMissionOperationAdapter: false,
   delegationMissionOperationAdapterFullTests: undefined,
+  realmConsequenceMissionOperationAdapter: false,
+  realmConsequenceMissionOperationAdapterFullTests: undefined,
 });
 const PRE_DELEGATION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/delegation-mission-operation-adapter-v1.json',
@@ -346,12 +376,36 @@ const PRE_DELEGATION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze
   'tests/delegation-mission-operation-adapter-certification.test.mjs',
   'tests/delegation-mission-operation-adapter.test.mjs',
   DELEGATION_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
-].includes(path)));
+  'fixtures/realm-consequence-mission-operation-adapter-v1.json',
+  'scripts/build-realm-consequence-mission-operation-adapter-v1-fixture.mjs',
+  'scripts/build-realm-consequence-mission-operation-adapter-v1-receipt.mjs',
+  'src/runtime/realm-consequence-mission-operation-adapter.mjs',
+  'tests/realm-consequence-mission-operation-adapter-certification.test.mjs',
+  'tests/realm-consequence-mission-operation-adapter.test.mjs',
+  REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+ ].includes(path)));
+const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
+  'fixtures/realm-consequence-mission-operation-adapter-v1.json',
+  'scripts/build-realm-consequence-mission-operation-adapter-v1-fixture.mjs',
+  'scripts/build-realm-consequence-mission-operation-adapter-v1-receipt.mjs',
+  'src/runtime/realm-consequence-mission-operation-adapter.mjs',
+  'tests/realm-consequence-mission-operation-adapter-certification.test.mjs',
+  'tests/realm-consequence-mission-operation-adapter.test.mjs',
+  REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+ ].includes(path)));
+const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  ...CURRENT_HEAD_V2_PROFILE,
+  boundaryPaths: PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
+  realmConsequenceMissionOperationAdapter: false,
+  realmConsequenceMissionOperationAdapterFullTests: undefined,
+});
 const PRE_DELEGATION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_DELEGATION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
   delegationMissionOperationAdapter: false,
   delegationMissionOperationAdapterFullTests: undefined,
+  realmConsequenceMissionOperationAdapter: false,
+  realmConsequenceMissionOperationAdapterFullTests: undefined,
 });
 const PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
@@ -364,6 +418,8 @@ const PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   revisionMissionOperationAdapterFullTests: undefined,
   delegationMissionOperationAdapter: false,
   delegationMissionOperationAdapterFullTests: undefined,
+  realmConsequenceMissionOperationAdapter: false,
+  realmConsequenceMissionOperationAdapterFullTests: undefined,
 });
 const PRE_AGENT_PROFILE_V2_BOUNDARY_PATHS = Object.freeze(PRE_ADAPTER_V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/agent-profile-contract-v1.json',
@@ -1252,6 +1308,52 @@ async function verifyDelegationMissionOperationAdapterEvidence(repositoryRoot, c
   );
 }
 
+async function verifyRealmConsequenceMissionOperationAdapterEvidence(repositoryRoot, commit, evidence, profile) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'fullTests', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'Realm consequence mission operation adapter evidence');
+  if (evidence.certificationId !== REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CERTIFICATION_ID
+      || evidence.path !== REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH) {
+    throw new Error('Realm consequence mission operation adapter evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'Realm consequence mission operation adapter fixture digest');
+  requireDigest(evidence.receiptDigest, 'Realm consequence mission operation adapter receipt digest');
+  requireDigest(evidence.sha256, 'Realm consequence mission operation adapter receipt file digest');
+  requireCommit(evidence.sourceCommit, 'Realm consequence mission operation adapter source commit');
+  if (!Number.isInteger(evidence.fullTests)
+      || evidence.fullTests !== profile.realmConsequenceMissionOperationAdapterFullTests) {
+    throw new Error('Realm consequence mission operation adapter full test evidence mismatch');
+  }
+  const text = await readBlob(
+    repositoryRoot,
+    commit,
+    evidence.path,
+    'Realm consequence mission operation adapter receipt',
+  );
+  if (sha256Text(text) !== evidence.sha256) {
+    throw new Error('Realm consequence mission operation adapter receipt file digest mismatch');
+  }
+  const receipt = parseJson(text, 'Realm consequence mission operation adapter receipt');
+  requireCanonicalJsonText(text, receipt, 'Realm consequence mission operation adapter receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CERTIFICATION_ID
+      || receipt.protocolId !== REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CERTIFICATION_PROTOCOL
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest
+      || receipt.testRuns?.full?.status !== 'pass'
+      || receipt.testRuns.full.tests !== evidence.fullTests) {
+    throw new Error('Realm consequence mission operation adapter receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'Realm consequence mission operation adapter source commit');
+  await isAncestor(
+    repositoryRoot,
+    evidence.sourceCommit,
+    commit,
+    'Realm consequence mission operation adapter source commit',
+  );
+}
+
 async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
   const expectedEvidenceKeys = profile.portableConformance
     ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost',
@@ -1263,7 +1365,8 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
        ...(profile.missionOperationAdapter ? ['missionOperationAdapter'] : []),
        ...(profile.deferredReviewMissionOperationAdapter ? ['deferredReviewMissionOperationAdapter'] : []),
        ...(profile.revisionMissionOperationAdapter ? ['revisionMissionOperationAdapter'] : []),
-       ...(profile.delegationMissionOperationAdapter ? ['delegationMissionOperationAdapter'] : [])]
+       ...(profile.delegationMissionOperationAdapter ? ['delegationMissionOperationAdapter'] : []),
+       ...(profile.realmConsequenceMissionOperationAdapter ? ['realmConsequenceMissionOperationAdapter'] : [])]
     : ['boundaryFiles', 'integrationReceipt'];
   exactKeys(godagents.evidence, expectedEvidenceKeys, 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
@@ -1365,6 +1468,14 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
       repositoryRoot,
       commit,
       godagents.evidence.delegationMissionOperationAdapter,
+      profile,
+    );
+  }
+  if (profile.realmConsequenceMissionOperationAdapter) {
+    await verifyRealmConsequenceMissionOperationAdapterEvidence(
+      repositoryRoot,
+      commit,
+      godagents.evidence.realmConsequenceMissionOperationAdapter,
       profile,
     );
   }
@@ -1689,6 +1800,27 @@ async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGA
       sourceCommit: delegationMissionOperation.source.commit,
     };
   }
+  if (profile.realmConsequenceMissionOperationAdapter) {
+    const realmConsequenceMissionOperationText = await readBlob(
+      repositoryRoot,
+      commit,
+      REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+      'Realm consequence mission operation adapter receipt',
+    );
+    const realmConsequenceMissionOperation = parseJson(
+      realmConsequenceMissionOperationText,
+      'Realm consequence mission operation adapter receipt',
+    );
+    evidence.realmConsequenceMissionOperationAdapter = {
+      certificationId: realmConsequenceMissionOperation.certificationId,
+      fixtureDigest: realmConsequenceMissionOperation.fixture.logicalDigest,
+      fullTests: realmConsequenceMissionOperation.testRuns.full.tests,
+      path: REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+      receiptDigest: realmConsequenceMissionOperation.receiptDigest,
+      sha256: sha256Text(realmConsequenceMissionOperationText),
+      sourceCommit: realmConsequenceMissionOperation.source.commit,
+    };
+  }
   return evidence;
 }
 
@@ -1874,6 +2006,10 @@ export async function verifyCrossRepositoryCurrentHeadCertificateV2(receipt, opt
   if (currentProfile.delegationMissionOperationAdapterPresent !== delegationMissionOperationEvidencePresent) {
     throw new Error('current-head v2 delegation mission operation adapter profile does not match the committed source');
   }
+  const realmConsequenceMissionOperationEvidencePresent = receipt?.godagents?.evidence?.realmConsequenceMissionOperationAdapter !== undefined;
+  if (currentProfile.realmConsequenceMissionOperationAdapterPresent !== realmConsequenceMissionOperationEvidencePresent) {
+    throw new Error('current-head v2 Realm consequence mission operation adapter profile does not match the committed source');
+  }
   return verifyCertificate(receipt, {
     ...options,
     protocolId: CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL,
@@ -1906,12 +2042,13 @@ export async function buildCrossRepositoryCurrentHeadCertificateV2(options = {})
 
 async function currentHeadV2Profile(repositoryRoot, commit) {
   await requireCommitObject(repositoryRoot, commit, 'Godagents build commit');
-  const [forensicsPresent, agentProfilePresent, deferredReviewMissionOperationAdapterPresent, revisionMissionOperationAdapterPresent, delegationMissionOperationAdapterPresent] = await Promise.all([
+  const [forensicsPresent, agentProfilePresent, deferredReviewMissionOperationAdapterPresent, revisionMissionOperationAdapterPresent, delegationMissionOperationAdapterPresent, realmConsequenceMissionOperationAdapterPresent] = await Promise.all([
     hasCommittedPath(repositoryRoot, commit, MISSION_PROGRAM_FORENSICS_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, AGENT_PROFILE_CONTRACT_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, REVISION_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, DELEGATION_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
+    hasCommittedPath(repositoryRoot, commit, REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
   ]);
   const missionOperationAdapterPresent = await hasCommittedPath(
     repositoryRoot,
@@ -1924,7 +2061,9 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
         ? (deferredReviewMissionOperationAdapterPresent
           ? (revisionMissionOperationAdapterPresent
             ? (delegationMissionOperationAdapterPresent
-              ? CURRENT_HEAD_V2_PROFILE
+              ? (realmConsequenceMissionOperationAdapterPresent
+                ? CURRENT_HEAD_V2_PROFILE
+                : PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE)
               : PRE_DELEGATION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE)
             : PRE_REVISION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE)
           : PRE_REVIEW_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE)
@@ -1940,6 +2079,7 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     deferredReviewMissionOperationAdapterPresent,
     revisionMissionOperationAdapterPresent,
     delegationMissionOperationAdapterPresent,
+    realmConsequenceMissionOperationAdapterPresent,
     profile,
   };
 }

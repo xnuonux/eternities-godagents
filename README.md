@@ -58,6 +58,10 @@ npm run build:mission-program-forensics-fixture
 npm run certify:mission-program-forensics
 npm run build:mission-operation-adapter-fixture
 npm run certify:mission-operation-adapter
+npm run build:delegation-mission-operation-adapter-fixture
+npm run certify:delegation-mission-operation-adapter
+npm run build:realm-consequence-mission-operation-adapter-fixture
+npm run certify:realm-consequence-mission-operation-adapter
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -830,6 +834,29 @@ with `npm run build:delegation-mission-operation-adapter-fixture` and the
 certificate with `npm run certify:delegation-mission-operation-adapter`. This
 does not add quorum, nested delegation, scheduling, child isolation, Realm,
 continuity, identity, evolution, Soul, or Lunari authority.
+
+### Realm consequence mission-operation adapter v1
+
+The Realm consequence mission-operation adapter binds the certified recoverable
+Realm consequence host to one mission-program step. Its source descriptor and
+generic request carry only content-addressed mission, proposal, Contract,
+authority, constitution, state, host, execution, and ceiling identities. They
+never carry the Realm port, proposal body, Contract body, observations,
+credentials, or effect handles.
+
+The recoverable host remains the owner of admission, journal recovery,
+negotiation, constitutional decision, action execution, and consequence
+receipts. The mission-program coordinator performs reconciliation before
+execution and owns ordering and terminal replay. The adapter projects only a
+compact digest record with zero model-token usage. Its fixture proves terminal
+replay without a second Realm effect, recovery after admission interruption,
+and Contract drift rejection before a Realm method. The receipt is
+`receipts/realm-consequence-mission-operation-adapter-v1.json`; rebuild the
+fixture with `npm run build:realm-consequence-mission-operation-adapter-fixture`
+and certify it with `npm run certify:realm-consequence-mission-operation-adapter`.
+This remains opt-in and does not wire Realm consequences into default launch,
+delegation, scheduling, rollback, credentials, continuity, identity,
+evolution, Soul, or Lunari.
 
 ### Portable phase-host conformance v1
 
