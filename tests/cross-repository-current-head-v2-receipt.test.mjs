@@ -72,8 +72,8 @@ async function buildReceipt() {
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
     testRuns: {
-      godagentsFocused: { status: 'pass', tests: 77 },
-      godagentsFull: { status: 'pass', tests: 1029 },
+      godagentsFocused: { status: 'pass', tests: 107 },
+      godagentsFull: { status: 'pass', tests: 1059 },
       godskillsFocused: { status: 'pass', tests: 12 },
     },
   });
@@ -224,9 +224,29 @@ test('the committed v2 certificate binds the exact current heads and portable re
     assert.match(receipt.godagents.evidence.revisionMissionOperationAdapter.receiptDigest, /^[a-f0-9]{64}$/);
     assert.match(receipt.godagents.evidence.revisionMissionOperationAdapter.sourceCommit, /^[a-f0-9]{40}$/);
   }
+  if (receipt.godagents.evidence.delegationMissionOperationAdapter !== undefined) {
+    assert.equal(
+      receipt.godagents.evidence.delegationMissionOperationAdapter.certificationId,
+      'delegation-mission-operation-adapter-v1',
+    );
+    assert.match(receipt.godagents.evidence.delegationMissionOperationAdapter.fixtureDigest, /^[a-f0-9]{64}$/);
+    assert.equal(receipt.godagents.evidence.delegationMissionOperationAdapter.fullTests, 1059);
+    assert.equal(
+      receipt.godagents.evidence.delegationMissionOperationAdapter.path,
+      'receipts/delegation-mission-operation-adapter-v1.json',
+    );
+    assert.match(receipt.godagents.evidence.delegationMissionOperationAdapter.receiptDigest, /^[a-f0-9]{64}$/);
+    assert.match(receipt.godagents.evidence.delegationMissionOperationAdapter.sourceCommit, /^[a-f0-9]{40}$/);
+  }
   assert.deepEqual(
     receipt.testRuns,
-    receipt.godagents.evidence.revisionMissionOperationAdapter !== undefined
+    receipt.godagents.evidence.delegationMissionOperationAdapter !== undefined
+      ? {
+        godagentsFocused: { status: 'pass', tests: 107 },
+        godagentsFull: { status: 'pass', tests: 1059 },
+        godskillsFocused: { status: 'pass', tests: 12 },
+      }
+      : receipt.godagents.evidence.revisionMissionOperationAdapter !== undefined
       ? {
         godagentsFocused: { status: 'pass', tests: 99 },
         godagentsFull: { status: 'pass', tests: 1051 },

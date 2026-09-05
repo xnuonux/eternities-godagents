@@ -824,6 +824,29 @@ export function createBoundedDelegationCoordinator({
     return workerEntriesFor(input, adapters);
   }
 
+  function describe(input) {
+    const normalized = normalizeInput(input);
+    const workerEntries = currentWorkersFor(normalized);
+    const seed = admissionSeed(normalized, workerEntries);
+    const workerSet = seed.workers.map(({ workerId, assignment, descriptorDigest }) => ({
+      workerId,
+      assignment: safeClone(assignment, 'worker assignment'),
+      descriptorDigest,
+    }));
+    return deepFreeze({
+      schemaVersion: 1,
+      protocolId: BOUNDED_DELEGATION_PROTOCOL_ID,
+      delegationId: sha256Value(seed),
+      inputDigest: sha256Value(normalized),
+      authorityDigest: sha256Value(normalized.authority),
+      workerSetDigest: sha256Value(workerSet),
+      workerIds: workerSet.map(({ workerId }) => workerId),
+      workerCount: workerSet.length,
+      maxCompletionTokens: normalized.budget.maxCompletionTokens,
+      maxResultBytes: normalized.budget.maxResultBytes,
+    });
+  }
+
   async function execute(input) {
     const normalized = normalizeInput(input);
     const workerEntries = currentWorkersFor(normalized);
@@ -875,6 +898,7 @@ export function createBoundedDelegationCoordinator({
   }
 
   const coordinator = {
+    describe,
     execute,
     recover,
     inspect,

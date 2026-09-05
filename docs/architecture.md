@@ -255,6 +255,37 @@ replay. It does not qualify revision quality, a provider or model, default
 launch, hosted durability, Realm action, delegation, continuity, identity,
 evolution, keel, memory, Inspiration, Soul, or Lunari integration.
 
+## Delegation mission-operation adapter v1
+
+The delegation mission-operation adapter is the opt-in provider-neutral bridge
+between the certified bounded delegation lifecycle and one mission-program
+step. It freezes one canonical delegation input and asks the bounded
+coordinator for a read-only content-addressed description. The source
+descriptor binds only the derived delegation id, input digest, authority
+envelope digest, worker-set digest and ids, worker count, and exact delegation
+budgets. Excerpts, worker output, functions, credentials, providers, Realm
+handles, keel, memory, identity, evolution, and durable state do not enter the
+generic operation request or source descriptor.
+
+The adapter requires the mission step's completion and result ceilings to
+equal the bounded delegation budget. The generic operation boundary
+revalidates the source before every call. An absent bounded journal remains
+absent until the mission operation executes. An admitted or incomplete
+delegation is advanced through the bounded coordinator's own reconciliation
+and execution lifecycle and remains pending when a worker is pending. A
+completed aggregate projects only its digest, ordered worker ids, aggregate
+usage, and adapter-owned timestamps into the generic mission completion.
+
+The bounded coordinator retains ownership of worker envelopes, locks, journal,
+artifacts, worker recovery, and aggregate identity. The mission-program
+coordinator retains ownership of step ordering, step commitment, and terminal
+replay. The source receipt binds the existing bounded-delegation lifecycle
+receipt as a parent. This boundary proves local binding, pending preservation,
+compact projection, crash recovery, and duplicate-free replay over injected
+workers. It does not qualify worker quality, child-process isolation, remote
+exactly-once behavior, quorum, nested delegation, scheduling, Realm action,
+continuity, identity, evolution, Inspiration, Soul, or Lunari integration.
+
 ## Deferred Godskills review materialization boundary
 
 The review materializer is the first post-native disclosure boundary. It verifies the complete pinned Godskills release at construction but does not read deferred capability entrypoints or contracts. For each materialization it first verifies the mission admission, exact review request and descriptor, round-specific artifact context, release and activation roots, and every deferred capability descriptor. It opens no selected body until that full set passes, preventing a later invalid descriptor from leaking an earlier valid body.

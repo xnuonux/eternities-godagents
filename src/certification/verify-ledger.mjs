@@ -24,6 +24,7 @@ const registry = Object.freeze({
   'creator-protocol-phase3-certification.json': 'creator-protocol-phase3',
   'review-mission-operation-adapter-v1.json': 'deferred-review-mission-operation-adapter-v1',
   'revision-mission-operation-adapter-v1.json': 'revision-mission-operation-adapter-v1',
+  'delegation-mission-operation-adapter-v1.json': 'delegation-mission-operation-adapter-v1',
   'deferred-godskills-review-executor-v1.json': 'deferred-godskills-review-executor-v1',
   'deferred-godskills-review-materializer-v1.json': 'deferred-godskills-review-materializer-v1',
   'durable-anthropic-messages-phase-transport-v1.json': 'durable-anthropic-messages-phase-transport-v1',
@@ -78,16 +79,21 @@ const expectedFilesBeforeMissionOperationAdapter = Object.freeze(expectedFiles.f
     'mission-operation-adapter-v1.json',
     'review-mission-operation-adapter-v1.json',
     'revision-mission-operation-adapter-v1.json',
+    'delegation-mission-operation-adapter-v1.json',
   ].includes(file),
 ));
 const expectedFilesBeforeDeferredReviewOperationAdapter = Object.freeze(expectedFiles.filter(
   (file) => ![
     'review-mission-operation-adapter-v1.json',
     'revision-mission-operation-adapter-v1.json',
+    'delegation-mission-operation-adapter-v1.json',
   ].includes(file),
 ));
 const expectedFilesBeforeRevisionMissionOperationAdapter = Object.freeze(expectedFiles.filter(
-  (file) => file !== 'revision-mission-operation-adapter-v1.json',
+  (file) => !['revision-mission-operation-adapter-v1.json', 'delegation-mission-operation-adapter-v1.json'].includes(file),
+));
+const expectedFilesBeforeDelegationMissionOperationAdapter = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'delegation-mission-operation-adapter-v1.json',
 ));
 const expectedFilesBeforeAgentProfileContract = Object.freeze(expectedFilesBeforeMissionOperationAdapter.filter(
   (file) => file !== 'agent-profile-contract-v1.json',
@@ -901,6 +907,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'revision-mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeRevisionMissionOperationAdapter
     .map((file) => `receipts/${file}`)),
+  'delegation-mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeDelegationMissionOperationAdapter
+    .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
@@ -1343,6 +1351,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(revisionMissionOperationAdapter.receipt)) {
       throw new Error('revision mission operation adapter certification differs from exact source reconstruction');
+    }
+  }
+
+  const delegationMissionOperationAdapter = loaded.get('delegation-mission-operation-adapter-v1.json');
+  if (delegationMissionOperationAdapter) {
+    const { buildDelegationMissionOperationAdapterReceiptFromSource } = await import(
+      '../../scripts/build-delegation-mission-operation-adapter-v1-receipt.mjs'
+    );
+    const rebuilt = await buildDelegationMissionOperationAdapterReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: delegationMissionOperationAdapter.receipt.source.commit,
+      testRuns: delegationMissionOperationAdapter.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(delegationMissionOperationAdapter.receipt)) {
+      throw new Error('delegation mission operation adapter certification differs from exact source reconstruction');
     }
   }
 
