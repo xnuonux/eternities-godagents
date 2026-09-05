@@ -68,7 +68,7 @@ const expectedFiles = Object.freeze(Object.keys(registry).sort());
 const expectedFilesBeforeBoundedDelegation = Object.freeze(expectedFiles.filter(
   (file) => file !== 'bounded-delegation-lifecycle-v1.json',
 ));
-const legacyExpectedFiles = Object.freeze(expectedFiles.filter(
+const legacyExpectedFiles = Object.freeze(expectedFilesBeforeBoundedDelegation.filter(
   (file) => file !== 'realm-compensation-v1.json',
 ));
 const expectedFilesBeforePortableRealmConsequenceSdk = Object.freeze(legacyExpectedFiles.filter(
