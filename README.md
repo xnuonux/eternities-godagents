@@ -786,10 +786,30 @@ reconciliation, and phase-result validation inside the existing review
 executor. The mission-program coordinator remains the owner of journal writes,
 locks, ordering, recovery, artifact publication, and terminal replay. Its
 source-bound certification is
-`receipts/deferred-review-mission-operation-adapter-v1.json`; rebuild the
+`receipts/review-mission-operation-adapter-v1.json`; rebuild the
 fixture with `npm run build:review-mission-operation-adapter-fixture` and the
 certificate with `npm run certify:review-mission-operation-adapter`. This is an
 opt-in local bridge, not a live evaluator or default vessel integration.
+
+### Revision mission-operation adapter v1
+
+The revision mission-operation adapter is the matching source-specific bridge
+for one already-admitted revision executor. It binds the executor descriptor,
+the exact revision phase request and context, the mission-program identity,
+step identity, authority ceiling, and completion ceilings before it can
+reconcile or execute. The generic operation request stays body-free, and the
+adapter revalidates the live source descriptor before every call.
+
+The revision executor remains responsible for materialization, transport
+reconciliation, and phase-result validation. The mission-program coordinator
+remains responsible for journal writes, locks, ordering, recovery, publication,
+and terminal replay. The adapter owns no provider, credential, Realm, keel,
+memory, identity, evolution, delegation, or Lunari authority. Its source-bound
+receipt is `receipts/revision-mission-operation-adapter-v1.json`; rebuild the
+fixture with `npm run build:revision-mission-operation-adapter-fixture` and the
+certificate with `npm run certify:revision-mission-operation-adapter`. This is
+an opt-in provider-neutral migration boundary, not a claim about revision
+quality, live model behavior, or default launch wiring.
 
 ### Portable phase-host conformance v1
 

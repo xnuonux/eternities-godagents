@@ -228,6 +228,33 @@ malformed-result refusal, and duplicate-free replay against a trusted injected
 executor. It does not qualify a review evaluator, model, provider, live
 Godskills execution, default launch, hosted durability, or Lunari behavior.
 
+## Revision mission-operation adapter v1
+
+The revision mission-operation adapter is the parallel source-specific bridge
+for one already admitted revision executor. Its source descriptor binds the
+executor descriptor digest, exact revision phase request and context digests,
+mission-program and step identities, authority ceiling, and completion
+ceilings. The generic mission request contains no mission or result body and
+cannot widen the phase's authority or budget.
+
+The adapter verifies the revision request before construction and revalidates
+the live executor descriptor before every reconcile or execute call. It maps
+only a verified revision phase result into the generic mission-program
+completion shape. Reconciliation remains first, completed underlying work is
+recovered without a second execute, and malformed or drifted results fail
+closed. The revision executor retains ownership of materialization, transport
+reconciliation, and phase validation; the mission-program coordinator retains
+ownership of journal, lock, ordering, recovery, publication, and terminal
+replay.
+
+Its receipt binds the existing generic mission-operation certificate as a
+parent rather than duplicating that proof. The deterministic fixture proves
+body-free dispatch, exact phase and context binding, authority and completion
+ceiling preservation, absent-before-execute, completed recovery, and terminal
+replay. It does not qualify revision quality, a provider or model, default
+launch, hosted durability, Realm action, delegation, continuity, identity,
+evolution, keel, memory, Inspiration, Soul, or Lunari integration.
+
 ## Deferred Godskills review materialization boundary
 
 The review materializer is the first post-native disclosure boundary. It verifies the complete pinned Godskills release at construction but does not read deferred capability entrypoints or contracts. For each materialization it first verifies the mission admission, exact review request and descriptor, round-specific artifact context, release and activation roots, and every deferred capability descriptor. It opens no selected body until that full set passes, preventing a later invalid descriptor from leaking an earlier valid body.

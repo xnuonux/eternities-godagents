@@ -23,6 +23,7 @@ const registry = Object.freeze({
   'cortex-binding-registry-v1.json': 'cortex-binding-registry-v1',
   'creator-protocol-phase3-certification.json': 'creator-protocol-phase3',
   'review-mission-operation-adapter-v1.json': 'deferred-review-mission-operation-adapter-v1',
+  'revision-mission-operation-adapter-v1.json': 'revision-mission-operation-adapter-v1',
   'deferred-godskills-review-executor-v1.json': 'deferred-godskills-review-executor-v1',
   'deferred-godskills-review-materializer-v1.json': 'deferred-godskills-review-materializer-v1',
   'durable-anthropic-messages-phase-transport-v1.json': 'durable-anthropic-messages-phase-transport-v1',
@@ -73,10 +74,20 @@ const registry = Object.freeze({
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
 const expectedFilesBeforeMissionOperationAdapter = Object.freeze(expectedFiles.filter(
-  (file) => !['mission-operation-adapter-v1.json', 'review-mission-operation-adapter-v1.json'].includes(file),
+  (file) => ![
+    'mission-operation-adapter-v1.json',
+    'review-mission-operation-adapter-v1.json',
+    'revision-mission-operation-adapter-v1.json',
+  ].includes(file),
 ));
 const expectedFilesBeforeDeferredReviewOperationAdapter = Object.freeze(expectedFiles.filter(
-  (file) => file !== 'review-mission-operation-adapter-v1.json',
+  (file) => ![
+    'review-mission-operation-adapter-v1.json',
+    'revision-mission-operation-adapter-v1.json',
+  ].includes(file),
+));
+const expectedFilesBeforeRevisionMissionOperationAdapter = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'revision-mission-operation-adapter-v1.json',
 ));
 const expectedFilesBeforeAgentProfileContract = Object.freeze(expectedFilesBeforeMissionOperationAdapter.filter(
   (file) => file !== 'agent-profile-contract-v1.json',
@@ -888,6 +899,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'review-mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeDeferredReviewOperationAdapter
     .map((file) => `receipts/${file}`)),
+  'revision-mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeRevisionMissionOperationAdapter
+    .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
@@ -1315,6 +1328,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(deferredReviewMissionOperationAdapter.receipt)) {
       throw new Error('deferred review mission operation adapter certification differs from exact source reconstruction');
+    }
+  }
+
+  const revisionMissionOperationAdapter = loaded.get('revision-mission-operation-adapter-v1.json');
+  if (revisionMissionOperationAdapter) {
+    const { buildRevisionMissionOperationAdapterReceiptFromSource } = await import(
+      '../../scripts/build-revision-mission-operation-adapter-v1-receipt.mjs'
+    );
+    const rebuilt = await buildRevisionMissionOperationAdapterReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: revisionMissionOperationAdapter.receipt.source.commit,
+      testRuns: revisionMissionOperationAdapter.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(revisionMissionOperationAdapter.receipt)) {
+      throw new Error('revision mission operation adapter certification differs from exact source reconstruction');
     }
   }
 
