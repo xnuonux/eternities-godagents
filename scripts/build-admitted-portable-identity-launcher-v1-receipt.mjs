@@ -30,8 +30,8 @@ const COMMIT = /^[a-f0-9]{40}$/;
 
 const protectedTrustRoots = Object.freeze({
   'receipts/admitted-sealed-identity-host-v1.json': '98e904a14822fb9e66620030a5472c0b64a9948bf3ffa4c0e94a2f17274f2581',
-  'receipts/deferred-godskills-review-executor-v1.json': '7d6579c1acbfd2142084396f818ab69c12675eb3d2be98e6b9c55b1c4b301e44',
-  'receipts/deferred-godskills-review-materializer-v1.json': 'a17793c9dc94308598fb0435c9404c8f796225173d31a26a0a77c1f1a2d62b09',
+  'receipts/deferred-godskills-review-executor-v1.json': 'e5897311bbeab99eda7b6a093b7c442908c9a03e85217f85979210e29d6a6c9c',
+  'receipts/deferred-godskills-review-materializer-v1.json': '243a252f47a9d9d63a520a2d6a673acd045515c8de29b5e2a5b594e136a8ccac',
   'receipts/identity-bound-mission-vessel-v1.json': 'f61a34aab15d2cd63403a11f2b260d2e929ebd69ca4e1fbe6d4dc4e588a629fa',
   'receipts/portable-phase-host-conformance-v1.json': '88dd2e1c1ab5b1aa93e9c6a24c1a2e3eb0f96a1bd2a8f0b3fd0d17bd92a66e2c',
   'src/host/admitted-sealed-identity-launch.mjs': 'fbe6b59b8f6f28dc4def494c168894e17b8771ae5f2c515d96b4d2bcd86dfb27',
