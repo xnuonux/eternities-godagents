@@ -73,7 +73,7 @@ const expectedFilesBeforePortableLauncher = Object.freeze(expectedFiles.filter(
 const expectedFilesBeforeMissionEconomics = Object.freeze(expectedFilesBeforePortableLauncher.filter(
   (file) => file !== 'mission-economics-ledger-v1.json',
 ));
-const expectedFilesBeforeBoundedDelegation = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeBoundedDelegation = Object.freeze(expectedFilesBeforePortableLauncher.filter(
   (file) => !['bounded-delegation-lifecycle-v1.json', 'mission-economics-ledger-v1.json'].includes(file),
 ));
 const legacyExpectedFiles = Object.freeze(expectedFilesBeforeBoundedDelegation.filter(
