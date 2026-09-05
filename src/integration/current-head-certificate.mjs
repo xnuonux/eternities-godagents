@@ -57,6 +57,9 @@ const MISSION_PROGRAM_FORENSICS_CERTIFICATION_PROTOCOL = 'eternities-mission-pro
 const AGENT_PROFILE_CONTRACT_RECEIPT_PATH = 'receipts/agent-profile-contract-v1.json';
 const AGENT_PROFILE_CONTRACT_CERTIFICATION_ID = 'agent-profile-contract-v1';
 const AGENT_PROFILE_CONTRACT_CERTIFICATION_PROTOCOL = 'eternities-godagent-profile-certification-v1';
+const MISSION_OPERATION_ADAPTER_RECEIPT_PATH = 'receipts/mission-operation-adapter-v1.json';
+const MISSION_OPERATION_ADAPTER_CERTIFICATION_ID = 'mission-operation-adapter-v1';
+const MISSION_OPERATION_ADAPTER_CERTIFICATION_PROTOCOL = 'eternities-mission-operation-adapter-certification-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -137,6 +140,17 @@ const V2_BOUNDARY_PATHS = Object.freeze([
     'tests/agent-profile-contract-certification.test.mjs',
     'tests/agent-profile-contract.test.mjs',
     AGENT_PROFILE_CONTRACT_RECEIPT_PATH,
+    'fixtures/mission-operation-adapter-v1.json',
+    'schemas/mission-operation-adapter.schema.json',
+    'schemas/mission-operation-request.schema.json',
+    'schemas/mission-operation-receipt.schema.json',
+    'src/core/schema-validator.mjs',
+    'src/runtime/mission-operation-adapter.mjs',
+    'scripts/build-mission-operation-adapter-v1-fixture.mjs',
+    'scripts/build-mission-operation-adapter-v1-receipt.mjs',
+    'tests/mission-operation-adapter-certification.test.mjs',
+    'tests/mission-operation-adapter.test.mjs',
+    MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
     'fixtures/admitted-portable-identity-launcher-v1.json',
     'receipts/admitted-portable-identity-launcher-v1.json',
     'src/host/admitted-portable-identity-launcher.mjs',
@@ -204,6 +218,8 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   missionProgramForensicsFullTests: 1009,
   agentProfileContract: true,
   agentProfileContractFullTests: 1018,
+  missionOperationAdapter: true,
+  missionOperationAdapterFullTests: 1029,
   supportedAdapterProtocols: Object.freeze([
     PORTABLE_CONFORMANCE_PROTOCOL,
     PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
@@ -216,7 +232,26 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   certificationPath: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH,
   certificationDocument: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_DOCUMENT,
 });
-const PRE_AGENT_PROFILE_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
+const PRE_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
+  'fixtures/mission-operation-adapter-v1.json',
+  'schemas/mission-operation-adapter.schema.json',
+  'schemas/mission-operation-request.schema.json',
+  'schemas/mission-operation-receipt.schema.json',
+  'src/core/schema-validator.mjs',
+  'src/runtime/mission-operation-adapter.mjs',
+  'scripts/build-mission-operation-adapter-v1-fixture.mjs',
+  'scripts/build-mission-operation-adapter-v1-receipt.mjs',
+  'tests/mission-operation-adapter-certification.test.mjs',
+  'tests/mission-operation-adapter.test.mjs',
+  MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+].includes(path)));
+const PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  ...CURRENT_HEAD_V2_PROFILE,
+  boundaryPaths: PRE_ADAPTER_V2_BOUNDARY_PATHS,
+  missionOperationAdapter: false,
+  missionOperationAdapterFullTests: undefined,
+});
+const PRE_AGENT_PROFILE_V2_BOUNDARY_PATHS = Object.freeze(PRE_ADAPTER_V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/agent-profile-contract-v1.json',
   'schemas/godagent-profile.schema.json',
   'src/agent/profile.mjs',
@@ -227,10 +262,12 @@ const PRE_AGENT_PROFILE_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filt
   AGENT_PROFILE_CONTRACT_RECEIPT_PATH,
 ].includes(path)));
 const PRE_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE = Object.freeze({
-  ...CURRENT_HEAD_V2_PROFILE,
+  ...PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_AGENT_PROFILE_V2_BOUNDARY_PATHS,
   agentProfileContract: false,
   agentProfileContractFullTests: undefined,
+  missionOperationAdapter: false,
+  missionOperationAdapterFullTests: undefined,
 });
 const PRE_FORENSICS_V2_BOUNDARY_PATHS = Object.freeze(PRE_AGENT_PROFILE_V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/mission-program-forensics-v1.json',
@@ -242,6 +279,18 @@ const PRE_FORENSICS_V2_BOUNDARY_PATHS = Object.freeze(PRE_AGENT_PROFILE_V2_BOUND
 const PRE_FORENSICS_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...PRE_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_FORENSICS_V2_BOUNDARY_PATHS,
+  missionProgramForensics: false,
+  missionProgramForensicsFullTests: undefined,
+});
+const PRE_FORENSICS_WITH_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  ...PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE,
+  boundaryPaths: PRE_ADAPTER_V2_BOUNDARY_PATHS.filter((path) => ![
+    'fixtures/mission-program-forensics-v1.json',
+    'schemas/mission-program-forensics.schema.json',
+    'tests/mission-program-forensics-certification.test.mjs',
+    'tests/mission-program-forensics.test.mjs',
+    MISSION_PROGRAM_FORENSICS_RECEIPT_PATH,
+  ].includes(path)),
   missionProgramForensics: false,
   missionProgramForensicsFullTests: undefined,
 });
@@ -915,6 +964,40 @@ async function verifyAgentProfileContractEvidence(repositoryRoot, commit, eviden
   await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'agent profile contract source commit');
 }
 
+async function verifyMissionOperationAdapterEvidence(repositoryRoot, commit, evidence, profile) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'fullTests', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'mission operation adapter evidence');
+  if (evidence.certificationId !== MISSION_OPERATION_ADAPTER_CERTIFICATION_ID
+      || evidence.path !== MISSION_OPERATION_ADAPTER_RECEIPT_PATH) {
+    throw new Error('mission operation adapter evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'mission operation adapter fixture digest');
+  requireDigest(evidence.receiptDigest, 'mission operation adapter receipt digest');
+  requireDigest(evidence.sha256, 'mission operation adapter receipt file digest');
+  requireCommit(evidence.sourceCommit, 'mission operation adapter source commit');
+  if (!Number.isInteger(evidence.fullTests)
+      || evidence.fullTests !== profile.missionOperationAdapterFullTests) {
+    throw new Error('mission operation adapter full test evidence mismatch');
+  }
+  const text = await readBlob(repositoryRoot, commit, evidence.path, 'mission operation adapter receipt');
+  if (sha256Text(text) !== evidence.sha256) throw new Error('mission operation adapter receipt file digest mismatch');
+  const receipt = parseJson(text, 'mission operation adapter receipt');
+  requireCanonicalJsonText(text, receipt, 'mission operation adapter receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== MISSION_OPERATION_ADAPTER_CERTIFICATION_ID
+      || receipt.protocolId !== MISSION_OPERATION_ADAPTER_CERTIFICATION_PROTOCOL
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest
+      || receipt.testRuns?.full?.status !== 'pass'
+      || receipt.testRuns.full.tests !== evidence.fullTests) {
+    throw new Error('mission operation adapter receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'mission operation adapter source commit');
+  await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'mission operation adapter source commit');
+}
+
 async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
   const expectedEvidenceKeys = profile.portableConformance
     ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost',
@@ -922,7 +1005,8 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
       ...(profile.admittedPortableIdentityLauncher ? ['admittedPortableIdentityLauncher'] : []),
       ...(profile.missionProgram ? ['missionProgram'] : []),
       ...(profile.missionProgramForensics ? ['missionProgramForensics'] : []),
-      ...(profile.agentProfileContract ? ['agentProfileContract'] : [])]
+      ...(profile.agentProfileContract ? ['agentProfileContract'] : []),
+      ...(profile.missionOperationAdapter ? ['missionOperationAdapter'] : [])]
     : ['boundaryFiles', 'integrationReceipt'];
   exactKeys(godagents.evidence, expectedEvidenceKeys, 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
@@ -992,6 +1076,14 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
       repositoryRoot,
       commit,
       godagents.evidence.agentProfileContract,
+      profile,
+    );
+  }
+  if (profile.missionOperationAdapter) {
+    await verifyMissionOperationAdapterEvidence(
+      repositoryRoot,
+      commit,
+      godagents.evidence.missionOperationAdapter,
       profile,
     );
   }
@@ -1235,6 +1327,24 @@ async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGA
       sourceCommit: agentProfile.source.commit,
     };
   }
+  if (profile.missionOperationAdapter) {
+    const missionOperationText = await readBlob(
+      repositoryRoot,
+      commit,
+      MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+      'mission operation adapter receipt',
+    );
+    const missionOperation = parseJson(missionOperationText, 'mission operation adapter receipt');
+    evidence.missionOperationAdapter = {
+      certificationId: missionOperation.certificationId,
+      fixtureDigest: missionOperation.fixture.logicalDigest,
+      fullTests: missionOperation.testRuns.full.tests,
+      path: MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+      receiptDigest: missionOperation.receiptDigest,
+      sha256: sha256Text(missionOperationText),
+      sourceCommit: missionOperation.source.commit,
+    };
+  }
   return evidence;
 }
 
@@ -1404,6 +1514,10 @@ export async function verifyCrossRepositoryCurrentHeadCertificateV2(receipt, opt
   if (currentProfile.agentProfilePresent !== agentProfileEvidencePresent) {
     throw new Error('current-head v2 agent profile profile does not match the committed source');
   }
+  const missionOperationEvidencePresent = receipt?.godagents?.evidence?.missionOperationAdapter !== undefined;
+  if (currentProfile.missionOperationAdapterPresent !== missionOperationEvidencePresent) {
+    throw new Error('current-head v2 mission operation adapter profile does not match the committed source');
+  }
   return verifyCertificate(receipt, {
     ...options,
     protocolId: CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL,
@@ -1440,12 +1554,22 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     hasCommittedPath(repositoryRoot, commit, MISSION_PROGRAM_FORENSICS_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, AGENT_PROFILE_CONTRACT_RECEIPT_PATH),
   ]);
+  const missionOperationAdapterPresent = await hasCommittedPath(
+    repositoryRoot,
+    commit,
+    MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+  );
   const profile = forensicsPresent
-    ? (agentProfilePresent ? CURRENT_HEAD_V2_PROFILE : PRE_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE)
-    : (agentProfilePresent ? PRE_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE : PRE_FORENSICS_CURRENT_HEAD_V2_PROFILE);
+    ? (agentProfilePresent
+      ? (missionOperationAdapterPresent ? CURRENT_HEAD_V2_PROFILE : PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE)
+      : PRE_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE)
+    : (agentProfilePresent
+      ? (missionOperationAdapterPresent ? PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE : PRE_FORENSICS_WITH_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE)
+      : PRE_FORENSICS_CURRENT_HEAD_V2_PROFILE);
   return {
     forensicsPresent,
     agentProfilePresent,
+    missionOperationAdapterPresent,
     profile,
   };
 }
