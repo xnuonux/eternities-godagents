@@ -11,6 +11,10 @@ const expectedCommands = Object.freeze({
     'node scripts/build-admitted-local-launch-v1-fixture.mjs',
   'certify:admitted-local-launch':
     'node scripts/build-admitted-local-launch-v1-receipt.mjs',
+  'build:review-mission-operation-adapter-fixture':
+    'node scripts/build-review-mission-operation-adapter-v1-fixture.mjs',
+  'certify:review-mission-operation-adapter':
+    'node scripts/build-review-mission-operation-adapter-v1-receipt.mjs',
   'build:bounded-delegation-fixture':
     'node scripts/build-bounded-delegation-fixture.mjs',
   'certify:bounded-delegation':

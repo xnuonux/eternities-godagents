@@ -201,6 +201,33 @@ emptiness, and terminal replay stability. It is not a live provider, Realm,
 Godskills, delegation, review, host SDK, or Lunari integration. Those surfaces
 must earn separate adapters and receipts.
 
+## Deferred review mission-operation adapter v1
+
+The deferred review mission-operation adapter is the first source-specific
+consumer of the generic mission-operation boundary. It adapts one already
+admitted review executor instance to one exact mission-program step. Its
+source descriptor binds only the executor descriptor digest, phase request
+digest, context digest, mission-program and step identities, authority ceiling,
+and exact completion ceilings. Admission, subject, Godskills package, review
+body, provider route, credential, and result body remain outside the generic
+source descriptor and request.
+
+The adapter verifies the review phase request against the executor descriptor
+and admission, freezes a credential-screened context, and revalidates the live
+executor descriptor before each call. It projects the executor's verified
+phase result into the existing mission-program completion shape. The review
+executor remains the owner of materialization, disclosure, transport
+reconciliation, and phase validation; the mission-program coordinator remains
+the owner of journal, lock, ordering, recovery, publication, and terminal
+replay. The source-specific receipt explicitly binds the generic
+`mission-operation-adapter-v1` receipt rather than duplicating its body-free
+request proof.
+
+This local bridge proves binding, ceiling preservation, absent-before-execute,
+malformed-result refusal, and duplicate-free replay against a trusted injected
+executor. It does not qualify a review evaluator, model, provider, live
+Godskills execution, default launch, hosted durability, or Lunari behavior.
+
 ## Deferred Godskills review materialization boundary
 
 The review materializer is the first post-native disclosure boundary. It verifies the complete pinned Godskills release at construction but does not read deferred capability entrypoints or contracts. For each materialization it first verifies the mission admission, exact review request and descriptor, round-specific artifact context, release and activation roots, and every deferred capability descriptor. It opens no selected body until that full set passes, preventing a later invalid descriptor from leaking an earlier valid body.

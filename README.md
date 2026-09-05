@@ -772,6 +772,25 @@ with `npm run build:mission-operation-adapter-fixture` and the certificate with
 bounded local migration boundary and its explicit fail-closed invariants, not a
 live host or model integration.
 
+### Deferred review mission-operation adapter v1
+
+The deferred review mission-operation adapter is the first source-specific
+consumer of that generic boundary. It binds one already-admitted review
+executor instance to one exact mission phase request, context digest, program
+step, authority ceiling, and completion ceilings. The generic mission request
+remains body-free and the parent `mission-operation-adapter-v1` certificate is
+bound explicitly rather than reimplementing its proof.
+
+The adapter keeps review materialization, Godskills disclosure, transport
+reconciliation, and phase-result validation inside the existing review
+executor. The mission-program coordinator remains the owner of journal writes,
+locks, ordering, recovery, artifact publication, and terminal replay. Its
+source-bound certification is
+`receipts/deferred-review-mission-operation-adapter-v1.json`; rebuild the
+fixture with `npm run build:review-mission-operation-adapter-fixture` and the
+certificate with `npm run certify:review-mission-operation-adapter`. This is an
+opt-in local bridge, not a live evaluator or default vessel integration.
+
 ### Portable phase-host conformance v1
 
 The package also exposes a provider-neutral adapter boundary for hosts that

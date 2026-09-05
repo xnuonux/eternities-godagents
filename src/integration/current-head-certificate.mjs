@@ -60,6 +60,9 @@ const AGENT_PROFILE_CONTRACT_CERTIFICATION_PROTOCOL = 'eternities-godagent-profi
 const MISSION_OPERATION_ADAPTER_RECEIPT_PATH = 'receipts/mission-operation-adapter-v1.json';
 const MISSION_OPERATION_ADAPTER_CERTIFICATION_ID = 'mission-operation-adapter-v1';
 const MISSION_OPERATION_ADAPTER_CERTIFICATION_PROTOCOL = 'eternities-mission-operation-adapter-certification-v1';
+const DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH = 'receipts/review-mission-operation-adapter-v1.json';
+const DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_CERTIFICATION_ID = 'deferred-review-mission-operation-adapter-v1';
+const DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_CERTIFICATION_PROTOCOL = 'eternities-deferred-review-mission-operation-adapter-certification-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -148,10 +151,17 @@ const V2_BOUNDARY_PATHS = Object.freeze([
     'src/runtime/mission-operation-adapter.mjs',
     'scripts/build-mission-operation-adapter-v1-fixture.mjs',
     'scripts/build-mission-operation-adapter-v1-receipt.mjs',
-    'tests/mission-operation-adapter-certification.test.mjs',
-    'tests/mission-operation-adapter.test.mjs',
-    MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
-    'fixtures/admitted-portable-identity-launcher-v1.json',
+     'tests/mission-operation-adapter-certification.test.mjs',
+     'tests/mission-operation-adapter.test.mjs',
+     MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+     'fixtures/review-mission-operation-adapter-v1.json',
+     'scripts/build-review-mission-operation-adapter-v1-fixture.mjs',
+     'scripts/build-review-mission-operation-adapter-v1-receipt.mjs',
+     'src/runtime/review-mission-operation-adapter.mjs',
+     'tests/review-mission-operation-adapter-certification.test.mjs',
+     'tests/review-mission-operation-adapter.test.mjs',
+     DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+   'fixtures/admitted-portable-identity-launcher-v1.json',
     'receipts/admitted-portable-identity-launcher-v1.json',
     'src/host/admitted-portable-identity-launcher.mjs',
     'src/host/portable-mission-dependencies.mjs',
@@ -220,6 +230,8 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   agentProfileContractFullTests: 1018,
   missionOperationAdapter: true,
   missionOperationAdapterFullTests: 1029,
+  deferredReviewMissionOperationAdapter: true,
+  deferredReviewMissionOperationAdapterFullTests: 1040,
   supportedAdapterProtocols: Object.freeze([
     PORTABLE_CONFORMANCE_PROTOCOL,
     PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
@@ -244,12 +256,36 @@ const PRE_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((pa
   'tests/mission-operation-adapter-certification.test.mjs',
   'tests/mission-operation-adapter.test.mjs',
   MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+  'fixtures/review-mission-operation-adapter-v1.json',
+  'scripts/build-review-mission-operation-adapter-v1-fixture.mjs',
+  'scripts/build-review-mission-operation-adapter-v1-receipt.mjs',
+  'src/runtime/review-mission-operation-adapter.mjs',
+  'tests/review-mission-operation-adapter-certification.test.mjs',
+  'tests/review-mission-operation-adapter.test.mjs',
+  DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
 ].includes(path)));
+const PRE_REVIEW_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
+  'fixtures/review-mission-operation-adapter-v1.json',
+  'scripts/build-review-mission-operation-adapter-v1-fixture.mjs',
+  'scripts/build-review-mission-operation-adapter-v1-receipt.mjs',
+  'src/runtime/review-mission-operation-adapter.mjs',
+  'tests/review-mission-operation-adapter-certification.test.mjs',
+  'tests/review-mission-operation-adapter.test.mjs',
+  DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+].includes(path)));
+const PRE_REVIEW_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  ...CURRENT_HEAD_V2_PROFILE,
+  boundaryPaths: PRE_REVIEW_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
+  deferredReviewMissionOperationAdapter: false,
+  deferredReviewMissionOperationAdapterFullTests: undefined,
+});
 const PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_ADAPTER_V2_BOUNDARY_PATHS,
   missionOperationAdapter: false,
   missionOperationAdapterFullTests: undefined,
+  deferredReviewMissionOperationAdapter: false,
+  deferredReviewMissionOperationAdapterFullTests: undefined,
 });
 const PRE_AGENT_PROFILE_V2_BOUNDARY_PATHS = Object.freeze(PRE_ADAPTER_V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/agent-profile-contract-v1.json',
@@ -268,6 +304,8 @@ const PRE_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   agentProfileContractFullTests: undefined,
   missionOperationAdapter: false,
   missionOperationAdapterFullTests: undefined,
+  deferredReviewMissionOperationAdapter: false,
+  deferredReviewMissionOperationAdapterFullTests: undefined,
 });
 const PRE_FORENSICS_V2_BOUNDARY_PATHS = Object.freeze(PRE_AGENT_PROFILE_V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/mission-program-forensics-v1.json',
@@ -998,15 +1036,62 @@ async function verifyMissionOperationAdapterEvidence(repositoryRoot, commit, evi
   await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'mission operation adapter source commit');
 }
 
+async function verifyDeferredReviewMissionOperationAdapterEvidence(repositoryRoot, commit, evidence, profile) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'fullTests', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'deferred review mission operation adapter evidence');
+  if (evidence.certificationId !== DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_CERTIFICATION_ID
+      || evidence.path !== DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH) {
+    throw new Error('deferred review mission operation adapter evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'deferred review mission operation adapter fixture digest');
+  requireDigest(evidence.receiptDigest, 'deferred review mission operation adapter receipt digest');
+  requireDigest(evidence.sha256, 'deferred review mission operation adapter receipt file digest');
+  requireCommit(evidence.sourceCommit, 'deferred review mission operation adapter source commit');
+  if (!Number.isInteger(evidence.fullTests)
+      || evidence.fullTests !== profile.deferredReviewMissionOperationAdapterFullTests) {
+    throw new Error('deferred review mission operation adapter full test evidence mismatch');
+  }
+  const text = await readBlob(
+    repositoryRoot,
+    commit,
+    evidence.path,
+    'deferred review mission operation adapter receipt',
+  );
+  if (sha256Text(text) !== evidence.sha256) {
+    throw new Error('deferred review mission operation adapter receipt file digest mismatch');
+  }
+  const receipt = parseJson(text, 'deferred review mission operation adapter receipt');
+  requireCanonicalJsonText(text, receipt, 'deferred review mission operation adapter receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_CERTIFICATION_ID
+      || receipt.protocolId !== DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_CERTIFICATION_PROTOCOL
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest
+      || receipt.testRuns?.full?.status !== 'pass'
+      || receipt.testRuns.full.tests !== evidence.fullTests) {
+    throw new Error('deferred review mission operation adapter receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'deferred review mission operation adapter source commit');
+  await isAncestor(
+    repositoryRoot,
+    evidence.sourceCommit,
+    commit,
+    'deferred review mission operation adapter source commit',
+  );
+}
+
 async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
   const expectedEvidenceKeys = profile.portableConformance
     ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost',
       ...(profile.portableRealmConsequenceSdk ? ['portableRealmConsequenceSdk'] : []),
       ...(profile.admittedPortableIdentityLauncher ? ['admittedPortableIdentityLauncher'] : []),
       ...(profile.missionProgram ? ['missionProgram'] : []),
-      ...(profile.missionProgramForensics ? ['missionProgramForensics'] : []),
-      ...(profile.agentProfileContract ? ['agentProfileContract'] : []),
-      ...(profile.missionOperationAdapter ? ['missionOperationAdapter'] : [])]
+       ...(profile.missionProgramForensics ? ['missionProgramForensics'] : []),
+       ...(profile.agentProfileContract ? ['agentProfileContract'] : []),
+       ...(profile.missionOperationAdapter ? ['missionOperationAdapter'] : []),
+       ...(profile.deferredReviewMissionOperationAdapter ? ['deferredReviewMissionOperationAdapter'] : [])]
     : ['boundaryFiles', 'integrationReceipt'];
   exactKeys(godagents.evidence, expectedEvidenceKeys, 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
@@ -1084,6 +1169,14 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
       repositoryRoot,
       commit,
       godagents.evidence.missionOperationAdapter,
+      profile,
+    );
+  }
+  if (profile.deferredReviewMissionOperationAdapter) {
+    await verifyDeferredReviewMissionOperationAdapterEvidence(
+      repositoryRoot,
+      commit,
+      godagents.evidence.deferredReviewMissionOperationAdapter,
       profile,
     );
   }
@@ -1345,6 +1438,27 @@ async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGA
       sourceCommit: missionOperation.source.commit,
     };
   }
+  if (profile.deferredReviewMissionOperationAdapter) {
+    const deferredReviewMissionOperationText = await readBlob(
+      repositoryRoot,
+      commit,
+      DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+      'deferred review mission operation adapter receipt',
+    );
+    const deferredReviewMissionOperation = parseJson(
+      deferredReviewMissionOperationText,
+      'deferred review mission operation adapter receipt',
+    );
+    evidence.deferredReviewMissionOperationAdapter = {
+      certificationId: deferredReviewMissionOperation.certificationId,
+      fixtureDigest: deferredReviewMissionOperation.fixture.logicalDigest,
+      fullTests: deferredReviewMissionOperation.testRuns.full.tests,
+      path: DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
+      receiptDigest: deferredReviewMissionOperation.receiptDigest,
+      sha256: sha256Text(deferredReviewMissionOperationText),
+      sourceCommit: deferredReviewMissionOperation.source.commit,
+    };
+  }
   return evidence;
 }
 
@@ -1518,6 +1632,10 @@ export async function verifyCrossRepositoryCurrentHeadCertificateV2(receipt, opt
   if (currentProfile.missionOperationAdapterPresent !== missionOperationEvidencePresent) {
     throw new Error('current-head v2 mission operation adapter profile does not match the committed source');
   }
+  const deferredReviewMissionOperationEvidencePresent = receipt?.godagents?.evidence?.deferredReviewMissionOperationAdapter !== undefined;
+  if (currentProfile.deferredReviewMissionOperationAdapterPresent !== deferredReviewMissionOperationEvidencePresent) {
+    throw new Error('current-head v2 deferred review mission operation adapter profile does not match the committed source');
+  }
   return verifyCertificate(receipt, {
     ...options,
     protocolId: CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL,
@@ -1550,9 +1668,10 @@ export async function buildCrossRepositoryCurrentHeadCertificateV2(options = {})
 
 async function currentHeadV2Profile(repositoryRoot, commit) {
   await requireCommitObject(repositoryRoot, commit, 'Godagents build commit');
-  const [forensicsPresent, agentProfilePresent] = await Promise.all([
+  const [forensicsPresent, agentProfilePresent, deferredReviewMissionOperationAdapterPresent] = await Promise.all([
     hasCommittedPath(repositoryRoot, commit, MISSION_PROGRAM_FORENSICS_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, AGENT_PROFILE_CONTRACT_RECEIPT_PATH),
+    hasCommittedPath(repositoryRoot, commit, DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
   ]);
   const missionOperationAdapterPresent = await hasCommittedPath(
     repositoryRoot,
@@ -1561,7 +1680,11 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
   );
   const profile = forensicsPresent
     ? (agentProfilePresent
-      ? (missionOperationAdapterPresent ? CURRENT_HEAD_V2_PROFILE : PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE)
+      ? (missionOperationAdapterPresent
+        ? (deferredReviewMissionOperationAdapterPresent
+          ? CURRENT_HEAD_V2_PROFILE
+          : PRE_REVIEW_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE)
+        : PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE)
       : PRE_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE)
     : (agentProfilePresent
       ? (missionOperationAdapterPresent ? PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE : PRE_FORENSICS_WITH_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE)
@@ -1570,6 +1693,7 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     forensicsPresent,
     agentProfilePresent,
     missionOperationAdapterPresent,
+    deferredReviewMissionOperationAdapterPresent,
     profile,
   };
 }

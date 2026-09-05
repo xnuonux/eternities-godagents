@@ -196,17 +196,40 @@ test('the committed v2 certificate binds the exact current heads and portable re
     assert.match(receipt.godagents.evidence.missionOperationAdapter.receiptDigest, /^[a-f0-9]{64}$/);
     assert.match(receipt.godagents.evidence.missionOperationAdapter.sourceCommit, /^[a-f0-9]{40}$/);
   }
-  assert.deepEqual(receipt.testRuns, receipt.godagents.evidence.missionOperationAdapter === undefined
-    ? {
-      godagentsFocused: { status: 'pass', tests: 66 },
-      godagentsFull: { status: 'pass', tests: 1018 },
-      godskillsFocused: { status: 'pass', tests: 12 },
-    }
-    : {
-      godagentsFocused: { status: 'pass', tests: 77 },
-      godagentsFull: { status: 'pass', tests: 1029 },
-      godskillsFocused: { status: 'pass', tests: 12 },
-    });
+  if (receipt.godagents.evidence.deferredReviewMissionOperationAdapter !== undefined) {
+    assert.equal(
+      receipt.godagents.evidence.deferredReviewMissionOperationAdapter.certificationId,
+      'deferred-review-mission-operation-adapter-v1',
+    );
+    assert.match(receipt.godagents.evidence.deferredReviewMissionOperationAdapter.fixtureDigest, /^[a-f0-9]{64}$/);
+    assert.equal(receipt.godagents.evidence.deferredReviewMissionOperationAdapter.fullTests, 1040);
+    assert.equal(
+      receipt.godagents.evidence.deferredReviewMissionOperationAdapter.path,
+      'receipts/review-mission-operation-adapter-v1.json',
+    );
+    assert.match(receipt.godagents.evidence.deferredReviewMissionOperationAdapter.receiptDigest, /^[a-f0-9]{64}$/);
+    assert.match(receipt.godagents.evidence.deferredReviewMissionOperationAdapter.sourceCommit, /^[a-f0-9]{40}$/);
+  }
+  assert.deepEqual(
+    receipt.testRuns,
+    receipt.godagents.evidence.deferredReviewMissionOperationAdapter !== undefined
+      ? {
+        godagentsFocused: { status: 'pass', tests: 88 },
+        godagentsFull: { status: 'pass', tests: 1040 },
+        godskillsFocused: { status: 'pass', tests: 12 },
+      }
+      : receipt.godagents.evidence.missionOperationAdapter === undefined
+        ? {
+          godagentsFocused: { status: 'pass', tests: 66 },
+          godagentsFull: { status: 'pass', tests: 1018 },
+          godskillsFocused: { status: 'pass', tests: 12 },
+        }
+        : {
+          godagentsFocused: { status: 'pass', tests: 77 },
+          godagentsFull: { status: 'pass', tests: 1029 },
+          godskillsFocused: { status: 'pass', tests: 12 },
+        },
+  );
 });
 
 test('strict v2 verification accepts only an artifact-and-certification append', async () => {
