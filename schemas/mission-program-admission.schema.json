@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stepId", "stepIndex", "kind", "inputDigest", "maxCompletionTokens", "maxResultBytes", "descriptor"],
+      "properties": {
+        "stepId": { "$ref": "#/$defs/identifier" },
+        "stepIndex": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "kind": { "$ref": "#/$defs/identifier" },
+        "inputDigest": { "$ref": "#/$defs/digest" },
+        "maxCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 4000000 },
+        "maxResultBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 },
+        "descriptor": { "type": "object" }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "input", "steps", "admittedAt", "admissionDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-long-horizon-mission-program-v1" },
+    "input": { "type": "object" },
+    "steps": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/step" } },
+    "admittedAt": { "type": "string", "format": "date-time" },
+    "admissionDigest": { "$ref": "#/$defs/digest" }
+  }
+}

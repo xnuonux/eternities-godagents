@@ -112,6 +112,41 @@ availability, along with Realm, identity, continuity, keel, evolution,
 Inspiration, Lunari, and Soul authority. A future cache or cost policy must
 bind its own protocol and receipt to these observation digests.
 
+## Long-horizon mission program boundary
+
+The long-horizon mission program is the provider-neutral sequencing boundary
+for already-owned one-operation runtimes. It admits one immutable actor-bound
+plan with at most eight ordered steps. Each step contains only an operation
+kind, an input digest, a completion ceiling, and a result ceiling. The program
+does not own the mission body, model route, Realm Contract, Godskills body,
+identity, constitution, keel, memory, or host credentials.
+
+The selected adapter exposes only an exact descriptor, `reconcile`, and
+`execute`. The descriptor declares an empty authority projection and is
+captured at construction, then reread before every reconciliation and
+execution. A canonical hash-chained journal publishes the exact dispatch
+before either call. `absent` permits one execution, `pending` remains pending,
+and `completed` is verified and committed without execution. Only the first
+uncommitted step is active, so future-step inputs are never dispatched early.
+
+Completion artifacts are content-addressed, byte-checked, and stored as
+bounded references in the journal. A crash after execution but before commit
+recovers through adapter reconciliation, while terminal replay reads verified
+local evidence and makes zero adapter calls. Aggregate usage and result bytes
+remain below both the per-step and program ceilings. Journal, dispatch, and
+artifact tampering, descriptor drift, malformed adapter results, authority or
+credential-shaped input, and unresolved adapter kinds fail closed.
+
+This is an opt-in coordinator and migration boundary, not a default launcher,
+background scheduler, second vessel, or provider adapter. Its deterministic
+certificate uses trusted in-process fixtures only. Live model quality,
+Codex, Claude Code, local-model, MCP, external exactly-once behavior, Realm
+effects, rollback, compensation, Godskills body loading, keel or memory
+writes, identity, evolution, Inspiration, Soul, Lunari, and product usability
+remain outside the boundary. The exact source-bound proof is
+`mission-program-v1`; future host adapters must earn separate descriptors,
+contracts, and certification rather than being inferred from this coordinator.
+
 ## Deferred Godskills review materialization boundary
 
 The review materializer is the first post-native disclosure boundary. It verifies the complete pinned Godskills release at construction but does not read deferred capability entrypoints or contracts. For each materialization it first verifies the mission admission, exact review request and descriptor, round-specific artifact context, release and activation roots, and every deferred capability descriptor. It opens no selected body until that full set passes, preventing a later invalid descriptor from leaking an earlier valid body.

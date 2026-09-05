@@ -15,6 +15,10 @@ const expectedCommands = Object.freeze({
     'node scripts/build-bounded-delegation-fixture.mjs',
   'certify:bounded-delegation':
     'node scripts/build-bounded-delegation-v1-receipt.mjs',
+  'build:mission-program-fixture':
+    'node scripts/build-mission-program-fixture.mjs',
+  'certify:mission-program':
+    'node scripts/build-mission-program-v1-receipt.mjs',
   'certify:admitted-sealed-typed-execution-host':
     'node scripts/build-admitted-sealed-typed-execution-host-v1-receipt.mjs',
   'certify:godskills-typed-composition-consumer':

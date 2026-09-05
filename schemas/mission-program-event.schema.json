@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sequence", "previousDigest", "eventType", "programId", "recordedAt", "payload", "contentDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sequence": { "type": "integer", "minimum": 1, "maximum": 32 },
+    "previousDigest": { "$ref": "#/$defs/digest" },
+    "eventType": { "enum": ["program.admitted", "step.prepared", "step.committed", "program.completed"] },
+    "programId": { "$ref": "#/$defs/digest" },
+    "recordedAt": { "type": "string", "format": "date-time" },
+    "payload": { "type": "object" },
+    "contentDigest": { "$ref": "#/$defs/digest" }
+  }
+}
