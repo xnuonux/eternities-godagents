@@ -11,7 +11,7 @@ const receiptDirectory = new URL('../receipts/', import.meta.url);
 test('release lineage binds current HEAD to all sixty-one ancestor certification sources', async () => {
   const result = await verifyReleaseLineage({ repositoryRoot, receiptDirectory });
   assert.equal(result.status, 'verified');
-  assert.equal(result.receiptCount, 61);
+  assert.equal(result.receiptCount, 62);
   assert.match(result.headCommit, /^[a-f0-9]{40}$/);
   assert.match(result.ledgerDigest, /^[a-f0-9]{64}$/);
   assert.match(result.releaseLineageDigest, /^[a-f0-9]{64}$/);
