@@ -317,7 +317,7 @@ export async function buildReviewMissionOperationAdapterReceiptFromSource({
 async function main() {
   const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const outputPath = join(repository, ...receiptPath.split('/'));
-  await requireCleanExcept(repository, releaseOnlyPaths);
+  await requireCleanExcept(repository, [...releaseOnlyPaths, 'package-lock.json']);
   const sourceCommit = await resolveSourceCommit({
     root: repository,
     headCommit: await headCommit(repository),
