@@ -73,7 +73,7 @@ async function buildReceipt() {
     },
     testRuns: {
       godagentsFocused: { status: 'pass', tests: 22 },
-      godagentsFull: { status: 'pass', tests: 959 },
+      godagentsFull: { status: 'pass', tests: 972 },
       godskillsFocused: { status: 'pass', tests: 12 },
     },
   });
@@ -164,7 +164,7 @@ test('the committed v2 certificate binds the exact current heads and portable re
   assert.equal(receipt.godagents.evidence.portableRealmConsequenceSdk.fullTests, 948);
   assert.deepEqual(receipt.testRuns, {
     godagentsFocused: { status: 'pass', tests: 22 },
-    godagentsFull: { status: 'pass', tests: 959 },
+    godagentsFull: { status: 'pass', tests: 972 },
     godskillsFocused: { status: 'pass', tests: 12 },
   });
 });

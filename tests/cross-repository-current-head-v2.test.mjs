@@ -21,7 +21,7 @@ const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
   godagentsFocused: { status: 'pass', tests: 22 },
-  godagentsFull: { status: 'pass', tests: 959 },
+  godagentsFull: { status: 'pass', tests: 972 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
