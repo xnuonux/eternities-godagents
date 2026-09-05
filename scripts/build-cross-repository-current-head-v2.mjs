@@ -136,11 +136,10 @@ async function main() {
   const godskillsCommit = godskillsRefs.main;
   const refs = { godagents: godagentsRefs, godskills: godskillsRefs };
   const godskillsFocused = await runTests(GODSKILLS_TESTS, GODSKILLS_ROOT);
-  const preliminaryFocused = await runTests(PRELIMINARY_GODAGENTS_TESTS, repositoryRoot);
 
-  // The receipt test needs an artifact before the final gates can run. Seed it
-  // with the expected final cardinalities, then rerun the complete gates and
-  // replace it with the measured evidence.
+  // The previous artifact may describe an earlier source boundary. Seed the
+  // new receipt before any Godagents suite so append-only compatibility tests
+  // validate this source head rather than the stale artifact.
   await writeReceipt(repositoryRoot, await buildReceipt({
     repositoryRoot,
     godagentsCommit,
