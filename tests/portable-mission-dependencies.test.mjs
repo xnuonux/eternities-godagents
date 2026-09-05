@@ -23,6 +23,15 @@ async function loadSubject() {
   }
 }
 
+function containsString(value, needle) {
+  if (typeof value === 'string') return value.includes(needle);
+  if (Array.isArray(value)) return value.some((entry) => containsString(entry, needle));
+  if (value && typeof value === 'object') {
+    return Object.values(value).some((entry) => containsString(entry, needle));
+  }
+  return false;
+}
+
 async function portableHost(t) {
   const root = await mkdtemp(join(tmpdir(), 'godagents-portable-dependencies-'));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -45,6 +54,14 @@ async function portableHost(t) {
       throw new Error('portable dependency construction must not call the provider');
     },
   });
+  const descriptorCalls = { native: 0, review: 0, revision: 0 };
+  const ports = Object.fromEntries(Object.keys(descriptorCalls).map((phase) => [phase, {
+    ...provider[phase],
+    async descriptor() {
+      descriptorCalls[phase] += 1;
+      return provider[phase].descriptor();
+    },
+  }]));
   const description = buildPortablePhaseHostDescription({
     adapterId: 'provider-wrapper-for-portable-dependencies',
     adapterVersion: '1',
@@ -53,13 +70,18 @@ async function portableHost(t) {
   });
   const host = await createPortablePhaseHostAdapter({
     description,
-    native: provider.native,
-    review: provider.review,
-    revision: provider.revision,
+    native: ports.native,
+    review: ports.review,
+    revision: ports.revision,
     assertCredentialAbsent: provider.assertCredentialAbsent,
     createOperatorResolutionController: provider.createOperatorResolutionController,
   });
-  return { host, secret, get providerCalls() { return providerCalls; } };
+  return {
+    host,
+    secret,
+    descriptorCalls,
+    get providerCalls() { return providerCalls; },
+  };
 }
 
 test('one SDK-issued portable host becomes one frozen, body-free dependency bundle', async (t) => {
@@ -72,7 +94,6 @@ test('one SDK-issued portable host becomes one frozen, body-free dependency bund
     releasePin: pinnedGodskillsReviewRelease('C:/dev/eternities-godskills'),
     maximumReviewMaterializedBytes: 65_536,
     maximumRevisionMaterializedBytes: 32_768,
-    executorIdPrefix: 'portable-dependencies-test',
   };
   const bundle = await subject.createPortableMissionDependencies(configuration);
   const description = bundle.describe();
@@ -92,8 +113,9 @@ test('one SDK-issued portable host becomes one frozen, body-free dependency bund
   assert.deepEqual(description.dependencies.revisionExecutor, await bundle.revisionExecutor.descriptor());
   assert.equal(description.limits.maximumReviewMaterializedBytes, 65_536);
   assert.equal(description.limits.maximumRevisionMaterializedBytes, 32_768);
-  assert.equal(canonicalJson(description).includes(state.secret), false);
+  assert.equal(containsString(description, state.secret), false);
   assert.equal(state.providerCalls, 0);
+  assert.deepEqual(state.descriptorCalls, { native: 1, review: 1, revision: 1 });
   assert.equal(Object.isFrozen(description), true);
   assert.equal(Object.isFrozen(description.dependencies), true);
   assert.deepEqual(subject.verifyPortableMissionDependenciesDescription(description), description);
@@ -106,7 +128,6 @@ test('portable dependency descriptions are deterministic and reject coherent sub
   const configuration = {
     host: state.host,
     releasePin: pinnedGodskillsReviewRelease('C:/dev/eternities-godskills'),
-    executorIdPrefix: 'portable-dependencies-parity',
   };
   const first = await subject.createPortableMissionDependencies(configuration);
   const second = await subject.createPortableMissionDependencies(configuration);
@@ -145,6 +166,14 @@ test('portable dependency construction fails closed for forged hosts and expande
   await assert.rejects(
     subject.createPortableMissionDependencies({ host: state.host, releasePin, io: { writeFile: async () => {} } }),
     /filesystem.*fields|io.*fields/i,
+  );
+  await assert.rejects(
+    subject.createPortableMissionDependencies({
+      host: state.host,
+      releasePin,
+      executorIdPrefix: 'https://models.example.test/v1?token=sk-or-secret',
+    }),
+    /configuration/i,
   );
   assert.equal(state.providerCalls, 0);
 });

@@ -83,6 +83,7 @@
     "build:admitted-provider-backed-identity-launcher-fixture": "node scripts/build-admitted-provider-backed-identity-launcher-v1-fixture.mjs",
     "certify:admitted-provider-backed-identity-launcher": "node scripts/build-admitted-provider-backed-identity-launcher-v1-receipt.mjs",
     "build:admitted-portable-identity-launcher-fixture": "node scripts/build-admitted-portable-identity-launcher-v1-fixture.mjs",
+    "certify:admitted-portable-identity-launcher": "node scripts/build-admitted-portable-identity-launcher-v1-receipt.mjs",
     "build:provider-backed-identity-cli-fixture": "node scripts/build-provider-backed-identity-cli-v1-fixture.mjs",
     "certify:provider-backed-identity-cli": "node scripts/build-provider-backed-identity-cli-v1-receipt.mjs",
     "build:cross-repository-issuance-snapshot": "node scripts/build-cross-repository-issuance-snapshot.mjs",

@@ -219,7 +219,6 @@ async function buildFamilyRecord(family, godskillsRoot) {
       releasePin,
       maximumReviewMaterializedBytes: 65_536,
       maximumRevisionMaterializedBytes: 32_768,
-      executorIdPrefix: `admitted-portable-launcher-${family}`,
     };
     const providerCallsBeforeConstruction = calls.length;
     const launcher = await createAdmittedPortableIdentityLauncher(launcherConfiguration);

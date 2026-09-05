@@ -14,7 +14,7 @@ import { verifyGodskillsReviewTransportDescriptor } from '../skills/review-trans
 const PROTOCOL_ID = 'eternities-portable-mission-dependencies-v1';
 const CONFIGURATION_FIELDS = Object.freeze([
   'host', 'releasePin', 'maximumReviewMaterializedBytes',
-  'maximumRevisionMaterializedBytes', 'executorIdPrefix', 'artifactCache', 'io',
+  'maximumRevisionMaterializedBytes', 'artifactCache', 'io',
 ]);
 const HOST_FIELDS = Object.freeze([
   'describe', 'assertCredentialAbsent', 'createOperatorResolutionController',
@@ -181,7 +181,6 @@ export async function createPortableMissionDependencies(options = {}) {
     releasePin,
     maximumReviewMaterializedBytes = 1_048_576,
     maximumRevisionMaterializedBytes = 1_048_576,
-    executorIdPrefix = 'portable-mission',
     artifactCache = new Map(),
     io = {},
   } = options;
@@ -195,9 +194,7 @@ export async function createPortableMissionDependencies(options = {}) {
   } catch (error) {
     throw new TypeError('portable mission dependency host credential preflight failed', { cause: error });
   }
-  if (!(artifactCache instanceof Map) || !io || typeof io !== 'object' || Array.isArray(io)
-      || typeof executorIdPrefix !== 'string' || executorIdPrefix.length < 1
-      || executorIdPrefix.length > 128 || /[\0\r\n]/.test(executorIdPrefix)) {
+  if (!(artifactCache instanceof Map) || !io || typeof io !== 'object' || Array.isArray(io)) {
     throw new TypeError('portable mission dependency policy is invalid');
   }
   if (Object.keys(io).some((key) => !['readFile', 'realpath'].includes(key))
@@ -224,14 +221,14 @@ export async function createPortableMissionDependencies(options = {}) {
   const reviewExecutor = await createDeferredGodskillsReviewExecutor({
     releasePin,
     maximumMaterializedBytes: maximumReviewMaterializedBytes,
-    executorIdPrefix: `${executorIdPrefix}-review`,
+    executorIdPrefix: 'portable-mission-review',
     transport: reviewTransport,
     artifactCache,
     io,
   });
   const revisionExecutor = await createMissionRevisionExecutor({
     maximumMaterializedBytes: maximumRevisionMaterializedBytes,
-    executorIdPrefix: `${executorIdPrefix}-revision`,
+    executorIdPrefix: 'portable-mission-revision',
     transport: revisionTransport,
   });
   const unsigned = {

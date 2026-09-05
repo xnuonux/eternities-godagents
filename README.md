@@ -586,6 +586,14 @@ The [admitted launcher design](docs/superpowers/specs/2026-08-31-admitted-provid
 
 Every call delegates to the existing admitted sealed identity host with the exact native, review, and revision handles captured at construction. The host continues to enforce admission, policy, request, dependency, residency, recovery, and replay. `npm run certify:admitted-provider-backed-identity-launcher` reconstructs the launcher for both certified provider families, executes the complete reviewed mission, scans all durable files for the credential canary, and proves exact terminal replay with no repeated provider, routing, or activation work.
 
+### Admitted portable identity launcher v1
+
+The [portable launcher design](docs/superpowers/specs/2026-09-05-portable-admitted-identity-launcher-v1-design.md) adds the provider-neutral admitted-launch boundary above the `eternities-portable-phase-host-v1` contract. One SDK-issued portable host and one exact Godskills release become a body-free, digest-bound dependency bundle; the explicit launcher then delegates to the existing admitted sealed identity vessel with the captured native, review, and revision handles. The universal boundary does not inspect provider settings, choose a model, resolve a credential, author an identity policy, or add Realm, continuity, keel, evolution, Inspiration, Lunari, or Soul authority.
+
+The launcher rejects forged or expanded hosts, phase descriptor drift, dependency substitution, credential-shaped request data, and direct transport or executor injection. Its cross-family fixture runs the same admitted native-review-revision-final-review loop through two different underlying transport families, then reconstructs the exact terminal result without new provider, route, or activation work. The launcher is an explicit experimental SDK seam and does not change default launch behavior or claim that Codex, Claude Code, local-model, or MCP adapters already exist.
+
+Run `npm run certify:admitted-portable-identity-launcher` to build its source-bound fixture and append-only local boundary receipt. The certificate records whether an independent review was available; its deterministic fixture does not stand in for live model quality or external adapter qualification.
+
 ### Provider-backed identity CLI certification v1
 
 The CLI certification is an append-only operator-surface certificate over the
@@ -606,12 +614,13 @@ adds `receipts/provider-backed-identity-cli-v1.json` as the forty-sixth entry.
 
 The package root `@eternities/godagents` now exposes a small experimental
 import surface over the existing provider-neutral host and admitted
-provider-backed launcher:
+provider-backed and portable admitted launchers:
 
 ```js
 import {
   createProviderPhaseHost,
   createAdmittedProviderBackedIdentityLauncher,
+  createAdmittedPortableIdentityLauncher,
   describeGodagentSdk,
 } from '@eternities/godagents';
 ```

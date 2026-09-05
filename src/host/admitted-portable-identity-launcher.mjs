@@ -12,7 +12,6 @@ const CONFIGURATION_FIELDS = Object.freeze([
   'releasePin',
   'maximumReviewMaterializedBytes',
   'maximumRevisionMaterializedBytes',
-  'executorIdPrefix',
   'artifactCache',
   'io',
 ]);
@@ -48,7 +47,8 @@ function object(value) {
 }
 
 function exactKeys(value, expected, label) {
-  if (!object(value) || canonicalJson(Object.keys(value)) !== canonicalJson(expected)) {
+  if (!object(value)
+      || canonicalJson(Object.keys(value).sort()) !== canonicalJson([...expected].sort())) {
     throw new TypeError(`${label} fields are invalid`);
   }
 }

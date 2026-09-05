@@ -71,7 +71,6 @@ test('one certified portable dependency stack becomes one frozen explicit admitt
     releasePin: pinnedGodskillsReviewRelease('C:/dev/eternities-godskills'),
     maximumReviewMaterializedBytes: 65_536,
     maximumRevisionMaterializedBytes: 32_768,
-    executorIdPrefix: 'admitted-portable-launcher-test',
   };
   const launcher = await subject.createAdmittedPortableIdentityLauncher(configuration);
   const description = launcher.describe();
@@ -98,6 +97,8 @@ test('one certified portable dependency stack becomes one frozen explicit admitt
   assert.equal(state.providerCalls, 0);
   assert.equal(Object.isFrozen(description), true);
   assert.deepEqual(subject.verifyAdmittedPortableIdentityLauncherDescription(description), description);
+  const reordered = Object.fromEntries(Object.entries(description).reverse());
+  assert.deepEqual(subject.verifyAdmittedPortableIdentityLauncherDescription(reordered), description);
   assert.notEqual(launcher.describe(), description);
 });
 
@@ -142,6 +143,10 @@ test('portable launcher delegates only explicit policy inputs and rejects inject
   await assert.rejects(
     launcher.launch({ ...base, identityPolicyDigest: 'A'.repeat(64) }),
     /identity policy digest/i,
+  );
+  await assert.rejects(
+    launcher.launch({ ...base, request: { token: 'sk-or-secret' } }),
+    /credential preflight/i,
   );
 
   const changed = structuredClone(launcher.describe());

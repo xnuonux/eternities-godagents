@@ -29,14 +29,14 @@ existing provider-backed launcher.
 | id | acceptance condition | proof shape |
 |---|---|---|
 | PA-01 | only an SDK-issued portable host with the exact portable protocol and closed authority can construct | positive fixture plus unissued, forged, and authority-drift failures |
-| PA-02 | all native, review, and revision descriptors are read once, verified, and equal to the host description | descriptor call-count and descriptor-drift tests |
+| PA-02 | all native, review, and revision descriptors are read and verified equal to the host description | descriptor call-count and descriptor-drift tests |
 | PA-03 | the derived dependency description is canonical, deeply frozen, deterministic, and digest-bound | rebuild equality, freeze, digest, unknown-field, and mutation tests |
 | PA-04 | the exact pinned Godskills release and activation trust-root digests are retained without copying skill bodies | release-pin verification and body-free description assertions |
 | PA-05 | review and revision dependency descriptors bind their transport and materializer digests exactly | positive binding plus release, transport, and limit drift tests |
 | PA-06 | portable host authority cannot expand mission, identity, Realm, continuity, keel, evolution, Inspiration, or Soul authority | authority projection and authority-shaped input rejection tests |
 | PA-07 | the launch request is forwarded only through the existing admitted identity vessel and rejects policy, genesis, residency, request, and dependency drift | fixture launch and fail-closed integration tests |
 | PA-08 | exact terminal retry and a process-boundary recovery perform no duplicate phase dispatch | recovery fixture with native/review/revision call counters |
-| PA-09 | credentials, endpoints, models, raw provider settings, callables, and transport bodies do not enter the launcher description or durable state | recursive secret/field scan and canonical durable-state assertions |
+| PA-09 | credentials, endpoints, models, raw provider settings, callables, and transport bodies do not enter the launcher description or durable state; caller-controlled executor prefixes are rejected | recursive secret/field scan and canonical durable-state assertions |
 | PA-10 | root SDK export and description remain explicit, versioned, and backwards-compatible; default launch remains unchanged | SDK surface regression and default-path non-adoption tests |
 | PA-11 | current-head integration binds the portable launcher entrypoint, tests, exact Godskills head `3501f20`, and updated test cardinalities | cross-head certificate, source manifests, and strict verifier |
 | PA-12 | the release receipt records only the bridge claim and its proof limits | certification receipt reconstruction and ledger/lineage verification |

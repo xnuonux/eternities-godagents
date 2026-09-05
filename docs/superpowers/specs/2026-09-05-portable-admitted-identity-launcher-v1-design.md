@@ -25,6 +25,11 @@ the launcher accepts only:
 - the existing bounded materialization, cache, and filesystem options; and
 - the existing admitted identity launch request.
 
+executor identifiers are derived from fixed neutral adapter-owned prefixes. the
+public configuration surface does not accept a caller-controlled prefix, so
+endpoints, model names, credential-like strings, or arbitrary data cannot be
+smuggled into durable executor identifiers.
+
 the launcher must not accept a provider family, endpoint, model, credential,
 raw transport, executor, classifier, Realm hand, continuity writer, personal
 keel, identity prose, policy bytes, or precompiled vessel. the portable host
