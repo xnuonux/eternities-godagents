@@ -673,6 +673,36 @@ provider routing, Realm, continuity, keel, evolution, Inspiration, Lunari, or
 Soul behavior. The contract and its non-goals are in
 `docs/superpowers/specs/2026-09-05-mission-economics-ledger-v1-design.md`.
 
+### Long-horizon mission program v1
+
+The opt-in mission-program coordinator supplies the missing universal spine
+between one-operation boundaries. It admits one immutable actor-bound plan of
+up to eight digest-bound ordered steps, then calls only the exact
+authority-empty adapter selected for the current step. The program journal
+durably records admission and dispatch before reconciliation, distinguishes
+`absent`, `pending`, and `completed`, and advances only after a verified
+content-addressed completion is committed.
+
+Process boundaries after execution recover through reconciliation without
+redispatching completed work. Terminal replay returns the exact local result
+without adapter calls. Descriptors are reread before every reconcile and
+execute, all step and aggregate ceilings are enforced, and tampered journals,
+dispatches, descriptors, artifacts, or aggregate records fail closed. Durable
+state contains bounded digests and metadata rather than mission bodies,
+credentials, filesystem paths, Realm handles, model routes, or keel and memory
+writers.
+
+This is a provider-neutral orchestration boundary, not a second vessel. It
+does not launch a provider, model, Codex task, Claude Code process, local model,
+MCP server, Realm effect, Godskill body, keel or memory write, identity change,
+evolution, Inspiration, Soul, Lunari, scheduler, daemon, or automatic retry of
+ambiguous work. The design and limits are in
+`docs/superpowers/specs/2026-09-05-long-horizon-mission-program-v1-design.md`,
+and the source-bound proof is
+`receipts/mission-program-v1.json`. Rebuild the deterministic fixture with
+`npm run build:mission-program-fixture` and the certificate with
+`npm run certify:mission-program`.
+
 ### Portable phase-host conformance v1
 
 The package also exposes a provider-neutral adapter boundary for hosts that

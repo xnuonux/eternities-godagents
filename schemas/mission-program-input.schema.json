@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "programId", "actor", "missionDigest", "authorityCeilingDigest", "budget", "steps"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-long-horizon-mission-program-v1" },
+    "programId": { "$ref": "#/$defs/digest" },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instanceId", "identityDigest", "genomeDigest", "keelHeadDigest"],
+      "properties": {
+        "instanceId": { "$ref": "#/$defs/identifier" },
+        "identityDigest": { "$ref": "#/$defs/digest" },
+        "genomeDigest": { "$ref": "#/$defs/digest" },
+        "keelHeadDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "missionDigest": { "$ref": "#/$defs/digest" },
+    "authorityCeilingDigest": { "$ref": "#/$defs/digest" },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxCompletionTokens", "maxResultBytes"],
+      "properties": {
+        "maxCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 4000000 },
+        "maxResultBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stepId", "stepIndex", "kind", "inputDigest", "maxCompletionTokens", "maxResultBytes"],
+        "properties": {
+          "stepId": { "$ref": "#/$defs/identifier" },
+          "stepIndex": { "type": "integer", "minimum": 0, "maximum": 7 },
+          "kind": { "$ref": "#/$defs/identifier" },
+          "inputDigest": { "$ref": "#/$defs/digest" },
+          "maxCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 4000000 },
+          "maxResultBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 }
+        }
+      }
+    }
+  }
+}

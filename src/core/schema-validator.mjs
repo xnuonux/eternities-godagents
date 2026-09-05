@@ -109,6 +109,14 @@ const schemaFiles = {
   'bounded-delegation-state': 'bounded-delegation-state.schema.json',
   'bounded-delegation-completion': 'bounded-delegation-completion.schema.json',
   'mission-economics-ledger': 'mission-economics-ledger.schema.json',
+  'mission-program-input': 'mission-program-input.schema.json',
+  'mission-program-step-descriptor': 'mission-program-step-descriptor.schema.json',
+  'mission-program-admission': 'mission-program-admission.schema.json',
+  'mission-program-dispatch': 'mission-program-dispatch.schema.json',
+  'mission-program-completion': 'mission-program-completion.schema.json',
+  'mission-program-aggregate-completion': 'mission-program-aggregate-completion.schema.json',
+  'mission-program-event': 'mission-program-event.schema.json',
+  'mission-program-state': 'mission-program-state.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

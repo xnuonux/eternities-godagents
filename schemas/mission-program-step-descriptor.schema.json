@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+    "version": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:+-]{0,63}$" },
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "kind", "adapterId", "adapterVersion", "authority", "descriptorDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-program-step-adapter-v1" },
+    "kind": { "$ref": "#/$defs/identifier" },
+    "adapterId": { "$ref": "#/$defs/identifier" },
+    "adapterVersion": { "$ref": "#/$defs/version" },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["realmEffects", "continuityWrites", "identityMutation", "evolution", "soul"],
+      "properties": {
+        "realmEffects": { "const": 0 },
+        "continuityWrites": { "const": 0 },
+        "identityMutation": { "const": 0 },
+        "evolution": { "const": 0 },
+        "soul": { "const": 0 }
+      }
+    },
+    "descriptorDigest": { "$ref": "#/$defs/digest" }
+  }
+}

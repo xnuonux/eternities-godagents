@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "programId", "results", "usage", "completedAt", "aggregateDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-long-horizon-mission-program-v1" },
+    "programId": { "$ref": "#/$defs/digest" },
+    "results": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stepId", "stepIndex", "completionDigest", "resultDigest", "resultBytes"],
+        "properties": {
+          "stepId": { "$ref": "#/$defs/identifier" },
+          "stepIndex": { "type": "integer", "minimum": 0, "maximum": 7 },
+          "completionDigest": { "$ref": "#/$defs/digest" },
+          "resultDigest": { "$ref": "#/$defs/digest" },
+          "resultBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 }
+        }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputTokens", "cachedInputTokens", "reasoningTokens", "visibleOutputTokens", "completionTokens"],
+      "properties": {
+        "inputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "cachedInputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "reasoningTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "visibleOutputTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "completionTokens": { "type": "integer", "minimum": 0, "maximum": 10000000 }
+      }
+    },
+    "completedAt": { "type": "string", "format": "date-time" },
+    "aggregateDigest": { "$ref": "#/$defs/digest" }
+  }
+}

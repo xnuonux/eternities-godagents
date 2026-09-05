@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "programId", "events", "headDigest", "stateDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-long-horizon-mission-program-v1" },
+    "programId": { "$ref": "#/$defs/digest" },
+    "events": { "type": "array", "minItems": 1, "maxItems": 32, "items": { "type": "object" } },
+    "headDigest": { "$ref": "#/$defs/digest" },
+    "stateDigest": { "$ref": "#/$defs/digest" }
+  }
+}
