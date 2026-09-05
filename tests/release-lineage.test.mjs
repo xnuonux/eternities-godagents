@@ -8,7 +8,7 @@ import { verifyReleaseLineage } from '../src/certification/verify-release-lineag
 const repositoryRoot = new URL('../', import.meta.url);
 const receiptDirectory = new URL('../receipts/', import.meta.url);
 
-test('release lineage binds current HEAD to all sixty-one ancestor certification sources', async () => {
+test('release lineage binds current HEAD to all sixty-two ancestor certification sources', async () => {
   const result = await verifyReleaseLineage({ repositoryRoot, receiptDirectory });
   assert.equal(result.status, 'verified');
   assert.equal(result.receiptCount, 62);
