@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 77 },
-  godagentsFull: { status: 'pass', tests: 1029 },
+  godagentsFocused: { status: 'pass', tests: 88 },
+  godagentsFull: { status: 'pass', tests: 1040 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -232,6 +232,47 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     assert.equal(receipt.godagents.evidence.missionOperationAdapter.path, 'receipts/mission-operation-adapter-v1.json');
     assert.match(receipt.godagents.evidence.missionOperationAdapter.receiptDigest, /^[a-f0-9]{64}$/);
     assert.match(receipt.godagents.evidence.missionOperationAdapter.sourceCommit, /^[a-f0-9]{40}$/);
+  }
+  const deferredReviewMissionOperationCommitted = await hasCommittedPath(
+    godagentsCommit,
+    'receipts/review-mission-operation-adapter-v1.json',
+  );
+  assert.equal(
+    receipt.godagents.evidence.deferredReviewMissionOperationAdapter !== undefined,
+    deferredReviewMissionOperationCommitted,
+    'v2 builder profile must follow the committed deferred review adapter receipt boundary',
+  );
+  if (receipt.godagents.evidence.deferredReviewMissionOperationAdapter !== undefined) {
+    assert.ok(
+      receipt.godagents.evidence.boundaryFiles.some(
+        ({ path }) => path === 'tests/review-mission-operation-adapter.test.mjs',
+      ),
+      'current v2 profile must bind the deferred review adapter boundary paths',
+    );
+    assert.equal(
+      receipt.godagents.evidence.deferredReviewMissionOperationAdapter.certificationId,
+      'deferred-review-mission-operation-adapter-v1',
+    );
+    assert.equal(
+      receipt.godagents.evidence.deferredReviewMissionOperationAdapter.fullTests,
+      1040,
+    );
+    assert.equal(
+      receipt.godagents.evidence.deferredReviewMissionOperationAdapter.path,
+      'receipts/review-mission-operation-adapter-v1.json',
+    );
+    assert.match(
+      receipt.godagents.evidence.deferredReviewMissionOperationAdapter.fixtureDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.deferredReviewMissionOperationAdapter.receiptDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.deferredReviewMissionOperationAdapter.sourceCommit,
+      /^[a-f0-9]{40}$/,
+    );
   }
 });
 
