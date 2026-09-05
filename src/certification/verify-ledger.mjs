@@ -30,6 +30,7 @@ const registry = Object.freeze({
   'godskills-v3-integration.json': 'godskills-v3-mission-binding',
   'identity-bound-mission-vessel-v1.json': 'identity-bound-mission-vessel-v1',
   'local-admission-shell-certification.json': 'local-admission-shell-v1',
+  'mission-economics-ledger-v1.json': 'mission-economics-ledger-v1',
   'networked-cortex-certification.json': 'networked-cortex-v1',
   'provider-backed-identity-cli-v1.json': 'provider-backed-identity-cli-v1',
   'provider-neutral-phase-protocol-v1.json': 'provider-neutral-phase-protocol-v1',
@@ -65,8 +66,11 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
+const expectedFilesBeforeMissionEconomics = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'mission-economics-ledger-v1.json',
+));
 const expectedFilesBeforeBoundedDelegation = Object.freeze(expectedFiles.filter(
-  (file) => file !== 'bounded-delegation-lifecycle-v1.json',
+  (file) => !['bounded-delegation-lifecycle-v1.json', 'mission-economics-ledger-v1.json'].includes(file),
 ));
 const legacyExpectedFiles = Object.freeze(expectedFilesBeforeBoundedDelegation.filter(
   (file) => file !== 'realm-compensation-v1.json',
@@ -841,6 +845,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'bounded-delegation-lifecycle-v1.json': Object.freeze(expectedFilesBeforeBoundedDelegation
     .map((file) => `receipts/${file}`)),
+  'mission-economics-ledger-v1.json': Object.freeze(expectedFilesBeforeMissionEconomics
+    .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
@@ -1176,6 +1182,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(boundedDelegation.receipt)) {
       throw new Error('bounded delegation certification differs from exact source reconstruction');
+    }
+  }
+
+  const missionEconomics = loaded.get('mission-economics-ledger-v1.json');
+  if (missionEconomics) {
+    const { buildMissionEconomicsLedgerReceiptFromSource } = await import(
+      '../../scripts/build-mission-economics-ledger-v1-receipt.mjs'
+    );
+    const rebuilt = await buildMissionEconomicsLedgerReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: missionEconomics.receipt.source.commit,
+      testRuns: missionEconomics.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(missionEconomics.receipt)) {
+      throw new Error('mission economics ledger certification differs from exact source reconstruction');
     }
   }
 

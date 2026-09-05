@@ -93,6 +93,25 @@ Each prepared request binds its ordered prior artifacts and reserved completion 
 
 The kernel consumes a separately pinned body-free Godskills activation result but does not itself run a real evaluator package. Its deterministic certification uses trusted injected executors to prove ordering, crash recovery, deduplication, token accounting, authority non-expansion, and zero Realm effects. Provider credentials, model quality, hostile-executor isolation, default vessel integration, Codex task transport, continuity admission, personal-keel writes, Realm action, Lunari, Inspiration, and Soul remain outside this boundary.
 
+## Mission economics observation boundary
+
+The mission economics ledger is an additive sidecar over completed journal
+evidence. It verifies the exact admission, verdict, completion receipt,
+executor descriptors, phase requests, and committed phase results before
+projecting a deeply frozen, digest-bound observation. The projection keeps
+only phase and result digests, separated token counters, integer cache and
+completion-budget ratios, stable request cache identities, and phase timing.
+It also offers a bridge from `recoverEvidence()` so callers do not rebuild
+phase tuples or accidentally persist artifact bodies.
+
+The sidecar does not change the mission review state machine or historical
+receipt bytes. It does not implement cache storage or make a cache-hit claim,
+resolve a provider, estimate price, score quality, or authorize any action.
+Its proof limits explicitly exclude live provider quality, pricing, and cache
+availability, along with Realm, identity, continuity, keel, evolution,
+Inspiration, Lunari, and Soul authority. A future cache or cost policy must
+bind its own protocol and receipt to these observation digests.
+
 ## Deferred Godskills review materialization boundary
 
 The review materializer is the first post-native disclosure boundary. It verifies the complete pinned Godskills release at construction but does not read deferred capability entrypoints or contracts. For each materialization it first verifies the mission admission, exact review request and descriptor, round-specific artifact context, release and activation roots, and every deferred capability descriptor. It opens no selected body until that full set passes, preventing a later invalid descriptor from leaking an earlier valid body.

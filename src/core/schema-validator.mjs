@@ -108,6 +108,7 @@ const schemaFiles = {
   'bounded-delegation-event': 'bounded-delegation-event.schema.json',
   'bounded-delegation-state': 'bounded-delegation-state.schema.json',
   'bounded-delegation-completion': 'bounded-delegation-completion.schema.json',
+  'mission-economics-ledger': 'mission-economics-ledger.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

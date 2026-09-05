@@ -636,6 +636,34 @@ launcher reads the caller-selected policy and may create the caller-selected
 runtime directory; credential resolution and provider calls remain lazy and
 are not implied by construction.
 
+### Mission economics ledger v1
+
+The explicit `@eternities/godagents/economics` subpath exposes a small,
+provider-neutral observation sidecar for completed mission review evidence:
+
+```js
+import {
+  buildMissionEconomicsLedgerFromEvidence,
+  verifyMissionEconomicsLedger,
+} from '@eternities/godagents/economics';
+```
+
+It accepts the exact admission, verdict, terminal completion receipt, and
+committed phase evidence recovered from the mission journal. The resulting
+digest-bound ledger reports separated input, cached-input, reasoning,
+visible-output, and completion tokens, cache-coverage and completion-budget
+ratios, stable request cache identities, phase latency, and aggregate
+headroom. It stores no artifact bodies, prompts, responses, credentials,
+endpoints, or model values. A journal-shaped evidence bridge avoids manual
+phase reconstruction while keeping the output body-free.
+
+This is observation and planning data, not a cache implementation. It makes
+no live cache, pricing, latency-quality, provider-quality, or model-comparison
+claim, and it does not alter the mission kernel, root SDK, default launch,
+provider routing, Realm, continuity, keel, evolution, Inspiration, Lunari, or
+Soul behavior. The contract and its non-goals are in
+`docs/superpowers/specs/2026-09-05-mission-economics-ledger-v1-design.md`.
+
 ### Portable phase-host conformance v1
 
 The package also exposes a provider-neutral adapter boundary for hosts that
