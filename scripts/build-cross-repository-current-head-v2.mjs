@@ -26,6 +26,7 @@ const GODSKILLS_ROOT = resolve(
   process.env.ETERNITIES_GODSKILLS_ROOT ?? 'C:/dev/eternities-godskills',
 );
 const OUTPUT_PATH = CROSS_REPOSITORY_CURRENT_HEAD_V2_ARTIFACT_PATH;
+const LOCAL_WORKSPACE_PATHS = Object.freeze(['package-lock.json']);
 const RECEIPT_TEST = 'tests/cross-repository-current-head-v2-receipt.test.mjs';
 const PRELIMINARY_GODAGENTS_TESTS = [
   'tests/cross-repository-current-head-v2.test.mjs',
@@ -119,6 +120,7 @@ async function main() {
   await requireCleanExcept(repositoryRoot, [
     OUTPUT_PATH,
     CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH,
+    ...LOCAL_WORKSPACE_PATHS,
   ]);
   const [godagentsRefs, godskillsRefs] = await Promise.all([
     reconciledRefs(repositoryRoot, 'Godagents'),
