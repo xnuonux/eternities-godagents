@@ -54,11 +54,13 @@ const PRELIMINARY_GODAGENTS_TESTS = [
   'tests/revision-mission-operation-adapter-certification.test.mjs',
   'tests/delegation-mission-operation-adapter.test.mjs',
   'tests/delegation-mission-operation-adapter-certification.test.mjs',
+  'tests/realm-consequence-mission-operation-adapter.test.mjs',
+  'tests/realm-consequence-mission-operation-adapter-certification.test.mjs',
 ];
 const FINAL_GODAGENTS_TESTS = [...PRELIMINARY_GODAGENTS_TESTS, RECEIPT_TEST];
 const EXPECTED_FINAL_GODAGENTS_TEST_RUNS = Object.freeze({
-  focused: { status: 'pass', tests: 107 },
-  full: { status: 'pass', tests: 1059 },
+  focused: { status: 'pass', tests: 114 },
+  full: { status: 'pass', tests: 1066 },
 });
 const GODSKILLS_TESTS = [
   'tests/eternities-beacon-release.test.mjs',

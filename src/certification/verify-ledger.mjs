@@ -59,6 +59,7 @@ const registry = Object.freeze({
   'realm-action-adapter-v1.json': 'realm-action-adapter-v1',
   'realm-compensation-v1.json': 'realm-compensation-v1',
   'realm-consequence-executor-v1.json': 'realm-consequence-executor-v1',
+  'realm-consequence-mission-operation-adapter-v1.json': 'realm-consequence-mission-operation-adapter-v1',
   'realm-negotiation-v1.json': 'realm-negotiation-v1',
   'recoverable-typed-composition-compiler-v1.json': 'recoverable-typed-composition-compiler-v1',
   'receipt-bound-typed-executor-bundle-v1.json': 'receipt-bound-typed-executor-bundle-v1',
@@ -80,6 +81,7 @@ const expectedFilesBeforeMissionOperationAdapter = Object.freeze(expectedFiles.f
     'review-mission-operation-adapter-v1.json',
     'revision-mission-operation-adapter-v1.json',
     'delegation-mission-operation-adapter-v1.json',
+    'realm-consequence-mission-operation-adapter-v1.json',
   ].includes(file),
 ));
 const expectedFilesBeforeDeferredReviewOperationAdapter = Object.freeze(expectedFiles.filter(
@@ -87,13 +89,17 @@ const expectedFilesBeforeDeferredReviewOperationAdapter = Object.freeze(expected
     'review-mission-operation-adapter-v1.json',
     'revision-mission-operation-adapter-v1.json',
     'delegation-mission-operation-adapter-v1.json',
+    'realm-consequence-mission-operation-adapter-v1.json',
   ].includes(file),
 ));
 const expectedFilesBeforeRevisionMissionOperationAdapter = Object.freeze(expectedFiles.filter(
-  (file) => !['revision-mission-operation-adapter-v1.json', 'delegation-mission-operation-adapter-v1.json'].includes(file),
+  (file) => !['revision-mission-operation-adapter-v1.json', 'delegation-mission-operation-adapter-v1.json', 'realm-consequence-mission-operation-adapter-v1.json'].includes(file),
 ));
 const expectedFilesBeforeDelegationMissionOperationAdapter = Object.freeze(expectedFiles.filter(
-  (file) => file !== 'delegation-mission-operation-adapter-v1.json',
+  (file) => !['delegation-mission-operation-adapter-v1.json', 'realm-consequence-mission-operation-adapter-v1.json'].includes(file),
+));
+const expectedFilesBeforeRealmConsequenceMissionOperationAdapter = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'realm-consequence-mission-operation-adapter-v1.json',
 ));
 const expectedFilesBeforeAgentProfileContract = Object.freeze(expectedFilesBeforeMissionOperationAdapter.filter(
   (file) => file !== 'agent-profile-contract-v1.json',
@@ -909,6 +915,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'delegation-mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeDelegationMissionOperationAdapter
     .map((file) => `receipts/${file}`)),
+  'realm-consequence-mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeRealmConsequenceMissionOperationAdapter
+    .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
@@ -1366,6 +1374,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(delegationMissionOperationAdapter.receipt)) {
       throw new Error('delegation mission operation adapter certification differs from exact source reconstruction');
+    }
+  }
+
+  const realmConsequenceMissionOperationAdapter = loaded.get('realm-consequence-mission-operation-adapter-v1.json');
+  if (realmConsequenceMissionOperationAdapter) {
+    const { buildRealmConsequenceMissionOperationAdapterReceiptFromSource } = await import(
+      '../../scripts/build-realm-consequence-mission-operation-adapter-v1-receipt.mjs'
+    );
+    const rebuilt = await buildRealmConsequenceMissionOperationAdapterReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: realmConsequenceMissionOperationAdapter.receipt.source.commit,
+      testRuns: realmConsequenceMissionOperationAdapter.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(realmConsequenceMissionOperationAdapter.receipt)) {
+      throw new Error('Realm consequence mission operation adapter certification differs from exact source reconstruction');
     }
   }
 

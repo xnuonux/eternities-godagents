@@ -72,8 +72,8 @@ async function buildReceipt() {
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
     testRuns: {
-      godagentsFocused: { status: 'pass', tests: 107 },
-      godagentsFull: { status: 'pass', tests: 1059 },
+      godagentsFocused: { status: 'pass', tests: 114 },
+      godagentsFull: { status: 'pass', tests: 1066 },
       godskillsFocused: { status: 'pass', tests: 12 },
     },
   });
@@ -238,9 +238,29 @@ test('the committed v2 certificate binds the exact current heads and portable re
     assert.match(receipt.godagents.evidence.delegationMissionOperationAdapter.receiptDigest, /^[a-f0-9]{64}$/);
     assert.match(receipt.godagents.evidence.delegationMissionOperationAdapter.sourceCommit, /^[a-f0-9]{40}$/);
   }
+  if (receipt.godagents.evidence.realmConsequenceMissionOperationAdapter !== undefined) {
+    assert.equal(
+      receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.certificationId,
+      'realm-consequence-mission-operation-adapter-v1',
+    );
+    assert.match(receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.fixtureDigest, /^[a-f0-9]{64}$/);
+    assert.equal(receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.fullTests, 1066);
+    assert.equal(
+      receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.path,
+      'receipts/realm-consequence-mission-operation-adapter-v1.json',
+    );
+    assert.match(receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.receiptDigest, /^[a-f0-9]{64}$/);
+    assert.match(receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.sourceCommit, /^[a-f0-9]{40}$/);
+  }
   assert.deepEqual(
     receipt.testRuns,
-    receipt.godagents.evidence.delegationMissionOperationAdapter !== undefined
+    receipt.godagents.evidence.realmConsequenceMissionOperationAdapter !== undefined
+      ? {
+        godagentsFocused: { status: 'pass', tests: 114 },
+        godagentsFull: { status: 'pass', tests: 1066 },
+        godskillsFocused: { status: 'pass', tests: 12 },
+      }
+      : receipt.godagents.evidence.delegationMissionOperationAdapter !== undefined
       ? {
         godagentsFocused: { status: 'pass', tests: 107 },
         godagentsFull: { status: 'pass', tests: 1059 },
