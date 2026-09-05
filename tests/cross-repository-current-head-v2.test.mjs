@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 57 },
-  godagentsFull: { status: 'pass', tests: 1009 },
+  godagentsFocused: { status: 'pass', tests: 66 },
+  godagentsFull: { status: 'pass', tests: 1018 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -173,21 +173,42 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     receipt.godagents.evidence.missionProgram.sourceCommit,
     'd393f6891776fab07c008def6efe1ef8edac5db7',
   );
-  if (receipt.godagents.evidence.missionProgramForensics === undefined) {
-    return;
+  if (receipt.godagents.evidence.missionProgramForensics !== undefined) {
+    assert.ok(
+      receipt.godagents.evidence.boundaryFiles.some(
+        ({ path }) => path === 'tests/mission-program-forensics.test.mjs',
+      ),
+      'current v2 profile must bind the forensic boundary paths',
+    );
+    assert.equal(receipt.godagents.evidence.missionProgramForensics.certificationId, 'mission-program-forensics-v1');
+    assert.match(receipt.godagents.evidence.missionProgramForensics.fixtureDigest, /^[a-f0-9]{64}$/);
+    assert.equal(receipt.godagents.evidence.missionProgramForensics.fullTests, 1009);
+    assert.equal(receipt.godagents.evidence.missionProgramForensics.path, 'receipts/mission-program-forensics-v1.json');
+    assert.match(receipt.godagents.evidence.missionProgramForensics.receiptDigest, /^[a-f0-9]{64}$/);
+    assert.match(receipt.godagents.evidence.missionProgramForensics.sourceCommit, /^[a-f0-9]{40}$/);
   }
+  const agentProfileCommitted = await hasCommittedPath(
+    godagentsCommit,
+    'receipts/agent-profile-contract-v1.json',
+  );
+  assert.equal(
+    receipt.godagents.evidence.agentProfileContract !== undefined,
+    agentProfileCommitted,
+    'v2 builder profile must follow the committed agent profile receipt boundary',
+  );
+  if (receipt.godagents.evidence.agentProfileContract === undefined) return;
   assert.ok(
     receipt.godagents.evidence.boundaryFiles.some(
-      ({ path }) => path === 'tests/mission-program-forensics.test.mjs',
+      ({ path }) => path === 'tests/agent-profile-contract.test.mjs',
     ),
-    'current v2 profile must bind the forensic boundary paths',
+    'current v2 profile must bind the agent profile boundary paths',
   );
-  assert.equal(receipt.godagents.evidence.missionProgramForensics.certificationId, 'mission-program-forensics-v1');
-  assert.match(receipt.godagents.evidence.missionProgramForensics.fixtureDigest, /^[a-f0-9]{64}$/);
-  assert.equal(receipt.godagents.evidence.missionProgramForensics.fullTests, 1009);
-  assert.equal(receipt.godagents.evidence.missionProgramForensics.path, 'receipts/mission-program-forensics-v1.json');
-  assert.match(receipt.godagents.evidence.missionProgramForensics.receiptDigest, /^[a-f0-9]{64}$/);
-  assert.match(receipt.godagents.evidence.missionProgramForensics.sourceCommit, /^[a-f0-9]{40}$/);
+  assert.equal(receipt.godagents.evidence.agentProfileContract.certificationId, 'agent-profile-contract-v1');
+  assert.match(receipt.godagents.evidence.agentProfileContract.fixtureDigest, /^[a-f0-9]{64}$/);
+  assert.equal(receipt.godagents.evidence.agentProfileContract.fullTests, 1018);
+  assert.equal(receipt.godagents.evidence.agentProfileContract.path, 'receipts/agent-profile-contract-v1.json');
+  assert.match(receipt.godagents.evidence.agentProfileContract.receiptDigest, /^[a-f0-9]{64}$/);
+  assert.match(receipt.godagents.evidence.agentProfileContract.sourceCommit, /^[a-f0-9]{40}$/);
 });
 
 test('v2 verification fails closed on old heads, SDK drift, portable receipt drift, and ref movement', async () => {
