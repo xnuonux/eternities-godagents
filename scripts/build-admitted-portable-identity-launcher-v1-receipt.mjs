@@ -85,7 +85,6 @@ const testFiles = Object.freeze([
   'tests/helpers/admitted-portable-identity-launcher-certification-fixture.mjs',
   'tests/helpers/anthropic-messages-phase-policy-fixture.mjs',
   'tests/helpers/identity-bound-mission-vessel-certification-fixture.mjs',
-  'tests/helpers/identity-bound-mission-vessel-fixture.mjs',
   'tests/helpers/openai-compatible-phase-policy-fixture.mjs',
   'tests/portable-mission-dependencies.test.mjs',
   'tests/portable-phase-host-conformance.test.mjs',
