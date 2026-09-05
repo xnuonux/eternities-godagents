@@ -9,6 +9,7 @@ import { sha256Text, sha256Value } from '../core/digest.mjs';
 
 const registry = Object.freeze({
   'admitted-local-launch-v1.json': 'admitted-local-launch-v1',
+  'bounded-delegation-lifecycle-v1.json': 'bounded-delegation-lifecycle-v1',
   'admitted-provider-backed-identity-launcher-v1.json': 'admitted-provider-backed-identity-launcher-v1',
   'admitted-sealed-identity-host-v1.json': 'admitted-sealed-identity-host-v1',
   'admitted-sealed-typed-execution-host-v1.json': 'admitted-sealed-typed-execution-host-v1',
