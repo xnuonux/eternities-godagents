@@ -72,8 +72,8 @@ async function buildReceipt() {
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
     testRuns: {
-      godagentsFocused: { status: 'pass', tests: 36 },
-      godagentsFull: { status: 'pass', tests: 988 },
+      godagentsFocused: { status: 'pass', tests: 52 },
+      godagentsFull: { status: 'pass', tests: 1004 },
       godskillsFocused: { status: 'pass', tests: 12 },
     },
   });
@@ -168,9 +168,15 @@ test('the committed v2 certificate binds the exact current heads and portable re
   assert.equal(receipt.godagents.evidence.admittedPortableIdentityLauncher.path, 'receipts/admitted-portable-identity-launcher-v1.json');
   assert.equal(receipt.godagents.evidence.admittedPortableIdentityLauncher.receiptDigest, 'fcf5f7975606cac1e6588193b4a4e1f75de6b2007553ebfcb5b4a4e0c2231631');
   assert.equal(receipt.godagents.evidence.admittedPortableIdentityLauncher.sourceCommit, 'ba5e489fac7840fe6407ab1455f8e29a1196efa2');
+  assert.equal(receipt.godagents.evidence.missionProgram.certificationId, 'mission-program-v1');
+  assert.equal(receipt.godagents.evidence.missionProgram.fixtureDigest, '4fb78a7d214830ba124ecce19478b4b306ef400bb4f1817cda325c2ed2abc226');
+  assert.equal(receipt.godagents.evidence.missionProgram.fullTests, 1004);
+  assert.equal(receipt.godagents.evidence.missionProgram.path, 'receipts/mission-program-v1.json');
+  assert.match(receipt.godagents.evidence.missionProgram.receiptDigest, /^[a-f0-9]{64}$/);
+  assert.equal(receipt.godagents.evidence.missionProgram.sourceCommit, 'd393f6891776fab07c008def6efe1ef8edac5db7');
   assert.deepEqual(receipt.testRuns, {
-    godagentsFocused: { status: 'pass', tests: 36 },
-    godagentsFull: { status: 'pass', tests: 988 },
+    godagentsFocused: { status: 'pass', tests: 52 },
+    godagentsFull: { status: 'pass', tests: 1004 },
     godskillsFocused: { status: 'pass', tests: 12 },
   });
 });

@@ -40,11 +40,13 @@ const PRELIMINARY_GODAGENTS_TESTS = [
   'tests/admitted-portable-identity-launcher-integration.test.mjs',
   'tests/admitted-portable-identity-launcher.test.mjs',
   'tests/portable-mission-dependencies.test.mjs',
+  'tests/mission-program-certification.test.mjs',
+  'tests/mission-program.test.mjs',
 ];
 const FINAL_GODAGENTS_TESTS = [...PRELIMINARY_GODAGENTS_TESTS, RECEIPT_TEST];
 const EXPECTED_FINAL_GODAGENTS_TEST_RUNS = Object.freeze({
-  focused: { status: 'pass', tests: 36 },
-  full: { status: 'pass', tests: 988 },
+  focused: { status: 'pass', tests: 52 },
+  full: { status: 'pass', tests: 1004 },
 });
 const GODSKILLS_TESTS = [
   'tests/eternities-beacon-release.test.mjs',

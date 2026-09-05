@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 36 },
-  godagentsFull: { status: 'pass', tests: 988 },
+  godagentsFocused: { status: 'pass', tests: 52 },
+  godagentsFull: { status: 'pass', tests: 1004 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -138,6 +138,18 @@ test('v2 names the current-head protocol and binds the merged portable surface',
   assert.equal(
     receipt.godagents.evidence.admittedPortableIdentityLauncher.sourceCommit,
     'ba5e489fac7840fe6407ab1455f8e29a1196efa2',
+  );
+  assert.equal(receipt.godagents.evidence.missionProgram.certificationId, 'mission-program-v1');
+  assert.equal(
+    receipt.godagents.evidence.missionProgram.fixtureDigest,
+    '4fb78a7d214830ba124ecce19478b4b306ef400bb4f1817cda325c2ed2abc226',
+  );
+  assert.equal(receipt.godagents.evidence.missionProgram.fullTests, 1004);
+  assert.equal(receipt.godagents.evidence.missionProgram.path, 'receipts/mission-program-v1.json');
+  assert.match(receipt.godagents.evidence.missionProgram.receiptDigest, /^[a-f0-9]{64}$/);
+  assert.equal(
+    receipt.godagents.evidence.missionProgram.sourceCommit,
+    'd393f6891776fab07c008def6efe1ef8edac5db7',
   );
 });
 

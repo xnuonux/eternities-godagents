@@ -48,6 +48,9 @@ const PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL = 'eternities-recoverable-realm-co
 const ADMITTED_PORTABLE_IDENTITY_LAUNCHER_RECEIPT_PATH = 'receipts/admitted-portable-identity-launcher-v1.json';
 const ADMITTED_PORTABLE_IDENTITY_LAUNCHER_CERTIFICATION_ID = 'admitted-portable-identity-launcher-v1';
 const ADMITTED_PORTABLE_IDENTITY_LAUNCHER_CERTIFICATION_PROTOCOL = 'eternities-admitted-portable-identity-launcher-certification-v1';
+const MISSION_PROGRAM_RECEIPT_PATH = 'receipts/mission-program-v1.json';
+const MISSION_PROGRAM_CERTIFICATION_ID = 'mission-program-v1';
+const MISSION_PROGRAM_CERTIFICATION_PROTOCOL = 'eternities-long-horizon-mission-program-certification-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -111,6 +114,10 @@ const V2_BOUNDARY_PATHS = Object.freeze([
     'tests/admitted-portable-identity-launcher-integration.test.mjs',
     'tests/admitted-portable-identity-launcher.test.mjs',
     'tests/portable-mission-dependencies.test.mjs',
+    'src/runtime/mission-program.mjs',
+    'tests/mission-program-certification.test.mjs',
+    'tests/mission-program.test.mjs',
+    MISSION_PROGRAM_RECEIPT_PATH,
     'fixtures/admitted-portable-identity-launcher-v1.json',
     'receipts/admitted-portable-identity-launcher-v1.json',
     'src/host/admitted-portable-identity-launcher.mjs',
@@ -172,6 +179,8 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   portableRealmConsequenceSdkFullTests: 948,
   admittedPortableIdentityLauncher: true,
   admittedPortableIdentityLauncherFullTests: 988,
+  missionProgram: true,
+  missionProgramFullTests: 1004,
   supportedAdapterProtocols: Object.freeze([
     PORTABLE_CONFORMANCE_PROTOCOL,
     PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
@@ -753,11 +762,45 @@ async function verifyAdmittedPortableIdentityLauncherEvidence(repositoryRoot, co
   await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'admitted portable identity launcher source commit');
 }
 
+async function verifyMissionProgramEvidence(repositoryRoot, commit, evidence, profile) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'fullTests', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'mission program evidence');
+  if (evidence.certificationId !== MISSION_PROGRAM_CERTIFICATION_ID
+      || evidence.path !== MISSION_PROGRAM_RECEIPT_PATH) {
+    throw new Error('mission program evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'mission program fixture digest');
+  requireDigest(evidence.receiptDigest, 'mission program receipt digest');
+  requireDigest(evidence.sha256, 'mission program receipt file digest');
+  requireCommit(evidence.sourceCommit, 'mission program source commit');
+  if (!Number.isInteger(evidence.fullTests) || evidence.fullTests !== profile.missionProgramFullTests) {
+    throw new Error('mission program full test evidence mismatch');
+  }
+  const text = await readBlob(repositoryRoot, commit, evidence.path, 'mission program receipt');
+  if (sha256Text(text) !== evidence.sha256) throw new Error('mission program receipt file digest mismatch');
+  const receipt = parseJson(text, 'mission program receipt');
+  requireCanonicalJsonText(text, receipt, 'mission program receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== MISSION_PROGRAM_CERTIFICATION_ID
+      || receipt.protocolId !== MISSION_PROGRAM_CERTIFICATION_PROTOCOL
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest
+      || receipt.testRuns?.full?.status !== 'pass'
+      || receipt.testRuns.full.tests !== evidence.fullTests) {
+    throw new Error('mission program receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'mission program source commit');
+  await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'mission program source commit');
+}
+
 async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
   const expectedEvidenceKeys = profile.portableConformance
     ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost',
       ...(profile.portableRealmConsequenceSdk ? ['portableRealmConsequenceSdk'] : []),
-      ...(profile.admittedPortableIdentityLauncher ? ['admittedPortableIdentityLauncher'] : [])]
+      ...(profile.admittedPortableIdentityLauncher ? ['admittedPortableIdentityLauncher'] : []),
+      ...(profile.missionProgram ? ['missionProgram'] : [])]
     : ['boundaryFiles', 'integrationReceipt'];
   exactKeys(godagents.evidence, expectedEvidenceKeys, 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
@@ -803,6 +846,14 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
       repositoryRoot,
       commit,
       godagents.evidence.admittedPortableIdentityLauncher,
+      profile,
+    );
+  }
+  if (profile.missionProgram) {
+    await verifyMissionProgramEvidence(
+      repositoryRoot,
+      commit,
+      godagents.evidence.missionProgram,
       profile,
     );
   }
@@ -990,6 +1041,24 @@ async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGA
       receiptDigest: launcher.receiptDigest,
       sha256: sha256Text(launcherText),
       sourceCommit: launcher.source.commit,
+    };
+  }
+  if (profile.missionProgram) {
+    const missionProgramText = await readBlob(
+      repositoryRoot,
+      commit,
+      MISSION_PROGRAM_RECEIPT_PATH,
+      'mission program receipt',
+    );
+    const missionProgram = parseJson(missionProgramText, 'mission program receipt');
+    evidence.missionProgram = {
+      certificationId: missionProgram.certificationId,
+      fixtureDigest: missionProgram.fixture.logicalDigest,
+      fullTests: missionProgram.testRuns.full.tests,
+      path: MISSION_PROGRAM_RECEIPT_PATH,
+      receiptDigest: missionProgram.receiptDigest,
+      sha256: sha256Text(missionProgramText),
+      sourceCommit: missionProgram.source.commit,
     };
   }
   return evidence;
