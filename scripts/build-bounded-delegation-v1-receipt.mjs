@@ -62,6 +62,7 @@ const historicalReceiptPaths = Object.freeze([
   'receipts/provider-resolution-decision-preparer-v1.json',
   'receipts/provider-resolution-profile-v1.json',
   'receipts/realm-action-adapter-v1.json',
+  'receipts/realm-compensation-v1.json',
   'receipts/realm-consequence-executor-v1.json',
   'receipts/realm-negotiation-v1.json',
   'receipts/receipt-bound-typed-executor-bundle-v1.json',
