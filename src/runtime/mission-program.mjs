@@ -11,6 +11,7 @@ import { acquireFileLock } from '../state/file-lock.mjs';
 
 export const MISSION_PROGRAM_PROTOCOL_ID = 'eternities-long-horizon-mission-program-v1';
 export const MISSION_PROGRAM_STEP_PROTOCOL_ID = 'eternities-mission-program-step-adapter-v1';
+export const MISSION_PROGRAM_FORENSICS_PROTOCOL_ID = 'eternities-mission-program-forensics-v1';
 
 const ZERO_DIGEST = '0'.repeat(64);
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -20,6 +21,7 @@ const MAX_STEPS = 8;
 const MAX_EVENTS = 32;
 const MAX_JOURNAL_BYTES = 8 * 1024 * 1024;
 const MAX_ARTIFACT_BYTES = 1024 * 1024;
+const MAX_FORENSICS_BYTES = 256 * 1024;
 const coordinatorInstances = new WeakSet();
 
 const clone = (value) => structuredClone(value);
@@ -605,6 +607,155 @@ function inspectProjection(projection) {
   });
 }
 
+function forensicEvent(event) {
+  const summary = {
+    sequence: event.sequence,
+    eventType: event.eventType,
+    recordedAt: event.recordedAt,
+    previousDigest: event.previousDigest,
+    contentDigest: event.contentDigest,
+    payloadDigest: sha256Value(event.payload),
+  };
+  if (event.eventType === 'step.prepared') {
+    summary.stepId = event.payload.dispatch.stepId;
+    summary.stepIndex = event.payload.dispatch.stepIndex;
+    summary.dispatchDigest = event.payload.dispatch.dispatchDigest;
+  } else if (event.eventType === 'step.committed') {
+    summary.stepId = event.payload.stepId;
+    summary.stepIndex = event.payload.stepIndex;
+    summary.artifactDigest = event.payload.artifact.digest;
+  } else if (event.eventType === 'program.completed') {
+    summary.aggregateDigest = event.payload.completion.aggregateDigest;
+  }
+  return summary;
+}
+
+function verifyForensicProjection(value) {
+  object(value, 'mission program forensic projection');
+  try {
+    assertSchema('mission-program-forensics', value);
+  } catch (error) {
+    fail('forensics-invalid', 'mission program forensic projection is invalid', error);
+  }
+  exactKeys(value, [
+    'schemaVersion', 'protocolId', 'programId', 'status', 'selectedSequence', 'headSequence',
+    'headDigest', 'selectedHeadDigest', 'projectionDigest', 'events', 'steps', 'next', 'aggregateDigest',
+  ], 'mission program forensic projection');
+  requireDigest(value.programId, 'mission program forensic program id');
+  requireInteger(value.selectedSequence, 'mission program forensic selected sequence', MAX_EVENTS);
+  requireInteger(value.headSequence, 'mission program forensic head sequence', MAX_EVENTS);
+  if (value.selectedSequence > value.headSequence) fail('sequence-invalid', 'mission program forensic sequence exceeds the head');
+  requireDigest(value.headDigest, 'mission program forensic head digest');
+  requireDigest(value.selectedHeadDigest, 'mission program forensic selected head digest');
+  requireDigest(value.projectionDigest, 'mission program forensic projection digest');
+  if (value.aggregateDigest !== null) requireDigest(value.aggregateDigest, 'mission program forensic aggregate digest');
+  for (let index = 0; index < value.events.length; index += 1) {
+    const event = value.events[index];
+    exactKeys(event, [
+      'sequence', 'eventType', 'recordedAt', 'previousDigest', 'contentDigest', 'payloadDigest',
+      ...(['step.prepared', 'step.committed'].includes(event.eventType)
+        ? ['stepId', 'stepIndex'] : []),
+      ...(event.eventType === 'step.prepared' ? ['dispatchDigest'] : []),
+      ...(event.eventType === 'step.committed' ? ['artifactDigest'] : []),
+      ...(event.eventType === 'program.completed' ? ['aggregateDigest'] : []),
+    ], `mission program forensic event ${index + 1}`);
+    if (event.sequence !== index + 1) fail('sequence-invalid', 'mission program forensic events are not contiguous');
+    requireDigest(event.previousDigest, 'mission program forensic previous digest');
+    requireDigest(event.contentDigest, 'mission program forensic content digest');
+    requireDigest(event.payloadDigest, 'mission program forensic payload digest');
+    if (event.stepId !== undefined) requireIdentifier(event.stepId, 'mission program forensic step id');
+    if (event.stepIndex !== undefined) requireInteger(event.stepIndex, 'mission program forensic step index', MAX_STEPS - 1);
+    if (event.dispatchDigest !== undefined) requireDigest(event.dispatchDigest, 'mission program forensic dispatch digest');
+    if (event.artifactDigest !== undefined) requireDigest(event.artifactDigest, 'mission program forensic artifact digest');
+    if (event.aggregateDigest !== undefined) requireDigest(event.aggregateDigest, 'mission program forensic event aggregate digest');
+  }
+  for (let index = 0; index < value.steps.length; index += 1) {
+    const step = value.steps[index];
+    exactKeys(step, ['stepId', 'stepIndex', 'kind', 'status'], `mission program forensic step ${index}`);
+    requireIdentifier(step.stepId, 'mission program forensic step id');
+    requireInteger(step.stepIndex, 'mission program forensic step index', MAX_STEPS - 1);
+    requireIdentifier(step.kind, 'mission program forensic step kind');
+  }
+  const { projectionDigest, ...unsigned } = value;
+  if (sha256Value(unsigned) !== projectionDigest) fail('projection-digest', 'mission program forensic projection digest mismatch');
+  return deepFreeze(safeClone(value, 'mission program forensic projection'));
+}
+
+function buildForensicProjection(projection, selectedSequence) {
+  const events = projection.state.events.slice(0, selectedSequence).map(forensicEvent);
+  const admission = projection.admission;
+  const prepared = new Set();
+  const committed = new Set();
+  let aggregateDigest = null;
+  for (const event of projection.state.events.slice(0, selectedSequence)) {
+    if (event.eventType === 'step.prepared') prepared.add(event.payload.dispatch.stepIndex);
+    if (event.eventType === 'step.committed') committed.add(event.payload.stepIndex);
+    if (event.eventType === 'program.completed') aggregateDigest = event.payload.completion.aggregateDigest;
+  }
+  const next = admission.steps.find((step) => !committed.has(step.stepIndex));
+  const status = aggregateDigest
+    ? 'completed'
+    : next && prepared.has(next.stepIndex) ? 'pending' : 'admitted';
+  const steps = admission.steps.map((step) => ({
+    stepId: step.stepId,
+    stepIndex: step.stepIndex,
+    kind: step.kind,
+    status: committed.has(step.stepIndex) ? 'committed' : prepared.has(step.stepIndex) ? 'pending' : 'admitted',
+  }));
+  const unsigned = {
+    schemaVersion: 1,
+    protocolId: MISSION_PROGRAM_FORENSICS_PROTOCOL_ID,
+    programId: projection.state.programId,
+    status,
+    selectedSequence,
+    headSequence: projection.state.events.length,
+    headDigest: projection.state.headDigest,
+    selectedHeadDigest: selectedSequence === 0 ? ZERO_DIGEST : projection.state.events[selectedSequence - 1].contentDigest,
+    events,
+    steps,
+    next: status === 'completed' ? 'none' : next ? `step:${next.stepId}` : 'none',
+    aggregateDigest,
+  };
+  const result = { ...unsigned, projectionDigest: sha256Value(unsigned) };
+  if (Buffer.byteLength(jsonBytes(result), 'utf8') > MAX_FORENSICS_BYTES) {
+    fail('forensics-ceiling', 'mission program forensic projection exceeds its byte ceiling');
+  }
+  return verifyForensicProjection(result);
+}
+
+function buildAbsentForensicProjection(programId) {
+  const unsigned = {
+    schemaVersion: 1,
+    protocolId: MISSION_PROGRAM_FORENSICS_PROTOCOL_ID,
+    programId,
+    status: 'absent',
+    selectedSequence: 0,
+    headSequence: 0,
+    headDigest: ZERO_DIGEST,
+    selectedHeadDigest: ZERO_DIGEST,
+    events: [],
+    steps: [],
+    next: 'none',
+    aggregateDigest: null,
+  };
+  return verifyForensicProjection({ ...unsigned, projectionDigest: sha256Value(unsigned) });
+}
+
+function normalizeForensicsOptions(options, headSequence) {
+  object(options, 'mission program forensic options');
+  if (Object.keys(options).some((key) => key !== 'throughSequence')) {
+    fail('unknown-field', 'mission program forensic options fields are invalid');
+  }
+  assertCredentialFree(options, 'mission program forensic options');
+  const selectedSequence = options.throughSequence ?? headSequence;
+  if (!Number.isInteger(selectedSequence)
+      || selectedSequence < (headSequence === 0 ? 0 : 1)
+      || selectedSequence > headSequence) {
+    fail('sequence-invalid', 'mission program forensic sequence is invalid');
+  }
+  return selectedSequence;
+}
+
 async function completedResult(projection, recovered) {
   const results = [];
   for (const step of projection.admission.steps) {
@@ -808,7 +959,20 @@ export async function createMissionProgramCoordinator({
     return inspectProjection(projection);
   }
 
-  const coordinator = { execute, recover, inspect };
+  async function forensics(programId, options = {}) {
+    requireProgramId(programId);
+    const paths = operationPaths(programId);
+    const projection = await replayState(paths.journal, paths.artifacts);
+    if (!projection) {
+      normalizeForensicsOptions(options, 0);
+      return buildAbsentForensicProjection(programId);
+    }
+    if (projection.state.programId !== programId) fail('program-binding', 'mission program forensic path does not match its program id');
+    const selectedSequence = normalizeForensicsOptions(options, projection.state.events.length);
+    return buildForensicProjection(projection, selectedSequence);
+  }
+
+  const coordinator = { execute, recover, inspect, forensics };
   coordinatorInstances.add(coordinator);
   return Object.freeze(coordinator);
 }

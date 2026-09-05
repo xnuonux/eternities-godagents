@@ -52,6 +52,10 @@ npm run build:provider-backed-identity-cli-fixture
 npm run certify:provider-backed-identity-cli
 npm run build:bounded-delegation-fixture
 npm run certify:bounded-delegation
+npm run build:mission-program-fixture
+npm run certify:mission-program
+npm run build:mission-program-forensics-fixture
+npm run certify:mission-program-forensics
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -702,6 +706,32 @@ and the source-bound proof is
 `receipts/mission-program-v1.json`. Rebuild the deterministic fixture with
 `npm run build:mission-program-fixture` and the certificate with
 `npm run certify:mission-program`.
+
+### Mission-program forensic projection v1
+
+The opt-in forensic projection is a read-only operator view over one verified
+mission-program journal. It verifies the complete journal and all referenced
+completion artifacts before returning a bounded, deterministic timeline of
+event metadata, digest links, step status, and an exact selected-prefix
+summary. It exposes no event payloads, mission bodies, result bodies,
+credentials, filesystem paths, Realm handles, model routes, personal-keel
+writers, or memory content.
+
+`coordinator.forensics(programId)` returns the current projection, while
+`coordinator.forensics(programId, { throughSequence })` selects an existing
+event boundary without hiding or changing later evidence. The method makes no
+adapter calls, acquires no execution lock, and writes nothing. Tampered future
+events and artifacts still fail closed even when an earlier prefix is
+requested.
+
+This is bounded local observability, not a cross-program index, live provider
+trace, branch or reversible time-travel system, hosted durability layer, UI,
+or execution path. The design and limits are in
+`docs/superpowers/specs/2026-09-05-mission-program-forensics-v1-design.md`,
+and the source-bound proof is
+`receipts/mission-program-forensics-v1.json`. Rebuild the deterministic
+fixture with `npm run build:mission-program-forensics-fixture` and the
+certificate with `npm run certify:mission-program-forensics`.
 
 ### Portable phase-host conformance v1
 

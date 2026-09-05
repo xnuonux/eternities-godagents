@@ -32,6 +32,7 @@ const registry = Object.freeze({
   'identity-bound-mission-vessel-v1.json': 'identity-bound-mission-vessel-v1',
   'local-admission-shell-certification.json': 'local-admission-shell-v1',
   'mission-economics-ledger-v1.json': 'mission-economics-ledger-v1',
+  'mission-program-forensics-v1.json': 'mission-program-forensics-v1',
   'mission-program-v1.json': 'mission-program-v1',
   'networked-cortex-certification.json': 'networked-cortex-v1',
   'provider-backed-identity-cli-v1.json': 'provider-backed-identity-cli-v1',
@@ -68,7 +69,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeMissionProgram = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeMissionProgramForensics = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'mission-program-forensics-v1.json',
+));
+const expectedFilesBeforeMissionProgram = Object.freeze(expectedFilesBeforeMissionProgramForensics.filter(
   (file) => file !== 'mission-program-v1.json',
 ));
 const expectedFilesBeforePortableLauncher = Object.freeze(expectedFilesBeforeMissionProgram.filter(
@@ -864,6 +868,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'mission-program-v1.json': Object.freeze(expectedFilesBeforeMissionProgram
     .map((file) => `receipts/${file}`)),
+  'mission-program-forensics-v1.json': Object.freeze(expectedFilesBeforeMissionProgramForensics
+    .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
@@ -1246,6 +1252,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(missionProgram.receipt)) {
       throw new Error('mission program certification differs from exact source reconstruction');
+    }
+  }
+
+  const missionProgramForensics = loaded.get('mission-program-forensics-v1.json');
+  if (missionProgramForensics) {
+    const { buildMissionProgramForensicsReceiptFromSource } = await import(
+      '../../scripts/build-mission-program-forensics-v1-receipt.mjs'
+    );
+    const rebuilt = await buildMissionProgramForensicsReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: missionProgramForensics.receipt.source.commit,
+      testRuns: missionProgramForensics.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(missionProgramForensics.receipt)) {
+      throw new Error('mission program forensics certification differs from exact source reconstruction');
     }
   }
 

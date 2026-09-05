@@ -111,6 +111,8 @@
     "build:mission-economics-ledger-fixture": "node scripts/build-mission-economics-ledger-fixture.mjs",
     "certify:mission-economics-ledger": "node scripts/build-mission-economics-ledger-v1-receipt.mjs",
     "build:mission-program-fixture": "node scripts/build-mission-program-fixture.mjs",
-    "certify:mission-program": "node scripts/build-mission-program-v1-receipt.mjs"
+    "certify:mission-program": "node scripts/build-mission-program-v1-receipt.mjs",
+    "build:mission-program-forensics-fixture": "node scripts/build-mission-program-forensics-fixture.mjs",
+    "certify:mission-program-forensics": "node scripts/build-mission-program-forensics-v1-receipt.mjs"
   }
 }

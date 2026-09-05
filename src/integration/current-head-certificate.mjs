@@ -51,6 +51,9 @@ const ADMITTED_PORTABLE_IDENTITY_LAUNCHER_CERTIFICATION_PROTOCOL = 'eternities-a
 const MISSION_PROGRAM_RECEIPT_PATH = 'receipts/mission-program-v1.json';
 const MISSION_PROGRAM_CERTIFICATION_ID = 'mission-program-v1';
 const MISSION_PROGRAM_CERTIFICATION_PROTOCOL = 'eternities-long-horizon-mission-program-certification-v1';
+const MISSION_PROGRAM_FORENSICS_RECEIPT_PATH = 'receipts/mission-program-forensics-v1.json';
+const MISSION_PROGRAM_FORENSICS_CERTIFICATION_ID = 'mission-program-forensics-v1';
+const MISSION_PROGRAM_FORENSICS_CERTIFICATION_PROTOCOL = 'eternities-mission-program-forensics-certification-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -117,7 +120,12 @@ const V2_BOUNDARY_PATHS = Object.freeze([
     'src/runtime/mission-program.mjs',
     'tests/mission-program-certification.test.mjs',
     'tests/mission-program.test.mjs',
+    'tests/mission-program-forensics-certification.test.mjs',
+    'tests/mission-program-forensics.test.mjs',
+    'schemas/mission-program-forensics.schema.json',
+    'fixtures/mission-program-forensics-v1.json',
     MISSION_PROGRAM_RECEIPT_PATH,
+    MISSION_PROGRAM_FORENSICS_RECEIPT_PATH,
     'fixtures/admitted-portable-identity-launcher-v1.json',
     'receipts/admitted-portable-identity-launcher-v1.json',
     'src/host/admitted-portable-identity-launcher.mjs',
@@ -181,6 +189,8 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   admittedPortableIdentityLauncherFullTests: 988,
   missionProgram: true,
   missionProgramFullTests: 1004,
+  missionProgramForensics: true,
+  missionProgramForensicsFullTests: 1009,
   supportedAdapterProtocols: Object.freeze([
     PORTABLE_CONFORMANCE_PROTOCOL,
     PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
@@ -795,12 +805,47 @@ async function verifyMissionProgramEvidence(repositoryRoot, commit, evidence, pr
   await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'mission program source commit');
 }
 
+async function verifyMissionProgramForensicsEvidence(repositoryRoot, commit, evidence, profile) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'fullTests', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'mission program forensics evidence');
+  if (evidence.certificationId !== MISSION_PROGRAM_FORENSICS_CERTIFICATION_ID
+      || evidence.path !== MISSION_PROGRAM_FORENSICS_RECEIPT_PATH) {
+    throw new Error('mission program forensics evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'mission program forensics fixture digest');
+  requireDigest(evidence.receiptDigest, 'mission program forensics receipt digest');
+  requireDigest(evidence.sha256, 'mission program forensics receipt file digest');
+  requireCommit(evidence.sourceCommit, 'mission program forensics source commit');
+  if (!Number.isInteger(evidence.fullTests)
+      || evidence.fullTests !== profile.missionProgramForensicsFullTests) {
+    throw new Error('mission program forensics full test evidence mismatch');
+  }
+  const text = await readBlob(repositoryRoot, commit, evidence.path, 'mission program forensics receipt');
+  if (sha256Text(text) !== evidence.sha256) throw new Error('mission program forensics receipt file digest mismatch');
+  const receipt = parseJson(text, 'mission program forensics receipt');
+  requireCanonicalJsonText(text, receipt, 'mission program forensics receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== MISSION_PROGRAM_FORENSICS_CERTIFICATION_ID
+      || receipt.protocolId !== MISSION_PROGRAM_FORENSICS_CERTIFICATION_PROTOCOL
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest
+      || receipt.testRuns?.full?.status !== 'pass'
+      || receipt.testRuns.full.tests !== evidence.fullTests) {
+    throw new Error('mission program forensics receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'mission program forensics source commit');
+  await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'mission program forensics source commit');
+}
+
 async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
   const expectedEvidenceKeys = profile.portableConformance
     ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost',
       ...(profile.portableRealmConsequenceSdk ? ['portableRealmConsequenceSdk'] : []),
       ...(profile.admittedPortableIdentityLauncher ? ['admittedPortableIdentityLauncher'] : []),
-      ...(profile.missionProgram ? ['missionProgram'] : [])]
+      ...(profile.missionProgram ? ['missionProgram'] : []),
+      ...(profile.missionProgramForensics ? ['missionProgramForensics'] : [])]
     : ['boundaryFiles', 'integrationReceipt'];
   exactKeys(godagents.evidence, expectedEvidenceKeys, 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
@@ -854,6 +899,14 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
       repositoryRoot,
       commit,
       godagents.evidence.missionProgram,
+      profile,
+    );
+  }
+  if (profile.missionProgramForensics) {
+    await verifyMissionProgramForensicsEvidence(
+      repositoryRoot,
+      commit,
+      godagents.evidence.missionProgramForensics,
       profile,
     );
   }
@@ -1059,6 +1112,24 @@ async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGA
       receiptDigest: missionProgram.receiptDigest,
       sha256: sha256Text(missionProgramText),
       sourceCommit: missionProgram.source.commit,
+    };
+  }
+  if (profile.missionProgramForensics) {
+    const missionProgramForensicsText = await readBlob(
+      repositoryRoot,
+      commit,
+      MISSION_PROGRAM_FORENSICS_RECEIPT_PATH,
+      'mission program forensics receipt',
+    );
+    const missionProgramForensics = parseJson(missionProgramForensicsText, 'mission program forensics receipt');
+    evidence.missionProgramForensics = {
+      certificationId: missionProgramForensics.certificationId,
+      fixtureDigest: missionProgramForensics.fixture.logicalDigest,
+      fullTests: missionProgramForensics.testRuns.full.tests,
+      path: MISSION_PROGRAM_FORENSICS_RECEIPT_PATH,
+      receiptDigest: missionProgramForensics.receiptDigest,
+      sha256: sha256Text(missionProgramForensicsText),
+      sourceCommit: missionProgramForensics.source.commit,
     };
   }
   return evidence;

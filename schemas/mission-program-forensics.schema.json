@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "eventType", "recordedAt", "previousDigest", "contentDigest", "payloadDigest"],
+      "properties": {
+        "sequence": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "eventType": { "enum": ["program.admitted", "step.prepared", "step.committed", "program.completed"] },
+        "recordedAt": { "type": "string", "minLength": 24, "maxLength": 24 },
+        "previousDigest": { "$ref": "#/$defs/digest" },
+        "contentDigest": { "$ref": "#/$defs/digest" },
+        "payloadDigest": { "$ref": "#/$defs/digest" },
+        "stepId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "stepIndex": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "dispatchDigest": { "$ref": "#/$defs/digest" },
+        "artifactDigest": { "$ref": "#/$defs/digest" },
+        "aggregateDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stepId", "stepIndex", "kind", "status"],
+      "properties": {
+        "stepId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "stepIndex": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "kind": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+        "status": { "enum": ["admitted", "prepared", "pending", "committed"] }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "protocolId", "programId", "status", "selectedSequence", "headSequence",
+    "headDigest", "selectedHeadDigest", "projectionDigest", "events", "steps", "next", "aggregateDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-program-forensics-v1" },
+    "programId": { "$ref": "#/$defs/digest" },
+    "status": { "enum": ["absent", "admitted", "pending", "completed"] },
+    "selectedSequence": { "type": "integer", "minimum": 0, "maximum": 32 },
+    "headSequence": { "type": "integer", "minimum": 0, "maximum": 32 },
+    "headDigest": { "$ref": "#/$defs/digest" },
+    "selectedHeadDigest": { "$ref": "#/$defs/digest" },
+    "projectionDigest": { "$ref": "#/$defs/digest" },
+    "events": { "type": "array", "maxItems": 32, "items": { "$ref": "#/$defs/event" } },
+    "steps": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/step" } },
+    "next": { "type": "string", "minLength": 1, "maxLength": 140 },
+    "aggregateDigest": {}
+  }
+}

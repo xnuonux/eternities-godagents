@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 52 },
-  godagentsFull: { status: 'pass', tests: 1004 },
+  godagentsFocused: { status: 'pass', tests: 57 },
+  godagentsFull: { status: 'pass', tests: 1009 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -151,6 +151,12 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     receipt.godagents.evidence.missionProgram.sourceCommit,
     'd393f6891776fab07c008def6efe1ef8edac5db7',
   );
+  assert.equal(receipt.godagents.evidence.missionProgramForensics.certificationId, 'mission-program-forensics-v1');
+  assert.match(receipt.godagents.evidence.missionProgramForensics.fixtureDigest, /^[a-f0-9]{64}$/);
+  assert.equal(receipt.godagents.evidence.missionProgramForensics.fullTests, 1009);
+  assert.equal(receipt.godagents.evidence.missionProgramForensics.path, 'receipts/mission-program-forensics-v1.json');
+  assert.match(receipt.godagents.evidence.missionProgramForensics.receiptDigest, /^[a-f0-9]{64}$/);
+  assert.match(receipt.godagents.evidence.missionProgramForensics.sourceCommit, /^[a-f0-9]{40}$/);
 });
 
 test('v2 verification fails closed on old heads, SDK drift, portable receipt drift, and ref movement', async () => {
