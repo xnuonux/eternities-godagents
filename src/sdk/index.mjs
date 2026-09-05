@@ -55,6 +55,11 @@ export {
 } from '../host/admitted-provider-backed-identity-launcher.mjs';
 
 export {
+  createAdmittedPortableIdentityLauncher,
+  verifyAdmittedPortableIdentityLauncherDescription,
+} from '../host/admitted-portable-identity-launcher.mjs';
+
+export {
   RECOVERABLE_REALM_CONSEQUENCE_PROTOCOL_ID,
   assertRecoverableRealmConsequenceHost,
   createRecoverableRealmConsequenceHost,
