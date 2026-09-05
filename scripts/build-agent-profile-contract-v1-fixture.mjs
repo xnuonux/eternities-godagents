@@ -86,7 +86,7 @@ export function buildAgentProfileContractFixture() {
       && !cases.allRounderExplicitProhibition.result.eligibleIds.includes('eternities-muse'),
     emptyCatalogCompatible: cases.emptyCatalog.result.eligibleIds.length === 0
       && cases.emptyCatalog.result.semantics.allRounderComplete,
-    localeIndependentOrdering: cases.ordering.eligibleIds.join(',') === 'a-0,a.0,a:0,a_0',
+    localeIndependentOrdering: cases.ordering.result.eligibleIds.join(',') === 'a-0,a.0,a:0,a_0',
     compositionCeilingPreserved: cases.specialist.result.maxComposition === specialist.maxComposition,
   };
   const unsigned = {
