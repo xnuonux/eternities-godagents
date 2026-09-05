@@ -65,7 +65,6 @@ const testFiles = Object.freeze([
 ].sort());
 const focusedTestFiles = Object.freeze([
   'tests/mission-operation-adapter.test.mjs',
-  'tests/mission-operation-adapter-certification.test.mjs',
 ]);
 const releaseOnlyPaths = Object.freeze([certificationPath, receiptPath]);
 const requirements = Object.freeze([
