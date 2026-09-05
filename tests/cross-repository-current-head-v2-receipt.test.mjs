@@ -72,8 +72,8 @@ async function buildReceipt() {
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
     testRuns: {
-      godagentsFocused: { status: 'pass', tests: 26 },
-      godagentsFull: { status: 'pass', tests: 978 },
+      godagentsFocused: { status: 'pass', tests: 36 },
+      godagentsFull: { status: 'pass', tests: 988 },
       godskillsFocused: { status: 'pass', tests: 12 },
     },
   });
@@ -162,9 +162,15 @@ test('the committed v2 certificate binds the exact current heads and portable re
   assert.equal(receipt.godagents.evidence.portableRealmConsequenceSdk.certificationId, 'portable-realm-consequence-sdk-v1');
   assert.equal(receipt.godagents.evidence.portableRealmConsequenceSdk.sourceCommit, 'a0ebffe1373cd3af06b0aec8a392724d939e49b0');
   assert.equal(receipt.godagents.evidence.portableRealmConsequenceSdk.fullTests, 948);
+  assert.equal(receipt.godagents.evidence.admittedPortableIdentityLauncher.certificationId, 'admitted-portable-identity-launcher-v1');
+  assert.equal(receipt.godagents.evidence.admittedPortableIdentityLauncher.fixtureDigest, '19517ce24004672fa65f05cd4d1feba3dd9e80412118215eae1620775d51f884');
+  assert.equal(receipt.godagents.evidence.admittedPortableIdentityLauncher.fullTests, 988);
+  assert.equal(receipt.godagents.evidence.admittedPortableIdentityLauncher.path, 'receipts/admitted-portable-identity-launcher-v1.json');
+  assert.equal(receipt.godagents.evidence.admittedPortableIdentityLauncher.receiptDigest, 'fcf5f7975606cac1e6588193b4a4e1f75de6b2007553ebfcb5b4a4e0c2231631');
+  assert.equal(receipt.godagents.evidence.admittedPortableIdentityLauncher.sourceCommit, 'ba5e489fac7840fe6407ab1455f8e29a1196efa2');
   assert.deepEqual(receipt.testRuns, {
-    godagentsFocused: { status: 'pass', tests: 26 },
-    godagentsFull: { status: 'pass', tests: 978 },
+    godagentsFocused: { status: 'pass', tests: 36 },
+    godagentsFull: { status: 'pass', tests: 988 },
     godskillsFocused: { status: 'pass', tests: 12 },
   });
 });

@@ -45,6 +45,9 @@ const PORTABLE_REALM_CONSEQUENCE_SDK_RECEIPT_PATH = 'receipts/portable-realm-con
 const PORTABLE_REALM_CONSEQUENCE_SDK_CERTIFICATION_ID = 'portable-realm-consequence-sdk-v1';
 const PORTABLE_REALM_CONSEQUENCE_SDK_CERTIFICATION_PROTOCOL = 'eternities-portable-realm-consequence-sdk-certification-v1';
 const PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL = 'eternities-recoverable-realm-consequence-v1';
+const ADMITTED_PORTABLE_IDENTITY_LAUNCHER_RECEIPT_PATH = 'receipts/admitted-portable-identity-launcher-v1.json';
+const ADMITTED_PORTABLE_IDENTITY_LAUNCHER_CERTIFICATION_ID = 'admitted-portable-identity-launcher-v1';
+const ADMITTED_PORTABLE_IDENTITY_LAUNCHER_CERTIFICATION_PROTOCOL = 'eternities-admitted-portable-identity-launcher-certification-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -64,11 +67,13 @@ const V2_SDK_EXPORTS = Object.freeze([
   'assertProviderPhaseHostInstance',
   'assertRecoverableRealmConsequenceHost',
   'buildPortablePhaseHostDescription',
+  'createAdmittedPortableIdentityLauncher',
   'createAdmittedProviderBackedIdentityLauncher',
   'createPortablePhaseHostAdapter',
   'createProviderPhaseHost',
   'createRecoverableRealmConsequenceHost',
   'describeGodagentSdk',
+  'verifyAdmittedPortableIdentityLauncherDescription',
   'verifyPortablePhaseHostDescription',
   'verifyAdmittedProviderBackedIdentityLauncherDescription',
   'verifyProviderPhaseHostDescription',
@@ -102,6 +107,14 @@ const V2_BOUNDARY_PATHS = Object.freeze([
     'tests/portable-phase-host-conformance.test.mjs',
     'tests/portable-realm-consequence-sdk-certification.test.mjs',
     'tests/portable-realm-consequence-sdk.test.mjs',
+    'tests/admitted-portable-identity-launcher-certification.test.mjs',
+    'tests/admitted-portable-identity-launcher-integration.test.mjs',
+    'tests/admitted-portable-identity-launcher.test.mjs',
+    'tests/portable-mission-dependencies.test.mjs',
+    'fixtures/admitted-portable-identity-launcher-v1.json',
+    'receipts/admitted-portable-identity-launcher-v1.json',
+    'src/host/admitted-portable-identity-launcher.mjs',
+    'src/host/portable-mission-dependencies.mjs',
     PORTABLE_CONFORMANCE_RECEIPT_PATH,
     PORTABLE_REALM_CONSEQUENCE_SDK_RECEIPT_PATH,
   ]),
@@ -157,6 +170,8 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   portableConformance: true,
   portableRealmConsequenceSdk: true,
   portableRealmConsequenceSdkFullTests: 948,
+  admittedPortableIdentityLauncher: true,
+  admittedPortableIdentityLauncherFullTests: 988,
   supportedAdapterProtocols: Object.freeze([
     PORTABLE_CONFORMANCE_PROTOCOL,
     PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
@@ -697,10 +712,52 @@ async function verifyPortableRealmConsequenceSdkEvidence(repositoryRoot, commit,
   await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'portable Realm consequence SDK source commit');
 }
 
+async function verifyAdmittedPortableIdentityLauncherEvidence(repositoryRoot, commit, evidence, profile) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'fullTests', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'admitted portable identity launcher evidence');
+  if (evidence.certificationId !== ADMITTED_PORTABLE_IDENTITY_LAUNCHER_CERTIFICATION_ID
+      || evidence.path !== ADMITTED_PORTABLE_IDENTITY_LAUNCHER_RECEIPT_PATH) {
+    throw new Error('admitted portable identity launcher evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'admitted portable identity launcher fixture digest');
+  requireDigest(evidence.receiptDigest, 'admitted portable identity launcher receipt digest');
+  requireDigest(evidence.sha256, 'admitted portable identity launcher receipt file digest');
+  requireCommit(evidence.sourceCommit, 'admitted portable identity launcher source commit');
+  if (!Number.isInteger(evidence.fullTests)
+      || evidence.fullTests !== profile.admittedPortableIdentityLauncherFullTests) {
+    throw new Error('admitted portable identity launcher full test evidence mismatch');
+  }
+  const text = await readBlob(
+    repositoryRoot,
+    commit,
+    evidence.path,
+    'admitted portable identity launcher receipt',
+  );
+  if (sha256Text(text) !== evidence.sha256) {
+    throw new Error('admitted portable identity launcher receipt file digest mismatch');
+  }
+  const receipt = parseJson(text, 'admitted portable identity launcher receipt');
+  requireCanonicalJsonText(text, receipt, 'admitted portable identity launcher receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== ADMITTED_PORTABLE_IDENTITY_LAUNCHER_CERTIFICATION_ID
+      || receipt.protocolId !== ADMITTED_PORTABLE_IDENTITY_LAUNCHER_CERTIFICATION_PROTOCOL
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest
+      || receipt.testRuns?.full?.status !== 'pass'
+      || receipt.testRuns.full.tests !== evidence.fullTests) {
+    throw new Error('admitted portable identity launcher receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'admitted portable identity launcher source commit');
+  await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'admitted portable identity launcher source commit');
+}
+
 async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
   const expectedEvidenceKeys = profile.portableConformance
     ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost',
-      ...(profile.portableRealmConsequenceSdk ? ['portableRealmConsequenceSdk'] : [])]
+      ...(profile.portableRealmConsequenceSdk ? ['portableRealmConsequenceSdk'] : []),
+      ...(profile.admittedPortableIdentityLauncher ? ['admittedPortableIdentityLauncher'] : [])]
     : ['boundaryFiles', 'integrationReceipt'];
   exactKeys(godagents.evidence, expectedEvidenceKeys, 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
@@ -738,6 +795,14 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
       repositoryRoot,
       commit,
       godagents.evidence.portableRealmConsequenceSdk,
+      profile,
+    );
+  }
+  if (profile.admittedPortableIdentityLauncher) {
+    await verifyAdmittedPortableIdentityLauncherEvidence(
+      repositoryRoot,
+      commit,
+      godagents.evidence.admittedPortableIdentityLauncher,
       profile,
     );
   }
@@ -907,6 +972,24 @@ async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGA
       receiptDigest: portableRealm.receiptDigest,
       sha256: sha256Text(portableRealmText),
       sourceCommit: portableRealm.source.commit,
+    };
+  }
+  if (profile.admittedPortableIdentityLauncher) {
+    const launcherText = await readBlob(
+      repositoryRoot,
+      commit,
+      ADMITTED_PORTABLE_IDENTITY_LAUNCHER_RECEIPT_PATH,
+      'admitted portable identity launcher receipt',
+    );
+    const launcher = parseJson(launcherText, 'admitted portable identity launcher receipt');
+    evidence.admittedPortableIdentityLauncher = {
+      certificationId: launcher.certificationId,
+      fixtureDigest: launcher.fixture.logicalDigest,
+      fullTests: launcher.testRuns.full.tests,
+      path: ADMITTED_PORTABLE_IDENTITY_LAUNCHER_RECEIPT_PATH,
+      receiptDigest: launcher.receiptDigest,
+      sha256: sha256Text(launcherText),
+      sourceCommit: launcher.source.commit,
     };
   }
   return evidence;
