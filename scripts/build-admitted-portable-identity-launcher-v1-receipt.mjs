@@ -33,7 +33,7 @@ const protectedTrustRoots = Object.freeze({
   'receipts/deferred-godskills-review-executor-v1.json': 'e5897311bbeab99eda7b6a093b7c442908c9a03e85217f85979210e29d6a6c9c',
   'receipts/deferred-godskills-review-materializer-v1.json': '243a252f47a9d9d63a520a2d6a673acd045515c8de29b5e2a5b594e136a8ccac',
   'receipts/identity-bound-mission-vessel-v1.json': 'f61a34aab15d2cd63403a11f2b260d2e929ebd69ca4e1fbe6d4dc4e588a629fa',
-  'receipts/portable-phase-host-conformance-v1.json': '88dd2e1c1ab5b1aa93e9c6a24c1a2e3eb0f96a1bd2a8f0b3fd0d17bd92a66e2c',
+  'receipts/portable-phase-host-conformance-v1.json': '88dd2ede7cb3716b059fa022f1d3f40b0aad90630856f755843e146e8207809f',
   'src/host/admitted-sealed-identity-launch.mjs': 'fbe6b59b8f6f28dc4def494c168894e17b8771ae5f2c515d96b4d2bcd86dfb27',
   'src/runtime/mission-revision-executor.mjs': '64f9086603949a0ff6edef3ef66863f64becd7e74af242f2efdd3f8660697e15',
   'src/sdk/portable-phase-host.mjs': '5daf81ee263049e40b6c6bb67f8e6660a4b7d3a4165eaa31105c7ae53ada7df2',
