@@ -147,6 +147,33 @@ remain outside the boundary. The exact source-bound proof is
 `mission-program-v1`; future host adapters must earn separate descriptors,
 contracts, and certification rather than being inferred from this coordinator.
 
+## Mission-program forensic projection v1
+
+The forensic projection is a read-only view over one verified mission-program
+journal and its content-addressed completion artifacts. It verifies the full
+journal first, then returns a bounded deterministic timeline containing only
+event metadata, payload digests, step status, and digest links. A caller may
+select an existing event boundary to obtain an exact prefix state summary, but
+cannot use that selection to hide corrupted future evidence or alter the
+journal.
+
+The projection has no adapter, model, provider, lock, write, dispatch,
+reconciliation, or execution path. It discloses no event payload, mission or
+result body, credential, filesystem path, Realm handle, model route, keel or
+memory content, or authority. The source-bound proof is
+`mission-program-forensics-v1`; its receipt records the deterministic fixture,
+focused and full tests, and explicit limits. This closes only the bounded
+mission-program observability slice. Cross-program tracing, live provider
+correlation, branch or reversible time travel, hosted durability, and an
+operator UI remain future boundaries.
+
+The current-head v2 certificate has a narrow compatibility boundary for the
+previously published pre-forensics artifact. It selects the historical profile
+only when the certified Godagents source commit does not contain the forensics
+receipt, and requires the new profile and evidence together once that path is
+committed. The source commit is validated before the path probe, so malformed
+build inputs fail closed rather than falling back to an older profile.
+
 ## Deferred Godskills review materialization boundary
 
 The review materializer is the first post-native disclosure boundary. It verifies the complete pinned Godskills release at construction but does not read deferred capability entrypoints or contracts. For each materialization it first verifies the mission admission, exact review request and descriptor, round-specific artifact context, release and activation roots, and every deferred capability descriptor. It opens no selected body until that full set passes, preventing a later invalid descriptor from leaking an earlier valid body.

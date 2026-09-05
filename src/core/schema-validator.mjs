@@ -117,6 +117,7 @@ const schemaFiles = {
   'mission-program-aggregate-completion': 'mission-program-aggregate-completion.schema.json',
   'mission-program-event': 'mission-program-event.schema.json',
   'mission-program-state': 'mission-program-state.schema.json',
+  'mission-program-forensics': 'mission-program-forensics.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {

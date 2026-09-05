@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 52 },
-  godagentsFull: { status: 'pass', tests: 1004 },
+  godagentsFocused: { status: 'pass', tests: 57 },
+  godagentsFull: { status: 'pass', tests: 1009 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -57,6 +57,19 @@ async function sourceArtifact(path) {
   return stdout;
 }
 
+async function hasCommittedPath(commit, path) {
+  try {
+    await execFileAsync('git', ['cat-file', '-e', `${commit}:${path}`], {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+      windowsHide: true,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function build() {
   return buildCrossRepositoryCurrentHeadCertificateV2({
     godagentsRoot: repositoryRoot,
@@ -80,6 +93,15 @@ function rehash(value) {
 
 test('v2 names the current-head protocol and binds the merged portable surface', async () => {
   const receipt = await build();
+  const forensicsCommitted = await hasCommittedPath(
+    godagentsCommit,
+    'receipts/mission-program-forensics-v1.json',
+  );
+  assert.equal(
+    receipt.godagents.evidence.missionProgramForensics !== undefined,
+    forensicsCommitted,
+    'v2 builder profile must follow the committed forensic receipt boundary',
+  );
   assert.equal(receipt.protocolId, CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL);
   assert.equal(receipt.status, 'certified');
   assert.deepEqual(receipt.source, { godagents: { repository: 'eternities-godagents', commit: godagentsCommit, refs: refs.godagents }, godskills: { repository: 'eternities-godskills', commit: godskillsCommit, refs: refs.godskills } });
@@ -151,6 +173,21 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     receipt.godagents.evidence.missionProgram.sourceCommit,
     'd393f6891776fab07c008def6efe1ef8edac5db7',
   );
+  if (receipt.godagents.evidence.missionProgramForensics === undefined) {
+    return;
+  }
+  assert.ok(
+    receipt.godagents.evidence.boundaryFiles.some(
+      ({ path }) => path === 'tests/mission-program-forensics.test.mjs',
+    ),
+    'current v2 profile must bind the forensic boundary paths',
+  );
+  assert.equal(receipt.godagents.evidence.missionProgramForensics.certificationId, 'mission-program-forensics-v1');
+  assert.match(receipt.godagents.evidence.missionProgramForensics.fixtureDigest, /^[a-f0-9]{64}$/);
+  assert.equal(receipt.godagents.evidence.missionProgramForensics.fullTests, 1009);
+  assert.equal(receipt.godagents.evidence.missionProgramForensics.path, 'receipts/mission-program-forensics-v1.json');
+  assert.match(receipt.godagents.evidence.missionProgramForensics.receiptDigest, /^[a-f0-9]{64}$/);
+  assert.match(receipt.godagents.evidence.missionProgramForensics.sourceCommit, /^[a-f0-9]{40}$/);
 });
 
 test('v2 verification fails closed on old heads, SDK drift, portable receipt drift, and ref movement', async () => {
@@ -219,6 +256,22 @@ test('v2 verification fails closed on old heads, SDK drift, portable receipt dri
       testRuns,
     }),
     /reconciled refs|head/i,
+  );
+  await assert.rejects(
+    () => buildCrossRepositoryCurrentHeadCertificateV2({
+      godagentsRoot: repositoryRoot,
+      godskillsRoot,
+      godagentsCommit: '0'.repeat(40),
+      godskillsCommit,
+      refs,
+      adaptiveReviewPin: pinnedGodskillsReviewRelease(godskillsRoot),
+      adaptiveReviewSource: {
+        path: 'scripts/lib/pinned-godskills-review-release.mjs',
+        sourceCommit: pinnedGodskillsReviewSourceCommit,
+      },
+      testRuns,
+    }),
+    /Godagents build commit|does not exist|object/i,
   );
 });
 
