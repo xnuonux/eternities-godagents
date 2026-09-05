@@ -387,7 +387,6 @@ export async function buildAdmittedPortableIdentityLauncherReceiptFromSource({
   await assertCommit(root, attestation.reviewedCommit);
   await changedPathsBetween(root, attestation.baseCommit, attestation.reviewedCommit);
   if (!same(await changedPathsBetween(root, attestation.reviewedCommit, sourceCommit), [
-    'scripts/build-admitted-portable-identity-launcher-v1-receipt.mjs',
     reviewPath,
   ].sort())) {
     throw new Error('portable launcher source changed outside the reviewed attestation artifact');
