@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 99 },
-  godagentsFull: { status: 'pass', tests: 1051 },
+  godagentsFocused: { status: 'pass', tests: 107 },
+  godagentsFull: { status: 'pass', tests: 1059 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -312,6 +312,47 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     );
     assert.match(
       receipt.godagents.evidence.revisionMissionOperationAdapter.sourceCommit,
+      /^[a-f0-9]{40}$/,
+    );
+  }
+  const delegationMissionOperationCommitted = await hasCommittedPath(
+    godagentsCommit,
+    'receipts/delegation-mission-operation-adapter-v1.json',
+  );
+  assert.equal(
+    receipt.godagents.evidence.delegationMissionOperationAdapter !== undefined,
+    delegationMissionOperationCommitted,
+    'v2 builder profile must follow the committed delegation adapter receipt boundary',
+  );
+  if (receipt.godagents.evidence.delegationMissionOperationAdapter !== undefined) {
+    assert.ok(
+      receipt.godagents.evidence.boundaryFiles.some(
+        ({ path }) => path === 'tests/delegation-mission-operation-adapter.test.mjs',
+      ),
+      'current v2 profile must bind the delegation adapter boundary paths',
+    );
+    assert.equal(
+      receipt.godagents.evidence.delegationMissionOperationAdapter.certificationId,
+      'delegation-mission-operation-adapter-v1',
+    );
+    assert.equal(
+      receipt.godagents.evidence.delegationMissionOperationAdapter.fullTests,
+      1059,
+    );
+    assert.equal(
+      receipt.godagents.evidence.delegationMissionOperationAdapter.path,
+      'receipts/delegation-mission-operation-adapter-v1.json',
+    );
+    assert.match(
+      receipt.godagents.evidence.delegationMissionOperationAdapter.fixtureDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.delegationMissionOperationAdapter.receiptDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.delegationMissionOperationAdapter.sourceCommit,
       /^[a-f0-9]{40}$/,
     );
   }

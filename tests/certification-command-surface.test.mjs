@@ -19,6 +19,10 @@ const expectedCommands = Object.freeze({
     'node scripts/build-revision-mission-operation-adapter-v1-fixture.mjs',
   'certify:revision-mission-operation-adapter':
     'node scripts/build-revision-mission-operation-adapter-v1-receipt.mjs',
+  'build:delegation-mission-operation-adapter-fixture':
+    'node scripts/build-delegation-mission-operation-adapter-v1-fixture.mjs',
+  'certify:delegation-mission-operation-adapter':
+    'node scripts/build-delegation-mission-operation-adapter-v1-receipt.mjs',
   'build:bounded-delegation-fixture':
     'node scripts/build-bounded-delegation-fixture.mjs',
   'certify:bounded-delegation':

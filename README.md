@@ -811,6 +811,26 @@ certificate with `npm run certify:revision-mission-operation-adapter`. This is
 an opt-in provider-neutral migration boundary, not a claim about revision
 quality, live model behavior, or default launch wiring.
 
+### Delegation mission-operation adapter v1
+
+The delegation mission-operation adapter binds one already-certified bounded
+delegation lifecycle to one mission-program step. Its body-free generic
+request carries only the digest of the frozen delegation input, while the
+source descriptor binds the derived delegation identity, worker set,
+authority-envelope digest, and exact completion and result ceilings.
+
+The bounded delegation coordinator remains the owner of temporary-worker
+envelopes, worker reconciliation, journal and artifact recovery, aggregate
+identity, and worker replay. The mission-program coordinator remains the owner
+of step ordering, mission commitment, and terminal replay. A completed
+delegation is projected into only a compact aggregate digest, ordered worker
+ids, usage, and bounded timestamps. Its receipt is
+`receipts/delegation-mission-operation-adapter-v1.json`; rebuild the fixture
+with `npm run build:delegation-mission-operation-adapter-fixture` and the
+certificate with `npm run certify:delegation-mission-operation-adapter`. This
+does not add quorum, nested delegation, scheduling, child isolation, Realm,
+continuity, identity, evolution, Soul, or Lunari authority.
+
 ### Portable phase-host conformance v1
 
 The package also exposes a provider-neutral adapter boundary for hosts that
