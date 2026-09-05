@@ -189,8 +189,8 @@ test('the committed v2 certificate binds the exact current heads and portable re
   assert.match(receipt.godagents.evidence.agentProfileContract.receiptDigest, /^[a-f0-9]{64}$/);
   assert.match(receipt.godagents.evidence.agentProfileContract.sourceCommit, /^[a-f0-9]{40}$/);
   assert.deepEqual(receipt.testRuns, {
-    godagentsFocused: { status: 'pass', tests: 57 },
-    godagentsFull: { status: 'pass', tests: 1009 },
+    godagentsFocused: { status: 'pass', tests: 66 },
+    godagentsFull: { status: 'pass', tests: 1018 },
     godskillsFocused: { status: 'pass', tests: 12 },
   });
 });
