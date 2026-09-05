@@ -67,13 +67,13 @@ export function buildAgentProfileContractFixture() {
       prohibitedCapabilities: [],
       maxComposition: 3,
     }, [])),
-    ordering: evaluateGodagentProfile({
+    ordering: summarize(evaluateGodagentProfile({
       profile: 'all-rounder',
       preferredFamilies: [],
       prohibitedFamilies: [],
       prohibitedCapabilities: [],
       maxComposition: 1,
-    }, orderingCatalog),
+    }, orderingCatalog)),
   };
   const assertions = {
     allRounderComplete: cases.allRounder.result.semantics.allRounderComplete
