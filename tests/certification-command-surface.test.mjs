@@ -23,6 +23,10 @@ const expectedCommands = Object.freeze({
     'node scripts/build-mission-program-forensics-fixture.mjs',
   'certify:mission-program-forensics':
     'node scripts/build-mission-program-forensics-v1-receipt.mjs',
+  'build:agent-profile-contract-fixture':
+    'node scripts/build-agent-profile-contract-v1-fixture.mjs',
+  'certify:agent-profile-contract':
+    'node scripts/build-agent-profile-contract-v1-receipt.mjs',
   'certify:admitted-sealed-typed-execution-host':
     'node scripts/build-admitted-sealed-typed-execution-host-v1-receipt.mjs',
   'certify:godskills-typed-composition-consumer':

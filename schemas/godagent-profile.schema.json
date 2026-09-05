@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "protocolId",
+    "policyDigest",
+    "catalogDigest",
+    "policy",
+    "eligibleIds",
+    "prohibitedIds",
+    "preferredIds",
+    "maxComposition",
+    "semantics",
+    "resultDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-godagent-profile-v1" },
+    "policyDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "catalogDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "preferredFamilies", "prohibitedFamilies", "prohibitedCapabilities", "maxComposition"],
+      "properties": {
+        "profile": { "enum": ["all-rounder", "specialist"] },
+        "preferredFamilies": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" } },
+        "prohibitedFamilies": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" } },
+        "prohibitedCapabilities": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" } },
+        "maxComposition": { "type": "integer", "minimum": 1, "maximum": 3 }
+      }
+    },
+    "eligibleIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" } },
+    "prohibitedIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" } },
+    "preferredIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" } },
+    "maxComposition": { "type": "integer", "minimum": 1, "maximum": 3 },
+    "semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allRounderComplete", "allRounderPreferencesInert", "explicitProhibitionsAuthoritative", "nonProhibitedCapabilitiesPreserved", "preferenceIsNonRestrictive"],
+      "properties": {
+        "allRounderComplete": { "type": "boolean" },
+        "allRounderPreferencesInert": { "const": true },
+        "explicitProhibitionsAuthoritative": { "const": true },
+        "nonProhibitedCapabilitiesPreserved": { "const": true },
+        "preferenceIsNonRestrictive": { "const": true }
+      }
+    },
+    "resultDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}
