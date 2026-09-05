@@ -210,9 +210,29 @@ test('the committed v2 certificate binds the exact current heads and portable re
     assert.match(receipt.godagents.evidence.deferredReviewMissionOperationAdapter.receiptDigest, /^[a-f0-9]{64}$/);
     assert.match(receipt.godagents.evidence.deferredReviewMissionOperationAdapter.sourceCommit, /^[a-f0-9]{40}$/);
   }
+  if (receipt.godagents.evidence.revisionMissionOperationAdapter !== undefined) {
+    assert.equal(
+      receipt.godagents.evidence.revisionMissionOperationAdapter.certificationId,
+      'revision-mission-operation-adapter-v1',
+    );
+    assert.match(receipt.godagents.evidence.revisionMissionOperationAdapter.fixtureDigest, /^[a-f0-9]{64}$/);
+    assert.equal(receipt.godagents.evidence.revisionMissionOperationAdapter.fullTests, 1051);
+    assert.equal(
+      receipt.godagents.evidence.revisionMissionOperationAdapter.path,
+      'receipts/revision-mission-operation-adapter-v1.json',
+    );
+    assert.match(receipt.godagents.evidence.revisionMissionOperationAdapter.receiptDigest, /^[a-f0-9]{64}$/);
+    assert.match(receipt.godagents.evidence.revisionMissionOperationAdapter.sourceCommit, /^[a-f0-9]{40}$/);
+  }
   assert.deepEqual(
     receipt.testRuns,
-    receipt.godagents.evidence.deferredReviewMissionOperationAdapter !== undefined
+    receipt.godagents.evidence.revisionMissionOperationAdapter !== undefined
+      ? {
+        godagentsFocused: { status: 'pass', tests: 99 },
+        godagentsFull: { status: 'pass', tests: 1051 },
+        godskillsFocused: { status: 'pass', tests: 12 },
+      }
+      : receipt.godagents.evidence.deferredReviewMissionOperationAdapter !== undefined
       ? {
         godagentsFocused: { status: 'pass', tests: 88 },
         godagentsFull: { status: 'pass', tests: 1040 },

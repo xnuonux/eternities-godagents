@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 88 },
-  godagentsFull: { status: 'pass', tests: 1040 },
+  godagentsFocused: { status: 'pass', tests: 99 },
+  godagentsFull: { status: 'pass', tests: 1051 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -271,6 +271,47 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     );
     assert.match(
       receipt.godagents.evidence.deferredReviewMissionOperationAdapter.sourceCommit,
+      /^[a-f0-9]{40}$/,
+    );
+  }
+  const revisionMissionOperationCommitted = await hasCommittedPath(
+    godagentsCommit,
+    'receipts/revision-mission-operation-adapter-v1.json',
+  );
+  assert.equal(
+    receipt.godagents.evidence.revisionMissionOperationAdapter !== undefined,
+    revisionMissionOperationCommitted,
+    'v2 builder profile must follow the committed revision adapter receipt boundary',
+  );
+  if (receipt.godagents.evidence.revisionMissionOperationAdapter !== undefined) {
+    assert.ok(
+      receipt.godagents.evidence.boundaryFiles.some(
+        ({ path }) => path === 'tests/revision-mission-operation-adapter.test.mjs',
+      ),
+      'current v2 profile must bind the revision adapter boundary paths',
+    );
+    assert.equal(
+      receipt.godagents.evidence.revisionMissionOperationAdapter.certificationId,
+      'revision-mission-operation-adapter-v1',
+    );
+    assert.equal(
+      receipt.godagents.evidence.revisionMissionOperationAdapter.fullTests,
+      1051,
+    );
+    assert.equal(
+      receipt.godagents.evidence.revisionMissionOperationAdapter.path,
+      'receipts/revision-mission-operation-adapter-v1.json',
+    );
+    assert.match(
+      receipt.godagents.evidence.revisionMissionOperationAdapter.fixtureDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.revisionMissionOperationAdapter.receiptDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.revisionMissionOperationAdapter.sourceCommit,
       /^[a-f0-9]{40}$/,
     );
   }
