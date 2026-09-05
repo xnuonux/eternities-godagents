@@ -119,6 +119,9 @@ const schemaFiles = {
   'mission-program-event': 'mission-program-event.schema.json',
   'mission-program-state': 'mission-program-state.schema.json',
   'mission-program-forensics': 'mission-program-forensics.schema.json',
+  'mission-operation-adapter': 'mission-operation-adapter.schema.json',
+  'mission-operation-request': 'mission-operation-request.schema.json',
+  'mission-operation-receipt': 'mission-operation-receipt.schema.json',
 };
 
 const schemas = new Map(Object.entries(schemaFiles).map(([name, file]) => {
@@ -159,6 +162,22 @@ function validateNode({ schemaName, root, rule, value, pointer }) {
     return;
   }
 
+  if (rule.oneOf) {
+    let matches = 0;
+    for (const option of rule.oneOf) {
+      try {
+        validateNode({ schemaName, root, rule: option, value, pointer });
+        matches += 1;
+      } catch (error) {
+        if (!(error instanceof SchemaError)) throw error;
+      }
+    }
+    if (matches !== 1) {
+      throw new SchemaError(schemaName, pointer, 'oneOf');
+    }
+    return;
+  }
+
   if (rule.const !== undefined && value !== rule.const) {
     throw new SchemaError(schemaName, pointer, 'const');
   }
@@ -173,6 +192,9 @@ function validateNode({ schemaName, root, rule, value, pointer }) {
   }
   if (typeof value === 'string' && rule.maxLength !== undefined && value.length > rule.maxLength) {
     throw new SchemaError(schemaName, pointer, `maxLength ${rule.maxLength}`);
+  }
+  if (typeof value === 'string' && rule.pattern !== undefined && !new RegExp(rule.pattern).test(value)) {
+    throw new SchemaError(schemaName, pointer, 'pattern');
   }
   if (typeof value === 'number' && rule.minimum !== undefined && value < rule.minimum) {
     throw new SchemaError(schemaName, pointer, `minimum ${rule.minimum}`);

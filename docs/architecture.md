@@ -176,6 +176,31 @@ receipt, and requires the new profile and evidence together once that path is
 committed. The source commit is validated before the path probe, so malformed
 build inputs fail closed rather than falling back to an older profile.
 
+## Descriptor-bound mission-operation adapter v1
+
+The descriptor-bound mission-operation adapter is a deliberately narrow
+migration boundary for source-specific mission operations. It binds one source
+descriptor digest to the existing mission-program step descriptor, projects
+only the dispatch metadata needed by that operation, and revalidates the source
+descriptor before every reconcile or execute call. The request contains no
+mission or result body, credentials, provider route, Realm handle, keel or
+memory content, or authority-bearing expansion.
+
+Reconciliation remains first. `absent`, `pending`, and `completed` are closed
+outcomes, and a completed outcome must match the exact dispatch and completion
+ceilings already admitted by the mission program. The adapter emits a compact
+receipt binding the description, request, dispatch, disposition, and optional
+source evidence digest. It owns no journal, lock, retry, recovery, ordering, or
+terminal replay. Those responsibilities remain exclusively in the
+mission-program coordinator.
+
+The source-bound proof is `mission-operation-adapter-v1`. It certifies the
+body-free projection, source revalidation, reconcile-before-execute ordering,
+pending and drift fail-closed behavior, schema-level rejection, authority
+emptiness, and terminal replay stability. It is not a live provider, Realm,
+Godskills, delegation, review, host SDK, or Lunari integration. Those surfaces
+must earn separate adapters and receipts.
+
 ## Deferred Godskills review materialization boundary
 
 The review materializer is the first post-native disclosure boundary. It verifies the complete pinned Godskills release at construction but does not read deferred capability entrypoints or contracts. For each materialization it first verifies the mission admission, exact review request and descriptor, round-specific artifact context, release and activation roots, and every deferred capability descriptor. It opens no selected body until that full set passes, preventing a later invalid descriptor from leaking an earlier valid body.

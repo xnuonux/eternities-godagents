@@ -33,6 +33,7 @@ const registry = Object.freeze({
   'identity-bound-mission-vessel-v1.json': 'identity-bound-mission-vessel-v1',
   'local-admission-shell-certification.json': 'local-admission-shell-v1',
   'mission-economics-ledger-v1.json': 'mission-economics-ledger-v1',
+  'mission-operation-adapter-v1.json': 'mission-operation-adapter-v1',
   'mission-program-forensics-v1.json': 'mission-program-forensics-v1',
   'mission-program-v1.json': 'mission-program-v1',
   'networked-cortex-certification.json': 'networked-cortex-v1',
@@ -70,7 +71,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeAgentProfileContract = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeMissionOperationAdapter = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'mission-operation-adapter-v1.json',
+));
+const expectedFilesBeforeAgentProfileContract = Object.freeze(expectedFilesBeforeMissionOperationAdapter.filter(
   (file) => file !== 'agent-profile-contract-v1.json',
 ));
 const expectedFilesBeforeMissionProgramForensics = Object.freeze(expectedFilesBeforeAgentProfileContract.filter(
@@ -876,6 +880,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'mission-program-forensics-v1.json': Object.freeze(expectedFilesBeforeMissionProgramForensics
     .map((file) => `receipts/${file}`)),
+  'mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeMissionOperationAdapter
+    .map((file) => `receipts/${file}`)),
 });
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
@@ -1273,6 +1279,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(missionProgramForensics.receipt)) {
       throw new Error('mission program forensics certification differs from exact source reconstruction');
+    }
+  }
+
+  const missionOperationAdapter = loaded.get('mission-operation-adapter-v1.json');
+  if (missionOperationAdapter) {
+    const { buildMissionOperationAdapterReceiptFromSource } = await import(
+      '../../scripts/build-mission-operation-adapter-v1-receipt.mjs'
+    );
+    const rebuilt = await buildMissionOperationAdapterReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: missionOperationAdapter.receipt.source.commit,
+      testRuns: missionOperationAdapter.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(missionOperationAdapter.receipt)) {
+      throw new Error('mission operation adapter certification differs from exact source reconstruction');
     }
   }
 
