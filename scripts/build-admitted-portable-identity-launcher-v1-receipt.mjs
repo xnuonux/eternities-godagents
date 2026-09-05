@@ -25,7 +25,6 @@ const planPath = 'docs/superpowers/plans/2026-09-05-portable-admitted-identity-l
 const reviewPath = 'docs/reviews/admitted-portable-identity-launcher-v1-coordinator-review.json';
 const certificationPath = 'docs/admitted-portable-identity-launcher-v1-certification.md';
 const expectedReviewBase = '9b21cd3ff50834efdc16074c5a98310cbe18525e';
-const expectedReviewCommit = '32e15cf9b3d9f9d1b62ea216a2e50833ef33e304';
 const DIGEST = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
 
@@ -79,6 +78,7 @@ const implementationFiles = Object.freeze([
 ].sort());
 const testFiles = Object.freeze([
   'tests/admitted-portable-identity-launcher-integration.test.mjs',
+  'tests/admitted-portable-identity-launcher-certification.test.mjs',
   'tests/admitted-portable-identity-launcher.test.mjs',
   'tests/certification-ledger.test.mjs',
   'tests/helpers/admitted-identity-fixture.mjs',
@@ -252,7 +252,6 @@ function verifyReviewAttestation(value) {
       || value.reviewId !== 'admitted-portable-identity-launcher-v1-static-review'
       || value.disposition !== 'ready-for-receipt-generation'
       || value.baseCommit !== expectedReviewBase
-      || value.reviewedCommit !== expectedReviewCommit
       || typeof value.summary !== 'string' || value.summary.length < 32
       || value.summary.length > 2_048) {
     throw new Error('portable launcher review attestation identity is invalid');

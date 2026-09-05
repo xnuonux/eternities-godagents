@@ -9,6 +9,7 @@ import { sha256Text, sha256Value } from '../core/digest.mjs';
 
 const registry = Object.freeze({
   'admitted-local-launch-v1.json': 'admitted-local-launch-v1',
+  'admitted-portable-identity-launcher-v1.json': 'admitted-portable-identity-launcher-v1',
   'bounded-delegation-lifecycle-v1.json': 'bounded-delegation-lifecycle-v1',
   'admitted-provider-backed-identity-launcher-v1.json': 'admitted-provider-backed-identity-launcher-v1',
   'admitted-sealed-identity-host-v1.json': 'admitted-sealed-identity-host-v1',
@@ -66,7 +67,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeMissionEconomics = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforePortableLauncher = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'admitted-portable-identity-launcher-v1.json',
+));
+const expectedFilesBeforeMissionEconomics = Object.freeze(expectedFilesBeforePortableLauncher.filter(
   (file) => file !== 'mission-economics-ledger-v1.json',
 ));
 const expectedFilesBeforeBoundedDelegation = Object.freeze(expectedFiles.filter(
@@ -194,6 +198,13 @@ const requiredHistoricalLinks = Object.freeze({
     .filter((file) => file !== 'admitted-provider-backed-identity-launcher-v1.json'
       && file !== 'provider-backed-identity-cli-v1.json')
     .map((file) => `receipts/${file}`)),
+  'admitted-portable-identity-launcher-v1.json': Object.freeze([
+    'receipts/admitted-sealed-identity-host-v1.json',
+    'receipts/deferred-godskills-review-executor-v1.json',
+    'receipts/deferred-godskills-review-materializer-v1.json',
+    'receipts/identity-bound-mission-vessel-v1.json',
+    'receipts/portable-phase-host-conformance-v1.json',
+  ]),
   'provider-backed-identity-cli-v1.json': Object.freeze(expectedFilesBeforeProviderBackedIdentityCli
     .map((file) => `receipts/${file}`)),
   'admitted-sealed-identity-host-v1.json': Object.freeze([
@@ -1111,6 +1122,23 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
   }
 
   const providerBackedIdentityCli = loaded.get('provider-backed-identity-cli-v1.json');
+  const admittedPortableIdentityLauncher = loaded.get(
+    'admitted-portable-identity-launcher-v1.json',
+  );
+  if (admittedPortableIdentityLauncher) {
+    const { buildAdmittedPortableIdentityLauncherReceiptFromSource } = await import(
+      '../../scripts/build-admitted-portable-identity-launcher-v1-receipt.mjs'
+    );
+    const rebuilt = await buildAdmittedPortableIdentityLauncherReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: admittedPortableIdentityLauncher.receipt.source.commit,
+      testRuns: admittedPortableIdentityLauncher.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(admittedPortableIdentityLauncher.receipt)) {
+      throw new Error('admitted portable identity launcher certification differs from exact source reconstruction');
+    }
+  }
+
   if (providerBackedIdentityCli) {
     const { buildProviderBackedIdentityCliReceiptFromSource } = await import(
       '../../scripts/build-provider-backed-identity-cli-v1-receipt.mjs'
