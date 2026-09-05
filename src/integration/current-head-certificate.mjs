@@ -33,6 +33,7 @@ const ADAPTER_PROTOCOL = 'eternities-godskills-adapter-v1';
 const ACTIVATION_PROTOCOL = 'eternities-godskills-activation-v1';
 const SDK_PACKAGE_PATH = 'package.json';
 const SDK_ENTRYPOINT_PATH = 'src/sdk/index.mjs';
+const SDK_ECONOMICS_ENTRYPOINT_PATH = 'src/sdk/economics.mjs';
 const HOST_POLICY_PATH = 'fixtures/host-policy.json';
 const ADAPTIVE_SOURCE_PATH = 'scripts/lib/pinned-godskills-review-release.mjs';
 const BEACON_SNAPSHOT_PATH = 'receipts/eternities-beacon-release-v1-snapshot.json';
@@ -72,6 +73,11 @@ const V2_SDK_EXPORTS = Object.freeze([
   'verifyAdmittedProviderBackedIdentityLauncherDescription',
   'verifyProviderPhaseHostDescription',
 ].sort());
+const LEGACY_PACKAGE_EXPORTS = Object.freeze({ '.': `./${SDK_ENTRYPOINT_PATH}` });
+const V2_PACKAGE_EXPORTS = Object.freeze({
+  '.': `./${SDK_ENTRYPOINT_PATH}`,
+  './economics': `./${SDK_ECONOMICS_ENTRYPOINT_PATH}`,
+});
 const BOUNDARY_PATHS = Object.freeze([
   'src/sdk/index.mjs',
   'src/skills/godskills-adapter.mjs',
@@ -85,10 +91,13 @@ const BOUNDARY_PATHS = Object.freeze([
 const V2_BOUNDARY_PATHS = Object.freeze([
   ...new Set([
     ...BOUNDARY_PATHS,
+    SDK_ECONOMICS_ENTRYPOINT_PATH,
     'fixtures/portable-realm-consequence-sdk-v1.json',
     'schemas/portable-phase-host-description.schema.json',
     'src/realm/recoverable-consequence-host.mjs',
     'src/sdk/portable-phase-host.mjs',
+    'tests/mission-economics-ledger-certification.test.mjs',
+    'tests/mission-economics-ledger.test.mjs',
     'tests/portable-phase-host-conformance-certification.test.mjs',
     'tests/portable-phase-host-conformance.test.mjs',
     'tests/portable-realm-consequence-sdk-certification.test.mjs',
@@ -136,11 +145,13 @@ const ROOT_IDENTITY = Object.freeze({
   portableManifest: { manifestId: 'portable-capabilities-v1', status: 'certified-local-artifacts' },
 });
 const LEGACY_PROFILE = Object.freeze({
+  packageExports: LEGACY_PACKAGE_EXPORTS,
   sdkExports: SDK_EXPORTS,
   boundaryPaths: BOUNDARY_PATHS,
   portableConformance: false,
 });
 const CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  packageExports: V2_PACKAGE_EXPORTS,
   sdkExports: V2_SDK_EXPORTS,
   boundaryPaths: V2_BOUNDARY_PATHS,
   portableConformance: true,
@@ -528,8 +539,8 @@ async function verifySdk(repositoryRoot, commit, sdk, profile = LEGACY_PROFILE) 
     throw new Error('SDK export map mismatch');
   }
   if (sha256Value(packageValue.exports) !== sdk.packageExportsDigest) throw new Error('SDK export-map digest mismatch');
-  if (!equal(packageValue.exports, { '.': `./${SDK_ENTRYPOINT_PATH}` })) {
-    throw new Error('SDK export map is not the closed root map');
+  if (!equal(packageValue.exports, profile.packageExports)) {
+    throw new Error('SDK export map is not the declared closed map');
   }
   const source = await readBlob(repositoryRoot, commit, SDK_ENTRYPOINT_PATH, 'SDK entrypoint');
   if (sha256Text(source) !== sdk.entrypoint.sha256) throw new Error('SDK entrypoint digest mismatch');

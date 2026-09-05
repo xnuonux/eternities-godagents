@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 22 },
-  godagentsFull: { status: 'pass', tests: 972 },
+  godagentsFocused: { status: 'pass', tests: 26 },
+  godagentsFull: { status: 'pass', tests: 978 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -83,6 +83,10 @@ test('v2 names the current-head protocol and binds the merged portable surface',
   assert.equal(receipt.protocolId, CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL);
   assert.equal(receipt.status, 'certified');
   assert.deepEqual(receipt.source, { godagents: { repository: 'eternities-godagents', commit: godagentsCommit, refs: refs.godagents }, godskills: { repository: 'eternities-godskills', commit: godskillsCommit, refs: refs.godskills } });
+  assert.deepEqual(receipt.godagents.sdk.packageExports, {
+    '.': './src/sdk/index.mjs',
+    './economics': './src/sdk/economics.mjs',
+  });
   assert.deepEqual(receipt.godagents.sdk.rootExports, [
     'GODAGENT_SDK_PROTOCOL_ID',
     'GODAGENT_SDK_VERSION',
