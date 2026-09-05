@@ -80,6 +80,14 @@ invalid rather than guessed.
 8. The public method is available only on authentic SDK-issued mission
    coordinators. Lookalike objects and forged program ids remain rejected.
 
+The v2 current-head certificate has an explicit migration boundary for the
+already-published pre-forensics artifact. Profile selection is keyed to the
+forensics receipt being present at the certified Godagents source commit. An
+older source and artifact therefore verify with the historical boundary, while
+a source that contains the new receipt must carry the new boundary and evidence
+as well. Source commits are validated before the presence probe, so an invalid
+root or commit cannot silently select the historical profile.
+
 ## state-at-sequence semantics
 
 The implementation replays the verified events once, then derives each

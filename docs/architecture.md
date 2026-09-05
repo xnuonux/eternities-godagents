@@ -167,6 +167,13 @@ mission-program observability slice. Cross-program tracing, live provider
 correlation, branch or reversible time travel, hosted durability, and an
 operator UI remain future boundaries.
 
+The current-head v2 certificate has a narrow compatibility boundary for the
+previously published pre-forensics artifact. It selects the historical profile
+only when the certified Godagents source commit does not contain the forensics
+receipt, and requires the new profile and evidence together once that path is
+committed. The source commit is validated before the path probe, so malformed
+build inputs fail closed rather than falling back to an older profile.
+
 ## Deferred Godskills review materialization boundary
 
 The review materializer is the first post-native disclosure boundary. It verifies the complete pinned Godskills release at construction but does not read deferred capability entrypoints or contracts. For each materialization it first verifies the mission admission, exact review request and descriptor, round-specific artifact context, release and activation roots, and every deferred capability descriptor. It opens no selected body until that full set passes, preventing a later invalid descriptor from leaking an earlier valid body.

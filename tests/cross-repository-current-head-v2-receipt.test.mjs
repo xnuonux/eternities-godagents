@@ -174,6 +174,9 @@ test('the committed v2 certificate binds the exact current heads and portable re
   assert.equal(receipt.godagents.evidence.missionProgram.path, 'receipts/mission-program-v1.json');
   assert.match(receipt.godagents.evidence.missionProgram.receiptDigest, /^[a-f0-9]{64}$/);
   assert.equal(receipt.godagents.evidence.missionProgram.sourceCommit, 'd393f6891776fab07c008def6efe1ef8edac5db7');
+  if (receipt.godagents.evidence.missionProgramForensics === undefined) {
+    return;
+  }
   assert.equal(receipt.godagents.evidence.missionProgramForensics.certificationId, 'mission-program-forensics-v1');
   assert.match(receipt.godagents.evidence.missionProgramForensics.fixtureDigest, /^[a-f0-9]{64}$/);
   assert.equal(receipt.godagents.evidence.missionProgramForensics.fullTests, 1009);

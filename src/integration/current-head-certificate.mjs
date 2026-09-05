@@ -203,6 +203,19 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   certificationPath: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH,
   certificationDocument: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_DOCUMENT,
 });
+const PRE_FORENSICS_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
+  'fixtures/mission-program-forensics-v1.json',
+  'schemas/mission-program-forensics.schema.json',
+  'tests/mission-program-forensics-certification.test.mjs',
+  'tests/mission-program-forensics.test.mjs',
+  MISSION_PROGRAM_FORENSICS_RECEIPT_PATH,
+].includes(path)));
+const PRE_FORENSICS_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  ...CURRENT_HEAD_V2_PROFILE,
+  boundaryPaths: PRE_FORENSICS_V2_BOUNDARY_PATHS,
+  missionProgramForensics: false,
+  missionProgramForensicsFullTests: undefined,
+});
 
 function cleanGitEnvironment() {
   const env = Object.fromEntries(
@@ -1289,21 +1302,51 @@ export async function buildCrossRepositoryCurrentHeadCertificate(options = {}) {
 }
 
 export async function verifyCrossRepositoryCurrentHeadCertificateV2(receipt, options = {}) {
+  const forensicsProfile = await currentHeadV2ForensicsProfile(
+    options.godagentsRoot,
+    receipt?.source?.godagents?.commit,
+  );
+  const evidencePresent = receipt?.godagents?.evidence?.missionProgramForensics !== undefined;
+  if (forensicsProfile.present !== evidencePresent) {
+    throw new Error('current-head v2 forensic profile does not match the committed source');
+  }
   return verifyCertificate(receipt, {
     ...options,
     protocolId: CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL,
     status: 'certified',
-    profile: CURRENT_HEAD_V2_PROFILE,
+    profile: forensicsProfile.profile,
   });
 }
 
+async function hasCommittedPath(repositoryRoot, commit, path) {
+  try {
+    await readBlob(repositoryRoot, commit, path, 'current-head profile probe');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function buildCrossRepositoryCurrentHeadCertificateV2(options = {}) {
+  const forensicsProfile = await currentHeadV2ForensicsProfile(
+    options.godagentsRoot,
+    options.godagentsCommit,
+  );
   return buildCertificate({
     ...options,
     protocolId: CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL,
     status: 'certified',
-    profile: CURRENT_HEAD_V2_PROFILE,
+    profile: forensicsProfile.profile,
   });
+}
+
+async function currentHeadV2ForensicsProfile(repositoryRoot, commit) {
+  await requireCommitObject(repositoryRoot, commit, 'Godagents build commit');
+  const present = await hasCommittedPath(repositoryRoot, commit, MISSION_PROGRAM_FORENSICS_RECEIPT_PATH);
+  return {
+    present,
+    profile: present ? CURRENT_HEAD_V2_PROFILE : PRE_FORENSICS_CURRENT_HEAD_V2_PROFILE,
+  };
 }
 
 export async function buildCrossRepositoryIssuanceSnapshot(options = {}) {
