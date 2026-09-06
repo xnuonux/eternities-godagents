@@ -37,6 +37,7 @@ const registry = Object.freeze({
   'local-admission-shell-certification.json': 'local-admission-shell-v1',
   'mission-economics-ledger-v1.json': 'mission-economics-ledger-v1',
   'mission-operation-adapter-v1.json': 'mission-operation-adapter-v1',
+  'mission-operation-evidence-v1.json': 'mission-operation-evidence-v1',
   'mission-program-forensics-v1.json': 'mission-program-forensics-v1',
   'mission-program-v1.json': 'mission-program-v1',
   'networked-cortex-certification.json': 'networked-cortex-v1',
@@ -75,7 +76,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeMissionOperationAdapter = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeMissionOperationEvidence = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'mission-operation-evidence-v1.json',
+));
+const expectedFilesBeforeMissionOperationAdapter = Object.freeze(expectedFilesBeforeMissionOperationEvidence.filter(
   (file) => ![
     'mission-operation-adapter-v1.json',
     'review-mission-operation-adapter-v1.json',
@@ -84,7 +88,7 @@ const expectedFilesBeforeMissionOperationAdapter = Object.freeze(expectedFiles.f
     'realm-consequence-mission-operation-adapter-v1.json',
   ].includes(file),
 ));
-const expectedFilesBeforeDeferredReviewOperationAdapter = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeDeferredReviewOperationAdapter = Object.freeze(expectedFilesBeforeMissionOperationEvidence.filter(
   (file) => ![
     'review-mission-operation-adapter-v1.json',
     'revision-mission-operation-adapter-v1.json',
@@ -92,13 +96,13 @@ const expectedFilesBeforeDeferredReviewOperationAdapter = Object.freeze(expected
     'realm-consequence-mission-operation-adapter-v1.json',
   ].includes(file),
 ));
-const expectedFilesBeforeRevisionMissionOperationAdapter = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeRevisionMissionOperationAdapter = Object.freeze(expectedFilesBeforeMissionOperationEvidence.filter(
   (file) => !['revision-mission-operation-adapter-v1.json', 'delegation-mission-operation-adapter-v1.json', 'realm-consequence-mission-operation-adapter-v1.json'].includes(file),
 ));
-const expectedFilesBeforeDelegationMissionOperationAdapter = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeDelegationMissionOperationAdapter = Object.freeze(expectedFilesBeforeMissionOperationEvidence.filter(
   (file) => !['delegation-mission-operation-adapter-v1.json', 'realm-consequence-mission-operation-adapter-v1.json'].includes(file),
 ));
-const expectedFilesBeforeRealmConsequenceMissionOperationAdapter = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeRealmConsequenceMissionOperationAdapter = Object.freeze(expectedFilesBeforeMissionOperationEvidence.filter(
   (file) => file !== 'realm-consequence-mission-operation-adapter-v1.json',
 ));
 const expectedFilesBeforeAgentProfileContract = Object.freeze(expectedFilesBeforeMissionOperationAdapter.filter(
@@ -909,6 +913,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeMissionOperationAdapter
     .map((file) => `receipts/${file}`)),
+  'mission-operation-evidence-v1.json': Object.freeze(expectedFilesBeforeMissionOperationEvidence
+    .map((file) => `receipts/${file}`)),
   'review-mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeDeferredReviewOperationAdapter
     .map((file) => `receipts/${file}`)),
   'revision-mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeRevisionMissionOperationAdapter
@@ -1329,6 +1335,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(missionOperationAdapter.receipt)) {
       throw new Error('mission operation adapter certification differs from exact source reconstruction');
+    }
+  }
+
+  const missionOperationEvidence = loaded.get('mission-operation-evidence-v1.json');
+  if (missionOperationEvidence) {
+    const { buildMissionOperationEvidenceReceiptFromSource } = await import(
+      '../../scripts/build-mission-operation-evidence-v1-receipt.mjs'
+    );
+    const rebuilt = await buildMissionOperationEvidenceReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: missionOperationEvidence.receipt.source.commit,
+      testRuns: missionOperationEvidence.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(missionOperationEvidence.receipt)) {
+      throw new Error('mission operation evidence certification differs from exact source reconstruction');
     }
   }
 

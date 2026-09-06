@@ -118,6 +118,7 @@ const schemaFiles = {
   'mission-program-aggregate-completion': 'mission-program-aggregate-completion.schema.json',
   'mission-program-event': 'mission-program-event.schema.json',
   'mission-program-state': 'mission-program-state.schema.json',
+  'mission-operation-evidence': 'mission-operation-evidence.schema.json',
   'mission-program-forensics': 'mission-program-forensics.schema.json',
   'mission-operation-adapter': 'mission-operation-adapter.schema.json',
   'mission-operation-request': 'mission-operation-request.schema.json',

@@ -23,10 +23,10 @@ async function fixture(context) {
   return receipts;
 }
 
-test('certification ledger verifies all sixty-five canonical receipts and declared links', async () => {
+test('certification ledger verifies all sixty-six canonical receipts and declared links', async () => {
   const result = await verify(sourceReceipts);
   assert.equal(result.status, 'verified');
-  assert.equal(result.receipts.length, 65);
+  assert.equal(result.receipts.length, 66);
   assert.deepEqual(result.receipts.map((row) => row.certificationId), [
     'admitted-local-launch-v1',
     'admitted-portable-identity-launcher-v1',
@@ -55,6 +55,7 @@ test('certification ledger verifies all sixty-five canonical receipts and declar
     'local-admission-shell-v1',
     'mission-economics-ledger-v1',
     'mission-operation-adapter-v1',
+    'mission-operation-evidence-v1',
     'mission-program-forensics-v1',
     'mission-program-v1',
     'networked-cortex-v1',

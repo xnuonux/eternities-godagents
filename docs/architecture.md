@@ -176,6 +176,31 @@ receipt, and requires the new profile and evidence together once that path is
 committed. The source commit is validated before the path probe, so malformed
 build inputs fail closed rather than falling back to an older profile.
 
+## Mission-operation evidence projection v1
+
+The mission-operation evidence projection is a read-only join over one
+verified mission-program forensic projection and body-free generic operation
+evidence entries. It revalidates each description, dispatch, request, and
+receipt through the existing operation contract, then joins the entry to one
+selected prepared event by program, step, kind, and dispatch digest. The
+projection exposes the source descriptor, request, dispatch, receipt,
+completion, source-evidence, and artifact identities only as digests.
+
+The operation receipt disposition remains separate from the mission journal
+status. This preserves the legitimate crash window in which an operation has
+completed at its source but the mission has not committed its artifact. A
+prefix projection cannot include an entry whose prepared event is outside that
+prefix, so a caller cannot smuggle later operation evidence into an earlier
+timeline. The projection calls no adapter, provider, Realm, credential
+resolver, keel, memory writer, or filesystem path and owns no new durable
+state.
+
+The source-bound proof is `mission-operation-evidence-v1`. It certifies the
+bounded local join, ordering, prefix disclosure, authority emptiness,
+credential screening, digest binding, and deterministic byte ceiling. It does
+not certify an adapter, provider, model, remote effect, cross-program index,
+hosted durability, branch replay, time travel, or Lunari behavior.
+
 ## Descriptor-bound mission-operation adapter v1
 
 The descriptor-bound mission-operation adapter is a deliberately narrow
