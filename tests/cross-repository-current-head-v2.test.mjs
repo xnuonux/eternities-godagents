@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 129 },
-  godagentsFull: { status: 'pass', tests: 1081 },
+  godagentsFocused: { status: 'pass', tests: 144 },
+  godagentsFull: { status: 'pass', tests: 1096 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -110,6 +110,7 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     './economics': './src/sdk/economics.mjs',
   });
   assert.deepEqual(receipt.godagents.sdk.rootExports, [
+    'EXTERNAL_HOST_QUALIFICATION_PROTOCOL_ID',
     'GODAGENT_SDK_PROTOCOL_ID',
     'GODAGENT_SDK_VERSION',
     'PORTABLE_PHASE_HOST_PROTOCOL_ID',
@@ -117,6 +118,7 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     'assertPortablePhaseHostInstance',
     'assertProviderPhaseHostInstance',
     'assertRecoverableRealmConsequenceHost',
+    'buildExternalHostQualificationDossier',
     'buildPortablePhaseHostDescription',
     'createAdmittedPortableIdentityLauncher',
     'createAdmittedProviderBackedIdentityLauncher',
@@ -126,10 +128,12 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     'describeGodagentSdk',
     'verifyAdmittedPortableIdentityLauncherDescription',
     'verifyAdmittedProviderBackedIdentityLauncherDescription',
+    'verifyExternalHostQualificationDossier',
     'verifyPortablePhaseHostDescription',
     'verifyProviderPhaseHostDescription',
   ]);
   assert.deepEqual(receipt.godagents.sdk.supportedAdapterProtocols, [
+    'eternities-external-host-qualification-v1',
     'eternities-portable-phase-host-v1',
     'eternities-recoverable-realm-consequence-v1',
   ]);
@@ -517,6 +521,45 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     );
     assert.match(
       receipt.godagents.evidence.portablePhaseHostAdversarial.sourceCommit,
+      /^[a-f0-9]{40}$/,
+    );
+  }
+  const externalHostQualificationCommitted = await hasCommittedPath(
+    godagentsCommit,
+    'receipts/external-host-qualification-v1.json',
+  );
+  assert.equal(
+    receipt.godagents.evidence.externalHostQualification !== undefined,
+    externalHostQualificationCommitted,
+    'v2 builder profile must follow the committed external host qualification boundary',
+  );
+  if (receipt.godagents.evidence.externalHostQualification !== undefined) {
+    assert.ok(
+      receipt.godagents.evidence.boundaryFiles.some(
+        ({ path }) => path === 'tests/external-host-qualification.test.mjs',
+      ),
+      'current v2 profile must bind the external host qualification boundary paths',
+    );
+    assert.equal(
+      receipt.godagents.evidence.externalHostQualification.certificationId,
+      'external-host-qualification-v1',
+    );
+    assert.equal(receipt.godagents.evidence.externalHostQualification.fullTests, 1096);
+    assert.equal(
+      receipt.godagents.evidence.externalHostQualification.path,
+      'receipts/external-host-qualification-v1.json',
+    );
+    assert.equal(receipt.godagents.evidence.externalHostQualification.liveQualification, false);
+    assert.match(
+      receipt.godagents.evidence.externalHostQualification.fixtureDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.externalHostQualification.receiptDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.externalHostQualification.sourceCommit,
       /^[a-f0-9]{40}$/,
     );
   }

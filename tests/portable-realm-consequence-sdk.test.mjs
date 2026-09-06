@@ -54,6 +54,7 @@ test('package root exposes the certified optional Realm consequence host', async
 
   const description = sdk.describeGodagentSdk();
   assert.deepEqual(description.supportedAdapterProtocols, [
+    'eternities-external-host-qualification-v1',
     'eternities-portable-phase-host-v1',
     'eternities-recoverable-realm-consequence-v1',
   ]);

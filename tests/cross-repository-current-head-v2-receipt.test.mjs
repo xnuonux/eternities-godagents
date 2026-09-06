@@ -72,8 +72,8 @@ async function buildReceipt() {
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
     testRuns: {
-      godagentsFocused: { status: 'pass', tests: 129 },
-      godagentsFull: { status: 'pass', tests: 1081 },
+      godagentsFocused: { status: 'pass', tests: 144 },
+      godagentsFull: { status: 'pass', tests: 1096 },
       godskillsFocused: { status: 'pass', tests: 12 },
     },
   });
@@ -276,9 +276,24 @@ test('the committed v2 certificate binds the exact current heads and portable re
     assert.match(receipt.godagents.evidence.portablePhaseHostAdversarial.receiptDigest, /^[a-f0-9]{64}$/);
     assert.match(receipt.godagents.evidence.portablePhaseHostAdversarial.sourceCommit, /^[a-f0-9]{40}$/);
   }
+  if (receipt.godagents.evidence.externalHostQualification !== undefined) {
+    assert.equal(receipt.godagents.evidence.externalHostQualification.certificationId, 'external-host-qualification-v1');
+    assert.match(receipt.godagents.evidence.externalHostQualification.fixtureDigest, /^[a-f0-9]{64}$/);
+    assert.equal(receipt.godagents.evidence.externalHostQualification.fullTests, 1096);
+    assert.equal(receipt.godagents.evidence.externalHostQualification.liveQualification, false);
+    assert.equal(receipt.godagents.evidence.externalHostQualification.path, 'receipts/external-host-qualification-v1.json');
+    assert.match(receipt.godagents.evidence.externalHostQualification.receiptDigest, /^[a-f0-9]{64}$/);
+    assert.match(receipt.godagents.evidence.externalHostQualification.sourceCommit, /^[a-f0-9]{40}$/);
+  }
   assert.deepEqual(
     receipt.testRuns,
-    receipt.godagents.evidence.portablePhaseHostAdversarial !== undefined
+    receipt.godagents.evidence.externalHostQualification !== undefined
+      ? {
+        godagentsFocused: { status: 'pass', tests: 144 },
+        godagentsFull: { status: 'pass', tests: 1096 },
+        godskillsFocused: { status: 'pass', tests: 12 },
+      }
+      : receipt.godagents.evidence.portablePhaseHostAdversarial !== undefined
       ? {
         godagentsFocused: { status: 'pass', tests: 129 },
         godagentsFull: { status: 'pass', tests: 1081 },

@@ -45,6 +45,7 @@ const PORTABLE_REALM_CONSEQUENCE_SDK_RECEIPT_PATH = 'receipts/portable-realm-con
 const PORTABLE_REALM_CONSEQUENCE_SDK_CERTIFICATION_ID = 'portable-realm-consequence-sdk-v1';
 const PORTABLE_REALM_CONSEQUENCE_SDK_CERTIFICATION_PROTOCOL = 'eternities-portable-realm-consequence-sdk-certification-v1';
 const PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL = 'eternities-recoverable-realm-consequence-v1';
+const EXTERNAL_HOST_QUALIFICATION_PROTOCOL = 'eternities-external-host-qualification-v1';
 const ADMITTED_PORTABLE_IDENTITY_LAUNCHER_RECEIPT_PATH = 'receipts/admitted-portable-identity-launcher-v1.json';
 const ADMITTED_PORTABLE_IDENTITY_LAUNCHER_CERTIFICATION_ID = 'admitted-portable-identity-launcher-v1';
 const ADMITTED_PORTABLE_IDENTITY_LAUNCHER_CERTIFICATION_PROTOCOL = 'eternities-admitted-portable-identity-launcher-certification-v1';
@@ -81,6 +82,9 @@ const MISSION_FORENSIC_INDEX_CERTIFICATION_PROTOCOL = 'eternities-mission-forens
 const PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH = 'receipts/portable-phase-host-adversarial-v1.json';
 const PORTABLE_PHASE_HOST_ADVERSARIAL_CERTIFICATION_ID = 'portable-phase-host-adversarial-v1';
 const PORTABLE_PHASE_HOST_ADVERSARIAL_CERTIFICATION_PROTOCOL = 'eternities-portable-phase-host-adversarial-certification-v1';
+const EXTERNAL_HOST_QUALIFICATION_RECEIPT_PATH = 'receipts/external-host-qualification-v1.json';
+const EXTERNAL_HOST_QUALIFICATION_CERTIFICATION_ID = 'external-host-qualification-v1';
+const EXTERNAL_HOST_QUALIFICATION_CERTIFICATION_PROTOCOL = 'eternities-external-host-qualification-certification-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -106,7 +110,10 @@ const V2_SDK_EXPORTS = Object.freeze([
   'createProviderPhaseHost',
   'createRecoverableRealmConsequenceHost',
   'describeGodagentSdk',
+  'EXTERNAL_HOST_QUALIFICATION_PROTOCOL_ID',
+  'buildExternalHostQualificationDossier',
   'verifyAdmittedPortableIdentityLauncherDescription',
+  'verifyExternalHostQualificationDossier',
   'verifyPortablePhaseHostDescription',
   'verifyAdmittedProviderBackedIdentityLauncherDescription',
   'verifyProviderPhaseHostDescription',
@@ -223,6 +230,15 @@ const V2_BOUNDARY_PATHS = Object.freeze([
     'tests/portable-phase-host-adversarial-certification.test.mjs',
     'tests/portable-phase-host-adversarial.test.mjs',
     PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH,
+    'fixtures/external-host-qualification-v1.json',
+    'schemas/external-host-qualification-dossier.schema.json',
+    'scripts/build-external-host-qualification-v1-fixture.mjs',
+    'scripts/build-external-host-qualification-v1-receipt.mjs',
+    'src/host/external-host-qualification.mjs',
+    'tests/helpers/external-host-qualification-fixture.mjs',
+    'tests/external-host-qualification-certification.test.mjs',
+    'tests/external-host-qualification.test.mjs',
+    EXTERNAL_HOST_QUALIFICATION_RECEIPT_PATH,
    'fixtures/admitted-portable-identity-launcher-v1.json',
     'receipts/admitted-portable-identity-launcher-v1.json',
     'src/host/admitted-portable-identity-launcher.mjs',
@@ -306,9 +322,12 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   missionForensicIndexFullTests: 1073,
   portablePhaseHostAdversarial: true,
   portablePhaseHostAdversarialFullTests: 1081,
+  externalHostQualification: true,
+  externalHostQualificationFullTests: 1096,
   supportedAdapterProtocols: Object.freeze([
     PORTABLE_CONFORMANCE_PROTOCOL,
     PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
+    EXTERNAL_HOST_QUALIFICATION_PROTOCOL,
   ]),
   appendOnlyPaths: Object.freeze([
     CROSS_REPOSITORY_CURRENT_HEAD_V2_ARTIFACT_PATH,
@@ -326,12 +345,23 @@ const PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_V2_BOUNDARY_PATHS = Object.freeze(V2_B
   'tests/portable-phase-host-adversarial-certification.test.mjs',
   'tests/portable-phase-host-adversarial.test.mjs',
   PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH,
+  'fixtures/external-host-qualification-v1.json',
+  'schemas/external-host-qualification-dossier.schema.json',
+  'scripts/build-external-host-qualification-v1-fixture.mjs',
+  'scripts/build-external-host-qualification-v1-receipt.mjs',
+  'src/host/external-host-qualification.mjs',
+  'tests/helpers/external-host-qualification-fixture.mjs',
+  'tests/external-host-qualification-certification.test.mjs',
+  'tests/external-host-qualification.test.mjs',
+  EXTERNAL_HOST_QUALIFICATION_RECEIPT_PATH,
 ].includes(path)));
 const PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_V2_BOUNDARY_PATHS,
   portablePhaseHostAdversarial: false,
   portablePhaseHostAdversarialFullTests: undefined,
+  externalHostQualification: false,
+  externalHostQualificationFullTests: undefined,
 });
 const PRE_MISSION_FORENSIC_INDEX_V2_BOUNDARY_PATHS = Object.freeze(PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/mission-forensic-index-v1.json',
@@ -434,7 +464,7 @@ const PRE_REVIEW_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(PRE
   DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
 ].includes(path)));
 const PRE_REVIEW_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
-  ...CURRENT_HEAD_V2_PROFILE,
+  ...PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_REVIEW_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
   portablePhaseHostAdversarial: false,
   portablePhaseHostAdversarialFullTests: undefined,
@@ -452,7 +482,7 @@ const PRE_REVIEW_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.free
   realmConsequenceMissionOperationAdapterFullTests: undefined,
 });
 const PRE_REVISION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
-  ...CURRENT_HEAD_V2_PROFILE,
+  ...PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_REVISION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
   portablePhaseHostAdversarial: false,
   portablePhaseHostAdversarialFullTests: undefined,
@@ -493,7 +523,7 @@ const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object
   REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
  ].includes(path)));
 const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
-  ...CURRENT_HEAD_V2_PROFILE,
+  ...PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
   portablePhaseHostAdversarial: false,
   portablePhaseHostAdversarialFullTests: undefined,
@@ -505,7 +535,7 @@ const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = 
   realmConsequenceMissionOperationAdapterFullTests: undefined,
 });
 const PRE_DELEGATION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
-  ...CURRENT_HEAD_V2_PROFILE,
+  ...PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_DELEGATION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
   portablePhaseHostAdversarial: false,
   portablePhaseHostAdversarialFullTests: undefined,
@@ -519,7 +549,7 @@ const PRE_DELEGATION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.
   realmConsequenceMissionOperationAdapterFullTests: undefined,
 });
 const PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
-  ...CURRENT_HEAD_V2_PROFILE,
+  ...PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_ADAPTER_V2_BOUNDARY_PATHS,
   portablePhaseHostAdversarial: false,
   portablePhaseHostAdversarialFullTests: undefined,
@@ -974,6 +1004,11 @@ async function verifySdk(repositoryRoot, commit, sdk, profile = LEGACY_PROFILE) 
         && !source.includes(`'${PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL}'`)
         && !source.includes(`"${PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL}"`)) {
       throw new Error('SDK Realm consequence adapter protocol declaration is missing');
+    }
+    if (profile.externalHostQualification
+        && !source.includes(`'${EXTERNAL_HOST_QUALIFICATION_PROTOCOL}'`)
+        && !source.includes(`"${EXTERNAL_HOST_QUALIFICATION_PROTOCOL}"`)) {
+      throw new Error('SDK external host qualification protocol declaration is missing');
     }
   }
 }
@@ -1592,6 +1627,51 @@ async function verifyPortablePhaseHostAdversarialEvidence(repositoryRoot, commit
   await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'portable phase-host adversarial source commit');
 }
 
+async function verifyExternalHostQualificationEvidence(repositoryRoot, commit, evidence, profile) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'fullTests', 'liveQualification', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'external host qualification evidence');
+  if (evidence.certificationId !== EXTERNAL_HOST_QUALIFICATION_CERTIFICATION_ID
+      || evidence.path !== EXTERNAL_HOST_QUALIFICATION_RECEIPT_PATH) {
+    throw new Error('external host qualification evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'external host qualification fixture digest');
+  requireDigest(evidence.receiptDigest, 'external host qualification receipt digest');
+  requireDigest(evidence.sha256, 'external host qualification receipt file digest');
+  requireCommit(evidence.sourceCommit, 'external host qualification source commit');
+  if (!Number.isInteger(evidence.fullTests)
+      || evidence.fullTests !== profile.externalHostQualificationFullTests) {
+    throw new Error('external host qualification full test evidence mismatch');
+  }
+  if (evidence.liveQualification !== false) {
+    throw new Error('external host qualification evidence must remain contract-only');
+  }
+  const text = await readBlob(
+    repositoryRoot,
+    commit,
+    evidence.path,
+    'external host qualification receipt',
+  );
+  if (sha256Text(text) !== evidence.sha256) {
+    throw new Error('external host qualification receipt file digest mismatch');
+  }
+  const receipt = parseJson(text, 'external host qualification receipt');
+  requireCanonicalJsonText(text, receipt, 'external host qualification receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== EXTERNAL_HOST_QUALIFICATION_CERTIFICATION_ID
+      || receipt.protocolId !== EXTERNAL_HOST_QUALIFICATION_CERTIFICATION_PROTOCOL
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest
+      || receipt.metrics?.liveQualification !== evidence.liveQualification
+      || receipt.testRuns?.full?.status !== 'pass'
+      || receipt.testRuns.full.tests !== evidence.fullTests) {
+    throw new Error('external host qualification receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'external host qualification source commit');
+  await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'external host qualification source commit');
+}
+
 async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
   const expectedEvidenceKeys = profile.portableConformance
     ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost',
@@ -1607,7 +1687,8 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
        ...(profile.realmConsequenceMissionOperationAdapter ? ['realmConsequenceMissionOperationAdapter'] : []),
        ...(profile.missionOperationEvidence ? ['missionOperationEvidence'] : []),
        ...(profile.missionForensicIndex ? ['missionForensicIndex'] : []),
-       ...(profile.portablePhaseHostAdversarial ? ['portablePhaseHostAdversarial'] : [])]
+       ...(profile.portablePhaseHostAdversarial ? ['portablePhaseHostAdversarial'] : []),
+       ...(profile.externalHostQualification ? ['externalHostQualification'] : [])]
     : ['boundaryFiles', 'integrationReceipt'];
   exactKeys(godagents.evidence, expectedEvidenceKeys, 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
@@ -1741,6 +1822,14 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
       repositoryRoot,
       commit,
       godagents.evidence.portablePhaseHostAdversarial,
+      profile,
+    );
+  }
+  if (profile.externalHostQualification) {
+    await verifyExternalHostQualificationEvidence(
+      repositoryRoot,
+      commit,
+      godagents.evidence.externalHostQualification,
       profile,
     );
   }
@@ -2146,6 +2235,28 @@ async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGA
       sourceCommit: portablePhaseHostAdversarial.source.commit,
     };
   }
+  if (profile.externalHostQualification) {
+    const externalHostQualificationText = await readBlob(
+      repositoryRoot,
+      commit,
+      EXTERNAL_HOST_QUALIFICATION_RECEIPT_PATH,
+      'external host qualification receipt',
+    );
+    const externalHostQualification = parseJson(
+      externalHostQualificationText,
+      'external host qualification receipt',
+    );
+    evidence.externalHostQualification = {
+      certificationId: externalHostQualification.certificationId,
+      fixtureDigest: externalHostQualification.fixture.logicalDigest,
+      fullTests: externalHostQualification.testRuns.full.tests,
+      liveQualification: externalHostQualification.metrics.liveQualification,
+      path: EXTERNAL_HOST_QUALIFICATION_RECEIPT_PATH,
+      receiptDigest: externalHostQualification.receiptDigest,
+      sha256: sha256Text(externalHostQualificationText),
+      sourceCommit: externalHostQualification.source.commit,
+    };
+  }
   return evidence;
 }
 
@@ -2347,6 +2458,10 @@ export async function verifyCrossRepositoryCurrentHeadCertificateV2(receipt, opt
   if (currentProfile.portablePhaseHostAdversarialPresent !== portablePhaseHostAdversarialEvidencePresent) {
     throw new Error('current-head v2 portable phase-host adversarial profile does not match the committed source');
   }
+  const externalHostQualificationEvidencePresent = receipt?.godagents?.evidence?.externalHostQualification !== undefined;
+  if (currentProfile.externalHostQualificationPresent !== externalHostQualificationEvidencePresent) {
+    throw new Error('current-head v2 external host qualification profile does not match the committed source');
+  }
   return verifyCertificate(receipt, {
     ...options,
     protocolId: CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL,
@@ -2379,7 +2494,7 @@ export async function buildCrossRepositoryCurrentHeadCertificateV2(options = {})
 
 async function currentHeadV2Profile(repositoryRoot, commit) {
   await requireCommitObject(repositoryRoot, commit, 'Godagents build commit');
-  const [forensicsPresent, agentProfilePresent, deferredReviewMissionOperationAdapterPresent, revisionMissionOperationAdapterPresent, delegationMissionOperationAdapterPresent, realmConsequenceMissionOperationAdapterPresent, missionOperationEvidencePresent, missionForensicIndexPresent, portablePhaseHostAdversarialPresent] = await Promise.all([
+  const [forensicsPresent, agentProfilePresent, deferredReviewMissionOperationAdapterPresent, revisionMissionOperationAdapterPresent, delegationMissionOperationAdapterPresent, realmConsequenceMissionOperationAdapterPresent, missionOperationEvidencePresent, missionForensicIndexPresent, portablePhaseHostAdversarialPresent, externalHostQualificationPresent] = await Promise.all([
     hasCommittedPath(repositoryRoot, commit, MISSION_PROGRAM_FORENSICS_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, AGENT_PROFILE_CONTRACT_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
@@ -2389,6 +2504,7 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     hasCommittedPath(repositoryRoot, commit, MISSION_OPERATION_EVIDENCE_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, MISSION_FORENSIC_INDEX_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH),
+    hasCommittedPath(repositoryRoot, commit, EXTERNAL_HOST_QUALIFICATION_RECEIPT_PATH),
   ]);
   const missionOperationAdapterPresent = await hasCommittedPath(
     repositoryRoot,
@@ -2405,7 +2521,9 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
                 ? (missionOperationEvidencePresent
                   ? (missionForensicIndexPresent
                     ? (portablePhaseHostAdversarialPresent
-                      ? CURRENT_HEAD_V2_PROFILE
+                      ? (externalHostQualificationPresent
+                        ? CURRENT_HEAD_V2_PROFILE
+                        : PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE)
                       : PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE)
                     : PRE_MISSION_FORENSIC_INDEX_CURRENT_HEAD_V2_PROFILE)
                   : PRE_MISSION_OPERATION_EVIDENCE_CURRENT_HEAD_V2_PROFILE)
@@ -2429,6 +2547,7 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     missionOperationEvidencePresent,
     missionForensicIndexPresent,
     portablePhaseHostAdversarialPresent,
+    externalHostQualificationPresent,
     profile,
   };
 }
