@@ -78,6 +78,9 @@ const MISSION_OPERATION_EVIDENCE_CERTIFICATION_PROTOCOL = 'eternities-mission-op
 const MISSION_FORENSIC_INDEX_RECEIPT_PATH = 'receipts/mission-forensic-index-v1.json';
 const MISSION_FORENSIC_INDEX_CERTIFICATION_ID = 'mission-forensic-index-v1';
 const MISSION_FORENSIC_INDEX_CERTIFICATION_PROTOCOL = 'eternities-mission-forensic-index-certification-v1';
+const PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH = 'receipts/portable-phase-host-adversarial-v1.json';
+const PORTABLE_PHASE_HOST_ADVERSARIAL_CERTIFICATION_ID = 'portable-phase-host-adversarial-v1';
+const PORTABLE_PHASE_HOST_ADVERSARIAL_CERTIFICATION_PROTOCOL = 'eternities-portable-phase-host-adversarial-certification-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -213,6 +216,13 @@ const V2_BOUNDARY_PATHS = Object.freeze([
     'tests/mission-forensic-index-certification.test.mjs',
     'tests/mission-forensic-index.test.mjs',
     MISSION_FORENSIC_INDEX_RECEIPT_PATH,
+    'fixtures/portable-phase-host-adversarial-v1.json',
+    'scripts/build-portable-phase-host-adversarial-v1-fixture.mjs',
+    'scripts/build-portable-phase-host-adversarial-v1-receipt.mjs',
+    'tests/helpers/portable-phase-host-adversarial-fixture.mjs',
+    'tests/portable-phase-host-adversarial-certification.test.mjs',
+    'tests/portable-phase-host-adversarial.test.mjs',
+    PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH,
    'fixtures/admitted-portable-identity-launcher-v1.json',
     'receipts/admitted-portable-identity-launcher-v1.json',
     'src/host/admitted-portable-identity-launcher.mjs',
@@ -294,6 +304,8 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   missionOperationEvidenceFullTests: 1070,
   missionForensicIndex: true,
   missionForensicIndexFullTests: 1073,
+  portablePhaseHostAdversarial: true,
+  portablePhaseHostAdversarialFullTests: 1081,
   supportedAdapterProtocols: Object.freeze([
     PORTABLE_CONFORMANCE_PROTOCOL,
     PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
@@ -306,7 +318,22 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   certificationPath: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH,
   certificationDocument: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_DOCUMENT,
 });
-const PRE_MISSION_FORENSIC_INDEX_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
+const PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
+  'fixtures/portable-phase-host-adversarial-v1.json',
+  'scripts/build-portable-phase-host-adversarial-v1-fixture.mjs',
+  'scripts/build-portable-phase-host-adversarial-v1-receipt.mjs',
+  'tests/helpers/portable-phase-host-adversarial-fixture.mjs',
+  'tests/portable-phase-host-adversarial-certification.test.mjs',
+  'tests/portable-phase-host-adversarial.test.mjs',
+  PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH,
+].includes(path)));
+const PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  ...CURRENT_HEAD_V2_PROFILE,
+  boundaryPaths: PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_V2_BOUNDARY_PATHS,
+  portablePhaseHostAdversarial: false,
+  portablePhaseHostAdversarialFullTests: undefined,
+});
+const PRE_MISSION_FORENSIC_INDEX_V2_BOUNDARY_PATHS = Object.freeze(PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/mission-forensic-index-v1.json',
   'schemas/mission-forensic-index.schema.json',
   'scripts/build-mission-forensic-index-v1-fixture.mjs',
@@ -317,7 +344,7 @@ const PRE_MISSION_FORENSIC_INDEX_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_P
   MISSION_FORENSIC_INDEX_RECEIPT_PATH,
 ].includes(path)));
 const PRE_MISSION_FORENSIC_INDEX_CURRENT_HEAD_V2_PROFILE = Object.freeze({
-  ...CURRENT_HEAD_V2_PROFILE,
+  ...PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_MISSION_FORENSIC_INDEX_V2_BOUNDARY_PATHS,
   missionForensicIndex: false,
   missionForensicIndexFullTests: undefined,
@@ -333,7 +360,7 @@ const PRE_MISSION_OPERATION_EVIDENCE_V2_BOUNDARY_PATHS = Object.freeze(PRE_MISSI
   MISSION_OPERATION_EVIDENCE_RECEIPT_PATH,
 ].includes(path)));
 const PRE_MISSION_OPERATION_EVIDENCE_CURRENT_HEAD_V2_PROFILE = Object.freeze({
-  ...CURRENT_HEAD_V2_PROFILE,
+  ...PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_MISSION_OPERATION_EVIDENCE_V2_BOUNDARY_PATHS,
   missionOperationEvidence: false,
   missionOperationEvidenceFullTests: undefined,
@@ -409,6 +436,8 @@ const PRE_REVIEW_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(PRE
 const PRE_REVIEW_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_REVIEW_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
+  portablePhaseHostAdversarial: false,
+  portablePhaseHostAdversarialFullTests: undefined,
   missionForensicIndex: false,
   missionForensicIndexFullTests: undefined,
   missionOperationEvidence: false,
@@ -425,6 +454,8 @@ const PRE_REVIEW_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.free
 const PRE_REVISION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_REVISION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
+  portablePhaseHostAdversarial: false,
+  portablePhaseHostAdversarialFullTests: undefined,
   missionForensicIndex: false,
   missionForensicIndexFullTests: undefined,
   missionOperationEvidence: false,
@@ -464,6 +495,8 @@ const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object
 const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
+  portablePhaseHostAdversarial: false,
+  portablePhaseHostAdversarialFullTests: undefined,
   missionForensicIndex: false,
   missionForensicIndexFullTests: undefined,
   missionOperationEvidence: false,
@@ -474,6 +507,8 @@ const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = 
 const PRE_DELEGATION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_DELEGATION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
+  portablePhaseHostAdversarial: false,
+  portablePhaseHostAdversarialFullTests: undefined,
   missionForensicIndex: false,
   missionForensicIndexFullTests: undefined,
   missionOperationEvidence: false,
@@ -486,6 +521,8 @@ const PRE_DELEGATION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.
 const PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_ADAPTER_V2_BOUNDARY_PATHS,
+  portablePhaseHostAdversarial: false,
+  portablePhaseHostAdversarialFullTests: undefined,
   missionForensicIndex: false,
   missionForensicIndexFullTests: undefined,
   missionOperationEvidence: false,
@@ -1514,6 +1551,47 @@ async function verifyMissionForensicIndexEvidence(repositoryRoot, commit, eviden
   await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'mission forensic index source commit');
 }
 
+async function verifyPortablePhaseHostAdversarialEvidence(repositoryRoot, commit, evidence, profile) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'fullTests', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'portable phase-host adversarial evidence');
+  if (evidence.certificationId !== PORTABLE_PHASE_HOST_ADVERSARIAL_CERTIFICATION_ID
+      || evidence.path !== PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH) {
+    throw new Error('portable phase-host adversarial evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'portable phase-host adversarial fixture digest');
+  requireDigest(evidence.receiptDigest, 'portable phase-host adversarial receipt digest');
+  requireDigest(evidence.sha256, 'portable phase-host adversarial receipt file digest');
+  requireCommit(evidence.sourceCommit, 'portable phase-host adversarial source commit');
+  if (!Number.isInteger(evidence.fullTests)
+      || evidence.fullTests !== profile.portablePhaseHostAdversarialFullTests) {
+    throw new Error('portable phase-host adversarial full test evidence mismatch');
+  }
+  const text = await readBlob(
+    repositoryRoot,
+    commit,
+    evidence.path,
+    'portable phase-host adversarial receipt',
+  );
+  if (sha256Text(text) !== evidence.sha256) {
+    throw new Error('portable phase-host adversarial receipt file digest mismatch');
+  }
+  const receipt = parseJson(text, 'portable phase-host adversarial receipt');
+  requireCanonicalJsonText(text, receipt, 'portable phase-host adversarial receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== PORTABLE_PHASE_HOST_ADVERSARIAL_CERTIFICATION_ID
+      || receipt.protocolId !== PORTABLE_PHASE_HOST_ADVERSARIAL_CERTIFICATION_PROTOCOL
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest
+      || receipt.testRuns?.full?.status !== 'pass'
+      || receipt.testRuns.full.tests !== evidence.fullTests) {
+    throw new Error('portable phase-host adversarial receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'portable phase-host adversarial source commit');
+  await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'portable phase-host adversarial source commit');
+}
+
 async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
   const expectedEvidenceKeys = profile.portableConformance
     ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost',
@@ -1528,7 +1606,8 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
        ...(profile.delegationMissionOperationAdapter ? ['delegationMissionOperationAdapter'] : []),
        ...(profile.realmConsequenceMissionOperationAdapter ? ['realmConsequenceMissionOperationAdapter'] : []),
        ...(profile.missionOperationEvidence ? ['missionOperationEvidence'] : []),
-       ...(profile.missionForensicIndex ? ['missionForensicIndex'] : [])]
+       ...(profile.missionForensicIndex ? ['missionForensicIndex'] : []),
+       ...(profile.portablePhaseHostAdversarial ? ['portablePhaseHostAdversarial'] : [])]
     : ['boundaryFiles', 'integrationReceipt'];
   exactKeys(godagents.evidence, expectedEvidenceKeys, 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
@@ -1654,6 +1733,14 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
       repositoryRoot,
       commit,
       godagents.evidence.missionForensicIndex,
+      profile,
+    );
+  }
+  if (profile.portablePhaseHostAdversarial) {
+    await verifyPortablePhaseHostAdversarialEvidence(
+      repositoryRoot,
+      commit,
+      godagents.evidence.portablePhaseHostAdversarial,
       profile,
     );
   }
@@ -2038,6 +2125,27 @@ async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGA
       sourceCommit: missionForensicIndex.source.commit,
     };
   }
+  if (profile.portablePhaseHostAdversarial) {
+    const portablePhaseHostAdversarialText = await readBlob(
+      repositoryRoot,
+      commit,
+      PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH,
+      'portable phase-host adversarial receipt',
+    );
+    const portablePhaseHostAdversarial = parseJson(
+      portablePhaseHostAdversarialText,
+      'portable phase-host adversarial receipt',
+    );
+    evidence.portablePhaseHostAdversarial = {
+      certificationId: portablePhaseHostAdversarial.certificationId,
+      fixtureDigest: portablePhaseHostAdversarial.fixture.logicalDigest,
+      fullTests: portablePhaseHostAdversarial.testRuns.full.tests,
+      path: PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH,
+      receiptDigest: portablePhaseHostAdversarial.receiptDigest,
+      sha256: sha256Text(portablePhaseHostAdversarialText),
+      sourceCommit: portablePhaseHostAdversarial.source.commit,
+    };
+  }
   return evidence;
 }
 
@@ -2235,6 +2343,10 @@ export async function verifyCrossRepositoryCurrentHeadCertificateV2(receipt, opt
   if (currentProfile.missionForensicIndexPresent !== missionForensicIndexEvidencePresent) {
     throw new Error('current-head v2 mission forensic index profile does not match the committed source');
   }
+  const portablePhaseHostAdversarialEvidencePresent = receipt?.godagents?.evidence?.portablePhaseHostAdversarial !== undefined;
+  if (currentProfile.portablePhaseHostAdversarialPresent !== portablePhaseHostAdversarialEvidencePresent) {
+    throw new Error('current-head v2 portable phase-host adversarial profile does not match the committed source');
+  }
   return verifyCertificate(receipt, {
     ...options,
     protocolId: CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL,
@@ -2267,7 +2379,7 @@ export async function buildCrossRepositoryCurrentHeadCertificateV2(options = {})
 
 async function currentHeadV2Profile(repositoryRoot, commit) {
   await requireCommitObject(repositoryRoot, commit, 'Godagents build commit');
-  const [forensicsPresent, agentProfilePresent, deferredReviewMissionOperationAdapterPresent, revisionMissionOperationAdapterPresent, delegationMissionOperationAdapterPresent, realmConsequenceMissionOperationAdapterPresent, missionOperationEvidencePresent, missionForensicIndexPresent] = await Promise.all([
+  const [forensicsPresent, agentProfilePresent, deferredReviewMissionOperationAdapterPresent, revisionMissionOperationAdapterPresent, delegationMissionOperationAdapterPresent, realmConsequenceMissionOperationAdapterPresent, missionOperationEvidencePresent, missionForensicIndexPresent, portablePhaseHostAdversarialPresent] = await Promise.all([
     hasCommittedPath(repositoryRoot, commit, MISSION_PROGRAM_FORENSICS_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, AGENT_PROFILE_CONTRACT_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
@@ -2276,6 +2388,7 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     hasCommittedPath(repositoryRoot, commit, REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, MISSION_OPERATION_EVIDENCE_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, MISSION_FORENSIC_INDEX_RECEIPT_PATH),
+    hasCommittedPath(repositoryRoot, commit, PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH),
   ]);
   const missionOperationAdapterPresent = await hasCommittedPath(
     repositoryRoot,
@@ -2291,7 +2404,9 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
               ? (realmConsequenceMissionOperationAdapterPresent
                 ? (missionOperationEvidencePresent
                   ? (missionForensicIndexPresent
-                    ? CURRENT_HEAD_V2_PROFILE
+                    ? (portablePhaseHostAdversarialPresent
+                      ? CURRENT_HEAD_V2_PROFILE
+                      : PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE)
                     : PRE_MISSION_FORENSIC_INDEX_CURRENT_HEAD_V2_PROFILE)
                   : PRE_MISSION_OPERATION_EVIDENCE_CURRENT_HEAD_V2_PROFILE)
                 : PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE)
@@ -2313,6 +2428,7 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     realmConsequenceMissionOperationAdapterPresent,
     missionOperationEvidencePresent,
     missionForensicIndexPresent,
+    portablePhaseHostAdversarialPresent,
     profile,
   };
 }

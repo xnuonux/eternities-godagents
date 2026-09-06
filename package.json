@@ -90,6 +90,8 @@
     "verify:cross-repository-issuance-snapshot": "node scripts/verify-cross-repository-issuance-snapshot.mjs",
     "build:portable-phase-host-conformance-fixture": "node scripts/build-portable-phase-host-conformance-v1-fixture.mjs",
     "certify:portable-phase-host-conformance": "node scripts/build-portable-phase-host-conformance-v1-receipt.mjs",
+    "build:portable-phase-host-adversarial-fixture": "node scripts/build-portable-phase-host-adversarial-v1-fixture.mjs",
+    "certify:portable-phase-host-adversarial": "node scripts/build-portable-phase-host-adversarial-v1-receipt.mjs",
     "build:portable-realm-consequence-sdk-fixture": "node scripts/build-portable-realm-consequence-sdk-v1-fixture.mjs",
     "certify:portable-realm-consequence-sdk": "node scripts/build-portable-realm-consequence-sdk-v1-receipt.mjs",
     "build:cross-repository-current-head-v2": "node scripts/build-cross-repository-current-head-v2.mjs",

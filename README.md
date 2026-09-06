@@ -934,6 +934,24 @@ Inspiration, Lunari, or Soul authority. Verify the boundary with
 `npm run certify:portable-phase-host-conformance`; the resulting receipt is
 `receipts/portable-phase-host-conformance-v1.json`.
 
+### Portable phase-host adversarial campaign v1
+
+The portable phase-host adversarial campaign is a separate hostile-input
+evidence boundary over the same SDK surface. It replays counterfeit-host,
+protocol, capability, authority, descriptor-drift, credential-preflight,
+pinned-descriptor, public-surface, and inert provider-wrapper cases. The
+campaign is body-free and makes no provider calls. It does not change the
+portable host protocol or add an external adapter.
+
+The source-bound receipt is
+`receipts/portable-phase-host-adversarial-v1.json`; rebuild the deterministic
+fixture with `npm run build:portable-phase-host-adversarial-fixture` and the
+receipt with `npm run certify:portable-phase-host-adversarial`. This proves
+local fail-closed behavior only. Live providers, Codex, Claude Code,
+local-model, MCP, hostile same-user isolation, hosted durability, Realm,
+keel, memory, identity, evolution, Inspiration, Lunari, and Soul remain
+outside the proof.
+
 ### Realm negotiation v1
 
 The [Realm negotiation design](docs/superpowers/specs/2026-09-03-realm-negotiation-v1-design.md)
