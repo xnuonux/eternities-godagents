@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 118 },
-  godagentsFull: { status: 'pass', tests: 1070 },
+  godagentsFocused: { status: 'pass', tests: 121 },
+  godagentsFull: { status: 'pass', tests: 1073 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -435,6 +435,47 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     );
     assert.match(
       receipt.godagents.evidence.missionOperationEvidence.sourceCommit,
+      /^[a-f0-9]{40}$/,
+    );
+  }
+  const missionForensicIndexCommitted = await hasCommittedPath(
+    godagentsCommit,
+    'receipts/mission-forensic-index-v1.json',
+  );
+  assert.equal(
+    receipt.godagents.evidence.missionForensicIndex !== undefined,
+    missionForensicIndexCommitted,
+    'v2 builder profile must follow the committed mission forensic index boundary',
+  );
+  if (receipt.godagents.evidence.missionForensicIndex !== undefined) {
+    assert.ok(
+      receipt.godagents.evidence.boundaryFiles.some(
+        ({ path }) => path === 'tests/mission-forensic-index.test.mjs',
+      ),
+      'current v2 profile must bind the mission forensic index boundary paths',
+    );
+    assert.equal(
+      receipt.godagents.evidence.missionForensicIndex.certificationId,
+      'mission-forensic-index-v1',
+    );
+    assert.equal(
+      receipt.godagents.evidence.missionForensicIndex.fullTests,
+      1073,
+    );
+    assert.equal(
+      receipt.godagents.evidence.missionForensicIndex.path,
+      'receipts/mission-forensic-index-v1.json',
+    );
+    assert.match(
+      receipt.godagents.evidence.missionForensicIndex.fixtureDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.missionForensicIndex.receiptDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.missionForensicIndex.sourceCommit,
       /^[a-f0-9]{40}$/,
     );
   }
