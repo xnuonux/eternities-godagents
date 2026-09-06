@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["realmEffects", "continuityWrites", "identityMutation", "evolution", "soul"],
+      "properties": {
+        "realmEffects": { "const": 0 },
+        "continuityWrites": { "const": 0 },
+        "identityMutation": { "const": 0 },
+        "evolution": { "const": 0 },
+        "soul": { "const": 0 }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stepId", "stepIndex", "operationKind", "journalStatus",
+        "missionStepDescriptorDigest", "sourceDescriptorDigest", "requestDigest",
+        "dispatchDigest", "operationReceiptDigest", "disposition", "completionDigest",
+        "sourceEvidenceDigest", "artifactDigest", "authority"
+      ],
+      "properties": {
+        "stepId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+        "stepIndex": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "operationKind": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+        "journalStatus": { "enum": ["admitted", "pending", "committed"] },
+        "missionStepDescriptorDigest": { "$ref": "#/$defs/digest" },
+        "sourceDescriptorDigest": { "$ref": "#/$defs/digest" },
+        "requestDigest": { "$ref": "#/$defs/digest" },
+        "dispatchDigest": { "$ref": "#/$defs/digest" },
+        "operationReceiptDigest": { "$ref": "#/$defs/digest" },
+        "disposition": { "enum": ["absent", "pending", "completed"] },
+        "completionDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+        "sourceEvidenceDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+        "artifactDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+        "authority": { "$ref": "#/$defs/authority" }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "protocolId", "programId", "status", "selectedSequence",
+    "headSequence", "headDigest", "selectedHeadDigest", "missionProjectionDigest",
+    "entries", "projectionDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-operation-evidence-v1" },
+    "programId": { "$ref": "#/$defs/digest" },
+    "status": { "enum": ["absent", "admitted", "pending", "completed"] },
+    "selectedSequence": { "type": "integer", "minimum": 0, "maximum": 32 },
+    "headSequence": { "type": "integer", "minimum": 0, "maximum": 32 },
+    "headDigest": { "$ref": "#/$defs/digest" },
+    "selectedHeadDigest": { "$ref": "#/$defs/digest" },
+    "missionProjectionDigest": { "$ref": "#/$defs/digest" },
+    "entries": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/entry" } },
+    "projectionDigest": { "$ref": "#/$defs/digest" }
+  }
+}

@@ -27,6 +27,10 @@ const expectedCommands = Object.freeze({
     'node scripts/build-realm-consequence-mission-operation-adapter-v1-fixture.mjs',
   'certify:realm-consequence-mission-operation-adapter':
     'node scripts/build-realm-consequence-mission-operation-adapter-v1-receipt.mjs',
+  'build:mission-operation-evidence-fixture':
+    'node scripts/build-mission-operation-evidence-v1-fixture.mjs',
+  'certify:mission-operation-evidence':
+    'node scripts/build-mission-operation-evidence-v1-receipt.mjs',
   'build:bounded-delegation-fixture':
     'node scripts/build-bounded-delegation-fixture.mjs',
   'certify:bounded-delegation':

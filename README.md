@@ -757,6 +757,31 @@ and the source-bound proof is
 fixture with `npm run build:mission-program-forensics-fixture` and the
 certificate with `npm run certify:mission-program-forensics`.
 
+### Mission-operation evidence projection v1
+
+The opt-in evidence projection joins one verified mission-program forensic
+projection to exact generic mission-operation descriptions, dispatches,
+requests, and receipts. It exposes only program and step identity, journal
+status, operation disposition, source and completion digests, artifact and
+source-evidence digests, and the empty operation authority projection. It
+does not copy a mission body, operation body, provider body, Realm payload,
+credential, or source closure.
+
+The join is read-only and adapter-free. A supplied operation must have a
+prepared event in the selected journal prefix, which prevents a prefix query
+from disclosing a later operation. Journal status and source receipt
+disposition remain separate so a completed source operation can be represented
+while its mission artifact is still pending commitment after a crash. Duplicate
+steps, descriptor or dispatch drift, credentials, authority expansion, and
+oversized projections fail closed.
+
+This is still one-mission local observability, not a cross-program index, live
+provider trace, hosted durability service, branch replay system, or UI. Its
+design and proof limits are in
+`docs/superpowers/specs/2026-09-05-mission-operation-evidence-projection-v1-design.md`.
+Rebuild the fixture with `npm run build:mission-operation-evidence-fixture` and
+the source-bound certificate with `npm run certify:mission-operation-evidence`.
+
 ### Descriptor-bound mission-operation adapter v1
 
 The descriptor-bound mission-operation adapter is a narrow migration boundary

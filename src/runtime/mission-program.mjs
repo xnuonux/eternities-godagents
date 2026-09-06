@@ -630,7 +630,7 @@ function forensicEvent(event) {
   return summary;
 }
 
-function verifyForensicProjection(value) {
+export function verifyMissionProgramForensicsProjection(value) {
   object(value, 'mission program forensic projection');
   try {
     assertSchema('mission-program-forensics', value);
@@ -720,7 +720,7 @@ function buildForensicProjection(projection, selectedSequence) {
   if (Buffer.byteLength(jsonBytes(result), 'utf8') > MAX_FORENSICS_BYTES) {
     fail('forensics-ceiling', 'mission program forensic projection exceeds its byte ceiling');
   }
-  return verifyForensicProjection(result);
+  return verifyMissionProgramForensicsProjection(result);
 }
 
 function buildAbsentForensicProjection(programId) {
@@ -738,7 +738,7 @@ function buildAbsentForensicProjection(programId) {
     next: 'none',
     aggregateDigest: null,
   };
-  return verifyForensicProjection({ ...unsigned, projectionDigest: sha256Value(unsigned) });
+  return verifyMissionProgramForensicsProjection({ ...unsigned, projectionDigest: sha256Value(unsigned) });
 }
 
 function normalizeForensicsOptions(options, headSequence) {
