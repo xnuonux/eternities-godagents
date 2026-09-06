@@ -79,7 +79,8 @@ const registry = Object.freeze({
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
 const expectedFilesBeforeMissionForensicIndex = Object.freeze(expectedFiles.filter(
-  (file) => file !== 'mission-forensic-index-v1.json',
+  (file) => file !== 'portable-phase-host-adversarial-v1.json'
+    && file !== 'mission-forensic-index-v1.json',
 ));
 const expectedFilesBeforeMissionOperationEvidence = Object.freeze(expectedFilesBeforeMissionForensicIndex.filter(
   (file) => file !== 'mission-operation-evidence-v1.json',
@@ -147,8 +148,7 @@ const expectedFilesBeforeRealmNegotiation = Object.freeze(expectedFilesBeforeLat
   (file) => !['realm-action-adapter-v1.json', 'realm-negotiation-v1.json'].includes(file),
 ));
 const expectedFilesBeforePortablePhaseHost = Object.freeze(expectedFilesBeforeRealmNegotiation.filter(
-  (file) => file !== 'portable-phase-host-adversarial-v1.json'
-    && file !== 'portable-phase-host-conformance-v1.json',
+  (file) => file !== 'portable-phase-host-conformance-v1.json',
 ));
 const expectedFilesBeforeProviderBackedIdentityCli = Object.freeze(expectedFilesBeforePortablePhaseHost.filter(
   (file) => file !== 'provider-backed-identity-cli-v1.json',
