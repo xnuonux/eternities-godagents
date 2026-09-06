@@ -72,8 +72,8 @@ async function buildReceipt() {
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
     testRuns: {
-      godagentsFocused: { status: 'pass', tests: 118 },
-      godagentsFull: { status: 'pass', tests: 1070 },
+      godagentsFocused: { status: 'pass', tests: 121 },
+      godagentsFull: { status: 'pass', tests: 1073 },
       godskillsFocused: { status: 'pass', tests: 12 },
     },
   });
@@ -260,9 +260,23 @@ test('the committed v2 certificate binds the exact current heads and portable re
     assert.match(receipt.godagents.evidence.missionOperationEvidence.receiptDigest, /^[a-f0-9]{64}$/);
     assert.match(receipt.godagents.evidence.missionOperationEvidence.sourceCommit, /^[a-f0-9]{40}$/);
   }
+  if (receipt.godagents.evidence.missionForensicIndex !== undefined) {
+    assert.equal(receipt.godagents.evidence.missionForensicIndex.certificationId, 'mission-forensic-index-v1');
+    assert.match(receipt.godagents.evidence.missionForensicIndex.fixtureDigest, /^[a-f0-9]{64}$/);
+    assert.equal(receipt.godagents.evidence.missionForensicIndex.fullTests, 1073);
+    assert.equal(receipt.godagents.evidence.missionForensicIndex.path, 'receipts/mission-forensic-index-v1.json');
+    assert.match(receipt.godagents.evidence.missionForensicIndex.receiptDigest, /^[a-f0-9]{64}$/);
+    assert.match(receipt.godagents.evidence.missionForensicIndex.sourceCommit, /^[a-f0-9]{40}$/);
+  }
   assert.deepEqual(
     receipt.testRuns,
-    receipt.godagents.evidence.missionOperationEvidence !== undefined
+    receipt.godagents.evidence.missionForensicIndex !== undefined
+      ? {
+        godagentsFocused: { status: 'pass', tests: 121 },
+        godagentsFull: { status: 'pass', tests: 1073 },
+        godskillsFocused: { status: 'pass', tests: 12 },
+      }
+      : receipt.godagents.evidence.missionOperationEvidence !== undefined
       ? {
         godagentsFocused: { status: 'pass', tests: 118 },
         godagentsFull: { status: 'pass', tests: 1070 },

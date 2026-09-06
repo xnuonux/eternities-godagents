@@ -201,6 +201,28 @@ credential screening, digest binding, and deterministic byte ceiling. It does
 not certify an adapter, provider, model, remote effect, cross-program index,
 hosted durability, branch replay, time travel, or Lunari behavior.
 
+## Cross-program forensic index v1
+
+The cross-program forensic index is the next read-only observability boundary.
+It accepts only already verified mission-program forensic projections,
+mission-operation evidence projections, digest-only source receipt bindings,
+and explicit lifecycle evidence. Each program keeps its own journal head,
+selected prefix, projection digests, operations, and source receipt bindings;
+the index never merges unrelated chains or copies operation bodies.
+
+Programs are sorted by id and operations by step. The output can preserve
+`absent`, `admitted`, `pending`, `completed`, `recovered`, and `failed` status,
+but recovered and failed are caller-supplied evidence assertions that require a
+digest and do not certify a live recovery or provider failure. Duplicate ids,
+head or prefix drift, source receipt drift, future-prefix disclosure,
+credential-shaped input, authority expansion, and size overflow fail closed.
+
+The source-bound proof is `mission-forensic-index-v1`. It certifies only the
+bounded multi-program evidence index and its body-free, adapter-free,
+provider-neutral mechanics. It does not add a scheduler, branch replay,
+time-travel engine, hosted durability, external effect handling, keel or
+memory writes, identity, evolution, Soul, Inspiration, or Lunari behavior.
+
 ## Descriptor-bound mission-operation adapter v1
 
 The descriptor-bound mission-operation adapter is a deliberately narrow

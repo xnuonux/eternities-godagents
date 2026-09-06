@@ -36,6 +36,7 @@ const registry = Object.freeze({
   'identity-bound-mission-vessel-v1.json': 'identity-bound-mission-vessel-v1',
   'local-admission-shell-certification.json': 'local-admission-shell-v1',
   'mission-economics-ledger-v1.json': 'mission-economics-ledger-v1',
+  'mission-forensic-index-v1.json': 'mission-forensic-index-v1',
   'mission-operation-adapter-v1.json': 'mission-operation-adapter-v1',
   'mission-operation-evidence-v1.json': 'mission-operation-evidence-v1',
   'mission-program-forensics-v1.json': 'mission-program-forensics-v1',
@@ -76,7 +77,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeMissionOperationEvidence = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeMissionForensicIndex = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'mission-forensic-index-v1.json',
+));
+const expectedFilesBeforeMissionOperationEvidence = Object.freeze(expectedFilesBeforeMissionForensicIndex.filter(
   (file) => file !== 'mission-operation-evidence-v1.json',
 ));
 const expectedFilesBeforeMissionOperationAdapter = Object.freeze(expectedFilesBeforeMissionOperationEvidence.filter(
@@ -915,6 +919,8 @@ const requiredHistoricalLinks = Object.freeze({
     .map((file) => `receipts/${file}`)),
   'mission-operation-evidence-v1.json': Object.freeze(expectedFilesBeforeMissionOperationEvidence
     .map((file) => `receipts/${file}`)),
+  'mission-forensic-index-v1.json': Object.freeze(expectedFilesBeforeMissionForensicIndex
+    .map((file) => `receipts/${file}`)),
   'review-mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeDeferredReviewOperationAdapter
     .map((file) => `receipts/${file}`)),
   'revision-mission-operation-adapter-v1.json': Object.freeze(expectedFilesBeforeRevisionMissionOperationAdapter
@@ -1350,6 +1356,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(missionOperationEvidence.receipt)) {
       throw new Error('mission operation evidence certification differs from exact source reconstruction');
+    }
+  }
+
+  const missionForensicIndex = loaded.get('mission-forensic-index-v1.json');
+  if (missionForensicIndex) {
+    const { buildMissionForensicIndexReceiptFromSource } = await import(
+      '../../scripts/build-mission-forensic-index-v1-receipt.mjs'
+    );
+    const rebuilt = await buildMissionForensicIndexReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: missionForensicIndex.receipt.source.commit,
+      testRuns: missionForensicIndex.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(missionForensicIndex.receipt)) {
+      throw new Error('mission forensic index certification differs from exact source reconstruction');
     }
   }
 

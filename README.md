@@ -62,6 +62,8 @@ npm run build:delegation-mission-operation-adapter-fixture
 npm run certify:delegation-mission-operation-adapter
 npm run build:realm-consequence-mission-operation-adapter-fixture
 npm run certify:realm-consequence-mission-operation-adapter
+npm run build:mission-forensic-index-fixture
+npm run certify:mission-forensic-index
 ```
 
 `npm run demo` operates only on a repository-local counter Realm. It performs no network mutation, spending, publication, production operation, account change, or model API call.
@@ -781,6 +783,25 @@ design and proof limits are in
 `docs/superpowers/specs/2026-09-05-mission-operation-evidence-projection-v1-design.md`.
 Rebuild the fixture with `npm run build:mission-operation-evidence-fixture` and
 the source-bound certificate with `npm run certify:mission-operation-evidence`.
+
+### Cross-program forensic index v1
+
+The cross-program forensic index is a bounded, read-only view over two or more
+already verified mission-program forensic projections and their body-free
+mission-operation evidence projections. It sorts programs deterministically,
+keeps each selected prefix and mission head separate, binds every operation
+receipt to a digest-only source summary, and preserves explicit recovered or
+failed lifecycle evidence without pretending to observe a live provider
+effect.
+
+It rejects duplicate programs, head or prefix drift, receipt-binding drift,
+future-prefix disclosure, credential-shaped input, authority expansion, and
+oversized output. It never calls an adapter, provider, Realm, credential
+resolver, filesystem path, keel, or memory writer, and it does not merge
+journal chains. Its design and limits are in
+`docs/superpowers/specs/2026-09-05-cross-program-forensic-index-v1-design.md`;
+rebuild the fixture with `npm run build:mission-forensic-index-fixture` and
+the source-bound certificate with `npm run certify:mission-forensic-index`.
 
 ### Descriptor-bound mission-operation adapter v1
 

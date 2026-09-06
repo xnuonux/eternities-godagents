@@ -75,6 +75,9 @@ const REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CERTIFICATION_PROTOCOL = 'eter
 const MISSION_OPERATION_EVIDENCE_RECEIPT_PATH = 'receipts/mission-operation-evidence-v1.json';
 const MISSION_OPERATION_EVIDENCE_CERTIFICATION_ID = 'mission-operation-evidence-v1';
 const MISSION_OPERATION_EVIDENCE_CERTIFICATION_PROTOCOL = 'eternities-mission-operation-evidence-certification-v1';
+const MISSION_FORENSIC_INDEX_RECEIPT_PATH = 'receipts/mission-forensic-index-v1.json';
+const MISSION_FORENSIC_INDEX_CERTIFICATION_ID = 'mission-forensic-index-v1';
+const MISSION_FORENSIC_INDEX_CERTIFICATION_PROTOCOL = 'eternities-mission-forensic-index-certification-v1';
 const SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
@@ -202,6 +205,14 @@ const V2_BOUNDARY_PATHS = Object.freeze([
     'tests/mission-operation-evidence-certification.test.mjs',
     'tests/mission-operation-evidence.test.mjs',
     MISSION_OPERATION_EVIDENCE_RECEIPT_PATH,
+    'fixtures/mission-forensic-index-v1.json',
+    'schemas/mission-forensic-index.schema.json',
+    'scripts/build-mission-forensic-index-v1-fixture.mjs',
+    'scripts/build-mission-forensic-index-v1-receipt.mjs',
+    'src/runtime/mission-forensic-index.mjs',
+    'tests/mission-forensic-index-certification.test.mjs',
+    'tests/mission-forensic-index.test.mjs',
+    MISSION_FORENSIC_INDEX_RECEIPT_PATH,
    'fixtures/admitted-portable-identity-launcher-v1.json',
     'receipts/admitted-portable-identity-launcher-v1.json',
     'src/host/admitted-portable-identity-launcher.mjs',
@@ -281,6 +292,8 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   realmConsequenceMissionOperationAdapterFullTests: 1066,
   missionOperationEvidence: true,
   missionOperationEvidenceFullTests: 1070,
+  missionForensicIndex: true,
+  missionForensicIndexFullTests: 1073,
   supportedAdapterProtocols: Object.freeze([
     PORTABLE_CONFORMANCE_PROTOCOL,
     PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
@@ -293,7 +306,23 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   certificationPath: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH,
   certificationDocument: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_DOCUMENT,
 });
-const PRE_MISSION_OPERATION_EVIDENCE_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
+const PRE_MISSION_FORENSIC_INDEX_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
+  'fixtures/mission-forensic-index-v1.json',
+  'schemas/mission-forensic-index.schema.json',
+  'scripts/build-mission-forensic-index-v1-fixture.mjs',
+  'scripts/build-mission-forensic-index-v1-receipt.mjs',
+  'src/runtime/mission-forensic-index.mjs',
+  'tests/mission-forensic-index-certification.test.mjs',
+  'tests/mission-forensic-index.test.mjs',
+  MISSION_FORENSIC_INDEX_RECEIPT_PATH,
+].includes(path)));
+const PRE_MISSION_FORENSIC_INDEX_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  ...CURRENT_HEAD_V2_PROFILE,
+  boundaryPaths: PRE_MISSION_FORENSIC_INDEX_V2_BOUNDARY_PATHS,
+  missionForensicIndex: false,
+  missionForensicIndexFullTests: undefined,
+});
+const PRE_MISSION_OPERATION_EVIDENCE_V2_BOUNDARY_PATHS = Object.freeze(PRE_MISSION_FORENSIC_INDEX_V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/mission-operation-evidence-v1.json',
   'schemas/mission-operation-evidence.schema.json',
   'scripts/build-mission-operation-evidence-v1-fixture.mjs',
@@ -308,6 +337,8 @@ const PRE_MISSION_OPERATION_EVIDENCE_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   boundaryPaths: PRE_MISSION_OPERATION_EVIDENCE_V2_BOUNDARY_PATHS,
   missionOperationEvidence: false,
   missionOperationEvidenceFullTests: undefined,
+  missionForensicIndex: false,
+  missionForensicIndexFullTests: undefined,
 });
 const PRE_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(PRE_MISSION_OPERATION_EVIDENCE_V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/mission-operation-adapter-v1.json',
@@ -378,6 +409,8 @@ const PRE_REVIEW_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object.freeze(PRE
 const PRE_REVIEW_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_REVIEW_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
+  missionForensicIndex: false,
+  missionForensicIndexFullTests: undefined,
   missionOperationEvidence: false,
   missionOperationEvidenceFullTests: undefined,
   deferredReviewMissionOperationAdapter: false,
@@ -392,6 +425,8 @@ const PRE_REVIEW_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.free
 const PRE_REVISION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_REVISION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
+  missionForensicIndex: false,
+  missionForensicIndexFullTests: undefined,
   missionOperationEvidence: false,
   missionOperationEvidenceFullTests: undefined,
   revisionMissionOperationAdapter: false,
@@ -429,6 +464,8 @@ const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS = Object
 const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
+  missionForensicIndex: false,
+  missionForensicIndexFullTests: undefined,
   missionOperationEvidence: false,
   missionOperationEvidenceFullTests: undefined,
   realmConsequenceMissionOperationAdapter: false,
@@ -437,6 +474,8 @@ const PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = 
 const PRE_DELEGATION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_DELEGATION_MISSION_OPERATION_ADAPTER_V2_BOUNDARY_PATHS,
+  missionForensicIndex: false,
+  missionForensicIndexFullTests: undefined,
   missionOperationEvidence: false,
   missionOperationEvidenceFullTests: undefined,
   delegationMissionOperationAdapter: false,
@@ -447,6 +486,8 @@ const PRE_DELEGATION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.
 const PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_ADAPTER_V2_BOUNDARY_PATHS,
+  missionForensicIndex: false,
+  missionForensicIndexFullTests: undefined,
   missionOperationEvidence: false,
   missionOperationEvidenceFullTests: undefined,
   missionOperationAdapter: false,
@@ -1439,6 +1480,40 @@ async function verifyMissionOperationEvidence(repositoryRoot, commit, evidence, 
   );
 }
 
+async function verifyMissionForensicIndexEvidence(repositoryRoot, commit, evidence, profile) {
+  exactKeys(evidence, [
+    'certificationId', 'fixtureDigest', 'fullTests', 'path', 'receiptDigest', 'sha256', 'sourceCommit',
+  ], 'mission forensic index evidence');
+  if (evidence.certificationId !== MISSION_FORENSIC_INDEX_CERTIFICATION_ID
+      || evidence.path !== MISSION_FORENSIC_INDEX_RECEIPT_PATH) {
+    throw new Error('mission forensic index evidence identity mismatch');
+  }
+  requireDigest(evidence.fixtureDigest, 'mission forensic index fixture digest');
+  requireDigest(evidence.receiptDigest, 'mission forensic index receipt digest');
+  requireDigest(evidence.sha256, 'mission forensic index receipt file digest');
+  requireCommit(evidence.sourceCommit, 'mission forensic index source commit');
+  if (!Number.isInteger(evidence.fullTests)
+      || evidence.fullTests !== profile.missionForensicIndexFullTests) {
+    throw new Error('mission forensic index full test evidence mismatch');
+  }
+  const text = await readBlob(repositoryRoot, commit, evidence.path, 'mission forensic index receipt');
+  if (sha256Text(text) !== evidence.sha256) throw new Error('mission forensic index receipt file digest mismatch');
+  const receipt = parseJson(text, 'mission forensic index receipt');
+  requireCanonicalJsonText(text, receipt, 'mission forensic index receipt');
+  if (receipt.status !== 'certified'
+      || receipt.certificationId !== MISSION_FORENSIC_INDEX_CERTIFICATION_ID
+      || receipt.protocolId !== MISSION_FORENSIC_INDEX_CERTIFICATION_PROTOCOL
+      || receipt.receiptDigest !== evidence.receiptDigest
+      || receipt.source?.commit !== evidence.sourceCommit
+      || receipt.fixture?.logicalDigest !== evidence.fixtureDigest
+      || receipt.testRuns?.full?.status !== 'pass'
+      || receipt.testRuns.full.tests !== evidence.fullTests) {
+    throw new Error('mission forensic index receipt binding mismatch');
+  }
+  await requireCommitObject(repositoryRoot, evidence.sourceCommit, 'mission forensic index source commit');
+  await isAncestor(repositoryRoot, evidence.sourceCommit, commit, 'mission forensic index source commit');
+}
+
 async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGACY_PROFILE) {
   const expectedEvidenceKeys = profile.portableConformance
     ? ['boundaryFiles', 'integrationReceipt', 'portablePhaseHost',
@@ -1452,7 +1527,8 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
        ...(profile.revisionMissionOperationAdapter ? ['revisionMissionOperationAdapter'] : []),
        ...(profile.delegationMissionOperationAdapter ? ['delegationMissionOperationAdapter'] : []),
        ...(profile.realmConsequenceMissionOperationAdapter ? ['realmConsequenceMissionOperationAdapter'] : []),
-       ...(profile.missionOperationEvidence ? ['missionOperationEvidence'] : [])]
+       ...(profile.missionOperationEvidence ? ['missionOperationEvidence'] : []),
+       ...(profile.missionForensicIndex ? ['missionForensicIndex'] : [])]
     : ['boundaryFiles', 'integrationReceipt'];
   exactKeys(godagents.evidence, expectedEvidenceKeys, 'Godagents evidence');
   if (!Array.isArray(godagents.evidence.boundaryFiles)
@@ -1570,6 +1646,14 @@ async function verifyEvidence(repositoryRoot, commit, godagents, profile = LEGAC
       repositoryRoot,
       commit,
       godagents.evidence.missionOperationEvidence,
+      profile,
+    );
+  }
+  if (profile.missionForensicIndex) {
+    await verifyMissionForensicIndexEvidence(
+      repositoryRoot,
+      commit,
+      godagents.evidence.missionForensicIndex,
       profile,
     );
   }
@@ -1936,6 +2020,24 @@ async function collectIntegrationEvidence(repositoryRoot, commit, profile = LEGA
       sourceCommit: missionOperationEvidence.source.commit,
     };
   }
+  if (profile.missionForensicIndex) {
+    const missionForensicIndexText = await readBlob(
+      repositoryRoot,
+      commit,
+      MISSION_FORENSIC_INDEX_RECEIPT_PATH,
+      'mission forensic index receipt',
+    );
+    const missionForensicIndex = parseJson(missionForensicIndexText, 'mission forensic index receipt');
+    evidence.missionForensicIndex = {
+      certificationId: missionForensicIndex.certificationId,
+      fixtureDigest: missionForensicIndex.fixture.logicalDigest,
+      fullTests: missionForensicIndex.testRuns.full.tests,
+      path: MISSION_FORENSIC_INDEX_RECEIPT_PATH,
+      receiptDigest: missionForensicIndex.receiptDigest,
+      sha256: sha256Text(missionForensicIndexText),
+      sourceCommit: missionForensicIndex.source.commit,
+    };
+  }
   return evidence;
 }
 
@@ -2129,6 +2231,10 @@ export async function verifyCrossRepositoryCurrentHeadCertificateV2(receipt, opt
   if (currentProfile.missionOperationEvidencePresent !== missionOperationEvidencePresent) {
     throw new Error('current-head v2 mission operation evidence projection profile does not match the committed source');
   }
+  const missionForensicIndexEvidencePresent = receipt?.godagents?.evidence?.missionForensicIndex !== undefined;
+  if (currentProfile.missionForensicIndexPresent !== missionForensicIndexEvidencePresent) {
+    throw new Error('current-head v2 mission forensic index profile does not match the committed source');
+  }
   return verifyCertificate(receipt, {
     ...options,
     protocolId: CROSS_REPOSITORY_CURRENT_HEAD_V2_PROTOCOL,
@@ -2161,7 +2267,7 @@ export async function buildCrossRepositoryCurrentHeadCertificateV2(options = {})
 
 async function currentHeadV2Profile(repositoryRoot, commit) {
   await requireCommitObject(repositoryRoot, commit, 'Godagents build commit');
-  const [forensicsPresent, agentProfilePresent, deferredReviewMissionOperationAdapterPresent, revisionMissionOperationAdapterPresent, delegationMissionOperationAdapterPresent, realmConsequenceMissionOperationAdapterPresent, missionOperationEvidencePresent] = await Promise.all([
+  const [forensicsPresent, agentProfilePresent, deferredReviewMissionOperationAdapterPresent, revisionMissionOperationAdapterPresent, delegationMissionOperationAdapterPresent, realmConsequenceMissionOperationAdapterPresent, missionOperationEvidencePresent, missionForensicIndexPresent] = await Promise.all([
     hasCommittedPath(repositoryRoot, commit, MISSION_PROGRAM_FORENSICS_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, AGENT_PROFILE_CONTRACT_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, DEFERRED_REVIEW_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
@@ -2169,6 +2275,7 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     hasCommittedPath(repositoryRoot, commit, DELEGATION_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_RECEIPT_PATH),
     hasCommittedPath(repositoryRoot, commit, MISSION_OPERATION_EVIDENCE_RECEIPT_PATH),
+    hasCommittedPath(repositoryRoot, commit, MISSION_FORENSIC_INDEX_RECEIPT_PATH),
   ]);
   const missionOperationAdapterPresent = await hasCommittedPath(
     repositoryRoot,
@@ -2183,7 +2290,9 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
             ? (delegationMissionOperationAdapterPresent
               ? (realmConsequenceMissionOperationAdapterPresent
                 ? (missionOperationEvidencePresent
-                  ? CURRENT_HEAD_V2_PROFILE
+                  ? (missionForensicIndexPresent
+                    ? CURRENT_HEAD_V2_PROFILE
+                    : PRE_MISSION_FORENSIC_INDEX_CURRENT_HEAD_V2_PROFILE)
                   : PRE_MISSION_OPERATION_EVIDENCE_CURRENT_HEAD_V2_PROFILE)
                 : PRE_REALM_CONSEQUENCE_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE)
               : PRE_DELEGATION_MISSION_OPERATION_ADAPTER_CURRENT_HEAD_V2_PROFILE)
@@ -2203,6 +2312,7 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     delegationMissionOperationAdapterPresent,
     realmConsequenceMissionOperationAdapterPresent,
     missionOperationEvidencePresent,
+    missionForensicIndexPresent,
     profile,
   };
 }
