@@ -72,8 +72,8 @@ async function buildReceipt() {
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
     testRuns: {
-      godagentsFocused: { status: 'pass', tests: 121 },
-      godagentsFull: { status: 'pass', tests: 1073 },
+      godagentsFocused: { status: 'pass', tests: 129 },
+      godagentsFull: { status: 'pass', tests: 1081 },
       godskillsFocused: { status: 'pass', tests: 12 },
     },
   });
@@ -268,9 +268,23 @@ test('the committed v2 certificate binds the exact current heads and portable re
     assert.match(receipt.godagents.evidence.missionForensicIndex.receiptDigest, /^[a-f0-9]{64}$/);
     assert.match(receipt.godagents.evidence.missionForensicIndex.sourceCommit, /^[a-f0-9]{40}$/);
   }
+  if (receipt.godagents.evidence.portablePhaseHostAdversarial !== undefined) {
+    assert.equal(receipt.godagents.evidence.portablePhaseHostAdversarial.certificationId, 'portable-phase-host-adversarial-v1');
+    assert.match(receipt.godagents.evidence.portablePhaseHostAdversarial.fixtureDigest, /^[a-f0-9]{64}$/);
+    assert.equal(receipt.godagents.evidence.portablePhaseHostAdversarial.fullTests, 1081);
+    assert.equal(receipt.godagents.evidence.portablePhaseHostAdversarial.path, 'receipts/portable-phase-host-adversarial-v1.json');
+    assert.match(receipt.godagents.evidence.portablePhaseHostAdversarial.receiptDigest, /^[a-f0-9]{64}$/);
+    assert.match(receipt.godagents.evidence.portablePhaseHostAdversarial.sourceCommit, /^[a-f0-9]{40}$/);
+  }
   assert.deepEqual(
     receipt.testRuns,
-    receipt.godagents.evidence.missionForensicIndex !== undefined
+    receipt.godagents.evidence.portablePhaseHostAdversarial !== undefined
+      ? {
+        godagentsFocused: { status: 'pass', tests: 129 },
+        godagentsFull: { status: 'pass', tests: 1081 },
+        godskillsFocused: { status: 'pass', tests: 12 },
+      }
+      : receipt.godagents.evidence.missionForensicIndex !== undefined
       ? {
         godagentsFocused: { status: 'pass', tests: 121 },
         godagentsFull: { status: 'pass', tests: 1073 },

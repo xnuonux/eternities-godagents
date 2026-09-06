@@ -20,8 +20,8 @@ const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const godskillsRoot = 'C:/dev/eternities-godskills';
 const execFileAsync = promisify(execFile);
 const testRuns = Object.freeze({
-  godagentsFocused: { status: 'pass', tests: 121 },
-  godagentsFull: { status: 'pass', tests: 1073 },
+  godagentsFocused: { status: 'pass', tests: 129 },
+  godagentsFull: { status: 'pass', tests: 1081 },
   godskillsFocused: { status: 'pass', tests: 12 },
 });
 const oldArtifacts = Object.freeze([
@@ -476,6 +476,47 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     );
     assert.match(
       receipt.godagents.evidence.missionForensicIndex.sourceCommit,
+      /^[a-f0-9]{40}$/,
+    );
+  }
+  const portablePhaseHostAdversarialCommitted = await hasCommittedPath(
+    godagentsCommit,
+    'receipts/portable-phase-host-adversarial-v1.json',
+  );
+  assert.equal(
+    receipt.godagents.evidence.portablePhaseHostAdversarial !== undefined,
+    portablePhaseHostAdversarialCommitted,
+    'v2 builder profile must follow the committed portable phase-host adversarial boundary',
+  );
+  if (receipt.godagents.evidence.portablePhaseHostAdversarial !== undefined) {
+    assert.ok(
+      receipt.godagents.evidence.boundaryFiles.some(
+        ({ path }) => path === 'tests/portable-phase-host-adversarial.test.mjs',
+      ),
+      'current v2 profile must bind the portable phase-host adversarial boundary paths',
+    );
+    assert.equal(
+      receipt.godagents.evidence.portablePhaseHostAdversarial.certificationId,
+      'portable-phase-host-adversarial-v1',
+    );
+    assert.equal(
+      receipt.godagents.evidence.portablePhaseHostAdversarial.fullTests,
+      1081,
+    );
+    assert.equal(
+      receipt.godagents.evidence.portablePhaseHostAdversarial.path,
+      'receipts/portable-phase-host-adversarial-v1.json',
+    );
+    assert.match(
+      receipt.godagents.evidence.portablePhaseHostAdversarial.fixtureDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.portablePhaseHostAdversarial.receiptDigest,
+      /^[a-f0-9]{64}$/,
+    );
+    assert.match(
+      receipt.godagents.evidence.portablePhaseHostAdversarial.sourceCommit,
       /^[a-f0-9]{40}$/,
     );
   }
