@@ -952,6 +952,26 @@ local-model, MCP, hostile same-user isolation, hosted durability, Realm,
 keel, memory, identity, evolution, Inspiration, Lunari, and Soul remain
 outside the proof.
 
+### External host qualification dossier v1
+
+The external host qualification dossier is the provider-neutral migration
+boundary for a future Codex, Claude Code, local-model, MCP, or other host
+adapter. The current release is deliberately `contract-only`: it binds the
+portable host description and the exact conformance and adversarial receipt
+digests, while reserving a digest-only shape for a later live qualification
+run. It makes no provider call, resolves no credential, and cannot launch a
+mission or expand host authority.
+
+The source-bound receipt is
+`receipts/external-host-qualification-v1.json`; rebuild the deterministic
+fixture with `npm run build:external-host-qualification-fixture` and the
+receipt with `npm run certify:external-host-qualification`. A future
+`live-evidence-bound` dossier must still supply independently verified run,
+security, and native/review/revision phase receipt digests. This release does
+not claim external truth, model quality, remote exactly-once behavior,
+provider qualification, hosted durability, keel or memory authority, or
+Lunari and Soul behavior.
+
 ### Realm negotiation v1
 
 The [Realm negotiation design](docs/superpowers/specs/2026-09-03-realm-negotiation-v1-design.md)

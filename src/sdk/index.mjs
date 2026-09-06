@@ -15,6 +15,7 @@ const DESCRIPTION = deepFreeze({
   version: VERSION,
   status: 'experimental',
   supportedAdapterProtocols: [
+    'eternities-external-host-qualification-v1',
     'eternities-portable-phase-host-v1',
     'eternities-recoverable-realm-consequence-v1',
   ],
@@ -72,3 +73,9 @@ export {
   createPortablePhaseHostAdapter,
   verifyPortablePhaseHostDescription,
 } from './portable-phase-host.mjs';
+
+export {
+  EXTERNAL_HOST_QUALIFICATION_PROTOCOL_ID,
+  buildExternalHostQualificationDossier,
+  verifyExternalHostQualificationDossier,
+} from '../host/external-host-qualification.mjs';

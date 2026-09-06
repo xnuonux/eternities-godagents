@@ -28,6 +28,7 @@ const registry = Object.freeze({
   'deferred-godskills-review-executor-v1.json': 'deferred-godskills-review-executor-v1',
   'deferred-godskills-review-materializer-v1.json': 'deferred-godskills-review-materializer-v1',
   'durable-anthropic-messages-phase-transport-v1.json': 'durable-anthropic-messages-phase-transport-v1',
+  'external-host-qualification-v1.json': 'external-host-qualification-v1',
   'godagent-v0-certification.json': 'godagent-v0',
   'godskills-adaptive-activation-v1.json': 'godskills-adaptive-activation-v1',
   'godskills-specialist-preference-v1.json': 'godskills-specialist-preference-v1',
@@ -78,7 +79,10 @@ const registry = Object.freeze({
   'visual-creator-shell-certification.json': 'visual-creator-shell-v1',
 });
 const expectedFiles = Object.freeze(Object.keys(registry).sort());
-const expectedFilesBeforeMissionForensicIndex = Object.freeze(expectedFiles.filter(
+const expectedFilesBeforeExternalHostQualification = Object.freeze(expectedFiles.filter(
+  (file) => file !== 'external-host-qualification-v1.json',
+));
+const expectedFilesBeforeMissionForensicIndex = Object.freeze(expectedFilesBeforeExternalHostQualification.filter(
   (file) => file !== 'portable-phase-host-adversarial-v1.json'
     && file !== 'mission-forensic-index-v1.json',
 ));
@@ -157,6 +161,8 @@ const expectedFilesBeforeAdmittedProviderLauncher = Object.freeze(expectedFilesB
   (file) => file !== 'admitted-provider-backed-identity-launcher-v1.json',
 ));
 const requiredHistoricalLinks = Object.freeze({
+  'external-host-qualification-v1.json': Object.freeze(expectedFilesBeforeExternalHostQualification
+    .map((file) => `receipts/${file}`)),
   'agent-profile-contract-v1.json': Object.freeze(expectedFilesBeforeAgentProfileContract
     .map((file) => `receipts/${file}`)),
   'provider-neutral-phase-protocol-v1.json': Object.freeze(expectedFilesBeforeAdmittedProviderLauncher
@@ -1376,6 +1382,21 @@ export async function verifyCertificationLedger({ receiptDirectory, repositoryRo
     });
     if (canonicalJson(rebuilt) !== canonicalJson(missionForensicIndex.receipt)) {
       throw new Error('mission forensic index certification differs from exact source reconstruction');
+    }
+  }
+
+  const externalHostQualification = loaded.get('external-host-qualification-v1.json');
+  if (externalHostQualification) {
+    const { buildExternalHostQualificationReceiptFromSource } = await import(
+      '../../scripts/build-external-host-qualification-v1-receipt.mjs'
+    );
+    const rebuilt = await buildExternalHostQualificationReceiptFromSource({
+      repositoryRoot: repository,
+      sourceCommit: externalHostQualification.receipt.source.commit,
+      testRuns: externalHostQualification.receipt.testRuns,
+    });
+    if (canonicalJson(rebuilt) !== canonicalJson(externalHostQualification.receipt)) {
+      throw new Error('external host qualification certification differs from exact source reconstruction');
     }
   }
 

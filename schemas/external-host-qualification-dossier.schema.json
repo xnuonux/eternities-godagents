@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "hostDescription": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "protocolId",
+        "adapterId",
+        "adapterVersion",
+        "policyDigest",
+        "capabilities",
+        "descriptors",
+        "authority",
+        "descriptionDigest"
+      ],
+      "additionalProperties": true
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conformanceProtocolId",
+        "conformanceReceiptDigest",
+        "adversarialProtocolId",
+        "adversarialReceiptDigest"
+      ],
+      "properties": {
+        "conformanceProtocolId": {
+          "const": "eternities-portable-phase-host-conformance-certification-v1"
+        },
+        "conformanceReceiptDigest": { "$ref": "#/$defs/digest" },
+        "adversarialProtocolId": {
+          "const": "eternities-portable-phase-host-adversarial-certification-v1"
+        },
+        "adversarialReceiptDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "liveEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "providerFamily",
+        "sourceCommit",
+        "liveRunReceiptDigest",
+        "securityReceiptDigest",
+        "phaseReceiptDigests"
+      ],
+      "properties": {
+        "providerFamily": { "$ref": "#/$defs/identifier" },
+        "sourceCommit": { "$ref": "#/$defs/commit" },
+        "liveRunReceiptDigest": { "$ref": "#/$defs/digest" },
+        "securityReceiptDigest": { "$ref": "#/$defs/digest" },
+        "phaseReceiptDigests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["native", "review", "revision"],
+          "properties": {
+            "native": { "$ref": "#/$defs/digest" },
+            "review": { "$ref": "#/$defs/digest" },
+            "revision": { "$ref": "#/$defs/digest" }
+          }
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "protocolId",
+    "status",
+    "hostDescription",
+    "hostDescriptionDigest",
+    "baseline",
+    "liveEvidence",
+    "dossierDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-external-host-qualification-v1" },
+    "status": { "enum": ["contract-only", "live-evidence-bound"] },
+    "hostDescription": { "$ref": "#/$defs/hostDescription" },
+    "hostDescriptionDigest": { "$ref": "#/$defs/digest" },
+    "baseline": { "$ref": "#/$defs/baseline" },
+    "liveEvidence": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/liveEvidence" }
+      ]
+    },
+    "dossierDigest": { "$ref": "#/$defs/digest" }
+  }
+}

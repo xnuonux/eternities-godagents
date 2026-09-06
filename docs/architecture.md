@@ -649,6 +649,24 @@ identity or evolution authority, or Soul, Inspiration, Lunari, or
 phenomenological behavior. Its source-bound proof is
 `portable-phase-host-adversarial-v1`.
 
+## External host qualification dossier v1
+
+The external host qualification dossier is a provider-neutral migration
+boundary, not an adapter implementation. Its contract-only release binds the
+portable host description plus the exact conformance and adversarial receipt
+digests and reserves a digest-only live-evidence handoff for a separately
+qualified host. It makes no provider calls, resolves no credentials, loads no
+third-party bodies, and cannot add authority, effects, continuity, identity,
+evolution, keel, memory, Inspiration, Lunari, or Soul behavior.
+
+The source-bound receipt is `external-host-qualification-v1`. The dossier is
+deterministic, body-free, bounded, and fail-closed on stale or forged
+evidence. A future live-evidence binding must independently verify its
+provider run, security receipt, and native, review, and revision phase
+receipts. The current release therefore proves a migration seam only, not
+live provider truth, model quality, hosted durability, remote exactly-once
+effects, or default host adoption.
+
 ## Provider-backed mission dependency boundary
 
 The provider-backed dependency bridge consumes one SDK-issued host rather than selecting or constructing a family ambiently. A module-private process-local brand rejects descriptor-equivalent caller objects, proxies, and getter facades. The bridge snapshots and verifies the live native, review, and revision descriptors against the host description, captures the genuine callable references once, pins those descriptor bytes for the lifetime of the returned handles, and constructs the existing deferred Godskills review and mission revision executors over the pinned transports. Its immutable description binds the complete provider host description, exact Godskills release and activation roots, executor and materializer identities, transport descriptors, and materialization ceilings.

@@ -28,6 +28,16 @@ const state = {
   preconditions: ['realm-observed'],
 };
 
+const REALM_CONSEQUENCE_SDK_EXCLUDED_EXPORTS = new Set([
+  'EXTERNAL_HOST_QUALIFICATION_PROTOCOL_ID',
+  'buildExternalHostQualificationDossier',
+  'verifyExternalHostQualificationDossier',
+]);
+
+const REALM_CONSEQUENCE_SDK_EXCLUDED_PROTOCOLS = new Set([
+  'eternities-external-host-qualification-v1',
+]);
+
 async function inputFor() {
   const proposal = await createFixtureCortexA().infer({
     missionId: mission.missionId,
@@ -58,7 +68,9 @@ export async function buildDeterministicPortableRealmConsequenceSdkFixture() {
     const input = await inputFor();
     const first = await host.execute(input);
     const retry = await host.execute(input);
-    const rootExports = Object.keys(sdk).sort();
+    const rootExports = Object.keys(sdk)
+      .filter((name) => !REALM_CONSEQUENCE_SDK_EXCLUDED_EXPORTS.has(name))
+      .sort();
     const unsigned = {
       schemaVersion: 1,
       protocolId: 'eternities-portable-realm-consequence-sdk-fixture-v1',
@@ -66,7 +78,8 @@ export async function buildDeterministicPortableRealmConsequenceSdkFixture() {
         protocolId: sdk.GODAGENT_SDK_PROTOCOL_ID,
         version: sdk.GODAGENT_SDK_VERSION,
         rootExports,
-        supportedAdapterProtocols: sdk.describeGodagentSdk().supportedAdapterProtocols,
+        supportedAdapterProtocols: sdk.describeGodagentSdk().supportedAdapterProtocols
+          .filter((protocol) => !REALM_CONSEQUENCE_SDK_EXCLUDED_PROTOCOLS.has(protocol)),
       },
       host: {
         protocolId: sdk.RECOVERABLE_REALM_CONSEQUENCE_PROTOCOL_ID,

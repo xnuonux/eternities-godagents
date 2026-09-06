@@ -101,6 +101,7 @@ const schemaFiles = {
   'openai-compatible-phase-resolution-policy': 'openai-compatible-phase-resolution-policy.schema.json',
   'provider-phase-resolution-policy': 'provider-phase-resolution-policy.schema.json',
   'portable-phase-host-description': 'portable-phase-host-description.schema.json',
+  'external-host-qualification-dossier': 'external-host-qualification-dossier.schema.json',
   'bounded-delegation-admission': 'bounded-delegation-admission.schema.json',
   'bounded-delegation-input': 'bounded-delegation-input.schema.json',
   'bounded-delegation-worker-descriptor': 'bounded-delegation-worker-descriptor.schema.json',
