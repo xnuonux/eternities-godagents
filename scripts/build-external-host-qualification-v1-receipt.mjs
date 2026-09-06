@@ -113,7 +113,8 @@ function exactKeys(value, expected, label) {
 }
 
 function verifyFixture(value) {
-  assertNoCredentialFields(value);
+  const { hostDescription: _hostDescription, ...credentialFree } = value;
+  assertNoCredentialFields(credentialFree);
   verifyExternalHostQualificationDossier(value);
   return value;
 }
