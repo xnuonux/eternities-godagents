@@ -325,9 +325,9 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   externalHostQualification: true,
   externalHostQualificationFullTests: 1096,
   supportedAdapterProtocols: Object.freeze([
+    EXTERNAL_HOST_QUALIFICATION_PROTOCOL,
     PORTABLE_CONFORMANCE_PROTOCOL,
     PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
-    EXTERNAL_HOST_QUALIFICATION_PROTOCOL,
   ]),
   appendOnlyPaths: Object.freeze([
     CROSS_REPOSITORY_CURRENT_HEAD_V2_ARTIFACT_PATH,
