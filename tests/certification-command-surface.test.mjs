@@ -35,6 +35,10 @@ const expectedCommands = Object.freeze({
     'node scripts/build-mission-forensic-index-v1-fixture.mjs',
   'certify:mission-forensic-index':
     'node scripts/build-mission-forensic-index-v1-receipt.mjs',
+  'build:portable-phase-host-adversarial-fixture':
+    'node scripts/build-portable-phase-host-adversarial-v1-fixture.mjs',
+  'certify:portable-phase-host-adversarial':
+    'node scripts/build-portable-phase-host-adversarial-v1-receipt.mjs',
   'build:bounded-delegation-fixture':
     'node scripts/build-bounded-delegation-fixture.mjs',
   'certify:bounded-delegation':

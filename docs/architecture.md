@@ -632,6 +632,23 @@ default host adoption, or any new Realm, continuity, identity, evolution,
 Inspiration, Lunari, or Soul authority. Godskills remain an external,
 receipt-bound capability dependency and are not copied into this package.
 
+## Portable phase-host adversarial campaign v1
+
+The adversarial campaign is an explicit hostile-input receipt over the
+portable phase-host boundary. It exercises counterfeit and shallow-cloned
+hosts, forged protocol, capability, authority, and credential-shaped fields,
+phase descriptor drift, post-construction descriptor mutation, credential
+preflight, exact public surface, and inert construction of both existing
+provider wrappers. The fixture records only case dispositions and aggregate
+metrics, never credentials, provider bodies, or execution handles.
+
+This makes the local fail-closed claim replayable without pretending that a
+fixture is a live-host security certification. The campaign adds no provider
+call, Realm effect, scheduler, hosted persistence, keel or memory write,
+identity or evolution authority, or Soul, Inspiration, Lunari, or
+phenomenological behavior. Its source-bound proof is
+`portable-phase-host-adversarial-v1`.
+
 ## Provider-backed mission dependency boundary
 
 The provider-backed dependency bridge consumes one SDK-issued host rather than selecting or constructing a family ambiently. A module-private process-local brand rejects descriptor-equivalent caller objects, proxies, and getter facades. The bridge snapshots and verifies the live native, review, and revision descriptors against the host description, captures the genuine callable references once, pins those descriptor bytes for the lifetime of the returned handles, and constructs the existing deferred Godskills review and mission revision executors over the pinned transports. Its immutable description binds the complete provider host description, exact Godskills release and activation roots, executor and materializer identities, transport descriptors, and materialization ceilings.

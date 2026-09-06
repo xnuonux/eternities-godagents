@@ -47,6 +47,7 @@ const registry = Object.freeze({
   'provider-neutral-phase-resolution-v1.json': 'provider-neutral-phase-resolution-v1',
   'provider-backed-mission-dependencies-v1.json': 'provider-backed-mission-dependencies-v1',
   'provider-phase-host-sdk-v1.json': 'provider-phase-host-sdk-v1',
+  'portable-phase-host-adversarial-v1.json': 'portable-phase-host-adversarial-v1',
   'portable-phase-host-conformance-v1.json': 'portable-phase-host-conformance-v1',
   'portable-realm-consequence-sdk-v1.json': 'portable-realm-consequence-sdk-v1',
   'provider-resolution-authority-handoff-v1.json': 'provider-resolution-authority-handoff-v1',
@@ -146,7 +147,8 @@ const expectedFilesBeforeRealmNegotiation = Object.freeze(expectedFilesBeforeLat
   (file) => !['realm-action-adapter-v1.json', 'realm-negotiation-v1.json'].includes(file),
 ));
 const expectedFilesBeforePortablePhaseHost = Object.freeze(expectedFilesBeforeRealmNegotiation.filter(
-  (file) => file !== 'portable-phase-host-conformance-v1.json',
+  (file) => file !== 'portable-phase-host-adversarial-v1.json'
+    && file !== 'portable-phase-host-conformance-v1.json',
 ));
 const expectedFilesBeforeProviderBackedIdentityCli = Object.freeze(expectedFilesBeforePortablePhaseHost.filter(
   (file) => file !== 'provider-backed-identity-cli-v1.json',
@@ -890,6 +892,9 @@ const requiredHistoricalLinks = Object.freeze({
   ]),
   'portable-phase-host-conformance-v1.json': Object.freeze([
     'receipts/provider-phase-host-sdk-v1.json',
+  ]),
+  'portable-phase-host-adversarial-v1.json': Object.freeze([
+    'receipts/portable-phase-host-conformance-v1.json',
   ]),
   'portable-realm-consequence-sdk-v1.json': Object.freeze(expectedFilesBeforePortableRealmConsequenceSdk
     .map((file) => `receipts/${file}`)),
