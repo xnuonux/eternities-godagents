@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["realmEffects", "continuityWrites", "identityMutation", "evolution", "soul"],
+      "properties": {
+        "realmEffects": { "const": 0 },
+        "continuityWrites": { "const": 0 },
+        "identityMutation": { "const": 0 },
+        "evolution": { "const": 0 },
+        "soul": { "const": 0 }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stepId", "stepIndex", "operationKind", "journalStatus", "missionStepDescriptorDigest",
+        "sourceDescriptorDigest", "requestDigest", "dispatchDigest", "operationReceiptDigest",
+        "disposition", "completionDigest", "sourceEvidenceDigest", "artifactDigest", "authority"
+      ],
+      "properties": {
+        "stepId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+        "stepIndex": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "operationKind": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+        "journalStatus": { "enum": ["admitted", "pending", "committed"] },
+        "missionStepDescriptorDigest": { "$ref": "#/$defs/digest" },
+        "sourceDescriptorDigest": { "$ref": "#/$defs/digest" },
+        "requestDigest": { "$ref": "#/$defs/digest" },
+        "dispatchDigest": { "$ref": "#/$defs/digest" },
+        "operationReceiptDigest": { "$ref": "#/$defs/digest" },
+        "disposition": { "enum": ["absent", "pending", "completed"] },
+        "completionDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+        "sourceEvidenceDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+        "artifactDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+        "authority": { "$ref": "#/$defs/authority" }
+      }
+    },
+    "receiptBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operationReceiptDigest", "disposition", "completionDigest", "sourceEvidenceDigest"],
+      "properties": {
+        "operationReceiptDigest": { "$ref": "#/$defs/digest" },
+        "disposition": { "enum": ["absent", "pending", "completed"] },
+        "completionDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+        "sourceEvidenceDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] }
+      }
+    },
+    "program": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "programId", "lifecycleStatus", "lifecycleEvidenceDigest", "selectedSequence", "headSequence",
+        "headDigest", "selectedHeadDigest", "missionProjectionDigest", "operationProjectionDigest",
+        "sourceReceiptBindings", "operations"
+      ],
+      "properties": {
+        "programId": { "$ref": "#/$defs/digest" },
+        "lifecycleStatus": { "enum": ["absent", "admitted", "pending", "completed", "recovered", "failed"] },
+        "lifecycleEvidenceDigest": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/digest" }] },
+        "selectedSequence": { "type": "integer", "minimum": 0, "maximum": 32 },
+        "headSequence": { "type": "integer", "minimum": 0, "maximum": 32 },
+        "headDigest": { "$ref": "#/$defs/digest" },
+        "selectedHeadDigest": { "$ref": "#/$defs/digest" },
+        "missionProjectionDigest": { "$ref": "#/$defs/digest" },
+        "operationProjectionDigest": { "$ref": "#/$defs/digest" },
+        "sourceReceiptBindings": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/receiptBinding" } },
+        "operations": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/operation" } }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "status", "programCount", "programs", "indexDigest"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "protocolId": { "const": "eternities-mission-forensic-index-v1" },
+    "status": { "const": "indexed" },
+    "programCount": { "type": "integer", "minimum": 2, "maximum": 16 },
+    "programs": { "type": "array", "minItems": 2, "maxItems": 16, "items": { "$ref": "#/$defs/program" } },
+    "indexDigest": { "$ref": "#/$defs/digest" }
+  }
+}
