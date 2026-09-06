@@ -11,6 +11,7 @@ import { validAnthropicMessagesPhasePolicy } from './helpers/anthropic-messages-
 import { validOpenAICompatiblePhasePolicy } from './helpers/openai-compatible-phase-policy-fixture.mjs';
 
 const EXPECTED_EXPORTS = [
+  'EXTERNAL_HOST_QUALIFICATION_PROTOCOL_ID',
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
   'PORTABLE_PHASE_HOST_PROTOCOL_ID',
@@ -18,6 +19,7 @@ const EXPECTED_EXPORTS = [
   'assertPortablePhaseHostInstance',
   'assertProviderPhaseHostInstance',
   'assertRecoverableRealmConsequenceHost',
+  'buildExternalHostQualificationDossier',
   'buildPortablePhaseHostDescription',
   'createAdmittedPortableIdentityLauncher',
   'createAdmittedProviderBackedIdentityLauncher',
@@ -27,6 +29,7 @@ const EXPECTED_EXPORTS = [
   'describeGodagentSdk',
   'verifyAdmittedPortableIdentityLauncherDescription',
   'verifyAdmittedProviderBackedIdentityLauncherDescription',
+  'verifyExternalHostQualificationDossier',
   'verifyPortablePhaseHostDescription',
   'verifyProviderPhaseHostDescription',
 ];
@@ -112,6 +115,7 @@ test('SDK descriptor is deterministic, deeply frozen, and honest about proof lim
     version: '0.1.0',
     status: 'experimental',
     supportedAdapterProtocols: [
+      'eternities-external-host-qualification-v1',
       'eternities-portable-phase-host-v1',
       'eternities-recoverable-realm-consequence-v1',
     ],
