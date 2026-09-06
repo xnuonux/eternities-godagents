@@ -75,7 +75,6 @@ const testFiles = Object.freeze([
 ].sort());
 const focusedTestFiles = Object.freeze([
   'tests/external-host-qualification.test.mjs',
-  'tests/external-host-qualification-certification.test.mjs',
 ]);
 const releaseOnlyPaths = Object.freeze([certificationPath, receiptPath]);
 const requirements = Object.freeze([
