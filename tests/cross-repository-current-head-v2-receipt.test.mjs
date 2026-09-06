@@ -72,8 +72,8 @@ async function buildReceipt() {
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
     testRuns: {
-      godagentsFocused: { status: 'pass', tests: 114 },
-      godagentsFull: { status: 'pass', tests: 1066 },
+      godagentsFocused: { status: 'pass', tests: 118 },
+      godagentsFull: { status: 'pass', tests: 1070 },
       godskillsFocused: { status: 'pass', tests: 12 },
     },
   });
@@ -252,9 +252,23 @@ test('the committed v2 certificate binds the exact current heads and portable re
     assert.match(receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.receiptDigest, /^[a-f0-9]{64}$/);
     assert.match(receipt.godagents.evidence.realmConsequenceMissionOperationAdapter.sourceCommit, /^[a-f0-9]{40}$/);
   }
+  if (receipt.godagents.evidence.missionOperationEvidence !== undefined) {
+    assert.equal(receipt.godagents.evidence.missionOperationEvidence.certificationId, 'mission-operation-evidence-v1');
+    assert.match(receipt.godagents.evidence.missionOperationEvidence.fixtureDigest, /^[a-f0-9]{64}$/);
+    assert.equal(receipt.godagents.evidence.missionOperationEvidence.fullTests, 1070);
+    assert.equal(receipt.godagents.evidence.missionOperationEvidence.path, 'receipts/mission-operation-evidence-v1.json');
+    assert.match(receipt.godagents.evidence.missionOperationEvidence.receiptDigest, /^[a-f0-9]{64}$/);
+    assert.match(receipt.godagents.evidence.missionOperationEvidence.sourceCommit, /^[a-f0-9]{40}$/);
+  }
   assert.deepEqual(
     receipt.testRuns,
-    receipt.godagents.evidence.realmConsequenceMissionOperationAdapter !== undefined
+    receipt.godagents.evidence.missionOperationEvidence !== undefined
+      ? {
+        godagentsFocused: { status: 'pass', tests: 118 },
+        godagentsFull: { status: 'pass', tests: 1070 },
+        godskillsFocused: { status: 'pass', tests: 12 },
+      }
+      : receipt.godagents.evidence.realmConsequenceMissionOperationAdapter !== undefined
       ? {
         godagentsFocused: { status: 'pass', tests: 114 },
         godagentsFull: { status: 'pass', tests: 1066 },
