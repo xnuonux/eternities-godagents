@@ -61,9 +61,9 @@ function vesselRequest() {
   };
 }
 
-function routed(request, counters) {
+function routed(request, counters, status = 'selected') {
   counters.route += 1;
-  const selectedIds = ['eternities-aegis'];
+  const selectedIds = status === 'selected' ? ['eternities-aegis'] : [];
   return {
     compilerReceipt: {
       requestId: request.requestId,
@@ -80,17 +80,17 @@ function routed(request, counters) {
     },
     routeReceipt: {
       requestId: request.requestId,
-      status: 'selected',
-      selectionKind: 'single',
+      status,
+      selectionKind: status === 'selected' ? 'single' : 'none',
       selectedIds,
-      selectedEntrypoints: ['skills/eternities-aegis/SKILL.md'],
+      selectedEntrypoints: status === 'selected' ? ['skills/eternities-aegis/SKILL.md'] : [],
       requestFeatures: {
         permittedEffects: [...request.context.permittedEffects],
         maximumRisk: request.context.maximumRisk,
         minimumEvidenceConfidence: request.context.minimumEvidenceConfidence,
         contextBudget: request.context.contextBudget,
       },
-      unresolvedDecisions: [],
+      unresolvedDecisions: status === 'needs-decision' ? ['intent-not-understood'] : [],
     },
   };
 }
@@ -138,12 +138,12 @@ function activationResult(request) {
   return { ...unsigned, resultDigest: sha256Value(unsigned) };
 }
 
-async function realAdapter(counters, { forbidExternal = false } = {}) {
+async function realAdapter(counters, { forbidExternal = false, status = 'selected' } = {}) {
   return createGodskillsAdapter({
     releasePin: pinnedGodskillsReviewRelease(godskillsRoot),
     transport: forbidExternal
       ? async () => { counters.route += 1; throw new Error('routing must not run during recovery'); }
-      : async (request) => routed(request, counters),
+      : async (request) => routed(request, counters, status),
     activationClassifier: forbidExternal
       ? () => { counters.classify += 1; throw new Error('classification must not run during recovery'); }
       : () => {
@@ -210,7 +210,8 @@ function nativeTransport() {
   };
 }
 
-test('default vessel uses the real adaptive Godskills adapter once and recovery only rehydrates', async (t) => {
+for (const status of ['selected', 'no-qualified-route', 'needs-decision']) {
+test(`default vessel preserves ${status} through the real adapter${status === 'needs-decision' ? ' without inference' : ' and recovery'}`, async (t) => {
   const admitted = await setupAdmittedIdentity(t, 'real-godskills');
   t.after(() => rm(admitted.root, { recursive: true, force: true }));
   const request = vesselRequest();
@@ -230,18 +231,32 @@ test('default vessel uses the real adaptive Godskills adapter once and recovery 
   const first = createIdentityBoundMissionVessel({
     genesisAdmission: admitted.admission,
     ...roots,
-    godskillsAdapter: await realAdapter(firstCounters),
+    godskillsAdapter: await realAdapter(firstCounters, { status }),
     nativeTransport: native.adapter,
     clock,
   });
   const completed = await first.run(request);
 
+  if (status === 'needs-decision') {
+    assert.equal(completed.status, 'needs-decision');
+    assert.deepEqual(completed.unresolvedDecisions, ['intent-not-understood']);
+    assert.deepEqual(firstCounters, { route: 1, classify: 0, activate: 0 });
+    assert.equal(native.calls.length, 0, 'unresolved intent must never dispatch native inference');
+    return;
+  }
+
   assert.equal(completed.status, 'completed');
-  assert.deepEqual(firstCounters, { route: 1, classify: 1, activate: 1 });
+  const activated = status === 'selected' ? 1 : 0;
+  assert.deepEqual(firstCounters, { route: 1, classify: activated, activate: activated });
   const dispatch = native.calls.find(({ type }) => type === 'execute').dispatch;
+  if (status === 'no-qualified-route') {
+    assert.equal(dispatch.missionPackage.godskills, null);
+    assert.equal(native.calls.filter(({ type }) => type === 'execute').length, 1);
+  } else {
   assert.deepEqual(dispatch.missionPackage.godskills.cortexPackage.selectedCapabilities, ['eternities-aegis']);
   assert.deepEqual(dispatch.missionPackage.godskills.cortexPackage.selectedPackages, []);
   assert.equal(dispatch.missionPackage.godskills.cortexPackage.activation.decisions[0].mode, 'native');
+  }
 
   const callCount = native.calls.length;
   const recovered = createIdentityBoundMissionVessel({
@@ -255,3 +270,4 @@ test('default vessel uses the real adaptive Godskills adapter once and recovery 
   assert.deepEqual(recoveryCounters, { route: 0, classify: 0, activate: 0 });
   assert.equal(native.calls.length, callCount);
 });
+}

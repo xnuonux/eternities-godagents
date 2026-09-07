@@ -48,3 +48,19 @@ native execution. A pending workflow is not evidence of a terminated provider ca
 No production runtime, trusted release pins, Soul, Lunari integration or global
 instructions are changed by these helpers. A fresh source-gated live runner,
 full two-arm comparison and useful-task qualification remain separate work.
+
+## Native route boundary
+
+The vessel integration tests now exercise three distinct routing outcomes through
+the real pinned-release adapter, using synthetic routing and model transports:
+
+- selected capability with native activation: the bound package reaches inference;
+- receipt-backed `no-qualified-route`: exactly one native execution receives no
+  Godskills package, and recovery returns the same completion without rerouting,
+  reclassification, activation, or another model execution;
+- `needs-decision`: unresolved intent returns without native inference.
+
+This confirms existing vessel behavior, not semantic accuracy of the real intent
+compiler. In particular, it does not authorize converting `intent-not-understood`
+into an empty successful selection to get a comparison running. No new runtime
+path or fallback was needed. Live evaluation must first qualify its actual route.
