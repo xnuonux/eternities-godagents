@@ -18,7 +18,13 @@ explicitly pinned execution, verified artifact retrieval, and same-mission repla
 All 1,131 integration tests passed; independent review's rejection-outcome finding
 was resolved. The [workflow audit](audits/2026-09-07-local-artifact-workflow.md)
 records the exact proof and limits. This advances the local operator path, not
-live useful-task qualification, process-kill recovery, or universal completion.
+live useful-task qualification or universal completion.
+
+Recovery follow-up, 2026-09-07: bounded [process-recovery evidence](audits/2026-09-07-local-workflow-process-recovery.md)
+covers real process death during uncertain dispatch and after provider completion
+is persisted but before artifact publication. Fresh-process recovery makes no
+observed network attempts, including credential-present replay. This is not
+remote exactly-once execution, power-loss durability, or live model quality.
 
 ## what exists and what it proves
 

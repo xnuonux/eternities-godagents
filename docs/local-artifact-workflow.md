@@ -123,7 +123,18 @@ transport recovery. Only provider network responses are controlled. A terminal
 acceptance receipt and a matching digest establish acceptance and exact bytes, not
 truth, usefulness, or superiority to an ordinary model answer.
 
+The [process-recovery tests](../tests/local-workflow-process-recovery.test.mjs)
+also terminate an owned process with SIGKILL at two explicit boundaries: uncertain
+native dispatch, and persisted provider completion before artifact publication.
+They exercise the production lock's actual 30-second dead-owner grace period.
+Fresh CLI recovery and credential-present reruns make zero observed fetch/socket
+attempts. Uncertain work remains pending; saved completion is recovered and its
+artifact subsequently replays exactly. A canary verifies the network witness.
+The existing SDK fetch/checkpoint seams control the test boundary. This is local
+process-death evidence, not live networking, every crash checkpoint, OS power-loss
+durability, or remote exactly-once behavior.
+
 This example adds no historical certification receipt. Live useful-task evaluation
 against an unbound baseline under an explicit spending envelope remains a separate
-next milestone. So do cross-provider quality, interrupted-process fault injection,
+next milestone. So do cross-provider quality and broader fault injection,
 hostile same-account filesystem isolation, Soul, evolution, and Lunari integration.
