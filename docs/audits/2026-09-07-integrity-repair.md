@@ -24,3 +24,17 @@ all stored receipts and fixtures are preserved. the existing current-head certif
 the sibling external-host receipt issuer's preliminary publication behavior remains an explicitly separate outstanding issue. do not run that issuer as a new certification path before its bounded repair. existing historically measured receipts are not rewritten.
 
 full integration testing and independent review are tracked in the completion addendum when observed. the targeted results above are not a claim of live model quality, external-host qualification, remote exactly-once behavior, or a completed universal product.
+
+## verified completion addendum
+
+implementation commit: `5e82afe7a967e7afa2c4a3a4e2cab24b7be67d43`. the complete integration run at that unchanged head passed **1,119 tests**, with zero failures, skips, cancellations, or todos, and process exit 0. elapsed time was 1,010,959.573 ms, about 16 minutes 51 seconds. the run used `node --test --test-concurrency=2` with dot output and a separate TAP reporter.
+
+the complete log is `D:\00-INDEX\operations\2026-09-07-godagents-integrity-repair\full-integration-verified.tap`, SHA-256 `5f10370d3e9519198c8aa005ddf56ef2de756d33b489809d9338cafa8af6a539`. all 69 historical receipts, fixtures, and existing integration artifacts remained unchanged. this measured test record is not a reissued current-head certificate.
+
+independent reviewer `01a07a4f-4899-7e40-8269-1e72553a091c` inspected the exact baseline-to-implementation diff and directly implicated paths. the review found no critical or important issues and accepted the bounded repair for merge. it independently ran the 18 dossier tests successfully and checked the historical export/protocol/evidence transitions. the review did not duplicate the full or historical suite.
+
+one minor coverage improvement remains deferred: explicit mutation/alias attempts against the live-evidence phase-receipt map and caller-owned baseline/live-evidence input. this is not an observed implementation defect; the verified clone is recursively frozen in its entirety.
+
+two earlier integration attempts are retained as incomplete or stopped evidence, not counted as passes. the first recorded a Windows child-process crash during an interrupted turn; its cause was not established. the second exposed one abandoned synthetic test-identity registration from that interruption. the registration's exact identity, admission root, and digest were checked, then only that file was moved to the diagnostic archive with a matching file hash. its temporary admission was retained, no real agent registration or runtime safeguard was changed, and all 8 typed-host recovery tests then passed. details and the separate reviewer record are in `verification-recovery.md` and `independent-review.md` beside the complete log.
+
+the full gate and review justify this integrity repair, not a general live-host or product-completion claim. the next product milestone remains the documented create/task/interrupt/resume workflow in [current state](../current-state.md).

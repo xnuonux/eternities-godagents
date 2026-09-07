@@ -5,6 +5,13 @@ on `main`, reconciled with `origin/main`. Remote:
 `https://github.com/xnuonux/eternities-godagents.git`.
 This is a product and release-process review, not a new certification.
 
+Integrity follow-up, 2026-09-07: the bounded compatibility and immutability
+repair at `5e82afe7a967e7afa2c4a3a4e2cab24b7be67d43` passed all 1,119
+integration tests and independent review with no blocking findings. The
+[repair audit](audits/2026-09-07-integrity-repair.md) records the source, log
+digest, deferred coverage note, and interrupted-test recovery. Historical
+receipts are unchanged; no new current-head or live-host certificate is claimed.
+
 ## what exists and what it proves
 
 | surface | implementation evidence | usable boundary and remaining proof |
