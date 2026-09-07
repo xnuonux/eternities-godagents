@@ -1,6 +1,7 @@
 # Effect-only vessel migration decision
 
-Status: proposed implementation boundary, pending independent architecture review.
+Status: independently reviewed implementation boundary; runtime integration
+and certification remain incomplete.
 Evidence inspected at Godagents `b767bdb` on 2026-09-07. This is a continuation of
 `mission-intent-ingress-audit.md`, not a new definition of product completion.
 
@@ -101,5 +102,36 @@ paid provider use, Soul activation or Lunari integration follow from these tests
    routing/verification overhead. Passing structural checks is not this result.
 
 Rollback is to keep v2 unadopted while preserving its evidence. Do not delete or
-rewrite a historical receipt to switch dependencies. Recovery contract review is
-the immediate unresolved dependency, not a reason to expand product scope.
+rewrite a historical receipt to switch dependencies.
+
+## Review and interface settlement
+
+Independent reviewer Gibbs (`01a07e01-fc77-70e1-bd91-d698b101bebe`) approved
+the explicit v2 boundary provisionally, confirming that the existing identity
+transport/kernel solve execution mechanics but not v2 admission semantics.
+Its conditions are the R1-R7 identity/authority/recovery invariants, independently
+reviewed admission/completion contracts, and unchanged v1 behavior. This is not
+implementation or release certification.
+
+The Godskills owner and coordinator agreed a separate
+`scripts/verify-effect-only-v2.mjs` and sidecar
+`receipts/effect-only-verifier-v2.json`, protocol
+`eternities-godskills-effect-only-verifier-v2`. It binds the frozen routing receipt
+and identical shared dependency hashes, without modifying the old executable.
+Both roots must be pinned in the host admission. Implementation/review/issuance
+of that sidecar remains pending.
+
+The interface requires unique `--request`, `--expected-source`, `--result` flags,
+bounded UTF-8 regular files (1 MiB request/source, 2 MiB result), empty stdout,
+fixed redacted errors, no writes and no retries. Exit zero means exact stored-pair
+consistency, including a valid needs-decision pair; it never grants authority.
+Pure deterministic recomputation during verification is permitted. Count
+verification subprocesses separately from new routing operations, native
+inferences and effect dispatches.
+
+`verifyEffectOnlyRoutingProjection` now reconstructs the host-side package from
+fresh authenticated inputs and compares the whole stored projection. A new
+red-to-green test rejects rehashed altered candidate/policy/request/routing
+bindings, changed host policy and changed routing context. This does not verify
+the Godskills result or replace the sidecar. The focused producer/projection/
+source-capture test set passes 36 tests with no failures or skips.

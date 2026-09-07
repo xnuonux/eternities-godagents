@@ -4,7 +4,8 @@ import test from 'node:test';
 import { compileCortexBindingCandidate } from '../src/cortex/binding-compiler.mjs';
 import { buildCortexBindingRequestFromVesselRequest } from '../src/runtime/identity-bound-mission-vessel-contracts.mjs';
 import { prepareLocalArtifactEffectRequest } from '../src/host/structured-effect-producer.mjs';
-import { buildEffectOnlyRoutingProjection } from '../src/skills/effect-only-routing-projection.mjs';
+import * as projectionApi from '../src/skills/effect-only-routing-projection.mjs';
+const { buildEffectOnlyRoutingProjection } = projectionApi;
 import { sha256Value } from '../src/core/digest.mjs';
 import { setupAdmittedIdentity } from './helpers/admitted-identity-fixture.mjs';
 
@@ -55,6 +56,29 @@ test('host-only binding retains candidate and policy identity without leaking ei
   assert.deepEqual(next.expectedSource, projected.expectedSource);
   assert.notEqual(next.hostBinding.bindingDigest, projected.hostBinding.bindingDigest);
   assert.equal(Object.hasOwn(projected.request, 'hostBinding'), false);
+});
+
+test('recovery reconstructs the projection rather than trusting rehashed stored bindings', async t => {
+  const fixture = await setup(t);
+  assert.equal(typeof projectionApi.verifyEffectOnlyRoutingProjection, 'function', 'host recovery projection verifier exists');
+  const projection = buildEffectOnlyRoutingProjection(fixture);
+  const recover = (stored, overrides = {}) => projectionApi.verifyEffectOnlyRoutingProjection({ ...fixture, ...overrides, projection: stored });
+  const recovered = recover(structuredClone(projection));
+  assert.deepEqual(recovered, projection);
+  assert.equal(Object.isFrozen(recovered.hostBinding), true);
+  for (const field of ['requestDigest', 'candidateDigest', 'policyDigest', 'routingRequestDigest']) {
+    const forged = structuredClone(projection);
+    forged.hostBinding[field] = '0'.repeat(64);
+    const { bindingDigest, ...unsigned } = forged.hostBinding;
+    forged.hostBinding.bindingDigest = sha256Value(unsigned);
+    assert.throws(() => recover(forged), /recovery.*mismatch/);
+  }
+  const changedPolicy = structuredClone(fixture.policy);
+  changedPolicy.runtime.limits.maxCycles += 1;
+  assert.throws(() => recover(projection, { policy: changedPolicy }), /recovery.*mismatch/);
+  const changedWire = structuredClone(projection);
+  changedWire.request.context.permittedEffects = ['local-read'];
+  assert.throws(() => recover(changedWire), /recovery.*mismatch/);
 });
 
 test('projection rejects changed source and cannot borrow another candidate mission', async t => {

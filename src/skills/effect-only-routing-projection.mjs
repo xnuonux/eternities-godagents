@@ -66,3 +66,12 @@ export function buildEffectOnlyRoutingProjection({ request: input, policy, candi
     },
   });
 }
+
+// Recovery callers must supply newly authenticated host inputs, not copy these
+// from the stored projection. This verifies the host envelope only; result
+// consistency still belongs to the independently pinned Godskills verifier.
+export function verifyEffectOnlyRoutingProjection({ request, policy, candidate, projection }) {
+  const expected = buildEffectOnlyRoutingProjection({ request, policy, candidate });
+  if (!same(projection, expected)) throw new Error('effect-only recovery projection mismatch');
+  return expected;
+}
