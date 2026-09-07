@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "routeMode": "effect-only",
+  "task": {"taskId":"effect-vector-task","hostAdapterId":"artifact-host","revocationEpoch":0},
+  "mission": {"missionId":"effect-vector-mission","objective":"produce a bounded local artifact","successEvidence":["artifact accepted"],"stopConditions":["authority denied"]},
+  "observation": {"observationId":"effect-vector-observation","summary":"input ready","evidenceDigests":[]},
+  "requestedAuthority": ["local-read","local-write"],
+  "explicitMethodRequests": [],
+  "hostCeiling": {"availableAuthority":["local-read","local-write"],"permittedEffects":["local-read","local-write"],"availablePreconditions":[],"forbiddenCapabilities":[],"maximumRisk":"low","minimumEvidenceConfidence":"verified","contextBudget":6000,"maxCompositionSize":3},
+  "budgets": {"maxArtifactBytes":1024,"nativeCompletionTokens":1000,"reviewCompletionTokensPerRound":500,"revisionCompletionTokens":800,"totalCompletionTokens":2800},
+  "sourceStateEpoch": 0,
+  "maxCycles": 4,
+  "maxProjectionBytes": 16000
+}

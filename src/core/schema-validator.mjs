@@ -21,6 +21,7 @@ const schemaFiles = {
   'cortex-attempt': 'cortex-attempt.schema.json',
   'host-policy': 'host-policy.schema.json',
   'identity-host-policy': 'identity-host-policy.schema.json',
+  'identity-host-policy-v2': 'identity-host-policy-v2.schema.json',
   'admitted-typed-execution-host-policy': 'admitted-typed-execution-host-policy.schema.json',
   'typed-capability-executor-descriptor': 'typed-capability-executor-descriptor.schema.json',
   'admitted-typed-execution-host-completion': 'admitted-typed-execution-host-completion.schema.json',

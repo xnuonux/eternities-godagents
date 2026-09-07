@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import { sha256Value } from '../src/core/digest.mjs';
 import {
   localArtifactEffectProducer, prepareLocalArtifactEffectRequest,
@@ -26,6 +27,15 @@ function subject() {
 // Frozen from independently ordered JSON and node:crypto, not the producer.
 const producerDigest = 'bd00071f046bd5f8612a65cfe674d417b8b21c3fb25bad41634bb734b08bfc26';
 const trusted = () => ({ expectedProducerDescriptorDigest: producerDigest });
+
+test('producer matches the independently generated cross-repository digest vector', async () => {
+  const vector = JSON.parse(await readFile(new URL('../fixtures/effect-only-golden-vector-v2.json', import.meta.url), 'utf8'));
+  const result = prepareLocalArtifactEffectRequest(vector.subject, trusted());
+  assert.deepEqual(result.effectAssessment, vector.effectAssessment);
+  assert.equal(result.effectAssessment.subjectDigest, 'f82be214b317cd90a4b4ea060f0d5b7322fd2088878e8e9af9eb5b58a4616655');
+  assert.equal(sha256Value(result.effectAssessment), '2d996007d2fd5692e3760aede8b28f6a018723785bdc7148282bd75d64a2918d');
+  assert.equal(sha256Value(vector.request), 'a8e6adad64894409b3b5aee6a57f37abc7333b990b05cc4f04dc487a7c20a11a');
+});
 
 test('structured producer binds the whole request and declares artifact effects without a skill', () => {
   const original = subject();

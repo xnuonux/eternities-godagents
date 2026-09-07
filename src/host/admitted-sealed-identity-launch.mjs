@@ -6,6 +6,7 @@ import { verifyGenesisAdmission } from '../genesis/verify.mjs';
 import { createLocalKeelBackend } from '../keel/local-reference-backend.mjs';
 import { verifyIdentityBoundNativeTransportDescriptor } from '../runtime/identity-bound-native-contracts.mjs';
 import { verifyIdentityBoundMissionVesselRequest } from '../runtime/identity-bound-mission-vessel-contracts.mjs';
+import { verifyLocalArtifactEffectRequest } from './structured-effect-producer.mjs';
 import { verifyMissionExecutorDescriptor } from '../runtime/mission-phase-contracts.mjs';
 import { createSealedLocalIdentityBoundMissionVessel } from '../runtime/sealed-local-identity-bound-mission-vessel.mjs';
 import { createRoutingEvidenceActivationClassifier } from '../skills/routing-evidence-activation-classifier.mjs';
@@ -79,7 +80,18 @@ export function verifyIdentityHostRequest(policy, inputRequest) {
     throw new TypeError('identity host policy is required');
   }
   const request = structuredClone(inputRequest);
-  verifyIdentityBoundMissionVesselRequest(request);
+  if (request.schemaVersion === 2) {
+    if (policy.schemaVersion !== 2
+        || policy.runtime.protocolId !== 'eternities-admitted-sealed-identity-host-v2') {
+      throw new Error('identity host policy does not support the requested effect protocol');
+    }
+    verifyLocalArtifactEffectRequest(request, {
+      expectedProducerDescriptorDigest: policy.runtime.effectProducerDescriptorDigest,
+    });
+  } else {
+    if (policy.schemaVersion !== 1) throw new Error('identity host request version differs from policy');
+    verifyIdentityBoundMissionVesselRequest(request);
+  }
   if (request.task.hostAdapterId !== policy.runtime.hostAdapterId
       || request.task.revocationEpoch !== policy.runtime.revocationEpoch) {
     throw new Error('identity host request task identity differs from policy');

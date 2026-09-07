@@ -7,6 +7,8 @@ import { pinnedGodskillsReviewRelease } from '../scripts/lib/pinned-godskills-re
 import { pinnedGodskillsRoutingExecutable } from '../scripts/lib/pinned-godskills-routing-executable.mjs';
 import { canonicalJson } from '../src/core/canonical-json.mjs';
 import { sha256Text } from '../src/core/digest.mjs';
+import { loadIdentityHostPolicy } from '../src/host/identity-policy.mjs';
+import { prepareLocalArtifactEffectRequest } from '../src/host/structured-effect-producer.mjs';
 import { buildIdentityBoundNativeTransportDescriptor } from '../src/runtime/identity-bound-native-contracts.mjs';
 import { createRoutingEvidenceActivationClassifier } from '../src/skills/routing-evidence-activation-classifier.mjs';
 import { verifyGodskillsRoutingExecutable } from '../src/skills/routing-executable-verifier.mjs';
@@ -28,6 +30,35 @@ async function launcherModule() {
     assert.fail(`admitted sealed identity launcher is unavailable: ${error.message}`);
   }
 }
+
+test('versioned host policy pins the structured producer without widening v1', async (t) => {
+  const fixture = await setup(t, 'effect-policy');
+  const pin = 'bd00071f046bd5f8612a65cfe674d417b8b21c3fb25bad41634bb734b08bfc26';
+  const request = prepareLocalArtifactEffectRequest({ ...fixture.request,
+    schemaVersion: 2, routeMode: 'effect-only' }, { expectedProducerDescriptorDigest: pin });
+  const { verifyIdentityHostRequest } = await launcherModule();
+  assert.throws(() => verifyIdentityHostRequest(fixture.policy, request));
+  const policy = structuredClone(fixture.policy);
+  policy.schemaVersion = 2;
+  policy.runtime.protocolId = 'eternities-admitted-sealed-identity-host-v2';
+  policy.runtime.effectProducerDescriptorDigest = pin;
+  await writeFile(fixture.policyPath, `${canonicalJson(policy)}\n`);
+  const loaded = await loadIdentityHostPolicy(fixture.policyPath);
+  assert.deepEqual(verifyIdentityHostRequest(loaded.policy, request), request);
+  for (const mutate of [
+    p => { p.runtime.effectProducerDescriptorDigest = 'f'.repeat(64); },
+    p => { delete p.runtime.effectProducerDescriptorDigest; },
+    p => { p.schemaVersion = 1; },
+    p => { p.runtime.protocolId = 'eternities-admitted-sealed-identity-host-v1'; },
+  ]) {
+    const changed = structuredClone(policy); mutate(changed);
+    await writeFile(fixture.policyPath, `${canonicalJson(changed)}\n`);
+    await assert.rejects(loadIdentityHostPolicy(fixture.policyPath));
+  }
+  const altered = structuredClone(request);
+  altered.observation.summary = 'stale observation';
+  assert.throws(() => verifyIdentityHostRequest(loaded.policy, altered), /assessment|source/);
+});
 
 function operationCount(calls) {
   return calls.filter(({ type }) => type !== 'descriptor').length;

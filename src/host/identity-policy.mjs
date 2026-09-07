@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
-import { sha256Text } from '../core/digest.mjs';
+import { sha256Text, sha256Value } from '../core/digest.mjs';
+import { localArtifactEffectProducer } from './structured-effect-producer.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
 import { verifyIdentityBoundNativeTransportDescriptor } from '../runtime/identity-bound-native-contracts.mjs';
 import { verifyMissionExecutorDescriptor } from '../runtime/mission-phase-contracts.mjs';
@@ -33,6 +34,16 @@ function sortedUniqueStrings(values, label) {
 
 function validateSemantics(policy) {
   const runtime = policy.runtime;
+  if (policy.schemaVersion === 1) {
+    if (runtime.protocolId !== 'eternities-admitted-sealed-identity-host-v1'
+        || Object.hasOwn(runtime, 'effectProducerDescriptorDigest')) {
+      throw new Error('identity host v1 policy cannot negotiate an effect producer');
+    }
+  } else if (policy.schemaVersion !== 2
+      || runtime.protocolId !== 'eternities-admitted-sealed-identity-host-v2'
+      || runtime.effectProducerDescriptorDigest !== sha256Value(localArtifactEffectProducer)) {
+    throw new Error('identity host effect producer protocol or descriptor is unsupported');
+  }
   for (const [label, value] of [
     ['policy id', policy.policyId],
     ['instance id', runtime.instanceId],
@@ -120,7 +131,7 @@ export async function loadIdentityHostPolicy(path) {
   if (text !== `${canonicalJson(policy)}\n`) {
     throw new Error('identity host policy is not canonical JSON');
   }
-  assertSchema('identity-host-policy', policy);
+  assertSchema(policy.schemaVersion === 2 ? 'identity-host-policy-v2' : 'identity-host-policy', policy);
   validateSemantics(policy);
   const frozen = deepFreeze(policy);
   return Object.freeze({
@@ -133,7 +144,7 @@ export async function verifyIdentityHostPolicyRouting(policy, {
   artifactCache = new Map(),
   io = {},
 } = {}) {
-  assertSchema('identity-host-policy', policy);
+  assertSchema(policy.schemaVersion === 2 ? 'identity-host-policy-v2' : 'identity-host-policy', policy);
   validateSemantics(policy);
   const verified = await verifyGodskillsRoutingExecutable({
     releasePin: policy.runtime.godskillsRelease,
