@@ -71,6 +71,15 @@ test('known write intent is not silently intersected with read-only permissions'
   assert.deepEqual(result.requestedAuthority, ['local-read']);
 });
 
+test('effect-only mode cannot silently discard an explicitly requested skill method', () => {
+  const input = subject();
+  input.explicitMethodRequests = ['eternities-aegis'];
+  assert.throws(() => prepareLocalArtifactEffectRequest(input, trusted()), /explicit method/);
+  const valid = prepareLocalArtifactEffectRequest(subject(), trusted());
+  const rebound = { ...input, effectAssessment: { ...valid.effectAssessment, subjectDigest: sha256Value(input) } };
+  assert.throws(() => verifyLocalArtifactEffectRequest(rebound, trusted()), /explicit method/);
+});
+
 for (const [name, mutate] of [
   ['objective', r => { r.mission.objective = 'changed'; }],
   ['observation', r => { r.observation.summary = 'changed'; }],

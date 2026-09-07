@@ -41,6 +41,9 @@ function validateSubject(input) {
   // Reuse exact v1 field/ceiling validation without changing its accepted wire
   // shape. This internal validation projection is never dispatched as v1.
   verifyIdentityBoundMissionVesselRequest({ ...legacy, schemaVersion: 1 });
+  if (subject.explicitMethodRequests.length !== 0) {
+    throw new Error('effect-only mode conflicts with explicit method requests');
+  }
   return subject;
 }
 
