@@ -135,3 +135,25 @@ red-to-green test rejects rehashed altered candidate/policy/request/routing
 bindings, changed host policy and changed routing context. This does not verify
 the Godskills result or replace the sidecar. The focused producer/projection/
 source-capture test set passes 36 tests with no failures or skips.
+
+## Single-attempt execution claim checkpoint
+
+`src/skills/effect-only-execution-claim.mjs` adds the pre-launch primitive for the
+next journal. The host supplies a stable per-mission slot in its own canonical
+directory, plus host-binding, request, routing-root and verifier-root digests.
+Only exclusive creation followed by a synced file write returns `claimed`.
+An identical existing record returns `pending`; a partial, changed or malformed
+record fails closed. Neither path deletes or rewrites evidence. This is not
+authorization, a complete journal, or a power-loss durability guarantee for the
+parent directory. No subprocess is launched by this primitive.
+
+Four tests failed before implementation and now pass: first versus repeated
+claim, preserved interrupted bytes, changed binding, and concurrent claimers.
+The combined focused set passes 40 tests. Independent reviewer Schrodinger
+(`01a07e07-82b9-7462-a3cb-8757e791f030`) reran the four tests and approved this
+primitive for integration, with the same authorization/recovery/durability limits.
+
+This deliberately does not copy the v1 process transport's `execute` behavior:
+that method can continue to `runNode` when an earlier start record exists but
+completion materialization returns nothing. V2 requires reconciliation instead.
+The v1 transport is not modified or recertified by this checkpoint.
