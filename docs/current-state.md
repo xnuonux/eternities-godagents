@@ -1,0 +1,126 @@
+# Godagents current state and bounded completion path
+
+Review date: 2026-09-06. Baseline: `07b1d53ff2ef6440ceaa3ad540c10cb7f48062cb`
+on `main`, reconciled with `origin/main`. Remote:
+`https://github.com/xnuonux/eternities-godagents.git`.
+This is a product and release-process review, not a new certification.
+
+## what exists and what it proves
+
+| surface | implementation evidence | usable boundary and remaining proof |
+| --- | --- | --- |
+| public package | [package.json](../package.json), [SDK](../src/sdk/index.mjs) | `@eternities/godagents` 0.2.0 exports the root SDK and economics entrypoint. SDK protocol v1 self-describes as experimental and separately versions itself 0.1.0. Source availability is not verified package-registry publication. |
+| modular creation | [creator CLI](../src/creator/local-cli.mjs), [creation](../src/creation), [genesis](../src/genesis), [profile](../src/agent/profile.mjs) | Catalog, preview, finalization, local genesis and capability profiles exist. A supported character-creation-to-use experience across external hosts is not yet established. |
+| basic runnable vessel | [demo](../scripts/run-demo.mjs), [local host](../src/host/local-cli.mjs), [vessel](../src/runtime/vessel.mjs) | The demo uses a fixture cortex and counter Realm. The network-capable local CLI still constructs a fixture Realm. Neither is proof of useful external tools or production task performance. |
+| provider-backed identity path | [CLI](../src/host/provider-backed-cli.mjs), [phase SDK](../src/host/provider-phase-host-sdk.mjs), [CLI certification](provider-backed-identity-cli-v1-certification.md) | Real policy/admission preflight and native, review, revision wiring support Anthropic Messages and OpenAI-compatible protocol families. Its receipt explicitly certifies deterministic no-network execution, not live provider quality. |
+| persistent mission mechanisms | [mission program](../src/runtime/mission-program.mjs), [review kernel](../src/runtime/mission-review-kernel.mjs), [Realm](../src/realm), [forensic index](../src/runtime/mission-forensic-index.mjs) | Bounded local programs, replay, review/revision, report-only delegation, consequence/compensation interfaces, accounting, and cross-program forensic indexing exist. Hosted durability, arbitrary rollback and remote exactly-once execution do not follow from them. The forensic index was added in `11ba017`, so audit v6's proposal to build it is stale. |
+| selected Godskills | [mission binder](../src/skills/mission-binder.mjs), [activation adapter](../src/skills/activation-adapter.mjs), [release verifier](../src/skills/release-verifier.mjs) | Host-pinned releases and bounded mission packages bind capability before inference without granting authority. Selection and structural checks do not establish an improvement in model outcomes. |
+| external host qualification | [dossier](../src/host/external-host-qualification.mjs), [receipt](../receipts/external-host-qualification-v1.json), [certification](external-host-qualification-v1-certification.md) | Contract-only qualification records 12 focused and 1,096 full historical tests, zero provider calls and `liveQualification: false`. Codex, Claude Code, MCP and local-model host operation are not live-qualified by this dossier. Review is explicitly not independent. |
+| Soul and evolution | [dormant Soul port](../src/soul/dormant-port.mjs), [architecture](architecture.md) | Soul activation and governed evolution remain excluded/dormant. No consciousness or phenomenological claim is proved. |
+
+## release integrity findings
+
+1. **Current-head publication could falsely imply completion.** The previous
+   builder wrote `status: certified` and expected passing counts before running
+   the Godagents suites. A failed or killed process left those bytes behind.
+   The interrupted candidate `f14a4526ba953aff7282e1465e79094f1e02b937a1bb5055f4f5ed1e6c41a42c`
+   is structurally verifiable, but its completed run was not recovered. It must
+   not be promoted on that basis. Publication repair is tested in
+   [current-head-publication.test.mjs](../tests/current-head-publication.test.mjs):
+   six of seven cases failed before repair, including actual process
+   interruption; all seven passed after repair. A separate targeted integration
+   run passed all 14 tests before review. Independent review then identified
+   missing Godskills worktree cleanliness and post-test checkout checks. Four
+   additional failing regressions reproduced those attribution gaps; all 11
+   publication tests passed after repair. These are targeted results, not a
+   new full-suite claim.
+2. **Historical verifier compatibility is broken for at least one old release.**
+   Using the current verifier on the artifact stored at `b8354a3`, whose source
+   is `ae46906321983a7fe67511754a731b1a06877fad`, fails with
+   `SDK root export set mismatch` even with current-ref freshness disabled.
+   [current-head-certificate.mjs](../src/integration/current-head-certificate.mjs)
+   lets pre-qualification profiles inherit the new export list and selects the
+   pre-adversarial profile for the post-adversarial/pre-qualification interval.
+   This is an outstanding compatibility repair, not evidence that old receipt
+   bytes should be rewritten.
+3. **Dossier immutability is shallow.** A returned dossier's nested
+   `hostDescription.authority` remains mutable. A local probe changed
+   `realmEffects` after verification. Re-verification rejected it, so this probe
+   does not demonstrate an executed authority expansion. Consumers must not
+   treat the returned nested object as immutable until repaired.
+4. **Sibling certification issuance needs a separate bounded audit.**
+   [the external qualification builder](../scripts/build-external-host-qualification-v1-receipt.mjs)
+   also writes a preliminary certified receipt before its full suite. Historical
+   builders are not widened into the current-head repair. Existing measured
+   receipts remain historical records; future use of unreviewed issuers must
+   not be treated as an automatically safe release workflow.
+5. **Failure diagnostics and proof labels need discipline.**
+   [runTests](../scripts/lib/certification-support.mjs) buffers output and reports
+   only a generic failure message. Digests establish content binding, not an
+   authenticated record that a test ran. Fixture, measured test, live run,
+   independent review, and product evaluation are separate claims.
+
+The publication repair preserves stored-snapshot verification at recorded
+sources. The publishing command and direct current-head verifier still require
+exact current refs. It uses observed summaries, verifies before publishing,
+and atomically replaces only the artifact. The constant certification document
+must already match the protocol. This is process-interruption protection, not
+an OS-level power-loss or hostile same-user isolation guarantee.
+
+## architecture that remains stable
+
+- Godagent: persistent governed actor and host-owned capability policy.
+- Godskill: independently usable capability guidance, with optional qualified
+  routing and review mechanisms. It never grants authority.
+- Keel: continuity with explicit ownership and admission boundaries.
+- Realm Contract: observable state and permitted effects.
+- Cortex: replaceable model interface. Model changes need qualification, not
+  invented changes to actor identity.
+- Optional Soul: separately governed future system, not a label conferred by
+  this runtime.
+
+Godskills does not require Godagents. Godagents must not copy skill bodies into
+its runtime or make a universal skill pack dependent on its receipt machinery.
+
+## finite critical path
+
+```text
+truthful release publication
+  -> outstanding compatibility and mutation repairs
+  -> one documented usable local host path
+  -> budgeted real-task qualification and interruption recovery
+  -> second independent host adapter portability check
+  -> experimental v1 release decision
+```
+
+The alternative is continuing to add portable contracts and certificates first.
+That preserves narrow local coverage but postpones the user-visible question.
+The selected path reuses existing components and tests them through one actual
+workflow. Reconsider it only if that workflow reveals a necessary missing
+contract; add that contract with the failing user scenario attached.
+
+The next product milestone is **one operator can create an agent, give it a
+bounded task, obtain and verify a useful artifact, interrupt it, and resume the
+same mission without repeated effects**. Use one explicitly selected provider
+and a disposable local repository with reversible edits. Existing interfaces
+should be composed before introducing new abstractions.
+
+Acceptance evidence must include:
+
+- a fresh checkout walkthrough that does not require editing runtime source;
+- stable identity, admitted capability envelope and host effects policy;
+- native output plus optional selected review, with selection and cost visible;
+- an independently checked useful output, not only a structurally valid receipt;
+- cancellation, transport ambiguity and process-restart tests that preserve
+  evidence and never retry an uncertain effect automatically;
+- measured input/output/cache tokens where available, wall time, failures and
+  explicit spending ceiling; unavailable provider data is labelled unknown;
+- an unbound/native baseline on the same task and comparable budget;
+- a second provider/host run before claiming portability beyond the first;
+- a clear list of capabilities not qualified, rather than a universal success claim.
+
+Live spending requires a separately bounded authorized evaluation. No live
+provider work is part of this review. Distributed society, hosted multi-tenancy,
+new skill families, autonomous evolution, consciousness, and Lunari integration
+are explicit non-goals. Completion means meeting the named acceptance tests,
+not pursuing an unlimited sequence of adjacent layers.

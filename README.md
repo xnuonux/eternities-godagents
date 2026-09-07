@@ -1,5 +1,22 @@
 # Eternities Godagents
 
+## current status and next outcome
+
+Start with [the current-state review](docs/current-state.md). Godagents is an
+experimental, provider-neutral actor runtime. Its local creation, admission,
+mission, recovery, and authority boundaries have substantial deterministic
+coverage. That does not establish live model quality, a qualified external
+host, or a finished agent product.
+
+The immediate work is release-evidence integrity and one usable end-to-end
+host path. Godskills is a separate, independently usable skill pack and
+optional capability-routing dependency. More receipt layers are not the
+completion criterion. Soul, Inspiration, hosted civilization, and Lunari
+integration remain outside this release.
+
+The historical milestone detail below is retained as evidence, not presented
+as a current product-completion checklist.
+
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
 Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, a headless Phase 3 creator protocol, the first three host-side phases of the Cortex Binding Protocol, and a provider-neutral identity-bound mission vessel with recoverable Godskills admission. The binding path reconstructs one inert identity candidate from an admitted genesis, binds governed Godskills through immutable route and activation outboxes, places the exact bounded identity projection beside the exact recoverable mission package, and closes native generation through review, revision, and final review without granting Realm or continuity authority. An optional sealed local adapter executes the exact pinned Godskills route and activation binaries, a separate admitted identity host binds that vessel to one externally pinned operator policy, and an additive OpenAI-compatible suite now supplies concrete native, review, and revision cognition without changing either historical launch path. Evolution and Soul activation remain excluded.

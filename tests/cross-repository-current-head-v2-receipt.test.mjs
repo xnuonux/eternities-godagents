@@ -71,10 +71,11 @@ async function buildReceipt() {
       path: 'scripts/lib/pinned-godskills-review-release.mjs',
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
+    // Synthetic fixture inputs only, never issued as release-run evidence.
     testRuns: {
-      godagentsFocused: { status: 'pass', tests: 144 },
-      godagentsFull: { status: 'pass', tests: 1096 },
-      godskillsFocused: { status: 'pass', tests: 12 },
+      godagentsFocused: { status: 'pass', tests: 5 },
+      godagentsFull: { status: 'pass', tests: 17 },
+      godskillsFocused: { status: 'pass', tests: 3 },
     },
   });
 }
@@ -124,7 +125,7 @@ test.after(async () => {
   await Promise.all(temporaryRoots.map((root) => rm(root, { recursive: true, force: true })));
 });
 
-test('the committed v2 certificate is canonical and verifies against both current heads when present', async () => {
+test('the stored v2 certificate is canonical and verifies at its recorded sources when present', async () => {
   const text = await (async () => {
     try {
       return await readFile(certificatePath, 'utf8');
@@ -145,13 +146,15 @@ test('the committed v2 certificate is canonical and verifies against both curren
       godskillsRoot,
       expectedGodagentsCommit: receipt.source.godagents.commit,
       expectedGodskillsCommit: receipt.source.godskills.commit,
-      requireExactRefs: true,
+      // Freshness is the publisher and direct release verifier's gate. A stored
+      // snapshot must remain verifiable while its replacement is being tested.
+      requireExactRefs: false,
     }),
     { status: 'verified', receiptDigest: receipt.receiptDigest },
   );
 });
 
-test('the committed v2 certificate binds the exact current heads and portable receipt when present', async () => {
+test('the stored v2 certificate binds its source-specific portable receipts when present', async () => {
   const receipt = await committedReceipt();
   if (receipt === undefined) return;
   assert.equal(receipt.status, 'certified');
@@ -285,72 +288,16 @@ test('the committed v2 certificate binds the exact current heads and portable re
     assert.match(receipt.godagents.evidence.externalHostQualification.receiptDigest, /^[a-f0-9]{64}$/);
     assert.match(receipt.godagents.evidence.externalHostQualification.sourceCommit, /^[a-f0-9]{40}$/);
   }
-  assert.deepEqual(
-    receipt.testRuns,
-    receipt.godagents.evidence.externalHostQualification !== undefined
-      ? {
-        godagentsFocused: { status: 'pass', tests: 144 },
-        godagentsFull: { status: 'pass', tests: 1096 },
-        godskillsFocused: { status: 'pass', tests: 12 },
-      }
-      : receipt.godagents.evidence.portablePhaseHostAdversarial !== undefined
-      ? {
-        godagentsFocused: { status: 'pass', tests: 129 },
-        godagentsFull: { status: 'pass', tests: 1081 },
-        godskillsFocused: { status: 'pass', tests: 12 },
-      }
-      : receipt.godagents.evidence.missionForensicIndex !== undefined
-      ? {
-        godagentsFocused: { status: 'pass', tests: 121 },
-        godagentsFull: { status: 'pass', tests: 1073 },
-        godskillsFocused: { status: 'pass', tests: 12 },
-      }
-      : receipt.godagents.evidence.missionOperationEvidence !== undefined
-      ? {
-        godagentsFocused: { status: 'pass', tests: 118 },
-        godagentsFull: { status: 'pass', tests: 1070 },
-        godskillsFocused: { status: 'pass', tests: 12 },
-      }
-      : receipt.godagents.evidence.realmConsequenceMissionOperationAdapter !== undefined
-      ? {
-        godagentsFocused: { status: 'pass', tests: 114 },
-        godagentsFull: { status: 'pass', tests: 1066 },
-        godskillsFocused: { status: 'pass', tests: 12 },
-      }
-      : receipt.godagents.evidence.delegationMissionOperationAdapter !== undefined
-      ? {
-        godagentsFocused: { status: 'pass', tests: 107 },
-        godagentsFull: { status: 'pass', tests: 1059 },
-        godskillsFocused: { status: 'pass', tests: 12 },
-      }
-      : receipt.godagents.evidence.revisionMissionOperationAdapter !== undefined
-      ? {
-        godagentsFocused: { status: 'pass', tests: 99 },
-        godagentsFull: { status: 'pass', tests: 1051 },
-        godskillsFocused: { status: 'pass', tests: 12 },
-      }
-      : receipt.godagents.evidence.deferredReviewMissionOperationAdapter !== undefined
-      ? {
-        godagentsFocused: { status: 'pass', tests: 88 },
-        godagentsFull: { status: 'pass', tests: 1040 },
-        godskillsFocused: { status: 'pass', tests: 12 },
-      }
-      : receipt.godagents.evidence.missionOperationAdapter === undefined
-        ? {
-          godagentsFocused: { status: 'pass', tests: 66 },
-          godagentsFull: { status: 'pass', tests: 1018 },
-          godskillsFocused: { status: 'pass', tests: 12 },
-        }
-        : {
-          godagentsFocused: { status: 'pass', tests: 77 },
-          godagentsFull: { status: 'pass', tests: 1029 },
-          godskillsFocused: { status: 'pass', tests: 12 },
-        },
-  );
+  assert.deepEqual(Object.keys(receipt.testRuns).sort(), ['godagentsFocused', 'godagentsFull', 'godskillsFocused']);
+  for (const run of Object.values(receipt.testRuns)) {
+    assert.equal(run.status, 'pass');
+    assert.ok(Number.isSafeInteger(run.tests) && run.tests > 0);
+  }
+  assert.ok(receipt.testRuns.godagentsFocused.tests <= receipt.testRuns.godagentsFull.tests);
 });
 
 test('strict v2 verification accepts only an artifact-and-certification append', async () => {
-  const receipt = await committedReceipt() ?? await buildReceipt();
+  const receipt = await buildReceipt();
   const root = await appendOnlyRoot(receipt);
   assert.deepEqual(
     await verifyCrossRepositoryCurrentHeadCertificateV2(receipt, {
@@ -365,7 +312,7 @@ test('strict v2 verification accepts only an artifact-and-certification append',
 });
 
 test('strict v2 verification rejects unrelated or extra tip paths', async () => {
-  const receipt = await committedReceipt() ?? await buildReceipt();
+  const receipt = await buildReceipt();
   const root = await appendOnlyRoot(receipt);
   await writeFile(join(root, 'unrelated-current-head-v2.txt'), 'unrelated\n', 'utf8');
   await git(root, ['add', 'unrelated-current-head-v2.txt']);
