@@ -283,6 +283,60 @@ test('v2 admission binds the verified journal and admitted identity without a fa
   assert.equal(result.hostBinding.requestDigest, sha256Value(request));
   assert.equal(result.routing.result.routeReceipt.status, 'no-qualified-route');
   assert.deepEqual(admissionApi.verifyEffectOnlyVesselAdmission(structuredClone(result), context), result);
+  await t.test('v2 completion rejects artifact replacement and rehashed authority expansion', async () => {
+    assert.equal(typeof admissionApi.buildEffectOnlyVesselCompletion, 'function', 'v2 completion exists');
+    const { buildMissionVerdict, buildMissionCompletionReceipt } = await import('../src/runtime/mission-phase-contracts.mjs');
+    const artifact = { text: 'bounded local artifact' };
+    const phaseResults = { nativeResultDigest: '1'.repeat(64), reviewResultDigests: [], revisionResultDigest: null };
+    const verdict = buildMissionVerdict({ admission: result.missionAdmission, disposition: 'accepted',
+      reason: 'native-no-review', acceptedArtifactDigest: sha256Value(artifact), ...phaseResults });
+    const receipt = buildMissionCompletionReceipt({ admission: result.missionAdmission, verdict, phaseResults,
+      transactionId: '2'.repeat(64), preCompletionJournalHeadDigest: '3'.repeat(64),
+      usage: { inputTokens: 10, cachedInputTokens: 0, reasoningTokens: 2, visibleOutputTokens: 3, completionTokens: 5 },
+      completedAt: '2026-09-07T12:01:00.000Z' });
+    const missionResult = { status: 'completed', artifact, verdict, receipt };
+    const completionContext = { vesselAdmission: result, admissionContext: context, missionResult };
+    const completion = admissionApi.buildEffectOnlyVesselCompletion(completionContext);
+    assert.equal(completion.acceptedArtifactDigest, sha256Value(artifact));
+    assert.equal(completion.vesselAdmissionDigest, result.vesselAdmissionDigest);
+    assert.equal(completion.authority.realmEffects, false);
+    assert.equal(completion.authority.personalKeelWrite, false);
+    assert.deepEqual(admissionApi.verifyEffectOnlyVesselCompletion(structuredClone(completion), completionContext), completion);
+    assert.throws(() => admissionApi.buildEffectOnlyVesselCompletion({ ...completionContext,
+      missionResult: { ...missionResult, artifact: { text: 'replacement' } } }), /artifact/);
+    assert.throws(() => admissionApi.buildEffectOnlyVesselCompletion({ ...completionContext,
+      missionResult: { ...missionResult, status: 'pending' } }), /terminal/);
+    const forged = structuredClone(completion);
+    forged.authority.realmEffects = true;
+    const { receiptDigest, ...body } = forged;
+    forged.receiptDigest = sha256Value(body);
+    assert.throws(() => admissionApi.verifyEffectOnlyVesselCompletion(forged, completionContext), /binding/);
+    assert.throws(() => admissionApi.buildEffectOnlyVesselCompletion({ ...completionContext,
+      admissionContext: { ...context, request: { ...request, sourceStateEpoch: request.sourceStateEpoch + 1 } } }));
+    assert.deepEqual(admissionApi.buildEffectOnlyVesselCompletion({ ...completionContext,
+      vesselAdmission: structuredClone(result), missionResult: structuredClone(missionResult) }), completion);
+    const rejectedVerdict = buildMissionVerdict({ admission: result.missionAdmission, disposition: 'rejected',
+      reason: 'budget-exhausted-before-review', acceptedArtifactDigest: null, ...phaseResults });
+    const rejectedReceipt = buildMissionCompletionReceipt({ admission: result.missionAdmission,
+      verdict: rejectedVerdict, phaseResults, transactionId: '2'.repeat(64), preCompletionJournalHeadDigest: '3'.repeat(64),
+      usage: receipt.usage, completedAt: receipt.completedAt });
+    const rejectedResult = { status: 'completed', artifact: null, verdict: rejectedVerdict, receipt: rejectedReceipt };
+    assert.equal(admissionApi.buildEffectOnlyVesselCompletion({ ...completionContext,
+      missionResult: rejectedResult }).acceptedArtifactDigest, null);
+    for (const invalid of [
+      { ...missionResult, verdict: rejectedVerdict },
+      { ...missionResult, receipt: rejectedReceipt },
+      { ...missionResult, extra: true },
+      { ...rejectedResult, artifact },
+    ]) assert.throws(() => admissionApi.buildEffectOnlyVesselCompletion({ ...completionContext, missionResult: invalid }));
+    for (const key of ['candidateDigest', 'vesselAdmissionDigest']) {
+      const changed = structuredClone(completion);
+      changed[key] = 'f'.repeat(64);
+      const { receiptDigest: ignored, ...unsignedCompletion } = changed;
+      changed.receiptDigest = sha256Value(unsignedCompletion);
+      assert.throws(() => admissionApi.verifyEffectOnlyVesselCompletion(changed, completionContext), /binding/);
+    }
+  });
   assert.throws(() => admissionApi.buildEffectOnlyVesselAdmission({ ...context, routingResult: structuredClone(routingResult) }), /provenance/);
   const tampered = structuredClone(result);
   tampered.sourceStateEpoch += 1;

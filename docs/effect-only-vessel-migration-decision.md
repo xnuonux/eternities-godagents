@@ -252,3 +252,24 @@ The JSON schema is not a standalone authentication boundary: nested semantic
 validation and provenance depend on the runtime builder and reconstructing
 verifier. No native inference or live policy adoption
 has occurred; completion and vessel/host wiring remain incomplete.
+
+## V2 completion contract checkpoint
+
+The same module now builds and reconstructs a v2 outer completion from the
+authenticated admission context and terminal kernel result. It reuses the
+existing kernel receipt/verdict validation, verifies accepted artifact bytes
+through their canonical digest, and emits only the existing all-disabled vessel
+authority flags. It rejects nonterminal or extra-key results, mixed verdicts and
+receipts, artifact replacement, and rehashed changes to outer identity or
+authority. Rejected terminal results carry no artifact. Cloned kernel evidence
+is supported, but routing evidence still passes through the authenticated
+admission reconstruction.
+
+Banach (`01a07e22-93d9-7c82-981e-91ea6f493e98`) approved the scoped completion
+review. The focused executable/admission/completion and v1 contract set passes
+24 tests. Receipt consistency is not independent execution provenance: the
+production vessel must obtain the kernel result from its verified journal,
+not accept an arbitrary caller's self-consistent receipt as proof of work.
+No native inference, host-policy adoption, or main merge follows from this
+contract checkpoint. The existing launcher still uses the v1 sealed factory
+and v1 routing/classifier dependency checks; those require explicit v2 wiring.

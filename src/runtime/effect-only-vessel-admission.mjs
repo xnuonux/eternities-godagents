@@ -4,7 +4,8 @@ import { assertSchema } from '../core/schema-validator.mjs';
 import { buildEffectOnlyRoutingProjection } from '../skills/effect-only-routing-projection.mjs';
 import { assertEffectOnlyJournalResult } from '../skills/effect-only-routing-journal.mjs';
 import { assertVerifiedEffectOnlyExecutable, assertVerifiedEffectOnlyVerifier } from '../skills/effect-only-executable-verifier.mjs';
-import { buildMissionAdmission } from './mission-phase-contracts.mjs';
+import { buildMissionAdmission, verifyMissionCompletionReceipt } from './mission-phase-contracts.mjs';
+import { IDENTITY_BOUND_VESSEL_AUTHORITY } from './identity-bound-mission-vessel-contracts.mjs';
 
 function freeze(value) {
   if (value && typeof value === 'object') { Object.values(value).forEach(freeze); Object.freeze(value); }
@@ -58,5 +59,36 @@ export function buildEffectOnlyVesselAdmission({ request, policy, candidate,
 export function verifyEffectOnlyVesselAdmission(value, context) {
   const expected = buildEffectOnlyVesselAdmission(context);
   if (canonicalJson(value) !== canonicalJson(expected)) throw new Error('effect-only vessel admission binding mismatch');
+  return expected;
+}
+
+// The outer completion binds kernel evidence, not permission to publish an
+// artifact or mutate continuity. Current authenticated admission context remains
+// mandatory, including during recovery.
+export function buildEffectOnlyVesselCompletion({ vesselAdmission, admissionContext, missionResult }) {
+  const admission = verifyEffectOnlyVesselAdmission(vesselAdmission, admissionContext);
+  const result = structuredClone(missionResult);
+  if (!result || canonicalJson(Object.keys(result).sort()) !== canonicalJson(['artifact', 'receipt', 'status', 'verdict'])
+      || result.status !== 'completed') throw new Error('mission result is not a closed terminal result');
+  verifyMissionCompletionReceipt(result.receipt, { admission: admission.missionAdmission, verdict: result.verdict });
+  const accepted = result.receipt.acceptedArtifactDigest;
+  if (accepted === null ? result.artifact !== null : sha256Value(result.artifact) !== accepted) {
+    throw new Error('terminal mission artifact does not match its receipt');
+  }
+  const unsigned = {
+    schemaVersion: 2, protocolId: 'eternities-effect-only-vessel-completion-v2', status: 'completed',
+    vesselAdmissionDigest: admission.vesselAdmissionDigest,
+    candidateDigest: admission.identity.candidateDigest,
+    missionCompletionReceiptDigest: result.receipt.receiptDigest,
+    verdictDigest: result.verdict.verdictDigest,
+    acceptedArtifactDigest: accepted,
+    authority: structuredClone(IDENTITY_BOUND_VESSEL_AUTHORITY),
+  };
+  return freeze({ ...unsigned, receiptDigest: sha256Value(unsigned) });
+}
+
+export function verifyEffectOnlyVesselCompletion(value, context) {
+  const expected = buildEffectOnlyVesselCompletion(context);
+  if (canonicalJson(value) !== canonicalJson(expected)) throw new Error('effect-only vessel completion binding mismatch');
   return expected;
 }
