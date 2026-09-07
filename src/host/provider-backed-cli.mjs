@@ -144,7 +144,7 @@ function validateIdentityPolicyResult(value) {
   return value;
 }
 
-function verifyTerminalResult(value) {
+export function verifyProviderBackedIdentityTerminalResult(value) {
   try {
     assertNoCredentialFields(value);
     exactKeys(value, RESULT_KEYS, 'provider-backed terminal result');
@@ -348,7 +348,7 @@ export async function runProviderBackedIdentityCli({
     const options = parseProviderBackedIdentityCliArgs(argv);
     if (typeof service !== 'function') throw new TypeError('provider-backed identity cli service is invalid');
     const result = await service({ ...options, env });
-    writeCanonical(stdout, verifyTerminalResult(result));
+    writeCanonical(stdout, verifyProviderBackedIdentityTerminalResult(result));
     return 0;
   } catch (error) {
     const known = error instanceof ProviderBackedIdentityCliError;

@@ -17,6 +17,11 @@ integration remain outside this release.
 The historical milestone detail below is retained as evidence, not presented
 as a current product-completion checklist.
 
+The [local artifact workflow](docs/local-artifact-workflow.md) composes inert
+preparation, an explicitly pinned provider-backed run, and checked artifact
+retrieval/replay. It is a reference host with controlled-transport tests, not live
+model qualification or a new authority layer.
+
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
 Version `0.2.0` preserves the certified local v0 vessel and separately proves a networked-cortex boundary, a modular Phase 1 creation forge, a Phase 2 transactional genesis boundary, a headless Phase 3 creator protocol, the first three host-side phases of the Cortex Binding Protocol, and a provider-neutral identity-bound mission vessel with recoverable Godskills admission. The binding path reconstructs one inert identity candidate from an admitted genesis, binds governed Godskills through immutable route and activation outboxes, places the exact bounded identity projection beside the exact recoverable mission package, and closes native generation through review, revision, and final review without granting Realm or continuity authority. An optional sealed local adapter executes the exact pinned Godskills route and activation binaries, a separate admitted identity host binds that vessel to one externally pinned operator policy, and an additive OpenAI-compatible suite now supplies concrete native, review, and revision cognition without changing either historical launch path. Evolution and Soul activation remain excluded.
