@@ -157,3 +157,33 @@ This deliberately does not copy the v1 process transport's `execute` behavior:
 that method can continue to `runNode` when an earlier start record exists but
 completion materialization returns nothing. V2 requires reconciliation instead.
 The v1 transport is not modified or recertified by this checkpoint.
+
+## Routing journal implementation checkpoint
+
+`createEffectOnlyRoutingJournal` now owns a stable hashed slot, per-slot lock,
+exact immutable input publication, single-attempt execution claim, candidate
+result reconciliation and verified completion publication. Source and result
+files are bounded; partial/changed records are preserved rather than replaced.
+Recovery verifies saved results again but never receives a fresh routing claim.
+An exception observing routing returns pending even if a result was left behind;
+the next call may verify that result without routing again. A valid
+needs-decision result remains needs-decision, never native admission.
+
+The internal journal takes trusted host route/verify callbacks. The next
+production factory must bind those callbacks to the independently pinned,
+captured route and verification executables and authenticate host inputs. The
+journal alone is not an authority boundary and is not yet connected to a vessel.
+
+Ten focused tests cover normal recovery, start without result, lost transport
+observation, needs-decision recovery, changed input/result, malformed-result
+redaction, preservation of a changed completion record, orphaned-result rejection,
+exact result-byte binding and BOM insertion. These use controlled
+callbacks only at the subprocess boundary. They prove journal behavior, not
+Godskills semantics or native task quality. The combined focused set passes 53
+tests. Halley (`01a07e13-129d-7001-b62d-b0c81413f2d2`) approved the frozen
+internal component after the orphan-result and exact-byte regressions were fixed.
+Result publication belongs to the trusted adapter; the frozen CLI publishes
+exclusively. Host-exclusive filesystem ownership is required. No protection
+against same-user path replacement or power-loss exactly-once execution is
+claimed, and parent-directory fsync is not established. No main merge or live
+policy adoption follows from this component review.
