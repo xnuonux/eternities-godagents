@@ -273,3 +273,28 @@ not accept an arbitrary caller's self-consistent receipt as proof of work.
 No native inference, host-policy adoption, or main merge follows from this
 contract checkpoint. The existing launcher still uses the v1 sealed factory
 and v1 routing/classifier dependency checks; those require explicit v2 wiring.
+
+## Native kernel bridge checkpoint
+
+`src/runtime/effect-only-mission-runner.mjs` reconstructs the v2 admission,
+checks the native descriptor against its policy, then reuses the identity-bound
+transport, native executor, mission journal and resumable kernel. Completion
+comes from that kernel, never a caller-supplied terminal receipt.
+
+Independent review by Banach found three reproducible gaps in the first draft:
+descriptor changes between preflight and wrapper construction, caller context
+mutation before final completion reconstruction, and kernel replay across
+distinct outer admissions sharing the same kernel admission. Regression tests
+failed on each original behavior. The corrected bridge snapshots context
+synchronously, rechecks the descriptor in the wrapper, and namespaces the
+kernel journal by the verified outer admission digest. Banach approved the
+corrected scope. This namespace isolates identity; it does not authorize new
+admissions or bypass upstream routing-slot rejection on changed policy/input.
+
+The focused 33-test set passes. Controlled native transport with the real
+kernel demonstrates identical completed replay with one execution, distinct
+outer-admission isolation, and recovery after an injected interruption directly
+after native-result commit without another inference. This is not a live-model
+quality experiment or an OS-process crash/power-loss guarantee. The host must
+still authenticate policy/candidate, own the journal directory and transport,
+and enforce materialization ceilings before adopting this internal bridge.

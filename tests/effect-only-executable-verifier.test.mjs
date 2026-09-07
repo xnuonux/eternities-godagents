@@ -255,11 +255,15 @@ test('v2 admission binds the verified journal and admitted identity without a fa
   const vector = JSON.parse(await readFile(new URL('../fixtures/effect-only-golden-vector-v2.json', import.meta.url), 'utf8'));
   const { routeMode, ...legacy } = vector.subject;
   const request = prepareLocalArtifactEffectRequest(vector.subject, { expectedProducerDescriptorDigest: vector.digests.producerDescriptorDigest });
+  const { buildIdentityBoundNativeTransportDescriptor, buildIdentityBoundNativeCompletion } = await import('../src/runtime/identity-bound-native-contracts.mjs');
+  const nativeDescriptor = buildIdentityBoundNativeTransportDescriptor({ transportId: 'effect-v2-native-test',
+    maximumDispatchBytes: 262144, maximumCompletionBytes: 16384 });
   const candidate = await compileCortexBindingCandidate({ admission: admitted.admission,
     request: buildCortexBindingRequestFromVesselRequest({ ...legacy, schemaVersion: 1 }) });
   const policy = { schemaVersion: 2, authority: request.requestedAuthority, hostContext: request.hostCeiling,
     runtime: { protocolId: 'eternities-admitted-sealed-identity-host-v2', hostAdapterId: request.task.hostAdapterId,
       revocationEpoch: request.task.revocationEpoch, effectProducerDescriptorDigest: vector.digests.producerDescriptorDigest,
+      nativeTransport: nativeDescriptor,
       limits: { ...request.budgets, maxCycles: request.maxCycles, maxProjectionBytes: request.maxProjectionBytes } } };
   const projection = buildEffectOnlyRoutingProjection({ request, policy, candidate });
   const f = await sidecarFixture(t);
@@ -283,6 +287,77 @@ test('v2 admission binds the verified journal and admitted identity without a fa
   assert.equal(result.hostBinding.requestDigest, sha256Value(request));
   assert.equal(result.routing.result.routeReceipt.status, 'no-qualified-route');
   assert.deepEqual(admissionApi.verifyEffectOnlyVesselAdmission(structuredClone(result), context), result);
+  await t.test('v2 kernel bridge recovers a saved mission without another native inference', async () => {
+    const bridge = await import('../src/runtime/effect-only-mission-runner.mjs').catch(() => null);
+    assert.equal(typeof bridge?.runEffectOnlyAdmittedMission, 'function', 'v2 kernel bridge exists');
+    let executions = 0;
+    let expectedVesselDigest = result.vesselAdmissionDigest;
+    const nativeTransport = {
+      descriptor: () => nativeDescriptor,
+      reconcile: async () => ({ status: 'absent' }),
+      execute: async dispatch => {
+        executions += 1;
+        assert.equal(dispatch.vesselAdmissionDigest, expectedVesselDigest);
+        return { status: 'completed', completion: buildIdentityBoundNativeCompletion({ dispatch,
+          transportDescriptor: nativeDescriptor,
+          artifact: { schemaVersion: 1, artifactType: 'native', content: 'verified bounded draft' },
+          usage: { inputTokens: 10, cachedInputTokens: 0, reasoningTokens: 2, visibleOutputTokens: 3, completionTokens: 5 },
+          startedAt: '2026-09-07T12:00:01.000Z', completedAt: '2026-09-07T12:00:02.000Z' }) };
+      },
+    };
+    const runnerInput = { vesselAdmission: result, admissionContext: context,
+      journalRoot: join(f.input.repositoryRoot, 'native-mission'), nativeTransport,
+      maximumNativeMaterializedBytes: 262144, clock: () => Date.parse('2026-09-07T12:00:03.000Z') };
+    const first = await bridge.runEffectOnlyAdmittedMission(runnerInput);
+    assert.equal(first.status, 'completed');
+    assert.equal(first.mission.artifact.content, 'verified bounded draft');
+    assert.equal(first.receipt.authority.realmEffects, false);
+    const recovered = await bridge.runEffectOnlyAdmittedMission(runnerInput);
+    assert.deepEqual(recovered, first);
+    assert.equal(executions, 1);
+    let descriptorReads = 0;
+    const otherDescriptor = buildIdentityBoundNativeTransportDescriptor({ transportId: 'changed-between-reads',
+      maximumDispatchBytes: 262144, maximumCompletionBytes: 16384 });
+    await assert.rejects(bridge.runEffectOnlyAdmittedMission({ ...runnerInput,
+      nativeTransport: { ...nativeTransport, descriptor: () => ++descriptorReads === 1 ? nativeDescriptor : otherDescriptor } }), /descriptor|transport/);
+    const mutableContext = { ...context, request: structuredClone(context.request) };
+    const stableRecovery = await bridge.runEffectOnlyAdmittedMission({ ...runnerInput, admissionContext: mutableContext,
+      nativeTransport: { ...nativeTransport, descriptor: () => {
+        mutableContext.request.sourceStateEpoch += 1;
+        return nativeDescriptor;
+      } } });
+    assert.deepEqual(stableRecovery, first);
+    await assert.rejects(bridge.runEffectOnlyAdmittedMission({ ...runnerInput,
+      nativeTransport: { ...nativeTransport, descriptor: () => ({ ...nativeDescriptor, transportId: 'other' }) } }));
+    assert.equal(executions, 1);
+    const otherPolicy = { ...policy, policyId: 'different-host-policy' };
+    const otherProjection = buildEffectOnlyRoutingProjection({ request, policy: otherPolicy, candidate });
+    const otherRoot = join(f.input.repositoryRoot, 'other-routing');
+    await mkdir(otherRoot);
+    const otherJournal = createEffectOnlyRoutingJournal({ root: otherRoot,
+      routingReceiptDigest: routingExecutable.receipt.receiptDigest,
+      verifierReceiptDigest: verifierExecutable.receipt.receiptDigest,
+      route: async ({ resultPath }) => writeFile(resultPath, JSON.stringify({ routeReceipt: { status: 'no-qualified-route' } }), { flag: 'wx' }),
+      verify: async () => true });
+    const otherRoutingResult = await otherJournal.run({ slotId, request: otherProjection.request,
+      expectedSource: otherProjection.expectedSource, hostBindingDigest: otherProjection.hostBinding.bindingDigest });
+    const otherContext = { ...context, policy: otherPolicy, routingResult: otherRoutingResult };
+    const otherAdmission = admissionApi.buildEffectOnlyVesselAdmission(otherContext);
+    assert.equal(otherAdmission.missionAdmission.admissionDigest, result.missionAdmission.admissionDigest);
+    assert.notEqual(otherAdmission.vesselAdmissionDigest, result.vesselAdmissionDigest);
+    expectedVesselDigest = otherAdmission.vesselAdmissionDigest;
+    await bridge.runEffectOnlyAdmittedMission({ ...runnerInput, vesselAdmission: otherAdmission, admissionContext: otherContext });
+    assert.equal(executions, 2, 'a distinct outer admission cannot inherit the first terminal result');
+    expectedVesselDigest = result.vesselAdmissionDigest;
+    const interruptedInput = { ...runnerInput, journalRoot: join(f.input.repositoryRoot, 'interrupted-native-mission') };
+    await assert.rejects(bridge.runEffectOnlyAdmittedMission({ ...interruptedInput,
+      checkpoint: async name => { if (name === 'after-native-commit') throw new Error('test interruption after durable native result'); } }), /test interruption/);
+    assert.equal(executions, 3);
+    const resumed = await bridge.runEffectOnlyAdmittedMission(interruptedInput);
+    assert.equal(resumed.status, 'completed');
+    assert.equal(resumed.mission.artifact.content, 'verified bounded draft');
+    assert.equal(executions, 3, 'resume after committed native work must not infer again');
+  });
   await t.test('v2 completion rejects artifact replacement and rehashed authority expansion', async () => {
     assert.equal(typeof admissionApi.buildEffectOnlyVesselCompletion, 'function', 'v2 completion exists');
     const { buildMissionVerdict, buildMissionCompletionReceipt } = await import('../src/runtime/mission-phase-contracts.mjs');
