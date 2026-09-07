@@ -27,6 +27,35 @@ test('verifies a contract-only dossier without provider work', async () => {
   );
 });
 
+for (const [operation, consume] of [
+  ['build', (fixture) => buildExternalHostQualificationDossier(fixture.input)],
+  ['verify', (fixture) => verifyExternalHostQualificationDossier(fixture.dossier)],
+]) {
+  for (const [field, mutate] of [
+    ['authority', (dossier) => { dossier.hostDescription.authority.realmEffects = true; }],
+    ['phase list', (dossier) => { dossier.hostDescription.capabilities.phases.pop(); }],
+  ]) {
+    test(`${operation} keeps nested ${field} immutable after qualification`, async () => {
+      const fixture = await buildDeterministicExternalHostQualificationFixture();
+      const dossier = consume(fixture);
+      const original = structuredClone(dossier);
+      assert.throws(() => mutate(dossier), TypeError);
+      assert.deepEqual(dossier, original);
+      assert.deepEqual(verifyExternalHostQualificationDossier(dossier), original);
+    });
+  }
+
+  test(`${operation} isolates its dossier without freezing caller-owned data`, async () => {
+    const fixture = structuredClone(await buildDeterministicExternalHostQualificationFixture());
+    const dossier = consume(fixture);
+    fixture.input.hostDescription.authority.realmEffects = true;
+    fixture.dossier.hostDescription.capabilities.phases.pop();
+    assert.equal(dossier.hostDescription.authority.realmEffects, false);
+    assert.deepEqual(dossier.hostDescription.capabilities.phases, ['native', 'review', 'revision']);
+    assert.deepEqual(verifyExternalHostQualificationDossier(dossier), dossier);
+  });
+}
+
 test('binds a reserved live-evidence dossier without calling a provider', async () => {
   const fixture = await buildDeterministicExternalHostQualificationFixture();
   const dossier = buildExternalHostQualificationDossier({

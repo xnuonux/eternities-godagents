@@ -24,6 +24,14 @@ function clone(value) {
   return structuredClone(value);
 }
 
+function deepFreeze(value) {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) deepFreeze(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
 function same(left, right) {
   return canonicalJson(left) === canonicalJson(right);
 }
@@ -124,7 +132,7 @@ function verifyDossier(value) {
   if (copied.hostDescriptionDigest !== hostDescription.descriptionDigest) {
     throw new TypeError('external host description digest does not match');
   }
-  const baseline = verifyBaseline(copied.baseline);
+  verifyBaseline(copied.baseline);
   const liveEvidence = verifyLiveEvidence(copied.liveEvidence);
   if ((liveEvidence === null && copied.status !== 'contract-only')
       || (liveEvidence !== null && copied.status !== 'live-evidence-bound')) {
@@ -138,17 +146,7 @@ function verifyDossier(value) {
   if (Buffer.byteLength(`${canonicalJson(copied)}\n`, 'utf8') > MAX_BYTES) {
     throw new TypeError('external host qualification dossier exceeds byte ceiling');
   }
-  return Object.freeze({
-    ...copied,
-    hostDescription: Object.freeze(clone(hostDescription)),
-    baseline: Object.freeze(clone(baseline)),
-    liveEvidence: liveEvidence === null
-      ? null
-      : Object.freeze({
-        ...liveEvidence,
-        phaseReceiptDigests: Object.freeze(clone(liveEvidence.phaseReceiptDigests)),
-      }),
-  });
+  return deepFreeze(copied);
 }
 
 export function buildExternalHostQualificationDossier(input = {}) {

@@ -34,20 +34,26 @@ This is a product and release-process review, not a new certification.
    additional failing regressions reproduced those attribution gaps; all 11
    publication tests passed after repair. These are targeted results, not a
    new full-suite claim.
-2. **Historical verifier compatibility is broken for at least one old release.**
-   Using the current verifier on the artifact stored at `b8354a3`, whose source
-   is `ae46906321983a7fe67511754a731b1a06877fad`, fails with
+2. **Historical verifier compatibility repaired, 2026-09-07.**
+   Before repair, verifying the artifact stored at `b8354a3`, whose source
+   is `ae46906321983a7fe67511754a731b1a06877fad`, failed with
    `SDK root export set mismatch` even with current-ref freshness disabled.
    [current-head-certificate.mjs](../src/integration/current-head-certificate.mjs)
-   lets pre-qualification profiles inherit the new export list and selects the
+   let pre-qualification profiles inherit the new export list and selected the
    pre-adversarial profile for the post-adversarial/pre-qualification interval.
-   This is an outstanding compatibility repair, not evidence that old receipt
-   bytes should be rewritten.
-3. **Dossier immutability is shallow.** A returned dossier's nested
-   `hostDescription.authority` remains mutable. A local probe changed
+   The repair separates the pre-external-host SDK/protocol/boundary profile
+   from the current profile and selects it for the post-adversarial interval.
+   [Historical regressions](../tests/current-head-historical-compatibility.test.mjs)
+   verify unchanged receipts on both sides of those release boundaries.
+   Newer exports/protocols and omitted historical evidence remain rejected.
+   No historical receipt bytes were changed.
+3. **Dossier immutability repaired, 2026-09-07.** A returned dossier's nested
+   `hostDescription.authority` was mutable. A local probe changed
    `realmEffects` after verification. Re-verification rejected it, so this probe
-   does not demonstrate an executed authority expansion. Consumers must not
-   treat the returned nested object as immutable until repaired.
+   does not demonstrate an executed authority expansion. The repair recursively
+   freezes the validated private copy, leaving caller-owned input mutable.
+   Construction and verification reject post-validation authority and phase-list
+   mutation. See [repair evidence](audits/2026-09-07-integrity-repair.md).
 4. **Sibling certification issuance needs a separate bounded audit.**
    [the external qualification builder](../scripts/build-external-host-qualification-v1-receipt.mjs)
    also writes a preliminary certified receipt before its full suite. Historical
@@ -86,7 +92,7 @@ its runtime or make a universal skill pack dependent on its receipt machinery.
 
 ```text
 truthful release publication
-  -> outstanding compatibility and mutation repairs
+  -> historical compatibility and dossier immutability repairs
   -> one documented usable local host path
   -> budgeted real-task qualification and interruption recovery
   -> second independent host adapter portability check

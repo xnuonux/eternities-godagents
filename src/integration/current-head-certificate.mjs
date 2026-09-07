@@ -95,7 +95,7 @@ const SDK_EXPORTS = Object.freeze([
   'verifyAdmittedProviderBackedIdentityLauncherDescription',
   'verifyProviderPhaseHostDescription',
 ]);
-const V2_SDK_EXPORTS = Object.freeze([
+const PRE_EXTERNAL_HOST_QUALIFICATION_SDK_EXPORTS = Object.freeze([
   'GODAGENT_SDK_PROTOCOL_ID',
   'GODAGENT_SDK_VERSION',
   'PORTABLE_PHASE_HOST_PROTOCOL_ID',
@@ -110,13 +110,16 @@ const V2_SDK_EXPORTS = Object.freeze([
   'createProviderPhaseHost',
   'createRecoverableRealmConsequenceHost',
   'describeGodagentSdk',
-  'EXTERNAL_HOST_QUALIFICATION_PROTOCOL_ID',
-  'buildExternalHostQualificationDossier',
   'verifyAdmittedPortableIdentityLauncherDescription',
-  'verifyExternalHostQualificationDossier',
   'verifyPortablePhaseHostDescription',
   'verifyAdmittedProviderBackedIdentityLauncherDescription',
   'verifyProviderPhaseHostDescription',
+].sort());
+const V2_SDK_EXPORTS = Object.freeze([
+  ...PRE_EXTERNAL_HOST_QUALIFICATION_SDK_EXPORTS,
+  'EXTERNAL_HOST_QUALIFICATION_PROTOCOL_ID',
+  'buildExternalHostQualificationDossier',
+  'verifyExternalHostQualificationDossier',
 ].sort());
 const LEGACY_PACKAGE_EXPORTS = Object.freeze({ '.': `./${SDK_ENTRYPOINT_PATH}` });
 const V2_PACKAGE_EXPORTS = Object.freeze({
@@ -337,14 +340,7 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   certificationPath: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH,
   certificationDocument: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_DOCUMENT,
 });
-const PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
-  'fixtures/portable-phase-host-adversarial-v1.json',
-  'scripts/build-portable-phase-host-adversarial-v1-fixture.mjs',
-  'scripts/build-portable-phase-host-adversarial-v1-receipt.mjs',
-  'tests/helpers/portable-phase-host-adversarial-fixture.mjs',
-  'tests/portable-phase-host-adversarial-certification.test.mjs',
-  'tests/portable-phase-host-adversarial.test.mjs',
-  PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH,
+const PRE_EXTERNAL_HOST_QUALIFICATION_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/external-host-qualification-v1.json',
   'schemas/external-host-qualification-dossier.schema.json',
   'scripts/build-external-host-qualification-v1-fixture.mjs',
@@ -355,8 +351,28 @@ const PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_V2_BOUNDARY_PATHS = Object.freeze(V2_B
   'tests/external-host-qualification.test.mjs',
   EXTERNAL_HOST_QUALIFICATION_RECEIPT_PATH,
 ].includes(path)));
-const PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+const PRE_EXTERNAL_HOST_QUALIFICATION_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   ...CURRENT_HEAD_V2_PROFILE,
+  sdkExports: PRE_EXTERNAL_HOST_QUALIFICATION_SDK_EXPORTS,
+  boundaryPaths: PRE_EXTERNAL_HOST_QUALIFICATION_V2_BOUNDARY_PATHS,
+  externalHostQualification: false,
+  externalHostQualificationFullTests: undefined,
+  supportedAdapterProtocols: Object.freeze([
+    PORTABLE_CONFORMANCE_PROTOCOL,
+    PORTABLE_REALM_CONSEQUENCE_SDK_PROTOCOL,
+  ]),
+});
+const PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_V2_BOUNDARY_PATHS = Object.freeze(PRE_EXTERNAL_HOST_QUALIFICATION_V2_BOUNDARY_PATHS.filter((path) => ![
+  'fixtures/portable-phase-host-adversarial-v1.json',
+  'scripts/build-portable-phase-host-adversarial-v1-fixture.mjs',
+  'scripts/build-portable-phase-host-adversarial-v1-receipt.mjs',
+  'tests/helpers/portable-phase-host-adversarial-fixture.mjs',
+  'tests/portable-phase-host-adversarial-certification.test.mjs',
+  'tests/portable-phase-host-adversarial.test.mjs',
+  PORTABLE_PHASE_HOST_ADVERSARIAL_RECEIPT_PATH,
+].includes(path)));
+const PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  ...PRE_EXTERNAL_HOST_QUALIFICATION_CURRENT_HEAD_V2_PROFILE,
   boundaryPaths: PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_V2_BOUNDARY_PATHS,
   portablePhaseHostAdversarial: false,
   portablePhaseHostAdversarialFullTests: undefined,
@@ -2523,7 +2539,7 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
                     ? (portablePhaseHostAdversarialPresent
                       ? (externalHostQualificationPresent
                         ? CURRENT_HEAD_V2_PROFILE
-                        : PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE)
+                        : PRE_EXTERNAL_HOST_QUALIFICATION_CURRENT_HEAD_V2_PROFILE)
                       : PRE_PORTABLE_PHASE_HOST_ADVERSARIAL_CURRENT_HEAD_V2_PROFILE)
                     : PRE_MISSION_FORENSIC_INDEX_CURRENT_HEAD_V2_PROFILE)
                   : PRE_MISSION_OPERATION_EVIDENCE_CURRENT_HEAD_V2_PROFILE)
