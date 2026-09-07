@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, readFile, writeFile, rm, rename, symlink } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { mkdtemp, mkdir, readFile, writeFile, rm, rename, symlink, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { canonicalJson } from '../src/core/canonical-json.mjs';
@@ -94,4 +96,31 @@ test('rejects an aliased source directory even when every source byte matches', 
   await rename(original, relocated);
   await symlink(relocated, original, process.platform === 'win32' ? 'junction' : 'dir');
   await assert.rejects(verifyEffectOnlyExecutable(input), /alias/);
+});
+
+test('materializes only captured modules in a fresh directory without reopening the checkout', async t => {
+  const { verifyEffectOnlyExecutable, materializeEffectOnlyExecutable } = await api();
+  assert.equal(typeof materializeEffectOnlyExecutable, 'function', 'isolated source materialization is implemented');
+  const input = await fixture(t);
+  const captured = await verifyEffectOnlyExecutable(input);
+  const parent = join(input.repositoryRoot, 'snapshots');
+  await mkdir(parent);
+  await writeFile(join(input.repositoryRoot, paths[0]), '// changed checkout');
+  const first = await materializeEffectOnlyExecutable({ verifiedExecutable: captured, parent });
+  const second = await materializeEffectOnlyExecutable({ verifiedExecutable: captured, parent });
+  assert.notEqual(first.root, second.root);
+  assert.equal(first.entrypoint, join(first.root, paths[0]));
+  assert.equal(await readFile(first.entrypoint, 'utf8'), '// synthetic inert module: scripts/effect-only-v2.mjs\n');
+  assert.deepEqual((await readdir(first.root)).sort(), ['scripts', 'src']);
+  assert.equal((await readdir(join(first.root, 'src'))).length, 4);
+  await assert.rejects(materializeEffectOnlyExecutable({ verifiedExecutable: structuredClone(captured), parent }), /provenance/);
+});
+test('offline probe never creates a missing output parent before source validation', async t => {
+  const input = await fixture(t);
+  const parent = join(input.repositoryRoot, 'not-created');
+  const script = fileURLToPath(new URL('../scripts/evaluation/effect-only-snapshot-smoke.mjs', import.meta.url));
+  const child = spawnSync(process.execPath, [script, input.repositoryRoot, parent],
+    { windowsHide: true, timeout: 5000, maxBuffer: 4096 });
+  assert.notEqual(child.status, 0);
+  await assert.rejects(readdir(parent), { code: 'ENOENT' });
 });

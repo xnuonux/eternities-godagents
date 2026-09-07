@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { open, realpath } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { open, realpath, mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import { resolve, join, dirname } from 'node:path';
 import { canonicalJson } from '../core/canonical-json.mjs';
 
 const PROTOCOL = 'eternities-godskills-effect-only-executable-v2';
@@ -93,4 +93,25 @@ export async function verifyEffectOnlyExecutable({ repositoryRoot, pin: inputPin
   const result = freeze({ pin, receipt, sources });
   verified.add(result);
   return result;
+}
+
+// The parent must be a host-owned directory. This is source isolation, not an
+// OS sandbox against another process with the same filesystem permissions.
+// Failed partial snapshots are preserved for forensics and are never returned
+// as executable handles. No retry, cleanup, launch, or policy adoption occurs.
+export async function materializeEffectOnlyExecutable({ verifiedExecutable, parent }) {
+  const captured = assertVerifiedEffectOnlyExecutable(verifiedExecutable);
+  const lexicalParent = resolve(parent);
+  const actualParent = await realpath(lexicalParent);
+  if (identity(actualParent) !== identity(lexicalParent)) throw new Error('effect-only snapshot parent alias rejected');
+  const root = await mkdtemp(join(actualParent, 'effect-only-'));
+  for (const source of captured.sources) {
+    const destination = join(root, source.path);
+    await mkdir(dirname(destination), { recursive: true });
+    const bytes = Buffer.from(source.contentBase64, 'base64');
+    await writeFile(destination, bytes, { flag: 'wx', mode: 0o600 });
+    await capture(root, source);
+  }
+  return freeze({ root, entrypoint: join(root, captured.pin.entrypoint.path),
+    receiptDigest: captured.receipt.receiptDigest });
 }

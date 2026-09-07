@@ -62,3 +62,36 @@ installed-host-wording failure and one skip. The 89 targeted tests pass.
 
 This slice is a structured local-artifact path. It is not general natural-language
 interpretation, the entire Godskills catalog, or the completion of Godagents.
+
+## Isolated materialization and offline subprocess probe
+
+`materializeEffectOnlyExecutable({ verifiedExecutable, parent })` creates a fresh
+host-owned snapshot directory containing only the captured modules. It rejects
+unbranded objects and aliased parents, writes exclusively, and verifies the
+written bytes before returning. It never reopens the source checkout. Partial
+failures are retained, not returned as executable handles or automatically
+retried. This is not an OS sandbox against another process with the same access.
+
+The added materialization test failed before implementation and now passes. It
+changes the original checkout after capture, verifies the materialized original
+bytes, checks two calls use distinct directories, and rejects cloned provenance.
+
+The reusable offline probe `scripts/evaluation/effect-only-snapshot-smoke.mjs`
+pins the reviewed receipt and both vectors, executes the CLI with a stripped
+environment, no shell, hidden window, five-second timeout and 4 KiB captured
+output limit. It compares the actual subprocess output against the pinned result
+vector and retains the snapshot and report. This is not a production dispatcher.
+
+Observed report:
+`D:\00-INDEX\operations\2026-09-07-effect-only-snapshot-smoke\effect-only-RUKW8o\smoke-report.json`.
+The probe passed with result digest
+`2634cd2d2f5b780824869cb0b376c5d8acf002820730ffbcaeb0795efab33efe`,
+zero provider calls, no host policy adoption and no mission launch.
+
+Independent reviewer Peirce (`01a07dfc-a52c-7f11-8434-5ec39c626d71`)
+approved the materialization scope and noted that the probe created its parent
+before alias validation. A failing regression reproduced that early side effect;
+the probe now requires an existing parent and never creates it. The three-file
+focused set passes 34 tests after this correction. The zero-call fields in the
+probe report describe its verified scope, not independent usage instrumentation.
+This does not certify the still-missing v2 mission dispatch/recovery integration.
