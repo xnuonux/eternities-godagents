@@ -28,6 +28,11 @@ remote exactly-once execution, power-loss durability, or live model quality.
 
 ## what exists and what it proves
 
+Evaluation follow-up, 2026-09-07: [bounded diagnostic helpers](evaluation-diagnostics.md)
+provide offline-tested attempt preservation, baseline dispatch/validation and
+Godagent outcome accounting. They are not yet a source-gated live comparison CLI.
+The prior failed live experiment remains failed and its receipts are unchanged.
+
 Reasoning-profile follow-up, 2026-09-07: the explicit split-output profile passed
 1,137 full integration tests and independent review. The subsequent live experiment
 did **not** qualify the workflow: the baseline harness lost failure diagnostics,
