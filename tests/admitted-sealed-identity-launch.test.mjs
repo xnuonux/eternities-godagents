@@ -210,6 +210,61 @@ test('malformed launcher seams fail as input before filesystem or policy work', 
   );
 });
 
+test('authenticated v2 launcher runs pinned effect-only routing and recovers native work', async t => {
+  const fixture = await setup(t, 'effect-only-host', { reviewAvailable: false });
+  const sourceRoot = 'C:/dev/eternities-godskills/.worktrees/effect-only-v2';
+  const policy = await rewritePolicy(fixture, p => {
+    p.schemaVersion = 2;
+    p.runtime.protocolId = 'eternities-admitted-sealed-identity-host-v2';
+    p.runtime.effectProducerDescriptorDigest = 'bd00071f046bd5f8612a65cfe674d417b8b21c3fb25bad41634bb734b08bfc26';
+    p.runtime.effectOnlyRepositoryRoot = sourceRoot;
+    for (const key of ['godskillsRelease', 'activationClassifier']) delete p.runtime[key];
+    for (const key of ['maximumGodskillsDispatchBytes', 'maximumGodskillsCompletionBytes', 'maximumGodskillsResultBytes']) delete p.runtime.limits[key];
+  });
+  // Test-host pins come from the local frozen fixture. External release approval
+  // is separately covered by the fixed-pin policy test, not inferred here.
+  for (const [field, kind] of [['routingExecutable', 'executable'], ['verifierExecutable', 'verifier']]) {
+    const path = `receipts/effect-only-${kind}-v2.json`;
+    const bytes = await readFile(join(sourceRoot, path), 'utf8');
+    const receipt = JSON.parse(bytes);
+    policy.runtime[field] = { protocolId: receipt.protocolId, entrypoint: receipt.entrypoint,
+      executableReceipt: { path, sha256: sha256Text(bytes), receiptDigest: receipt.receiptDigest } };
+  }
+  await writeFile(fixture.policyPath, `${canonicalJson(policy)}\n`);
+  fixture.env.GODAGENT_IDENTITY_POLICY_SHA256 = sha256Text(canonicalJson(policy));
+  const request = prepareLocalArtifactEffectRequest({ ...fixture.request, schemaVersion: 2, routeMode: 'effect-only' },
+    { expectedProducerDescriptorDigest: policy.runtime.effectProducerDescriptorDigest });
+  const { launchAdmittedSealedIdentityMission } = await launcherModule();
+  const args = launchArgs(fixture, { request });
+  const first = await launchAdmittedSealedIdentityMission(args);
+  assert.equal(first.status, 'completed');
+  assert.equal(first.receipt.schemaVersion, 2);
+  assert.equal(first.mission.verdict.reason, 'native-no-review');
+  const calls = operationCount(fixture.native.calls);
+  assert.deepEqual(await launchAdmittedSealedIdentityMission(args), first);
+  assert.equal(operationCount(fixture.native.calls), calls);
+  const changed = prepareLocalArtifactEffectRequest({ ...fixture.request, schemaVersion: 2, routeMode: 'effect-only', sourceStateEpoch: 1 },
+    { expectedProducerDescriptorDigest: policy.runtime.effectProducerDescriptorDigest });
+  await assert.rejects(launchAdmittedSealedIdentityMission({ ...args, request: changed }));
+  assert.equal(operationCount(fixture.native.calls), calls);
+  const denied = prepareLocalArtifactEffectRequest({ ...fixture.request, schemaVersion: 2, routeMode: 'effect-only',
+    requestedAuthority: ['local-read'], mission: { ...fixture.request.mission, missionId: 'denied-effect-mission' } },
+    { expectedProducerDescriptorDigest: policy.runtime.effectProducerDescriptorDigest });
+  const blocked = await launchAdmittedSealedIdentityMission({ ...args, request: denied });
+  assert.equal(blocked.status, 'needs-decision');
+  assert.equal(operationCount(fixture.native.calls), calls, 'denied effects cannot reach native transport');
+  const { sha256Value } = await import('../src/core/digest.mjs');
+  const slot = sha256Value({ taskId: request.task.taskId, missionId: request.mission.missionId });
+  const admissionPath = join(fixture.admissionRoot, 'vessel', 'effect-only-v2', `${slot}.admission.json`);
+  const saved = JSON.parse(await readFile(admissionPath, 'utf8'));
+  saved.sourceStateEpoch += 1;
+  const { vesselAdmissionDigest, ...unsigned } = saved;
+  saved.vesselAdmissionDigest = sha256Value(unsigned);
+  await writeFile(admissionPath, `${canonicalJson(saved)}\n`);
+  await assert.rejects(launchAdmittedSealedIdentityMission(args));
+  assert.equal(operationCount(fixture.native.calls), calls, 'tampered admission cannot reach native transport');
+});
+
 async function rewritePolicy(fixture, mutate) {
   const changed = structuredClone(fixture.policy);
   mutate(changed);

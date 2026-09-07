@@ -318,3 +318,28 @@ The focused policy/launcher set passes 12 tests, including capture of the frozen
 effect-only pair and unchanged v1 launch/recovery. Banach reviewed the policy
 surface and confirmed closure of the obsolete byte-limit concern. Launcher
 selection of the v2 execution bridge remains unimplemented at this checkpoint.
+
+## Authenticated launcher integration
+
+The public admitted sealed launcher now branches to
+`src/host/effect-only-identity-execution.mjs` only after its existing external
+policy digest, genesis/binding, residency, request and native dependency checks.
+V2 captures the paired executables, reconstructs the candidate and projection,
+uses the routing journal, and persists a bounded canonical outer admission under
+a lock with exclusive publication. Recovery reuses its original timestamp and
+reconstructs its bindings before reaching the kernel bridge. V1 continues through
+its original sealed factory and activation classifier.
+
+Banach approved the scoped integration review. The public-entrypoint test uses
+the real frozen effect-only processes and a controlled native transport. It
+demonstrates completion, replay without extra native operations, changed-epoch
+rejection, denied write intent with no native work, and rejection of a rehashed
+altered saved admission. The source pins in this integration fixture are derived
+from the frozen test checkout; the separate policy test checks fixed reviewed
+pins. Neither grants release approval or establishes live model quality.
+
+Snapshots and process inputs remain retained under the host root. Admission
+publication reuses the existing synced-file/exclusive-hardlink primitive under
+the admission lock; parent-directory power-loss durability and adversarial
+same-user filesystem replacement are not claimed. Full branch integration and
+certification gates remain outstanding, and no live policy has been adopted.

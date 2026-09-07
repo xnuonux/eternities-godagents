@@ -20,6 +20,7 @@ import {
   verifyIdentityHostPolicyRouting,
 } from './identity-policy.mjs';
 import { claimLocalInstanceResidency, defaultLocalInstanceRegistryRoot } from './local-instance-registry.mjs';
+import { executeEffectOnlyIdentity } from './effect-only-identity-execution.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
 const MESSAGES = Object.freeze({
@@ -165,6 +166,10 @@ async function verifyDependencies({
         || !same(revisionDescriptor, policy.runtime.revisionExecutor)) {
       throw new Error('live review or revision executor descriptor differs from policy');
     }
+  }
+  if (policy.schemaVersion === 2) {
+    if (expectsReview) throw new Error('effect-only policy cannot activate review executors');
+    return Object.freeze({ classifier: null, expectsReview: false });
   }
   const classifier = createRoutingEvidenceActivationClassifier({
     verifiedRoutingExecutable,
@@ -342,6 +347,10 @@ export async function launchAdmittedSealedIdentityMission({
 
   const limits = loaded.policy.runtime.limits;
   try {
+    if (loaded.policy.schemaVersion === 2) {
+      return await executeEffectOnlyIdentity({ root, policy: loaded.policy, request, genesisAdmission,
+        verifiedPair: verifiedRoutingExecutable, nativeTransport, clock, checkpoint, lockOptions });
+    }
     const vessel = await createSealedLocalIdentityBoundMissionVessel({
       genesisAdmission,
       runtimeRoot: join(root, 'vessel', 'sealed-identity-v1'),
