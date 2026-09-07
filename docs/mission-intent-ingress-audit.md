@@ -91,3 +91,32 @@ Acceptance evidence must include:
 
 No release pin adoption, paid inference, Soul activation or Lunari integration is
 authorized by this document. Those remain separate existing authority boundaries.
+
+## Producer boundary refinement
+
+`examples/local-artifact-workflow/run.mjs:22-69` already requires an externally
+supplied expected manifest digest, verifies the prepared mission/policy/provider
+hashes, and forwards the verified mission snapshot to launch. Reuse this trust
+boundary. Hashes inside an otherwise attacker-controlled document do not by
+themselves authenticate a producer.
+
+The proposed first producer is a structured workflow adapter that knows its
+configured operation, such as publishing a local artifact. It must not guess
+effects from prose, borrow a card, or manufacture an assessment from expected
+benchmark answers. Bind its descriptor through trusted host policy and bind its
+assessment to the canonical original mission request, including observation,
+source epoch and host ceiling. Exclude the assessment itself from its subject
+digest to avoid a circular hash; the outer request/manifest binds both together.
+
+Proposed minimum assessment fields for protocol coordination are protocol ID,
+subject digest, known/unknown/conflicting state, requested effects, unresolved
+decisions, and producer descriptor digest. These are not a frozen wire schema.
+The consumer treats the assessment as intent data, not as authority. A producer
+descriptor digest is checked against host policy, never trusted from its label.
+
+The Godskills comparison at `c613f1a` recommends a known-capability-only pilot.
+That pilot is insufficient for this milestone: the already verified nonempty
+candidate constraint prevents the required understood-but-uncovered task.
+Preserve the existing hook for supported cases, but do not require a new pilot
+to demonstrate this same structural limitation again. The next contract must
+represent effect knowledge independently from capability selection.
