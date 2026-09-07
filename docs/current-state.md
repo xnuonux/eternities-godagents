@@ -28,6 +28,36 @@ remote exactly-once execution, power-loss durability, or live model quality.
 
 ## what exists and what it proves
 
+Effect-only integration follow-up, 2026-09-07: main `b4c599aa49e59061c8d926262fdfa228db47b18e`
+adds a structured local-artifact effect declaration, separately pinned Godskills
+routing/verifier source captures, single-attempt routing journal, versioned outer
+admission/completion, and authenticated v2 host launch through the existing native
+kernel. The full suite passed 1,230 tests with no failures or skips. Historical
+ledger and release lineage verified 69 receipts; a fast-forward preserved the
+exact tested commit and 34 focused post-integration checks passed. Evidence:
+`D:\00-INDEX\operations\2026-09-07-effect-only-snapshot-smoke\godagents-b4c599a-gate-status.json`.
+Full log SHA-256: `6978f7bd4d40eb355d01dcea6d339aa1065c0c361277a45807a2c9012a824111`.
+See [the migration decision and checkpoints](effect-only-vessel-migration-decision.md).
+This does not issue a new v2 release certificate, promote the Godskills feature
+to its main branch, or establish live model-quality gains.
+
+The next operator-path gap is concrete: `admitted-provider-backed-identity-launcher.mjs`
+and `admitted-portable-identity-launcher.mjs` unconditionally construct review and
+revision dependencies. Their existing factories therefore cannot launch a v2
+native-only policy. The root SDK exports those wrappers but not the new lower-level
+host path. The local-artifact preparation workflow likewise still builds the v1
+release/classifier policy. Do not present the v2 integration test as a complete
+operator-facing migration.
+
+Next bounded outcome: an explicit effect-only launch mode consuming the existing
+issued host's native transport, with no review/revision construction or calls,
+followed by v2 preparation/artifact retrieval through the existing operator flow.
+Keep v1 behavior and descriptor contracts unchanged; reject policy/mode mismatch
+before execution. Prove both provider families through controlled transports,
+credential-free preflight, denied-effect zero dispatch, and persisted replay.
+Do not add a new model client, infer provider selection, broaden authority, or
+run paid qualification before its exact model and resource envelope are approved.
+
 Evaluation follow-up, 2026-09-07: [bounded diagnostic helpers](evaluation-diagnostics.md)
 provide offline-tested attempt preservation, baseline dispatch/validation and
 Godagent outcome accounting. They are not yet a source-gated live comparison CLI.
