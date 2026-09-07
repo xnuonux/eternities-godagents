@@ -9,6 +9,7 @@ const SOURCES = ['scripts/effect-only-v2.mjs', 'src/effect-intent-v2.mjs',
   'src/intent-contracts.mjs', 'src/io.mjs', 'src/routing-contracts.mjs'];
 const LIMIT = 1_048_576;
 const verified = new WeakSet();
+const verifiedSidecars = new WeakSet();
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const equal = (a, b) => canonicalJson(a) === canonicalJson(b);
 const identity = p => process.platform === 'win32' ? p.toLowerCase() : p;
@@ -61,28 +62,47 @@ export function assertVerifiedEffectOnlyExecutable(value) {
 // release eligibility. Captured bytes, never the mutable checkout, are the
 // future execution input. This function itself never writes or executes code.
 export async function verifyEffectOnlyExecutable({ repositoryRoot, pin: inputPin }) {
+  return verifySourceCapture({ repositoryRoot, pin: inputPin });
+}
+
+export async function verifyEffectOnlyVerifier({ repositoryRoot, pin, routingExecutable }) {
+  assertVerifiedEffectOnlyExecutable(routingExecutable);
+  return verifySourceCapture({ repositoryRoot, pin }, routingExecutable);
+}
+
+async function verifySourceCapture({ repositoryRoot, pin: inputPin }, routingExecutable = null) {
+  const protocol = routingExecutable ? 'eternities-godskills-effect-only-verifier-v2' : PROTOCOL;
+  const receiptPath = routingExecutable ? 'receipts/effect-only-verifier-v2.json' : RECEIPT;
+  const sourcePaths = routingExecutable ? ['scripts/verify-effect-only-v2.mjs', ...SOURCES.slice(1)] : SOURCES;
   const pin = structuredClone(inputPin);
   exact(pin, ['protocolId', 'executableReceipt', 'entrypoint']);
   exact(pin.executableReceipt, ['path', 'sha256', 'receiptDigest']);
   exact(pin.entrypoint, ['path', 'sha256']);
-  if (pin.protocolId !== PROTOCOL || pin.executableReceipt.path !== RECEIPT
-      || pin.entrypoint.path !== SOURCES[0]) throw new Error('unsupported effect-only pin');
+  if (pin.protocolId !== protocol || pin.executableReceipt.path !== receiptPath
+      || pin.entrypoint.path !== sourcePaths[0]) throw new Error('unsupported effect-only pin');
   digest(pin.executableReceipt.receiptDigest);
   digest(pin.entrypoint.sha256);
   const root = await realpath(resolve(repositoryRoot));
   const receiptBytes = await capture(root, pin.executableReceipt);
   const receipt = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(receiptBytes));
   exact(receipt, ['schemaVersion', 'protocolId', 'status', 'sourceCommit', 'entrypoint',
-    'sources', 'builder', 'tests', 'vectors', 'verification', 'proofLimits', 'receiptDigest']);
+    'sources', 'builder', 'tests', 'vectors', 'verification', 'proofLimits', 'receiptDigest',
+    ...(routingExecutable ? ['parent'] : [])]);
   const { receiptDigest, ...body } = receipt;
-  if (receipt.schemaVersion !== 1 || receipt.protocolId !== PROTOCOL
+  if (receipt.schemaVersion !== 1 || receipt.protocolId !== protocol
       || receipt.status !== 'verified-structural-only'
       || !/^[a-f0-9]{40}$/.test(receipt.sourceCommit)
       || receiptDigest !== pin.executableReceipt.receiptDigest
       || hash(canonicalJson(body)) !== receiptDigest) throw new Error('effect-only receipt identity/digest mismatch');
-  if (!Array.isArray(receipt.sources) || !equal(receipt.sources.map(s => s.path), SOURCES)
+  if (!Array.isArray(receipt.sources) || !equal(receipt.sources.map(s => s.path), sourcePaths)
       || !equal(receipt.entrypoint, pin.entrypoint) || !equal(receipt.entrypoint, receipt.sources[0])) {
     throw new Error('effect-only executable closure mismatch');
+  }
+  if (routingExecutable) {
+    if (!equal(receipt.parent, routingExecutable.pin.executableReceipt)) throw new Error('sidecar parent binding mismatch');
+    if (!equal(receipt.sources.slice(1), routingExecutable.receipt.sources.slice(1))) {
+      throw new Error('sidecar shared consumer mismatch');
+    }
   }
   const sources = [];
   for (const source of receipt.sources) {
@@ -91,7 +111,7 @@ export async function verifyEffectOnlyExecutable({ repositoryRoot, pin: inputPin
     sources.push({ ...source, contentBase64: bytes.toString('base64') });
   }
   const result = freeze({ pin, receipt, sources });
-  verified.add(result);
+  (routingExecutable ? verifiedSidecars : verified).add(result);
   return result;
 }
 
@@ -100,7 +120,8 @@ export async function verifyEffectOnlyExecutable({ repositoryRoot, pin: inputPin
 // Failed partial snapshots are preserved for forensics and are never returned
 // as executable handles. No retry, cleanup, launch, or policy adoption occurs.
 export async function materializeEffectOnlyExecutable({ verifiedExecutable, parent }) {
-  const captured = assertVerifiedEffectOnlyExecutable(verifiedExecutable);
+  const captured = verifiedSidecars.has(verifiedExecutable)
+    ? verifiedExecutable : assertVerifiedEffectOnlyExecutable(verifiedExecutable);
   const lexicalParent = resolve(parent);
   const actualParent = await realpath(lexicalParent);
   if (identity(actualParent) !== identity(lexicalParent)) throw new Error('effect-only snapshot parent alias rejected');

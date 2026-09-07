@@ -3,7 +3,7 @@ import test from 'node:test';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { mkdtemp, mkdir, readFile, writeFile, rm, rename, symlink, readdir } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, rm, rename, symlink, readdir, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { canonicalJson } from '../src/core/canonical-json.mjs';
@@ -123,4 +123,66 @@ test('offline probe never creates a missing output parent before source validati
     { windowsHide: true, timeout: 5000, maxBuffer: 4096 });
   assert.notEqual(child.status, 0);
   await assert.rejects(readdir(parent), { code: 'ENOENT' });
+});
+
+async function sidecarFixture(t) {
+  const input = await fixture(t);
+  const { verifyEffectOnlyExecutable } = await api();
+  const routingExecutable = await verifyEffectOnlyExecutable(input);
+  const receipt = structuredClone(routingExecutable.receipt);
+  receipt.protocolId = 'eternities-godskills-effect-only-verifier-v2';
+  receipt.parent = structuredClone(input.pin.executableReceipt);
+  const entrypoint = { path: 'scripts/verify-effect-only-v2.mjs', sha256: hash('// inert verifier\n') };
+  receipt.entrypoint = entrypoint;
+  receipt.sources[0] = entrypoint;
+  await writeFile(join(input.repositoryRoot, entrypoint.path), '// inert verifier\n');
+  async function save() {
+    delete receipt.receiptDigest;
+    receipt.receiptDigest = hash(canonicalJson(receipt));
+    const bytes = JSON.stringify(receipt);
+    const path = 'receipts/effect-only-verifier-v2.json';
+    await writeFile(join(input.repositoryRoot, path), bytes);
+    return { repositoryRoot: input.repositoryRoot, routingExecutable,
+      pin: { protocolId: receipt.protocolId, entrypoint: receipt.entrypoint,
+        executableReceipt: { path, sha256: hash(bytes), receiptDigest: receipt.receiptDigest } } };
+  }
+  return { input, receipt, save };
+}
+test('sidecar captures its own entrypoint but remains bound to the verified routing parent', async t => {
+  const { verifyEffectOnlyVerifier, assertVerifiedEffectOnlyExecutable, materializeEffectOnlyExecutable } = await api();
+  assert.equal(typeof verifyEffectOnlyVerifier, 'function', 'sidecar host verifier exists');
+  const f = await sidecarFixture(t);
+  const args = await f.save();
+  const result = await verifyEffectOnlyVerifier(args);
+  assert.deepEqual(result.receipt.parent, args.routingExecutable.pin.executableReceipt);
+  assert.throws(() => assertVerifiedEffectOnlyExecutable(result), /provenance/);
+  await assert.rejects(verifyEffectOnlyVerifier({ ...args, routingExecutable: structuredClone(args.routingExecutable) }), /provenance/);
+  const snapshot = await materializeEffectOnlyExecutable({ verifiedExecutable: result, parent: f.input.repositoryRoot });
+  assert.equal(await readFile(snapshot.entrypoint, 'utf8'), '// inert verifier\n');
+  for (const field of ['sha256', 'receiptDigest']) {
+    f.receipt.parent[field] = '0'.repeat(64);
+    await assert.rejects(verifyEffectOnlyVerifier(await f.save()), /parent/);
+    f.receipt.parent = structuredClone(args.routingExecutable.pin.executableReceipt);
+  }
+});
+test('sidecar cannot replace shared consumer bytes even with a newly pinned receipt', async t => {
+  const { verifyEffectOnlyVerifier } = await api();
+  assert.equal(typeof verifyEffectOnlyVerifier, 'function', 'sidecar host verifier exists');
+  const f = await sidecarFixture(t);
+  const bytes = '// different consumer\n';
+  await writeFile(join(f.input.repositoryRoot, paths[1]), bytes);
+  f.receipt.sources[1].sha256 = hash(bytes);
+  await assert.rejects(verifyEffectOnlyVerifier(await f.save()), /shared/);
+});
+test('identical pinned sidecar content remains portable across repository directories', async t => {
+  const { verifyEffectOnlyVerifier } = await api();
+  const f = await sidecarFixture(t);
+  const args = await f.save();
+  const mirror = await fixture(t);
+  for (const relative of ['scripts/verify-effect-only-v2.mjs', 'receipts/effect-only-verifier-v2.json']) {
+    await cp(join(f.input.repositoryRoot, relative), join(mirror.repositoryRoot, relative));
+  }
+  const fromOriginal = await verifyEffectOnlyVerifier(args);
+  const fromMirror = await verifyEffectOnlyVerifier({ ...args, repositoryRoot: mirror.repositoryRoot });
+  assert.deepEqual(fromMirror, fromOriginal);
 });

@@ -95,3 +95,34 @@ the probe now requires an existing parent and never creates it. The three-file
 focused set passes 34 tests after this correction. The zero-call fields in the
 probe report describe its verified scope, not independent usage instrumentation.
 This does not certify the still-missing v2 mission dispatch/recovery integration.
+
+## Separately pinned recovery sidecar
+
+The host now verifies `eternities-godskills-effect-only-verifier-v2` using a
+separate provenance brand, exact parent receipt triple and identical four shared
+consumer module hashes. Both captures can be materialized, but a sidecar cannot
+satisfy the routing-executable assertion. Directory location is not authority:
+identical pinned copies in separate canonical directories are intentionally
+accepted. A positive mirror test protects that portability.
+
+Issued sidecar file hash:
+`1e027c1061fdb5bb482aae9d1a09409ba70ccb9f87bd834784fb3cf95e8f427a`;
+logical digest: `a4c2ef29dc626d45e57cce361185b5c43a6065dd602236fe38385cc28b025f81`;
+entrypoint hash: `bedfcf57bcff9b7d780c30c933cdef709a4a5c042973449d07fe0a4cc78857a8`.
+
+`scripts/evaluation/effect-only-recovery-smoke.mjs` verified the original saved
+golden result using a fresh sidecar snapshot. One verification subprocess, no
+new routing subprocess, native inference, effect dispatch or host policy change.
+Original request, expected-source and result file hashes remained unchanged.
+Report: `D:\00-INDEX\operations\2026-09-07-effect-only-snapshot-smoke\effect-only-py3djD\recovery-smoke-report.json`.
+The Godskills owner independently checked snapshot and original-file hashes.
+
+Rawls (`01a07e0c-81f7-7351-bb58-ec2ddc80e8d8`) reviewed the host delta and probe.
+An initial directory-identity objection was withdrawn after checking the
+content-addressed trust model. No concrete trust-confusion regression remained.
+The probe's `spawnSync maxBuffer:4096` is an overflow termination threshold, not
+a strict peak allocation or truncation guarantee. A local 5,000-byte-output
+probe produced ENOBUFS/SIGTERM with 5,000 bytes observed. Earlier references to
+a 4 KiB output bound mean this threshold; the recovery probe emits no captured
+child output and rejects errors. The successful verifier emitted zero bytes.
+This limitation is not a claim of a hard memory sandbox.
