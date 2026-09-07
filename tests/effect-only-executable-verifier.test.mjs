@@ -239,3 +239,70 @@ test('routing subprocess timeout terminates observation without an automatic ret
     resultPath: join(f.input.repositoryRoot, 'result.json'), request: {}, expectedSource: {} }), /timed out/);
   assert.deepEqual(adapters.counters(), { routingSubprocesses: 1, verificationSubprocesses: 0 });
 });
+
+test('v2 admission binds the verified journal and admitted identity without a fabricated v1 skill receipt', async t => {
+  const admissionApi = await import('../src/runtime/effect-only-vessel-admission.mjs').catch(() => null);
+  assert.equal(typeof admissionApi?.buildEffectOnlyVesselAdmission, 'function', 'v2 outer admission exists');
+  const { setupAdmittedIdentity } = await import('./helpers/admitted-identity-fixture.mjs');
+  const { compileCortexBindingCandidate } = await import('../src/cortex/binding-compiler.mjs');
+  const { buildCortexBindingRequestFromVesselRequest } = await import('../src/runtime/identity-bound-mission-vessel-contracts.mjs');
+  const { prepareLocalArtifactEffectRequest } = await import('../src/host/structured-effect-producer.mjs');
+  const { buildEffectOnlyRoutingProjection } = await import('../src/skills/effect-only-routing-projection.mjs');
+  const { createEffectOnlyRoutingJournal } = await import('../src/skills/effect-only-routing-journal.mjs');
+  const { sha256Value } = await import('../src/core/digest.mjs');
+  const admitted = await setupAdmittedIdentity(t, 'effect-v2-admission');
+  t.after(() => rm(admitted.root, { recursive: true, force: true }));
+  const vector = JSON.parse(await readFile(new URL('../fixtures/effect-only-golden-vector-v2.json', import.meta.url), 'utf8'));
+  const { routeMode, ...legacy } = vector.subject;
+  const request = prepareLocalArtifactEffectRequest(vector.subject, { expectedProducerDescriptorDigest: vector.digests.producerDescriptorDigest });
+  const candidate = await compileCortexBindingCandidate({ admission: admitted.admission,
+    request: buildCortexBindingRequestFromVesselRequest({ ...legacy, schemaVersion: 1 }) });
+  const policy = { schemaVersion: 2, authority: request.requestedAuthority, hostContext: request.hostCeiling,
+    runtime: { protocolId: 'eternities-admitted-sealed-identity-host-v2', hostAdapterId: request.task.hostAdapterId,
+      revocationEpoch: request.task.revocationEpoch, effectProducerDescriptorDigest: vector.digests.producerDescriptorDigest,
+      limits: { ...request.budgets, maxCycles: request.maxCycles, maxProjectionBytes: request.maxProjectionBytes } } };
+  const projection = buildEffectOnlyRoutingProjection({ request, policy, candidate });
+  const f = await sidecarFixture(t);
+  const args = await f.save();
+  const routingExecutable = args.routingExecutable;
+  const verifierExecutable = await (await api()).verifyEffectOnlyVerifier(args);
+  // Trusted test adapters isolate admission mechanics from already-tested consumer semantics.
+  const journal = createEffectOnlyRoutingJournal({ root: f.input.repositoryRoot,
+    routingReceiptDigest: routingExecutable.receipt.receiptDigest, verifierReceiptDigest: verifierExecutable.receipt.receiptDigest,
+    route: async ({ resultPath }) => writeFile(resultPath, JSON.stringify({ routeReceipt: { status: 'no-qualified-route' } }), { flag: 'wx' }),
+    verify: async () => true });
+  const slotId = sha256Value({ taskId: request.task.taskId, missionId: request.mission.missionId });
+  const routingResult = await journal.run({ slotId, request: projection.request, expectedSource: projection.expectedSource,
+    hostBindingDigest: projection.hostBinding.bindingDigest });
+  const context = { request, policy, candidate, routingResult, routingExecutable, verifierExecutable,
+    admittedAt: '2026-09-07T12:00:00.000Z' };
+  const result = admissionApi.buildEffectOnlyVesselAdmission(context);
+  assert.equal(result.schemaVersion, 2);
+  assert.equal(result.missionAdmission.godskills, null);
+  assert.equal(result.identity.candidateDigest, candidate.candidateDigest);
+  assert.equal(result.hostBinding.requestDigest, sha256Value(request));
+  assert.equal(result.routing.result.routeReceipt.status, 'no-qualified-route');
+  assert.deepEqual(admissionApi.verifyEffectOnlyVesselAdmission(structuredClone(result), context), result);
+  assert.throws(() => admissionApi.buildEffectOnlyVesselAdmission({ ...context, routingResult: structuredClone(routingResult) }), /provenance/);
+  const tampered = structuredClone(result);
+  tampered.sourceStateEpoch += 1;
+  const { vesselAdmissionDigest, ...unsigned } = tampered;
+  tampered.vesselAdmissionDigest = sha256Value(unsigned);
+  assert.throws(() => admissionApi.verifyEffectOnlyVesselAdmission(tampered, context), /binding/);
+  const blockedRoot = join(f.input.repositoryRoot, 'blocked-journal');
+  await mkdir(blockedRoot);
+  const blockedJournal = createEffectOnlyRoutingJournal({ root: blockedRoot,
+    routingReceiptDigest: routingExecutable.receipt.receiptDigest, verifierReceiptDigest: verifierExecutable.receipt.receiptDigest,
+    route: async ({ resultPath }) => writeFile(resultPath, JSON.stringify({ routeReceipt: { status: 'needs-decision' } }), { flag: 'wx' }),
+    verify: async () => true });
+  const blocked = await blockedJournal.run({ slotId, request: projection.request, expectedSource: projection.expectedSource,
+    hostBindingDigest: projection.hostBinding.bindingDigest });
+  assert.throws(() => admissionApi.buildEffectOnlyVesselAdmission({ ...context, routingResult: blocked }), /blocked/);
+  const deniedSubject = structuredClone(vector.subject);
+  deniedSubject.requestedAuthority = ['local-read'];
+  deniedSubject.hostCeiling.availableAuthority = ['local-read'];
+  deniedSubject.hostCeiling.permittedEffects = ['local-read'];
+  const deniedRequest = prepareLocalArtifactEffectRequest(deniedSubject, { expectedProducerDescriptorDigest: vector.digests.producerDescriptorDigest });
+  const deniedPolicy = { ...policy, authority: ['local-read'], hostContext: deniedSubject.hostCeiling };
+  assert.throws(() => admissionApi.buildEffectOnlyVesselAdmission({ ...context, request: deniedRequest, policy: deniedPolicy }), /effects exceed/);
+});

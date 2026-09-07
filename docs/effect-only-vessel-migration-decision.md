@@ -223,3 +223,32 @@ trees. Input/evidence directories remain retained intentionally, with no
 automatic deletion. Filesystem safety still requires host-exclusive directories.
 The v2 vessel and policy wiring are still required before the live, matched
 native-task comparison.
+
+## V2 admission contract checkpoint
+
+`src/runtime/effect-only-vessel-admission.mjs` and the registered
+`schemas/effect-only-vessel-admission.schema.json` now define the versioned outer
+envelope. It retains the host binding, source epoch, verified candidate identity,
+derived authority, both executable pins, exact journal result/completion and the
+ordinary native-only mission-kernel admission. V1 skill-cycle objects are not
+fabricated and existing v1 schemas remain unchanged.
+
+The journal returns frozen completed objects with an internal input-binding
+brand. Admission requires that live brand to match the reconstructed host
+projection, stable task/mission slot and paired root digests. Recovery therefore
+reverifies stored routing evidence through the journal before reconstructing the
+outer admission. A cloned stored object cannot impersonate this live handoff.
+The brand proves internal callback verification and binding only, not arbitrary
+caller authority. The production host factory must still authenticate policy,
+candidate admission and pinned process adapters.
+
+Native-only admission separately checks intended local effects against the
+derived authority, and rejects a valid needs-decision result. Tests use a real
+admitted candidate with synthetic pinned sources and controlled trusted journal
+adapters to isolate these mechanics. The focused new/adjacent/v1 set passes 60
+tests. Banach (`01a07e22-93d9-7c82-981e-91ea6f493e98`) independently reviewed
+the scoped admission changes and approved them, with 19 focused tests passing.
+The JSON schema is not a standalone authentication boundary: nested semantic
+validation and provenance depend on the runtime builder and reconstructing
+verifier. No native inference or live policy adoption
+has occurred; completion and vessel/host wiring remain incomplete.

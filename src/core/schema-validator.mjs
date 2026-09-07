@@ -4,6 +4,7 @@ import { canonicalJson } from './canonical-json.mjs';
 import { SchemaError } from './errors.mjs';
 
 const schemaFiles = {
+  'effect-only-vessel-admission': 'effect-only-vessel-admission.schema.json',
   'agent-genome': 'agent-genome.schema.json',
   'godagent-profile': 'godagent-profile.schema.json',
   'distribution-manifest': 'distribution-manifest.schema.json',

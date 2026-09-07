@@ -7,6 +7,17 @@ import { claimEffectOnlyRoutingExecution } from './effect-only-execution-claim.m
 
 const key = p => process.platform === 'win32' ? p.toLowerCase() : p;
 const json = value => `${canonicalJson(value)}\n`;
+const completedResults = new WeakMap();
+function freeze(value) {
+  if (value && typeof value === 'object') { Object.values(value).forEach(freeze); Object.freeze(value); }
+  return value;
+}
+export function assertEffectOnlyJournalResult(value, expectedInputs) {
+  if (!value || completedResults.get(value) !== sha256Value({ schemaVersion: 1, ...expectedInputs })) {
+    throw new Error('routing journal result lacks matching provenance');
+  }
+  return value;
+}
 function digest(value) {
   if (typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value)) throw new Error('journal binding digest invalid');
 }
@@ -111,7 +122,9 @@ export function createEffectOnlyRoutingJournal({ root: inputRoot, routingReceipt
         status: result.routeReceipt.status };
       const completion = { ...unsigned, completionDigest: sha256Value(unsigned) };
       await preserveExact(completionPath, completion, 4096);
-      return { status: completion.status, result, completion };
+      const output = freeze({ status: completion.status, result, completion });
+      completedResults.set(output, sha256Value(inputs));
+      return output;
     } finally { await lock.release(); }
   }
   return Object.freeze({ run });

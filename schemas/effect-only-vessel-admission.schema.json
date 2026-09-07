@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": { "digest": { "type": "string", "minLength": 64, "maxLength": 64 } },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "protocolId", "hostBinding", "sourceStateEpoch", "identity", "authority", "routing", "missionAdmission", "vesselAdmissionDigest"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "protocolId": { "const": "eternities-effect-only-identity-vessel-v2" },
+    "hostBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["protocolId", "requestDigest", "policyDigest", "candidateDigest", "routingRequestDigest", "bindingDigest"],
+      "properties": {
+        "protocolId": { "const": "eternities-effect-only-host-binding-v1" },
+        "requestDigest": { "$ref": "#/$defs/digest" },
+        "policyDigest": { "$ref": "#/$defs/digest" },
+        "candidateDigest": { "$ref": "#/$defs/digest" },
+        "routingRequestDigest": { "$ref": "#/$defs/digest" },
+        "bindingDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "sourceStateEpoch": { "type": "integer", "minimum": 0 },
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["candidateDigest", "fullEnvelopeDigest", "modelProjectionDigest", "binding"],
+      "properties": {
+        "candidateDigest": { "$ref": "#/$defs/digest" },
+        "fullEnvelopeDigest": { "$ref": "#/$defs/digest" },
+        "modelProjectionDigest": { "$ref": "#/$defs/digest" },
+        "binding": { "type": "object" }
+      }
+    },
+    "authority": { "type": "object" },
+    "routing": {
+      "type": "object", "additionalProperties": false,
+      "required": ["routingPin", "verifierPin", "result", "completion"],
+      "properties": {
+        "routingPin": { "type": "object" }, "verifierPin": { "type": "object" },
+        "result": { "type": "object" }, "completion": { "type": "object" }
+      }
+    },
+    "missionAdmission": { "type": "object" },
+    "vesselAdmissionDigest": { "$ref": "#/$defs/digest" }
+  }
+}
