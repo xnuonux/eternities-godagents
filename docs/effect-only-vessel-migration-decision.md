@@ -187,3 +187,39 @@ exclusively. Host-exclusive filesystem ownership is required. No protection
 against same-user path replacement or power-loss exactly-once execution is
 claimed, and parent-directory fsync is not established. No main merge or live
 policy adoption follows from this component review.
+
+## Pinned process adapters and journal interoperability
+
+`createEffectOnlyProcessAdapters` now requires paired branded routing and sidecar
+captures, materializes both snapshots, and supplies the journal's route/verify
+callbacks. Each callback serializes bounded input files in a fresh host-owned
+directory and runs only its pinned Node entrypoint with a stripped environment,
+no shell, hidden window and ignored stdout/stderr. A routing result must target
+the operation's `result.json`. Timeouts do not cause retries. Process counters
+currently count dispatch attempts; launch errors are not proof of zero work.
+
+The adapter test uses synthetic executable fixtures to isolate transport behavior
+and the real journal to establish one route and two verifications across first
+execution/recovery. It also checks forged results, unbranded sidecars, output
+path escape, input size and timeout behavior. The focused set passes 55 tests.
+
+The separate `scripts/evaluation/effect-only-journal-smoke.mjs` runs the actual
+frozen Godskills route and verifier against their pinned golden vector. The
+first result and recovered result were identical: one routing subprocess,
+two verification subprocesses and zero native inferences. Report:
+`D:\00-INDEX\operations\2026-09-07-effect-only-snapshot-smoke\journal-smoke-e7Jwwo\journal-smoke-report.json`.
+Completion digest: `ea55c81d39c48d0bae542a5e3e615482a8eca84d7050f4cf6e4e05818a459031`.
+This offline host-binding marker is explicitly not an authenticated agent
+admission. Rebuilding the adapters and journal against the persisted slot also
+recovers with zero routing attempts and one verification attempt. Kepler
+(`01a07e1a-038e-76a3-8c13-9e1271fa7738`) approved the internal integration after
+reviewing this persistence evidence and the pinned-code constraints. The
+Godskills owner independently checked the saved completion and golden result.
+
+The frozen routing CLI bounds result bytes before publication; ignored stdout
+and stderr do not accumulate captured output. Timeout handling kills the direct
+child and is scoped to these pinned non-spawning modules, not arbitrary process
+trees. Input/evidence directories remain retained intentionally, with no
+automatic deletion. Filesystem safety still requires host-exclusive directories.
+The v2 vessel and policy wiring are still required before the live, matched
+native-task comparison.

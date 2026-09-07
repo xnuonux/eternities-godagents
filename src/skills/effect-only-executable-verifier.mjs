@@ -57,6 +57,13 @@ export function assertVerifiedEffectOnlyExecutable(value) {
   return value;
 }
 
+export function assertVerifiedEffectOnlyVerifier(value, routingExecutable) {
+  assertVerifiedEffectOnlyExecutable(routingExecutable);
+  if (!value || !verifiedSidecars.has(value)) throw new Error('effect-only verifier lacks verified provenance');
+  if (!equal(value.receipt.parent, routingExecutable.pin.executableReceipt)) throw new Error('sidecar parent binding mismatch');
+  return value;
+}
+
 // The caller must obtain the pin through authenticated host policy. This checks
 // consistency with that pin, not reviewer authenticity, semantic quality or
 // release eligibility. Captured bytes, never the mutable checkout, are the

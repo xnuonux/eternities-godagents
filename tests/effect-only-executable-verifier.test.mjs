@@ -17,13 +17,13 @@ async function api() {
   assert.equal(typeof value?.verifyEffectOnlyExecutable, 'function', 'effect-only source capture is implemented');
   return value;
 }
-async function fixture(t) {
+async function fixture(t, routingCode = null) {
   const root = await mkdtemp(join(tmpdir(), 'effect-only-verifier-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const sources = [];
   for (const path of paths) {
     await mkdir(dirname(join(root, path)), { recursive: true });
-    const bytes = `// synthetic inert module: ${path}\n`;
+    const bytes = path === paths[0] && routingCode !== null ? routingCode : `// synthetic inert module: ${path}\n`;
     await writeFile(join(root, path), bytes);
     sources.push({ path, sha256: hash(bytes) });
   }
@@ -125,17 +125,17 @@ test('offline probe never creates a missing output parent before source validati
   await assert.rejects(readdir(parent), { code: 'ENOENT' });
 });
 
-async function sidecarFixture(t) {
-  const input = await fixture(t);
+async function sidecarFixture(t, routingCode = null, verifierCode = '// inert verifier\n') {
+  const input = await fixture(t, routingCode);
   const { verifyEffectOnlyExecutable } = await api();
   const routingExecutable = await verifyEffectOnlyExecutable(input);
   const receipt = structuredClone(routingExecutable.receipt);
   receipt.protocolId = 'eternities-godskills-effect-only-verifier-v2';
   receipt.parent = structuredClone(input.pin.executableReceipt);
-  const entrypoint = { path: 'scripts/verify-effect-only-v2.mjs', sha256: hash('// inert verifier\n') };
+  const entrypoint = { path: 'scripts/verify-effect-only-v2.mjs', sha256: hash(verifierCode) };
   receipt.entrypoint = entrypoint;
   receipt.sources[0] = entrypoint;
-  await writeFile(join(input.repositoryRoot, entrypoint.path), '// inert verifier\n');
+  await writeFile(join(input.repositoryRoot, entrypoint.path), verifierCode);
   async function save() {
     delete receipt.receiptDigest;
     receipt.receiptDigest = hash(canonicalJson(receipt));
@@ -185,4 +185,57 @@ test('identical pinned sidecar content remains portable across repository direct
   const fromOriginal = await verifyEffectOnlyVerifier(args);
   const fromMirror = await verifyEffectOnlyVerifier({ ...args, repositoryRoot: mirror.repositoryRoot });
   assert.deepEqual(fromMirror, fromOriginal);
+});
+
+test('pinned subprocess adapters drive journal execution and recovery without rerouting', async t => {
+  const adapterModule = await import('../src/skills/effect-only-process-adapters.mjs').catch(() => null);
+  assert.equal(typeof adapterModule?.createEffectOnlyProcessAdapters, 'function', 'pinned process adapters exist');
+  // Synthetic reviewed-code fixtures exercise transport mechanics, not Godskills semantics.
+  const routingCode = `import {readFile,writeFile} from 'node:fs/promises';
+const arg=k=>process.argv[process.argv.indexOf(k)+1];
+const request=JSON.parse(await readFile(arg('--request'),'utf8'));
+await writeFile(arg('--output'),JSON.stringify({routeReceipt:{status:'no-qualified-route'},marker:request.marker}),{flag:'wx'});`;
+  const verifierCode = `import {readFile} from 'node:fs/promises';
+const arg=k=>process.argv[process.argv.indexOf(k)+1];
+const request=JSON.parse(await readFile(arg('--request'),'utf8'));
+const result=JSON.parse(await readFile(arg('--result'),'utf8'));
+process.exitCode=result.marker===request.marker?0:1;`;
+  const f = await sidecarFixture(t, routingCode, verifierCode);
+  const args = await f.save();
+  const { verifyEffectOnlyVerifier } = await api();
+  const sidecar = await verifyEffectOnlyVerifier(args);
+  const adapters = await adapterModule.createEffectOnlyProcessAdapters({ routingExecutable: args.routingExecutable,
+    verifierExecutable: sidecar, snapshotParent: f.input.repositoryRoot });
+  const { createEffectOnlyRoutingJournal } = await import('../src/skills/effect-only-routing-journal.mjs');
+  const journal = createEffectOnlyRoutingJournal({ root: f.input.repositoryRoot, ...adapters,
+    routingReceiptDigest: args.routingExecutable.receipt.receiptDigest, verifierReceiptDigest: sidecar.receipt.receiptDigest });
+  const input = { slotId: 'real-process', request: { marker: 'checked' }, expectedSource: {}, hostBindingDigest: '1'.repeat(64) };
+  assert.equal((await journal.run(input)).status, 'no-qualified-route');
+  assert.equal((await journal.run(input)).status, 'no-qualified-route');
+  assert.deepEqual(adapters.counters(), { routingSubprocesses: 1, verificationSubprocesses: 2 });
+  const rebuiltAdapters = await adapterModule.createEffectOnlyProcessAdapters({ routingExecutable: args.routingExecutable,
+    verifierExecutable: sidecar, snapshotParent: f.input.repositoryRoot });
+  const rebuiltJournal = createEffectOnlyRoutingJournal({ root: f.input.repositoryRoot, ...rebuiltAdapters,
+    routingReceiptDigest: args.routingExecutable.receipt.receiptDigest, verifierReceiptDigest: sidecar.receipt.receiptDigest });
+  assert.equal((await rebuiltJournal.run(input)).status, 'no-qualified-route');
+  assert.deepEqual(rebuiltAdapters.counters(), { routingSubprocesses: 0, verificationSubprocesses: 1 });
+  assert.equal(await adapters.verify({ operationRoot: f.input.repositoryRoot, request: input.request, expectedSource: {}, result: { marker: 'forged' } }), false);
+  await assert.rejects(adapters.route({ operationRoot: f.input.repositoryRoot, resultPath: join(f.input.repositoryRoot, '..', 'escape.json'), request: input.request, expectedSource: {} }), /result path/);
+  await assert.rejects(adapters.route({ operationRoot: f.input.repositoryRoot, resultPath: join(f.input.repositoryRoot, 'result.json'), request: { oversized: 'x'.repeat(1_048_577) }, expectedSource: {} }), /bound/);
+  assert.equal(adapters.counters().routingSubprocesses, 1);
+  await assert.rejects(adapterModule.createEffectOnlyProcessAdapters({ routingExecutable: args.routingExecutable,
+    verifierExecutable: structuredClone(sidecar), snapshotParent: f.input.repositoryRoot }), /provenance/);
+});
+
+test('routing subprocess timeout terminates observation without an automatic retry', async t => {
+  const { createEffectOnlyProcessAdapters } = await import('../src/skills/effect-only-process-adapters.mjs');
+  const f = await sidecarFixture(t, 'setInterval(()=>{},1000);', '// no-op verifier');
+  const args = await f.save();
+  const { verifyEffectOnlyVerifier } = await api();
+  const verifierExecutable = await verifyEffectOnlyVerifier(args);
+  const adapters = await createEffectOnlyProcessAdapters({ routingExecutable: args.routingExecutable,
+    verifierExecutable, snapshotParent: f.input.repositoryRoot, timeoutMs: 100 });
+  await assert.rejects(adapters.route({ operationRoot: f.input.repositoryRoot,
+    resultPath: join(f.input.repositoryRoot, 'result.json'), request: {}, expectedSource: {} }), /timed out/);
+  assert.deepEqual(adapters.counters(), { routingSubprocesses: 1, verificationSubprocesses: 0 });
 });
