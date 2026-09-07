@@ -236,16 +236,23 @@ export async function buildExternalHostQualificationReceiptFromSource({ reposito
   return Object.freeze(verifyExternalHostQualificationReceipt({ ...unsigned, receiptDigest: sha256Value(unsigned) }));
 }
 
+export async function buildExternalHostQualificationAfterTests({
+  repository, sourceCommit,
+  runTestsImpl = runTests,
+  buildReceiptImpl = buildExternalHostQualificationReceiptFromSource,
+}) {
+  const focused = await runTestsImpl(focusedTestFiles, repository);
+  const full = await runTestsImpl([], repository);
+  return buildReceiptImpl({ repositoryRoot: repository, sourceCommit, testRuns: { focused, full } });
+}
+
 async function main() {
   const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const outputPath = join(repository, ...receiptPath.split('/'));
   await requireCleanExcept(repository, [...releaseOnlyPaths, 'package-lock.json']);
   const sourceCommit = await resolveSourceCommit({ root: repository, headCommit: await headCommit(repository), outputPath, releaseOnlyPaths });
-  const focused = await runTests(focusedTestFiles, repository);
-  const preliminary = await buildExternalHostQualificationReceiptFromSource({ repositoryRoot: repository, sourceCommit, testRuns: { focused, full: { status: 'pass', tests: focused.tests } } });
-  await writeFile(outputPath, `${canonicalJson(preliminary)}\n`, 'utf8');
-  const full = await runTests([], repository);
-  const receipt = await buildExternalHostQualificationReceiptFromSource({ repositoryRoot: repository, sourceCommit, testRuns: { focused, full } });
+  const receipt = await buildExternalHostQualificationAfterTests({ repository, sourceCommit });
+  const { focused, full } = receipt.testRuns;
   await writeFile(outputPath, `${canonicalJson(receipt)}\n`, 'utf8');
   const release = await runReleaseGates({ root: repository, certificationTestFile: 'tests/external-host-qualification-certification.test.mjs' });
   const [ledgerEvidence, lineageEvidence] = release.directVerifiers;

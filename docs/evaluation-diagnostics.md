@@ -64,3 +64,16 @@ This confirms existing vessel behavior, not semantic accuracy of the real intent
 compiler. In particular, it does not authorize converting `intent-not-understood`
 into an empty successful selection to get a comparison running. No new runtime
 path or fallback was needed. Live evaluation must first qualify its actual route.
+
+## Qualification issuance limitation
+
+The external-host qualification issuer now constructs its receipt only after
+both focused and full test runs return successfully, using their separate actual
+counts. It no longer publishes a preliminary certified receipt with a fabricated
+full-suite result. Three focused issuance tests cover ordering and failure;
+reinstating premature construction makes two of them fail.
+
+This is not transactional release publication: subsequent release gates still
+run after the receipt write. Do not treat this repair as resolving failure/crash
+handling for that later publication boundary, or as new qualification evidence.
+Historical receipts remain unchanged.
