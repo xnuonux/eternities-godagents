@@ -12,6 +12,14 @@ integration tests and independent review with no blocking findings. The
 digest, deferred coverage note, and interrupted-test recovery. Historical
 receipts are unchanged; no new current-head or live-host certificate is claimed.
 
+Operator-path follow-up, 2026-09-07: the [local artifact workflow](local-artifact-workflow.md)
+at `82e9f52b99621731302d0e7151f13cde49c49f0e` composes inert preparation,
+explicitly pinned execution, verified artifact retrieval, and same-mission replay.
+All 1,131 integration tests passed; independent review's rejection-outcome finding
+was resolved. The [workflow audit](audits/2026-09-07-local-artifact-workflow.md)
+records the exact proof and limits. This advances the local operator path, not
+live useful-task qualification, process-kill recovery, or universal completion.
+
 ## what exists and what it proves
 
 | surface | implementation evidence | usable boundary and remaining proof |
