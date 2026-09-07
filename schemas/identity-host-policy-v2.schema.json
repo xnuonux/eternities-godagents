@@ -12,7 +12,7 @@
     "runtime": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["protocolId", "instanceId", "distributionDir", "journalPath", "snapshotPath", "hostAdapterId", "revocationEpoch", "godskillsRelease", "routingExecutable", "activationClassifier", "nativeTransport", "limits", "effectProducerDescriptorDigest"],
+      "required": ["protocolId", "instanceId", "distributionDir", "journalPath", "snapshotPath", "hostAdapterId", "revocationEpoch", "effectOnlyRepositoryRoot", "routingExecutable", "verifierExecutable", "nativeTransport", "limits", "effectProducerDescriptorDigest"],
       "properties": {
         "protocolId": { "const": "eternities-admitted-sealed-identity-host-v2" },
         "effectProducerDescriptorDigest": { "type": "string", "minLength": 64, "maxLength": 64 },
@@ -22,21 +22,16 @@
         "snapshotPath": { "type": "string", "minLength": 1, "maxLength": 4096 },
         "hostAdapterId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "revocationEpoch": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
-        "godskillsRelease": { "type": "object" },
+        "effectOnlyRepositoryRoot": { "type": "string", "minLength": 1, "maxLength": 4096 },
         "routingExecutable": { "type": "object" },
-        "activationClassifier": { "type": "object" },
+        "verifierExecutable": { "type": "object" },
         "nativeTransport": { "type": "object" },
-        "reviewExecutor": { "type": "object" },
-        "revisionExecutor": { "type": "object" },
         "limits": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["timeoutMs", "maximumGodskillsDispatchBytes", "maximumGodskillsCompletionBytes", "maximumGodskillsResultBytes", "maximumNativeMaterializedBytes", "maxArtifactBytes", "nativeCompletionTokens", "reviewCompletionTokensPerRound", "revisionCompletionTokens", "totalCompletionTokens", "maxProjectionBytes", "maxCycles"],
+          "required": ["timeoutMs", "maximumNativeMaterializedBytes", "maxArtifactBytes", "nativeCompletionTokens", "reviewCompletionTokensPerRound", "revisionCompletionTokens", "totalCompletionTokens", "maxProjectionBytes", "maxCycles"],
           "properties": {
             "timeoutMs": { "type": "integer", "minimum": 100, "maximum": 120000 },
-            "maximumGodskillsDispatchBytes": { "type": "integer", "minimum": 256, "maximum": 16777216 },
-            "maximumGodskillsCompletionBytes": { "type": "integer", "minimum": 256, "maximum": 16777216 },
-            "maximumGodskillsResultBytes": { "type": "integer", "minimum": 256, "maximum": 16777216 },
             "maximumNativeMaterializedBytes": { "type": "integer", "minimum": 1024, "maximum": 16777216 },
             "maxArtifactBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 },
             "nativeCompletionTokens": { "type": "integer", "minimum": 1, "maximum": 1000000 },

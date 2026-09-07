@@ -8,6 +8,7 @@ import { verifyIdentityBoundNativeTransportDescriptor } from '../runtime/identit
 import { verifyMissionExecutorDescriptor } from '../runtime/mission-phase-contracts.mjs';
 import { verifyGodskillsRoutingExecutable } from '../skills/routing-executable-verifier.mjs';
 import { verifyRoutingEvidenceActivationClassifierDescriptor } from '../skills/routing-evidence-activation-classifier.mjs';
+import { verifyEffectOnlyExecutable, verifyEffectOnlyVerifier } from '../skills/effect-only-executable-verifier.mjs';
 
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 
@@ -74,6 +75,8 @@ function validateSemantics(policy) {
   if (policy.authority.some((value) => !available.has(value))) {
     throw new Error('identity host policy authority expands beyond host context');
   }
+  let classifier = null;
+  if (policy.schemaVersion === 1) {
   assertSchema('godskills-release-pin', runtime.godskillsRelease);
   assertSchema('godskills-routing-executable-pin', runtime.routingExecutable);
   if (!runtime.godskillsRelease.activation) {
@@ -85,9 +88,29 @@ function validateSemantics(policy) {
   if (runtime.godskillsRelease.maximumPackageBytes > policy.hostContext.contextBudget * 4) {
     throw new Error('identity host policy Godskills package exceeds context budget');
   }
-  const classifier = verifyRoutingEvidenceActivationClassifierDescriptor(runtime.activationClassifier);
+  classifier = verifyRoutingEvidenceActivationClassifierDescriptor(runtime.activationClassifier);
   if (classifier.routingTrustRootDigest !== runtime.routingExecutable.executableReceipt.receiptDigest) {
     throw new Error('identity host policy classifier differs from routing executable root');
+  }
+  } else {
+    if (/[\0\r\n]/.test(runtime.effectOnlyRepositoryRoot)) throw new Error('invalid effect-only repository path');
+    for (const [pin, kind, script] of [
+      [runtime.routingExecutable, 'executable', 'effect-only-v2'],
+      [runtime.verifierExecutable, 'verifier', 'verify-effect-only-v2'],
+    ]) {
+      if (!same(Object.keys(pin).sort(), ['entrypoint', 'executableReceipt', 'protocolId'])
+          || pin.protocolId !== `eternities-godskills-effect-only-${kind}-v2`
+          || !pin.executableReceipt || !pin.entrypoint
+          || !same(Object.keys(pin.executableReceipt).sort(), ['path', 'receiptDigest', 'sha256'])
+          || !same(Object.keys(pin.entrypoint).sort(), ['path', 'sha256'])
+          || pin.executableReceipt.path !== `receipts/effect-only-${kind}-v2.json`
+          || pin.entrypoint.path !== `scripts/${script}.mjs`
+          || [pin.executableReceipt.sha256, pin.executableReceipt.receiptDigest, pin.entrypoint.sha256]
+            .some(value => typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value))) {
+        throw new Error('identity host effect-only executable pin is invalid');
+      }
+    }
+    if (runtime.limits.timeoutMs > 30000) throw new Error('effect-only timeout exceeds adapter ceiling');
   }
   const native = verifyIdentityBoundNativeTransportDescriptor(runtime.nativeTransport);
   const hasReview = Object.hasOwn(runtime, 'reviewExecutor');
@@ -99,7 +122,7 @@ function validateSemantics(policy) {
     verifyMissionExecutorDescriptor(runtime.reviewExecutor, 'review');
     verifyMissionExecutorDescriptor(runtime.revisionExecutor, 'revision');
   }
-  if (classifier.reviewAvailable !== (hasReview && hasRevision)) {
+  if (classifier && classifier.reviewAvailable !== (hasReview && hasRevision)) {
     throw new Error('identity host policy classifier review availability differs from executor policy');
   }
   const limits = runtime.limits;
@@ -114,7 +137,7 @@ function validateSemantics(policy) {
       || limits.totalCompletionTokens > maximumCompletion) {
     throw new Error('identity host policy total completion token limit is incoherent');
   }
-  if (limits.maximumGodskillsResultBytes < runtime.godskillsRelease.maximumPackageBytes) {
+  if (policy.schemaVersion === 1 && limits.maximumGodskillsResultBytes < runtime.godskillsRelease.maximumPackageBytes) {
     throw new Error('identity host policy Godskills result limit is below package ceiling');
   }
 }
@@ -146,6 +169,13 @@ export async function verifyIdentityHostPolicyRouting(policy, {
 } = {}) {
   assertSchema(policy.schemaVersion === 2 ? 'identity-host-policy-v2' : 'identity-host-policy', policy);
   validateSemantics(policy);
+  if (policy.schemaVersion === 2) {
+    const repositoryRoot = policy.runtime.effectOnlyRepositoryRoot;
+    const routingExecutable = await verifyEffectOnlyExecutable({ repositoryRoot, pin: policy.runtime.routingExecutable });
+    const verifierExecutable = await verifyEffectOnlyVerifier({ repositoryRoot,
+      pin: policy.runtime.verifierExecutable, routingExecutable });
+    return Object.freeze({ routingExecutable, verifierExecutable });
+  }
   const verified = await verifyGodskillsRoutingExecutable({
     releasePin: policy.runtime.godskillsRelease,
     routingPin: policy.runtime.routingExecutable,

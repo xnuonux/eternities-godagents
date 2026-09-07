@@ -298,3 +298,23 @@ after native-result commit without another inference. This is not a live-model
 quality experiment or an OS-process crash/power-loss guarantee. The host must
 still authenticate policy/candidate, own the journal directory and transport,
 and enforce materialization ceilings before adopting this internal bridge.
+
+## Explicit v2 host policy
+
+The v2 policy now requires the effect-only repository location and separate
+routing/verifier executable pins, rather than the v1 release and activation
+classifier. Policy loading checks closed pin shapes, supported protocol paths,
+digests and the 30-second adapter timeout ceiling. Routing verification captures
+the exact source bytes and verifies the sidecar parent through the existing
+paired executable verifier. Loading a policy is not equivalent to authenticating
+its external digest or genesis binding; those remain launcher responsibilities.
+
+V1-only adjustable Godskills dispatch/completion/result byte limits are rejected
+by v2. The new adapter uses its fixed 1 MiB per-input and 2 MiB result bounds;
+there are no accepted policy knobs that silently claim a tighter byte ceiling.
+Review/revision executor declarations are excluded only from this native-only
+effect protocol, not from the existing v1 capability path. V1 is unchanged.
+The focused policy/launcher set passes 12 tests, including capture of the frozen
+effect-only pair and unchanged v1 launch/recovery. Banach reviewed the policy
+surface and confirmed closure of the obsolete byte-limit concern. Launcher
+selection of the v2 execution bridge remains unimplemented at this checkpoint.

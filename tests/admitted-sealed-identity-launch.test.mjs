@@ -42,6 +42,15 @@ test('versioned host policy pins the structured producer without widening v1', a
   policy.schemaVersion = 2;
   policy.runtime.protocolId = 'eternities-admitted-sealed-identity-host-v2';
   policy.runtime.effectProducerDescriptorDigest = pin;
+  for (const key of ['godskillsRelease', 'activationClassifier', 'reviewExecutor', 'revisionExecutor']) delete policy.runtime[key];
+  for (const key of ['maximumGodskillsDispatchBytes', 'maximumGodskillsCompletionBytes', 'maximumGodskillsResultBytes']) delete policy.runtime.limits[key];
+  policy.runtime.effectOnlyRepositoryRoot = 'unused-structural-policy-fixture';
+  for (const [field, kind, script] of [
+    ['routingExecutable', 'executable', 'effect-only-v2'],
+    ['verifierExecutable', 'verifier', 'verify-effect-only-v2'],
+  ]) policy.runtime[field] = { protocolId: `eternities-godskills-effect-only-${kind}-v2`,
+    executableReceipt: { path: `receipts/effect-only-${kind}-v2.json`, sha256: '0'.repeat(64), receiptDigest: '0'.repeat(64) },
+    entrypoint: { path: `scripts/${script}.mjs`, sha256: '0'.repeat(64) } };
   await writeFile(fixture.policyPath, `${canonicalJson(policy)}\n`);
   const loaded = await loadIdentityHostPolicy(fixture.policyPath);
   assert.deepEqual(verifyIdentityHostRequest(loaded.policy, request), request);
