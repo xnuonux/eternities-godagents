@@ -5,6 +5,7 @@ import { compileCortexBindingCandidate } from '../src/cortex/binding-compiler.mj
 import { buildCortexBindingRequestFromVesselRequest } from '../src/runtime/identity-bound-mission-vessel-contracts.mjs';
 import { prepareLocalArtifactEffectRequest } from '../src/host/structured-effect-producer.mjs';
 import { buildEffectOnlyRoutingProjection } from '../src/skills/effect-only-routing-projection.mjs';
+import { sha256Value } from '../src/core/digest.mjs';
 import { setupAdmittedIdentity } from './helpers/admitted-identity-fixture.mjs';
 
 async function setup(t) {
@@ -37,6 +38,23 @@ test('effect-only projection agrees with independent golden request and source d
   assert.equal(Object.isFrozen(projected.request.context), true);
   assert.equal(Object.hasOwn(projected.request, 'candidate'), false);
   assert.equal(Object.hasOwn(projected.request, 'policy'), false);
+});
+
+test('host-only binding retains candidate and policy identity without leaking either to routing', async t => {
+  const fixture = await setup(t);
+  const projected = buildEffectOnlyRoutingProjection(fixture);
+  assert.ok(projected.hostBinding, 'projection retains host-side admission binding');
+  assert.equal(projected.hostBinding.candidateDigest, fixture.candidate.candidateDigest);
+  assert.equal(projected.hostBinding.policyDigest, sha256Value(fixture.policy));
+  assert.equal(projected.hostBinding.requestDigest, sha256Value(fixture.request));
+  assert.equal(Object.isFrozen(projected.hostBinding), true);
+  const policy = structuredClone(fixture.policy);
+  policy.runtime.limits.maxCycles += 1;
+  const next = buildEffectOnlyRoutingProjection({ ...fixture, policy });
+  assert.deepEqual(next.request, projected.request);
+  assert.deepEqual(next.expectedSource, projected.expectedSource);
+  assert.notEqual(next.hostBinding.bindingDigest, projected.hostBinding.bindingDigest);
+  assert.equal(Object.hasOwn(projected.request, 'hostBinding'), false);
 });
 
 test('projection rejects changed source and cannot borrow another candidate mission', async t => {

@@ -45,8 +45,20 @@ export function buildEffectOnlyRoutingProjection({ request: input, policy, candi
     text: request.mission.objective, context, routeMode,
     effectAssessment: structuredClone(effectAssessment),
   };
+  // Kept by the host for admission/recovery, never sent as Godskills input.
+  // The verified candidate digest commits to its entire admitted identity and
+  // cortex envelope. Recompute this binding from trusted inputs on recovery;
+  // a stored digest alone is not origin authentication.
+  const hostBinding = {
+    protocolId: 'eternities-effect-only-host-binding-v1',
+    requestDigest: sha256Value(request),
+    policyDigest: sha256Value(policy),
+    candidateDigest: candidate.candidateDigest,
+    routingRequestDigest: sha256Value(projected),
+  };
   return freeze({
     request: projected,
+    hostBinding: { ...hostBinding, bindingDigest: sha256Value(hostBinding) },
     expectedSource: {
       subjectDigest: effectAssessment.subjectDigest,
       producerDescriptorDigest: policy.runtime.effectProducerDescriptorDigest,
