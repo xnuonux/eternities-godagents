@@ -27,6 +27,20 @@ or [Anthropic schema](../schemas/anthropic-messages-phase-transport-policy.schem
 Credentials belong only in the environment variable named by that policy, never in
 the configuration, mission, command line, or artifact.
 
+For an explicitly qualified endpoint that supports `reasoning_split`, the
+OpenAI-compatible policy can select
+`provider.profile: "chat-completions-json-schema-reasoning-split-v1"`.
+This named opt-in sends `reasoning_split: true` in all three phases without
+disabling thinking. It requires a reported integer
+`usage.completion_tokens_details.reasoning_tokens`; missing or contradictory
+reasoning usage fails closed. Visible content must still be exact JSON. No tags
+are stripped and no arbitrary provider parameters are accepted.
+
+The original `chat-completions-json-schema` profile is unchanged. Selecting the
+new profile changes the policy/request digests and requires newly pinned prepared
+inputs; do not edit an existing mission workspace to bypass those checks.
+The profile's existence is not qualification of every endpoint or model.
+
 ## preparation configuration
 
 `configuration.json` is one JSON object with these exact root fields:

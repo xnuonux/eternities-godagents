@@ -86,18 +86,24 @@ export function compileOpenAICompatiblePhaseRequest({ phase, dispatch, descripto
       { role: 'user', content: canonicalJson(modelInput(phase, dispatch, descriptor)) },
     ],
   };
+  if (policy.provider.profile === 'chat-completions-json-schema-reasoning-split-v1') {
+    request.reasoning_split = true;
+  }
   const body = canonicalJson(request);
   const bodyBytes = Buffer.byteLength(body, 'utf8');
   if (bodyBytes > policy.provider.maximumRequestBytes) fail('request-over-budget');
   return deepFreeze({ body, bodyBytes, requestDigest: sha256Text(body) });
 }
 
-function usageFrom(envelope, maximumCompletionTokens) {
+function usageFrom(envelope, maximumCompletionTokens, requireReasoningUsage = false) {
   const usage = envelope?.usage;
   const inputTokens = usage?.prompt_tokens;
   const completionTokens = usage?.completion_tokens;
   const cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens ?? 0;
   const reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens ?? 0;
+  if (requireReasoningUsage && !Number.isSafeInteger(usage?.completion_tokens_details?.reasoning_tokens)) {
+    fail('response-invalid');
+  }
   const values = [inputTokens, completionTokens, cachedInputTokens, reasoningTokens];
   if (values.some((value) => !Number.isSafeInteger(value) || value < 0)
       || cachedInputTokens > inputTokens || reasoningTokens > completionTokens
@@ -167,7 +173,8 @@ export function completeOpenAICompatiblePhaseResponse({
   if (!PHASES.has(phase)) throw new TypeError('OpenAI-compatible phase is invalid');
   verifyDispatch(phase, dispatch, descriptor);
   const { content, envelope } = contentFrom(response, policy, credential);
-  const usage = usageFrom(envelope, dispatch.maxCompletionTokens);
+  const usage = usageFrom(envelope, dispatch.maxCompletionTokens,
+    policy.provider.profile === 'chat-completions-json-schema-reasoning-split-v1');
   try {
     return buildProviderNeutralPhaseCompletion({
       phase,

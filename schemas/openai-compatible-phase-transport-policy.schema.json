@@ -23,7 +23,7 @@
       "additionalProperties": false,
       "required": ["profile", "endpointOrigin", "endpointPath", "modelId", "credentialEnv", "timeoutMs", "maximumRequestBytes", "maximumResponseBytes"],
       "properties": {
-        "profile": { "const": "chat-completions-json-schema" },
+        "profile": { "enum": ["chat-completions-json-schema", "chat-completions-json-schema-reasoning-split-v1"] },
         "endpointOrigin": { "type": "string", "minLength": 1, "maxLength": 2048 },
         "endpointPath": { "type": "string", "minLength": 1, "maxLength": 2048 },
         "modelId": { "type": "string", "minLength": 1, "maxLength": 256 },

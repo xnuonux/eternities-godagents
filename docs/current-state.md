@@ -28,6 +28,13 @@ remote exactly-once execution, power-loss durability, or live model quality.
 
 ## what exists and what it proves
 
+Reasoning-profile follow-up, 2026-09-07: the explicit split-output profile passed
+1,137 full integration tests and independent review. The subsequent live experiment
+did **not** qualify the workflow: the baseline harness lost failure diagnostics,
+and the Godagent stopped on a reproduced negation/ambiguity routing problem before
+any model call. See [adapter and comparison evidence](audits/2026-09-07-reasoning-split-profile.md).
+No broader completion or live-quality claim follows from the adapter tests.
+
 | surface | implementation evidence | usable boundary and remaining proof |
 | --- | --- | --- |
 | public package | [package.json](../package.json), [SDK](../src/sdk/index.mjs) | `@eternities/godagents` 0.2.0 exports the root SDK and economics entrypoint. SDK protocol v1 self-describes as experimental and separately versions itself 0.1.0. Source availability is not verified package-registry publication. |
