@@ -39,4 +39,25 @@ Independent review approved the source-era distinction and ancestry check.
 
 This repairs source/profile compatibility. It does not issue a new behavioral
 certificate for the facade, prove live model quality, or make the overall product
-complete. A fresh full repository gate is still required before integration.
+complete.
+
+## Integrated verification
+
+Runtime/test commit `eeb0c9c5bf91173c52d3e32b374816db065c8fc7` subsequently passed
+the full repository suite: 1267 tests, zero failures/cancellations/skips/todo,
+649529.9339 ms, exit 0. Log:
+`D:/00-INDEX/operations/2026-09-08-controlled-comparison-integration/godagents-eeb0c9c-full-suite.log`.
+SHA-256: `4fe6eb2842b8c87ef448b6350a65549a161569c952c33ba9679b0cf35f608510`.
+
+Main fast-forwarded from `700ea830db05b8b9dc3a1ade25235d2bec94953c` to that exact
+tested commit. All 61 merged evaluation/historical tests passed (32091.0739 ms).
+The SDK entrypoint, facade source and focused SDK test bytes were unchanged
+between the pre-merge main and the tested commit, explicitly checked before merge.
+After pushing and confirming main/origin-main agreement, all seven current-head
+certificate tests passed against the reconciled refs (71693.8566 ms). Stored v1
+artifacts remained byte-identical and historical v2 verification remained intact.
+
+These are fresh integration results, not amendments to the failed d5a3dfd run.
+This closeout is documentation-only after the tested code commit. The retained
+feature branch preserves the development history. The unrelated user-owned
+untracked package-lock.json was not changed or committed.
