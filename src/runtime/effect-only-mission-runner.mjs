@@ -12,7 +12,8 @@ import { createResumableMissionReviewKernel } from './mission-review-kernel.mjs'
 // is accepted: completion comes exclusively from the recovering mission kernel.
 export async function runEffectOnlyAdmittedMission({ vesselAdmission, admissionContext,
   journalRoot, nativeTransport, maximumNativeMaterializedBytes,
-  clock = Date.now, checkpoint = async () => {}, lockOptions = {} }) {
+  clock = Date.now, checkpoint = async () => {}, lockOptions = {}, executionMode = 'launch' }) {
+  if (!['launch', 'reconcile'].includes(executionMode)) throw new TypeError('effect-only execution mode is invalid');
   admissionContext = { ...admissionContext,
     request: structuredClone(admissionContext.request),
     policy: structuredClone(admissionContext.policy),
@@ -45,10 +46,10 @@ export async function runEffectOnlyAdmittedMission({ vesselAdmission, admissionC
   await journal.open(admission.missionAdmission);
   const kernel = createResumableMissionReviewKernel({ journalRoot, nativeExecutor,
     reviewExecutor: null, revisionExecutor: null, clock, checkpoint, lockOptions });
-  const mission = await kernel.run({ mission: admission.missionAdmission.mission,
+  const mission = await kernel[executionMode === 'reconcile' ? 'reconcile' : 'run']({ mission: admission.missionAdmission.mission,
     authorityCeilingDigest: admission.missionAdmission.authorityCeilingDigest,
     budgets: admission.missionAdmission.budgets, godskillsBinding: null, godskillsTrustPin: null });
-  if (mission.status === 'pending') return { status: 'pending',
+  if (mission.status === 'pending' || mission.status === 'absent') return { status: mission.status,
     vesselAdmissionDigest: admission.vesselAdmissionDigest, mission };
   return { status: 'completed', mission,
     receipt: buildEffectOnlyVesselCompletion({ vesselAdmission: admission, admissionContext, missionResult: mission }) };

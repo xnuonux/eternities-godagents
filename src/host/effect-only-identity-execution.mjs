@@ -36,7 +36,8 @@ async function readAdmission(path) {
 // Called only after the public launcher authenticates policy, genesis, request,
 // paired executable captures and native dependency. No alternate authority path.
 export async function executeEffectOnlyIdentity({ root, policy, request, genesisAdmission,
-  verifiedPair, nativeTransport, clock, checkpoint, lockOptions }) {
+  verifiedPair, nativeTransport, clock, checkpoint, lockOptions, executionMode = 'launch' }) {
+  if (!['launch', 'reconcile'].includes(executionMode)) throw new TypeError('effect-only execution mode is invalid');
   const { routeMode, effectAssessment, ...legacy } = request;
   const candidate = await compileCortexBindingCandidate({ admission: genesisAdmission,
     request: buildCortexBindingRequestFromVesselRequest({ ...legacy, schemaVersion: 1 }) });
@@ -71,5 +72,5 @@ export async function executeEffectOnlyIdentity({ root, policy, request, genesis
   return runEffectOnlyAdmittedMission({ vesselAdmission: admission, admissionContext: context,
     journalRoot: join(runtimeRoot, 'missions'), nativeTransport,
     maximumNativeMaterializedBytes: policy.runtime.limits.maximumNativeMaterializedBytes,
-    clock, checkpoint, lockOptions });
+    clock, checkpoint, lockOptions, executionMode });
 }

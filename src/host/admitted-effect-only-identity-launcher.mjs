@@ -2,11 +2,12 @@ import { assertProviderPhaseHostInstance } from './provider-phase-host-sdk.mjs';
 import { assertPortablePhaseHostInstance } from '../sdk/portable-phase-host.mjs';
 import { launchAdmittedSealedIdentityMission } from './admitted-sealed-identity-launch.mjs';
 import { canonicalJson } from '../core/canonical-json.mjs';
-import { sha256Text } from '../core/digest.mjs';
+import { sha256Text, sha256Value } from '../core/digest.mjs';
 import { OpenAICompatiblePhasePolicyError } from '../transports/openai-compatible-phase-policy.mjs';
 import { AnthropicMessagesPhasePolicyError } from '../transports/anthropic-messages-phase-policy.mjs';
 
 const terminalResults = new WeakMap();
+const reconciliationResults = new WeakMap();
 
 // In-process provenance only. Persistent recovery must pass through the
 // authenticated host again; a self-hashed or deserialized receipt is not issued.
@@ -14,6 +15,15 @@ export function assertAdmittedEffectOnlyTerminalResult(value) {
   if (!terminalResults.has(value)) throw new Error('effect-only terminal result was not issued by the facade');
   if (sha256Text(canonicalJson(value)) !== terminalResults.get(value)) throw new Error('issued effect-only terminal result changed');
   return structuredClone(value.receipt);
+}
+
+export function assertAdmittedEffectOnlyReconciliationResult(value, expectedBinding) {
+  if (!reconciliationResults.has(value)) throw new Error('effect-only reconciliation result was not issued by the facade');
+  if (sha256Value(value) !== reconciliationResults.get(value)) throw new Error('issued effect-only reconciliation result changed');
+  if (!expectedBinding || value.requestDigest !== expectedBinding.requestDigest
+      || value.identityPolicyDigest !== expectedBinding.identityPolicyDigest) {
+    throw new Error('effect-only reconciliation result binding differs');
+  }
 }
 
 const fields = new Set(['admissionRoot', 'policyPath', 'request', 'identityPolicyDigest',
@@ -36,15 +46,15 @@ export function createAdmittedEffectOnlyIdentityLauncher(configuration) {
   const describe = () => ({ schemaVersion: 2,
     protocolId: 'eternities-admitted-effect-only-identity-launcher-v2', mode: 'effect-only',
     hostKind, host: structuredClone(description), nativeTransport: structuredClone(description.descriptors.native) });
-  return Object.freeze({
-    describe,
-    async launch(input) {
+  async function invoke(input, executionMode) {
       if (!object(input) || Object.keys(input).some(key => !fields.has(key))
           || required.some(key => !Object.hasOwn(input, key))) throw new TypeError('effect-only launch fields are invalid');
       if (typeof input.identityPolicyDigest !== 'string' || !/^[a-f0-9]{64}$/.test(input.identityPolicyDigest)) {
         throw new TypeError('effect-only policy digest is invalid');
       }
       const request = structuredClone(input.request);
+      const identityPolicyDigest = input.identityPolicyDigest;
+      const requestDigest = sha256Value(request);
       if (request?.schemaVersion !== 2 || request.routeMode !== 'effect-only') {
         throw new TypeError('effect-only launcher requires a v2 effect-only request');
       }
@@ -57,12 +67,25 @@ export function createAdmittedEffectOnlyIdentityLauncher(configuration) {
       }
       const result = await launchAdmittedSealedIdentityMission({ admissionRoot: input.admissionRoot,
         policyPath: input.policyPath, request,
-        env: { GODAGENT_IDENTITY_POLICY_SHA256: input.identityPolicyDigest },
+        env: { GODAGENT_IDENTITY_POLICY_SHA256: identityPolicyDigest }, executionMode,
         nativeTransport, reviewExecutor: null, revisionExecutor: null,
         registryRoot: input.registryRoot, clock: input.clock, checkpoint: input.checkpoint,
         lockOptions: input.lockOptions });
       if (result.status === 'completed') terminalResults.set(result, sha256Text(canonicalJson(result)));
+      if (executionMode === 'reconcile') {
+        if (!['absent', 'pending', 'completed', 'needs-decision'].includes(result.status)) {
+          throw new Error('effect-only reconciliation status is invalid');
+        }
+        const reply = { schemaVersion: 1, protocolId: 'eternities-admitted-effect-only-reconciliation-v1',
+          status: result.status, requestDigest, identityPolicyDigest, result };
+        reconciliationResults.set(reply, sha256Value(reply));
+        return reply;
+      }
       return result;
-    },
+  }
+  return Object.freeze({
+    describe,
+    launch: input => invoke(input, 'launch'),
+    reconcile: input => invoke(input, 'reconcile'),
   });
 }

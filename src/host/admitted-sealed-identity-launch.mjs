@@ -182,6 +182,7 @@ async function verifyDependencies({
 }
 
 function validateInputs({
+  executionMode,
   admissionRoot,
   policyPath,
   nativeTransport,
@@ -195,7 +196,8 @@ function validateInputs({
   artifactCache,
   io,
 }) {
-  if ([admissionRoot, policyPath].some((value) => typeof value !== 'string'
+  if (!['launch', 'reconcile'].includes(executionMode)
+      || [admissionRoot, policyPath].some((value) => typeof value !== 'string'
       || value.length === 0 || /[\0\r\n]/.test(value))
       || !object(nativeTransport)
       || (reviewExecutor !== null && reviewExecutor !== undefined && !object(reviewExecutor))
@@ -221,6 +223,7 @@ function validateInputs({
 }
 
 export async function launchAdmittedSealedIdentityMission({
+  executionMode = 'launch',
   admissionRoot,
   policyPath,
   request: inputRequest,
@@ -238,6 +241,7 @@ export async function launchAdmittedSealedIdentityMission({
   io = {},
 } = {}) {
   validateInputs({
+    executionMode,
     admissionRoot,
     policyPath,
     nativeTransport,
@@ -268,6 +272,7 @@ export async function launchAdmittedSealedIdentityMission({
     fail('policy-integrity', error);
   }
   const rawPin = env?.GODAGENT_IDENTITY_POLICY_SHA256;
+  if (executionMode === 'reconcile' && loaded.policy.schemaVersion !== 2) fail('input-invalid');
   const pinnedDigest = typeof rawPin === 'string' ? rawPin.toLowerCase() : '';
   if (!DIGEST.test(pinnedDigest)
       || !timingSafeEqual(Buffer.from(pinnedDigest, 'hex'), Buffer.from(loaded.digest, 'hex'))) {
@@ -349,7 +354,7 @@ export async function launchAdmittedSealedIdentityMission({
   try {
     if (loaded.policy.schemaVersion === 2) {
       return await executeEffectOnlyIdentity({ root, policy: loaded.policy, request, genesisAdmission,
-        verifiedPair: verifiedRoutingExecutable, nativeTransport, clock, checkpoint, lockOptions });
+        verifiedPair: verifiedRoutingExecutable, nativeTransport, clock, checkpoint, lockOptions, executionMode });
     }
     const vessel = await createSealedLocalIdentityBoundMissionVessel({
       genesisAdmission,

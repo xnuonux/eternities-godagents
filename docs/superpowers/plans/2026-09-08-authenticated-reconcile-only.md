@@ -75,7 +75,7 @@ if (reconciled.status === 'absent' && !mayExecute) {
 An initial argument-placement error stopped normal runs; existing compatibility
 tests caught it. Forwarding the per-call flag at the actual execution boundary
 restored all 25 focused tests (7 new, 18 existing), exit 0, 9,132.7272 ms.
-Independent review cleared this slice. Tasks 2 and 3 remain unimplemented.
+Independent review cleared this slice. Later task status is recorded below.
 
 ## Task 2: authenticated native-only reconciliation and issuance
 
@@ -92,17 +92,17 @@ v1 policy rather than silently falling back. The public facade adds
 effect-only runner selects the matching kernel method and propagates absent and
 pending with `vesselAdmissionDigest`; only completed results build terminal receipts.
 
-- [ ] Write failing real-admission tests with the issued controlled provider
+- [x] Write failing real-admission tests with the issued controlled provider
   host. Start from the fresh artifact Realm helper, not a forged launcher. Test
   fresh absence with zero HTTP attempts; then normal launch; then recovery with
   no credential and zero additional attempts. Reusing an old mission ID with a
   changed request, policy drift or admission drift must reject before dispatch.
-- [ ] Verify the missing public reconciliation method causes the intended RED.
-- [ ] Thread the fixed mode through the existing authentication path. Do not
+- [x] Verify the missing public reconciliation method causes the intended RED.
+- [x] Thread the fixed mode through the existing authentication path. Do not
   duplicate policy/admission verification or call the internal runner from the
   facade. Factor a private `invoke(input, executionMode)` inside the facade for
   the shared field validation, request snapshot, credential screen and launch.
-- [ ] Add an issuance map and the wrapper/validator from spec R-5. The validator
+- [x] Add an issuance map and the wrapper/validator from spec R-5. The validator
   takes `{ requestDigest, identityPolicyDigest }` as its expected binding and
   rejects mismatches, copied/deserialized objects, mutation and ordinary launch
   results. On completed recovery, preserve the existing nested terminal brand:
@@ -115,16 +115,26 @@ assertAdmittedEffectOnlyReconciliationResult(reply, {
 if (reply.status === 'completed') assertAdmittedEffectOnlyTerminalResult(reply.result);
 ```
 
-- [ ] Test pending native outbox evidence with an execute tripwire, wrong expected
+- [x] Test pending native outbox evidence with an execute tripwire, wrong expected
   request/policy digests, stale returned wrapper bytes and routing `needs-decision`.
   An absent wrapper must not bypass the next normal launch's own reconciliation.
   Install credential-resolver/refresh tripwires as well as execute/fetch/process
   tripwires. They cover issued-host construction and reconciliation, not only the
   final executor call. Host construction must remain inert.
-- [ ] Run the new tests, task-1 tests, and existing local-artifact workflow tests.
+- [x] Run the new tests, task-1 tests, and existing local-artifact workflow tests.
   Include controlled Anthropic and Grok-portable coverage before closing this task.
   Reuse their existing correctly issued hosts and exact response shapes, not an
   unbranded object. Commit only after these checks pass.
+
+**Task-2 checkpoint:** 11 new cases cover both registered HTTP families and the
+Grok portable host. Combined with the kernel and existing workflow cases, all 48
+focused tests passed, exit 0, 8,295.3502 ms. Independent review found no critical
+or important defect. HTTP construction/recovery uses an empty credential env and
+a counted fetch boundary; Grok construction/absence uses absent auth and a pinned
+throwing bridge. No actual user credential, refresh, model call or live network
+is used. Existing literal credential screening is preserved, not mistaken for
+dispatch readiness. The public HTTP SDK accepts static env, not an injectable
+credential resolver, so this does not claim instrumentation of an invented API.
 
 ## Task 3: workflow and CLI boundary, complete integration
 
