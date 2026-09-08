@@ -148,26 +148,37 @@ driver receives a fixed operation, validates the existing pinned workspace and
 inputs, and requires workflow 3 for the new operation. Keep existing run versions
 unchanged. CLI `reconcile` accepts the same manifest flags as `run`.
 
-- [ ] Write RED tests through the public workflow function and fresh CLI process.
+- [x] Write RED tests through the public workflow function and fresh CLI process.
   Fresh reconcile returns absent/artifact null with zero provider work. Saved
   completion recovers and publishes once, then replays identical bytes. Pending
   returns null and never calls a new inference. Unsupported workflow versions,
   changed Realm/input pins and aliased directories reject before provider work.
-- [ ] Add the shared operation selection without moving Realm checks or writer
+- [x] Add the shared operation selection without moving Realm checks or writer
   ownership into the lower SDK. Call/validate the new branded reply, then reuse
   the existing completed-result path and post-recovery Realm check. Map absent
   separately to `{ status: 'absent', instanceId, missionId, artifact: null }`.
-- [ ] Extend CLI parse/help for `reconcile`; preserve existing flags and return
+- [x] Extend CLI parse/help for `reconcile`; preserve existing flags and return
   codes. Return 3 for absent/pending/needs-decision, 0 for accepted completed,
   4 for verified rejection, and unchanged 1/2 errors. Document local recovery
   writes and the no-new-inference promise, not read-only or universal network isolation.
-- [ ] Run new and existing local workflow tests plus the task-1/task-2 tests.
+- [x] Run new and existing local workflow tests plus the task-1/task-2 tests.
   Exercise real interruption after provider completion with fresh-process
   reconcile and no model/HTTP attempt; retain the actual stale-lock delay.
 - [ ] Obtain independent review of the full source range, fix confirmed findings,
   run one full integration gate with exact source/log pins, reconcile upstreams,
   fast-forward/merge under standing approval, run focused merged checks and push.
   Preserve old receipts and distinguish controlled evidence from live qualification.
+
+**Task-3 pre-integration checkpoint:** six new public-workflow cases first failed
+on the missing method. The new workflow, Realm-binding and facade gate passed 23
+tests, exit 0, 8,089.6722 ms, following the task-2 48-test gate. Two actual killed
+artifact-v3 processes recovered through fresh CLI `reconcile`: persisted completion
+published once; uncertain dispatch stayed pending. Both respected the real
+30-second dead-owner delay, preserved input pins, and observed zero new network
+attempts with and without synthetic credentials. The selected process gate
+passed 2 tests, exit 0, 63,061.6276 ms; it did not rerun the three historical `run`
+fault cases. Independent review cleared the full feature for final integration.
+The full suite, merged check and push are still pending at this checkpoint.
 
 ## Coverage and next boundary
 

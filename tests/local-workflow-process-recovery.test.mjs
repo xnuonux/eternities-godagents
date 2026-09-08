@@ -22,8 +22,8 @@ function childEnvironment() {
   return env;
 }
 
-async function freshCli(fixture, { credentialPresent = false } = {}) {
-  const child = spawn(process.execPath, ['--import', witness, cli, 'run', '--manifest', fixture.manifestPath,
+async function freshCli(fixture, { credentialPresent = false, command = 'run' } = {}) {
+  const child = spawn(process.execPath, ['--import', witness, cli, command, '--manifest', fixture.manifestPath,
     '--manifest-digest', fixture.manifestDigest],
   { windowsHide: true, env: { ...childEnvironment(),
     ...(credentialPresent ? { GODAGENT_TEST_PHASE_KEY: 'synthetic-process-recovery-key' } : {}) },
@@ -72,9 +72,10 @@ test('the recovery network witness detects and blocks intentional attempts', { t
   } finally { clearTimeout(timer); }
 });
 
-for (const [boundary, profile] of [['dispatch-uncertain', 'legacy'], ['completion-persisted', 'legacy'],
-  ['completion-persisted', 'artifact-v3']]) {
-  test(`a killed ${profile} workflow recovers safely from ${boundary} in a fresh process`, { timeout: 90_000 }, async (t) => {
+for (const [boundary, profile, command = 'run'] of [['dispatch-uncertain', 'legacy'], ['completion-persisted', 'legacy'],
+  ['completion-persisted', 'artifact-v3'], ['completion-persisted', 'artifact-v3', 'reconcile'],
+  ['dispatch-uncertain', 'artifact-v3', 'reconcile']]) {
+  test(`a killed ${profile} workflow ${command} recovers safely from ${boundary} in a fresh process`, { timeout: 90_000 }, async (t) => {
     const fixture = profile === 'artifact-v3' ? await prepareArtifactRealmFixture(t) : await prepareRecoveryFixture(t);
     const originalManifest = await readFile(fixture.manifestPath, 'utf8');
     const originalInputs = await Promise.all(['mission-request.json', 'identity-policy.json', 'provider-policy.json']
@@ -107,13 +108,13 @@ for (const [boundary, profile] of [['dispatch-uncertain', 'legacy'], ['completio
       assert.ok(signal === 'SIGKILL' || code !== 0, 'the process must be terminated, not complete normally');
       const deadAt = Date.now();
       assert.equal(await readFile(lockPath, 'utf8'), ownerText, 'killing the child must leave real owner evidence');
-      const immediate = await freshCli(fixture);
+      const immediate = await freshCli(fixture, { command });
       assert.equal(immediate.code, 1, 'a recent owner lock must not be silently discarded');
       assert.equal(immediate.stdout, '');
       assert.equal(await readFile(lockPath, 'utf8'), ownerText);
       // Use real elapsed time, not modified timestamps or a weakened stale-lock policy.
       await delay(Math.max(0, deadAt + 30_200 - Date.now()));
-      const recovered = await freshCli(fixture);
+      const recovered = await freshCli(fixture, { command });
       assert.equal(recovered.stderr, '');
       assert.equal(recovered.code, boundary === 'dispatch-uncertain' ? 3 : 0);
       const result = JSON.parse(recovered.stdout);
@@ -124,7 +125,7 @@ for (const [boundary, profile] of [['dispatch-uncertain', 'legacy'], ['completio
         assert.equal(result.status, 'pending');
         assert.equal(result.artifact, null);
         await assert.rejects(readdir(join(fixture.workspace, 'artifacts')), { code: 'ENOENT' });
-        const withCredential = await freshCli(fixture, { credentialPresent: true });
+        const withCredential = await freshCli(fixture, { credentialPresent: true, command });
         assert.equal(withCredential.code, 3);
         assert.equal(JSON.parse(withCredential.stdout).status, 'pending');
       } else {
@@ -133,7 +134,7 @@ for (const [boundary, profile] of [['dispatch-uncertain', 'legacy'], ['completio
         const artifactText = await readFile(result.artifact.path, 'utf8');
         assert.equal(JSON.parse(artifactText).content, 'two plus two is four.');
         assert.equal(result.receipt.acceptedArtifactDigest, result.artifact.artifactDigest);
-        const replay = await freshCli(fixture, { credentialPresent: true });
+        const replay = await freshCli(fixture, { credentialPresent: true, command });
         assert.equal(replay.code, 0);
         const replayResult = JSON.parse(replay.stdout);
         assert.deepEqual(replayResult.receipt, result.receipt);

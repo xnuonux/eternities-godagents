@@ -2,14 +2,15 @@ import { lstat, mkdir, readFile, realpath } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 
 import { canonicalJson } from '../../src/core/canonical-json.mjs';
-import { sha256Text } from '../../src/core/digest.mjs';
+import { sha256Text, sha256Value } from '../../src/core/digest.mjs';
 import { assertNoCredentialFields } from '../../src/cortex/receipt-safety.mjs';
 import { acquireFileLock } from '../../src/state/file-lock.mjs';
 import { launchProviderBackedIdentity, verifyProviderBackedIdentityTerminalResult } from '../../src/host/provider-backed-cli.mjs';
 import { writeAcceptedArtifact } from './artifact.mjs';
 import { createProviderPhaseHost } from '../../src/host/provider-phase-host-sdk.mjs';
 import { createGrokCliPortablePhaseHost } from '../../src/transports/grok-cli-phase-transport.mjs';
-import { createAdmittedEffectOnlyIdentityLauncher, assertAdmittedEffectOnlyTerminalResult } from '../../src/host/admitted-effect-only-identity-launcher.mjs';
+import { createAdmittedEffectOnlyIdentityLauncher, assertAdmittedEffectOnlyTerminalResult,
+  assertAdmittedEffectOnlyReconciliationResult } from '../../src/host/admitted-effect-only-identity-launcher.mjs';
 import { loadVerifiedDistribution } from '../../src/foundry/compile.mjs';
 import { verifyArtifactRealmBinding } from './realm-binding.mjs';
 
@@ -38,8 +39,11 @@ async function verifiedWorkflowDistribution(root) {
   return loadVerifiedDistribution(directory);
 }
 
-export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, env = process.env,
-  createProviderPhaseHostImpl } = {}) {
+export function runLocalWorkflow(options) { return driveLocalWorkflow(options, 'launch'); }
+export function reconcileLocalWorkflow(options) { return driveLocalWorkflow(options, 'reconcile'); }
+
+async function driveLocalWorkflow({ manifestPath, expectedManifestDigest, env = process.env,
+  createProviderPhaseHostImpl } = {}, operation) {
   if (typeof manifestPath !== 'string' || /[\0\r\n]/.test(manifestPath)
       || basename(manifestPath) !== 'workflow.json' || !DIGEST.test(expectedManifestDigest ?? '')) {
     throw new Error('workflow manifest reference is invalid');
@@ -51,6 +55,7 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
   if (sha256Text(text) !== expectedManifestDigest) throw new Error('workflow manifest digest changed');
   const manifest = JSON.parse(text);
   const realmBound = manifest.schemaVersion === 3;
+  if (operation === 'reconcile' && !realmBound) throw new Error('reconciliation requires workflow version 3');
   const effectOnly = manifest.schemaVersion === 2 || realmBound;
   const keys = ['schemaVersion', 'status', 'workspaceRoot', 'family', 'instanceId', 'missionId', 'genesisId',
     'identityPolicyDigest', 'inputs', ...(realmBound ? ['realmBinding'] : []),
@@ -102,9 +107,14 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
         env: { ...env, [providerPins[manifest.family]]: sha256Text(canonicalJson(JSON.parse(texts.providerPolicy))) },
       });
       const launcher = createAdmittedEffectOnlyIdentityLauncher({ host, hostKind: grok ? 'portable' : 'provider' });
-      rawResult = await launcher.launch({ admissionRoot: join(root, 'admission'),
+      rawResult = await launcher[operation]({ admissionRoot: join(root, 'admission'),
         policyPath: join(root, 'identity-policy.json'), request: mission,
         identityPolicyDigest: manifest.identityPolicyDigest });
+      if (operation === 'reconcile') {
+        assertAdmittedEffectOnlyReconciliationResult(rawResult, {
+          requestDigest: sha256Value(mission), identityPolicyDigest: manifest.identityPolicyDigest });
+        rawResult = rawResult.result;
+      }
       // Assert the original issued object before cloning. The authenticated host
       // already verifies completion against recovered admission/kernel evidence.
       if (rawResult.status === 'completed') effectReceipt = assertAdmittedEffectOnlyTerminalResult(rawResult);
@@ -139,8 +149,8 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
         missionId: manifest.missionId, artifact: null,
         unresolvedDecisions: Object.freeze([...result.unresolvedDecisions]) });
     }
-    if (result.status === 'pending') {
-      return Object.freeze({ status: 'pending', instanceId: manifest.instanceId,
+    if (result.status === 'pending' || (operation === 'reconcile' && result.status === 'absent')) {
+      return Object.freeze({ status: result.status, instanceId: manifest.instanceId,
         missionId: manifest.missionId, artifact: null });
     }
     const receipt = effectOnly ? effectReceipt : verifyProviderBackedIdentityTerminalResult(result);

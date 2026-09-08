@@ -5,6 +5,55 @@ mission recovery, and artifact checks into one prepared local workspace. It is a
 operator-facing reference, not a new kernel, autonomous deployment service, or live
 model qualification. It neither creates a Soul nor changes an agent's genome.
 
+## recovery without starting another inference
+
+For an already prepared **workflow version 3**, use its original external pin:
+
+```powershell
+node examples/local-artifact-workflow/cli.mjs reconcile --manifest C:\agent-work\my-agent\workflow.json --manifest-digest <original-sha256>
+```
+
+The library equivalent is `reconcileLocalWorkflow({ manifestPath,
+expectedManifestDigest, env })`, exported beside `runLocalWorkflow` from
+`examples/local-artifact-workflow/run.mjs`. It authenticates the same identity,
+policy, admission, dependency and Realm bindings. It uses the existing durable
+transport's reconciliation, never a missing-file guess, and never invokes a new
+model inference. The operation cannot be enabled or escalated by a mission flag.
+
+This is **not a read-only inspection**. It may claim local residency, materialize
+bounded local journal records, commit existing transport evidence, and publish an
+already accepted artifact under the original Realm and byte ceilings. A recent
+dead-owner lock is still respected; recovery does not bypass the normal stale-lock
+delay. Existing `run` semantics and workflow versions 1 and 2 are unchanged;
+`reconcile` rejects those older workflows rather than silently executing them.
+
+| Outcome | CLI exit | Meaning |
+| --- | --- | --- |
+| `absent` | 3 | The exact authenticated phase has no existing attempt/result; no inference was started. |
+| `pending` | 3 | An uncertain or unfinished attempt remains unresolved; it was not repeated. |
+| `needs-decision` | 3 | Routing/authority still requires a decision; recovery grants no authority. |
+| `completed` | 0 | Saved accepted evidence was verified and its artifact published or identically replayed. |
+| `rejected` | 4 | A verified terminal rejection; no artifact is published. |
+| failure / bad arguments | 1 / 2 | Invalid or altered inputs, unsupported versions, or another fail-closed error. |
+
+Nonterminal outcomes always have `artifact: null`. Calling `run` later is a
+separate normal launch with fresh verification, not an authorization inherited
+from an `absent` reply. Do not edit pins or remove outbox evidence to force it.
+
+The lower issued effect-only SDK exposes `launcher.reconcile(input)` and a
+receipt-bound wrapper. Its local validator,
+`assertAdmittedEffectOnlyReconciliationResult(reply, { requestDigest,
+identityPolicyDigest })`, checks issuance, unchanged bytes and the caller's
+expected binding. A completed `reply.result` retains terminal issuance. Copied
+JSON is not an issued in-process result; persistent recovery authenticates again.
+The lower SDK does not publish files: the workflow remains the Realm/writer owner.
+
+Controlled tests cover both HTTP families and the Grok subscription transport,
+including missing credentials, constructor tripwires, saved completion and
+uncertain attempts. This is not live-model quality evidence, universal network
+isolation for arbitrary portable hosts, remote exactly-once execution, or proof
+of power-loss safety.
+
 ## prerequisites and explicit choices
 
 Use Node 24 or newer and a local filesystem supporting exclusive hard-link

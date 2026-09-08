@@ -3,13 +3,15 @@ import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { canonicalJson } from '../../src/core/canonical-json.mjs';
 import { prepareLocalWorkflow } from './prepare.mjs';
-import { runLocalWorkflow } from './run.mjs';
+import { runLocalWorkflow, reconcileLocalWorkflow } from './run.mjs';
 
 const help = 'prepare --config PATH --workspace PATH\nrun --manifest PATH --manifest-digest SHA256\n'
+  + 'reconcile --manifest PATH --manifest-digest SHA256\n'
+  + 'reconcile requires workflow 3. It may recover local evidence and publish a saved accepted artifact, but never starts new inference.\n'
   + 'prepare is inert. run may contact the explicitly configured provider. HTTP credentials come from the configured environment variable; Grok subscription credentials come from the auth file named in its pinned policy.\n';
 
 function parse(argv) {
-  if (!Array.isArray(argv) || !['prepare', 'run'].includes(argv[0]) || argv.length !== 5) return null;
+  if (!Array.isArray(argv) || !['prepare', 'run', 'reconcile'].includes(argv[0]) || argv.length !== 5) return null;
   const allowed = argv[0] === 'prepare' ? ['--config', '--workspace'] : ['--manifest', '--manifest-digest'];
   const options = {};
   for (let index = 1; index < argv.length; index += 2) {
@@ -19,7 +21,7 @@ function parse(argv) {
         || !value.trim() || value.startsWith('--') || /[\0\r\n]/.test(value)) return null;
     options[key] = value;
   }
-  if (argv[0] === 'run' && !/^[a-f0-9]{64}$/.test(options['--manifest-digest'])) return null;
+  if (argv[0] !== 'prepare' && !/^[a-f0-9]{64}$/.test(options['--manifest-digest'])) return null;
   return { command: argv[0], options };
 }
 
@@ -52,12 +54,12 @@ export async function runLocalWorkflowCli({ argv, stdout = process.stdout, stder
       } else configuration.releasePin.repositoryRoot = resolve(base, configuration.releasePin.repositoryRoot);
       result = await prepareLocalWorkflow({ workspace: resolve(options['--workspace']), configuration });
     } else {
-      result = await runLocalWorkflow({ manifestPath: resolve(options['--manifest']),
+      result = await (command === 'reconcile' ? reconcileLocalWorkflow : runLocalWorkflow)({ manifestPath: resolve(options['--manifest']),
         expectedManifestDigest: options['--manifest-digest'], env });
     }
     stdout.write(`${canonicalJson(result)}\n`);
     if (result.status === 'rejected') return 4;
-    return result.status === 'pending' || result.status === 'needs-decision' ? 3 : 0;
+    return ['absent', 'pending', 'needs-decision'].includes(result.status) ? 3 : 0;
   } catch {
     // Never print provider bodies, configuration contents, paths from exceptions, or credentials.
     stderr.write(`${canonicalJson({ status: 'failed', code: 'workflow-failed' })}\n`);
