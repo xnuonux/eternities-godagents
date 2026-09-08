@@ -11,8 +11,12 @@ tests passed. One real admitted scheduling task produced the independently
 verified optimum, published its artifact, and replayed in a fresh process with
 zero observed Grok executable attempts. See the
 [exact evidence and limits](audits/2026-09-08-grok-local-artifact-workflow.md).
-The next unfinished milestone is a matched plain-model versus Godagent comparison,
-not another synthetic transport probe. MiniMax remains a candidate; its two latest
+The subsequent [matched Grok comparison](audits/2026-09-08-grok-matched-development-comparison.md)
+completed on `66ef6ce`: both arms returned the same optimal answer, with 37.40%
+more reported input tokens for the Godagent. This is one development sample,
+not general quality superiority. Next work is exact context-cost profiling and a
+multi-step or interruption-sensitive workflow, not another synthetic transport
+probe. MiniMax remains a candidate; its two latest
 attempts stopped at response-format boundaries without a scored quality result.
 The dated follow-ups below retain their historical scope rather than redefining
 past results as current product completion.

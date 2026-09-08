@@ -39,8 +39,13 @@ now completes real admission, a useful scheduling task, independently checked
 optimal output, saved artifact publication and fresh-process replay without an
 observed Grok launch. Runtime `61251c7` passed 1,314 integration tests. This is one
 live development-task qualification with a fixture-derived identity, not a claim
-of superiority over plain Grok or a completed universal product. The next bounded
-milestone is a fresh matched same-model comparison, including token/latency overhead.
+of superiority over plain Grok or a completed universal product. A first matched
+comparison is now [recorded](docs/audits/2026-09-08-grok-matched-development-comparison.md):
+both plain Grok and the Godagent returned the same optimal answer. The Godagent
+used 37.40% more input tokens in this one development pair, with similar elapsed
+time. No general quality gain is claimed. Next work is exact context-cost profiling
+and an interruption-sensitive or multi-step workflow where persistence has a
+measurable purpose.
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
