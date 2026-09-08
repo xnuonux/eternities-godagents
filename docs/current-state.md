@@ -17,6 +17,13 @@ completion. The reference host still publishes JSON artifacts rather than editin
 and testing an app. An eligible real-task comparison and the missing local tool
 connection remain next; no live superiority or Soul/Lunari readiness is claimed.
 
+The [workspace capability preflight](audits/2026-09-08-workspace-capability-preflight.md)
+reproduces the next boundary: the old negotiated Realm is fixture-only and its
+outcome semantics are numeric, not file edits or test execution. An explicit
+workspace contract and concrete host execution/trust policy are required.
+A first-party browser canary verified limited feasibility with sandbox requested;
+it did not qualify arbitrary-code isolation or deliver an edit/test host.
+
 Authenticated recovery milestone, 2026-09-08: runtime `6ca69d1` is merged and
 pushed. An issued native-only `reconcile` operation and workflow-3 CLI recover
 existing work without starting new inference, preserving identity, authority,
