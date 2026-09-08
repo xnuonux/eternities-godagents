@@ -184,7 +184,17 @@ calls, awaits already-owned calls, then invalidates/releases its capability/lock
 Every method rejects after scope close before provider work. No program adapter
 calls `runLocalWorkflow` or bypasses the owner to call the lower internal runner.
 
-The source's fixed descriptor is reverified before operations. Its reconcile calls
+The source's fixed descriptor is reverified before operations. Its declared
+first-party boundary pins the runner, store, source, owner, artifact writer,
+coordinator, operation adapter, pure contracts and local genesis assembly. It
+does not pin every transitive dependency or claim hostile-same-user isolation.
+Changed boundary bytes require explicit program re-preparation/migration without
+changing the actor's identity. Each verification pass reuses already-verified
+shared ancestors only within that pass; later dispatch, post-inference and replay
+checks start a fresh pass. This prevents exponential path traversal without a
+cross-operation evidence cache.
+
+Its reconcile calls
 only the issued facade's reconcile; its execute calls only launch, for the same
 resolved request. Completed accepted output is published by the workflow owner
 before a program completion is returned. The completion binds actual artifact

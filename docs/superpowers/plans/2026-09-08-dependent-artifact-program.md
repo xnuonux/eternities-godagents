@@ -207,7 +207,7 @@ no provider construction, credential lookup or residency claim is introduced.
 Minor diagnostic follow-up: simultaneous callback and in-flight operation errors
 currently report the drained operation error. Lock cleanup and authority remain
 correct; preserving both causes can be handled without changing the runtime lane.
-Tasks 4 and 5 have not started. No live-model quality, full-suite or release claim
+At the Task-3 checkpoint, Tasks 4 and 5 had not started. No live-model quality, full-suite or release claim
 follows from this targeted gate.
 
 ## Task 4: immutable operator program, resolution store and source
@@ -221,38 +221,41 @@ definition})` returns `programManifestPath,programManifestDigest,programId`.
 `runArtifactProgram({programManifestPath,expectedProgramManifestDigest,env,
 createProviderPhaseHostImpl})` validates the pin and runs/replays through one owner.
 Store only canonical bounded records under the derived program root; no caller
-paths. `createArtifactProgramSource({owner,program,getCoordinator,store,clock})`
+paths. `createArtifactProgramSource({owner,program,sourceDescriptor,manifestDigest,getCoordinator,store,clock})`
 is private host wiring: `getCoordinator` must yield the actual issued coordinator,
-never user JSON. It returns an adapter from `createMissionOperationAdapter`.
+never user JSON. It returns `{adapter,verifyCommittedSteps}`: the existing adapter
+plus the host-only replay audit needed when a completed coordinator skips adapters.
+Operator output contains compact completion/mission-receipt references and artifact
+paths, not full mission receipts or artifact bodies.
 
-- [ ] Write a real issued-owner two-step RED test. Step two observes exact selected
+- [x] Write a real issued-owner two-step RED test. Step two observes exact selected
   parent content and digest. The same instance/genesis/keel/genome/Realm stays
   bound and exactly two controlled provider calls occur. A plain counterfeit
   owner or changed descriptor cannot execute.
-- [ ] Prepare the program manifest exclusively under
+- [x] Prepare the program manifest exclusively under
   `artifact-programs/<programId>/program.json`. Use the original workflow reference
   and compiled value; compare an occupied destination byte-for-byte. Return an
   external digest only after verification. Definition/manifest/resolution reads
   use the existing workflow's 1-MiB regular-file/canonical/alias bounds.
-- [ ] Build one operation source of kind `artifact-mission` for all admitted steps.
+- [x] Build one operation source of kind `artifact-mission` for all admitted steps.
   Its fixed source descriptor includes programId, compiled/source digests and
   publisher pin; validate every dispatch's step/index/recipe/authority/budgets.
   Before child resolution query `readCommittedStep`, reconcile each parent's exact
   stored request through the owner, compare actual accepted output and published
   bytes against the committed program completion, and then call Task-2 materializer.
-- [ ] Publish the resolution using existing exclusive publication; on reread use
+- [x] Publish the resolution using existing exclusive publication; on reread use
   its original resolvedAt and recompute all other bytes from current sources.
   Do not write any provider attempt or completion journal in this store.
-- [ ] Source reconcile/execute call owner reconcile/launch respectively. Accepted
+- [x] Source reconcile/execute call owner reconcile/launch respectively. Accepted
   completion maps artifactDigest/publication bytes and actual authenticated usage
   into the existing program completion format. Use resolution time as startedAt
   and current post-publication time as completedAt. Refusal/rejection raises a
   bound source error mapped by program owner to `needs-decision`; pending remains
   pending and no descendant executes. Do not add a generic coordinator status.
-- [ ] On completed aggregate replay revalidate root/actor/step resolutions and all
+- [x] On completed aggregate replay revalidate root/actor/step resolutions and all
   published artifacts, not only coordinator metadata. Do not launch while auditing
   already committed results. Preserve source/provider/first-step bytes on failure.
-- [ ] CLI shapes are:
+- [x] CLI shapes are:
 
 ```text
 program-prepare --manifest PATH --manifest-digest SHA256 --definition PATH
@@ -262,12 +265,48 @@ program-run --program PATH --program-digest SHA256
   `program-run` can execute newly absent steps. It is not no-inference inspection.
   Codes: 0 verified complete, 3 pending/needs-decision, 1 runtime failure, 2 args.
   Existing prepare/run/reconcile parsing and codes remain unchanged.
-- [ ] Test altered/missing/pending/rejected parents, rehashed resolutions, changed
+- [x] Test altered/missing/pending/refused parents, rehashed resolutions, changed
   actor/policy/Realm/provider, overflow, self/forward refs and concurrent invocations.
   Repeat with controlled OpenAI-compatible/Anthropic and Grok-portable hosts.
   Review and commit only after targeted gates pass.
 
 ## Task 5: public creator, real interruption, release gate
+
+Task-4 checkpoint: the twelve-file targeted gate passes all 88 cases, exit 0,
+48633.5047 ms. This includes 14 new workflow cases, one executable-pin case and
+one dense-ancestor case, plus existing contracts, coordinator, owner, provider,
+Realm and public-creator regression tests. Independent review cleared the core,
+source-pin correction, per-round cache and exact-byte decoder before commit.
+
+Observed REDs and corrections:
+
+- Missing operator API and CLI entrypoints, then controlled two-step execution,
+  exact selected evidence, aggregate accounting and credential-free replay.
+- Mid-inference manifest drift and a coordinator junction were initially accepted;
+  source revalidation and canonical child-directory ownership now reject them.
+- Source closure omitted runner/store/coordinator. The descriptor now pins nine
+  declared first-party boundary files: runner, store, source, owner, artifact writer,
+  coordinator, operation adapter, pure contracts and local genesis assembly.
+  Isolated data-copy mutations of each file reject before provider construction.
+  This is not a transitive dependency, Node binary or hostile-same-user guarantee.
+- Fatal UTF-8 decoding originally stripped a BOM before external-pin comparison;
+  BOM preservation now makes the changed record fail canonical verification.
+- Dense shared ancestry exceeded 128 host reconstructions before finishing.
+  Fresh per-verification-round caches now complete all eight native calls with
+  108 authenticated host constructions. The combined-gate case took 48458.9908 ms;
+  this is bounded fanout evidence, not a fast-runtime or live-quality claim.
+
+Native-only applicability: `effect-only-mission-runner.mjs` supplies null review
+and revision executors and null Godskills binding. `mission-review-kernel.mjs`
+accepts a valid native-only completion without a review verdict. Thus actual
+review-derived terminal rejection is not reachable in this profile. Routing
+`needs-decision` is tested with zero inference/descendant execution; the defensive
+mapping of an authenticated `rejected` outcome is implemented but is not claimed
+as tested native rejection. No fabricated owner or receipt substitutes for proof.
+
+Task 5 remains open: fresh public-creator program, real process interruption,
+full integration/review/merged gate and release documentation. No live call or
+credential lookup against a user's provider occurred in Task 4.
 
 **Files:** add `tests/artifact-program-process-recovery.test.mjs` and its owned
 child helper; reuse/refactor the public creator setup in
