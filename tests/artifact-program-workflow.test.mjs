@@ -189,7 +189,8 @@ test('artifact program Grok portable host uses two controlled processes then rep
 
 test('artifact program CLI prepares an inert pinned program and rejects malformed command shapes', async t => {
   const f = await prepareArtifactRealmFixture(t);
-  const path = join(f.workspace, 'program-definition.json'); await writeFile(path, json(artifactProgramDefinition()));
+  const path = join(f.workspace, 'program-definition.json');
+  await writeFile(path, await readFile(new URL('../examples/local-artifact-workflow/dependent-program.json', import.meta.url), 'utf8'));
   let output = '', errors = '';
   const call = argv => runLocalWorkflowCli({ argv, env: {}, stdout: { write: s => { output += s; } }, stderr: { write: s => { errors += s; } } });
   assert.equal(await call(['program-prepare', '--manifest', f.manifestPath, '--manifest-digest', f.manifestDigest, '--definition', path]), 0);

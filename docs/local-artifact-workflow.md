@@ -289,6 +289,52 @@ Exit codes: `0` prepared or accepted; `1` failed; `2` invalid arguments; `3` pen
 or needs-decision; `4` verified rejection. `--help` describes the two commands. No credential flag, arbitrary
 code loader, host factory, or automatic retry option is exposed on the CLI.
 
+## dependent missions in one agent
+
+Workflow 3 can also run a pinned sequence of up to eight native-only missions.
+They share one admitted identity and Realm, while keeping separate task requests
+and provider evidence. No original workflow input is rewritten. This is explicit
+ordered work, not an autonomous planner or an expansion of the host's authority.
+
+Start with [dependent-program.json](../examples/local-artifact-workflow/dependent-program.json).
+Replace its context with your requirements and adjust its bounded steps before
+preparation. Definition files use canonical one-line JSON with a trailing newline.
+The existing host policy must admit the requested native/artifact ceilings and
+whole-program completion budget. No new credentials are accepted on the CLI.
+
+```powershell
+node examples/local-artifact-workflow/cli.mjs program-prepare --manifest C:\agent-work\my-agent\workflow.json --manifest-digest <workflow-sha256> --definition examples/local-artifact-workflow/dependent-program.json
+node examples/local-artifact-workflow/cli.mjs program-run --program <returned-programManifestPath> --program-digest <returned-programManifestDigest>
+```
+
+Preparation is inert. **Program run may execute newly absent steps**, unlike the
+single-mission `reconcile` command. Return codes are 0 for verified completion,
+3 for pending or needs-decision, 1 for runtime failure and 2 for invalid arguments.
+Output contains usage, aggregate/mission-receipt digests and artifact paths, not
+the full receipts or model bodies. Inspect the referenced JSON artifacts directly.
+
+Each step selects only explicit backward predecessors. `content` carries their
+complete accepted content and exact references; `digest` carries references only,
+not an automatically generated summary. Metadata and content together must fit
+`maxContextBytes`, at most 4,096 UTF-8 bytes. Oversized context is rejected, never
+truncated. `maxArtifactBytes` bounds native canonical artifact bytes; the program
+reserves one additional newline byte per artifact in `maxResultBytes`.
+
+Program records live under `artifact-programs/<programId>/`. A changed program,
+definition, source binding or one of the nine pinned first-party execution files
+does not silently update a saved run. Prepare/migrate it explicitly. Changing a
+program dependency is not permission to mutate the agent's identity or keel.
+Do not remove journals, resolutions, output artifacts or locks to force a retry.
+Required predecessor evidence is authenticated again before dependent execution
+and on completed replay. Uncertain inference remains pending rather than being
+automatically resubmitted. Recovery may publish an already saved accepted result.
+
+The reference implementation is still audit-heavy. Its dense eight-step controlled
+case uses eight native calls and 108 authenticated host constructions across fresh
+verification passes. This eliminates exponential ancestor traversal but does not
+establish low latency or better model answers. Matched live usefulness and cost
+remain separate qualification work.
+
 ## what the evidence means
 
 Tests exercise real creation/admission, policy validation, SDK/launcher, persistent
