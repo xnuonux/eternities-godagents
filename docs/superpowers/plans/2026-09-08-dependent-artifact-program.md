@@ -168,7 +168,7 @@ Artifact methods return the existing workflow outcome plus the authenticated
 mission receipt/body needed internally by the source; `runPrepared` keeps the
 old public output shape exactly. No arbitrary file or policy override is added.
 
-- [ ] Write lifecycle RED: methods share one lock; wrong pins/aliases fail before
+- [x] Write lifecycle RED: methods share one lock; wrong pins/aliases fail before
   host construction; describe is inert; a retained owner rejects after scope exit;
   an in-flight call cannot outlive lock release; old output shapes remain exact.
 
@@ -179,21 +179,36 @@ await assert.rejects(held.launchArtifactMission(request), /closed/);
 assert.equal(providerCalls, 0);
 ```
 
-- [ ] Move existing checks and result handling, not reimplement or weaken them.
+- [x] Move existing checks and result handling, not reimplement or weaken them.
   Keep one workspace lock, then the coordinator lock later. Track started method
   promises without creating unhandled rejection chains. On callback exit stop
   new method admission, await tracked calls, invalidate, release in `finally`.
   Check active lifetime before/after awaited work; already tracked calls remain
   owned while closing and cannot use an invalidated capability.
-- [ ] Extract shared local genesis path assembly, still using existing
+- [x] Extract shared local genesis path assembly, still using existing
   `assertSafeAdmissionTree`, `readAdmissionBinding`, `assertAdmissionPolicyBinding`
   and `compileCortexBindingCandidate`/genesis verification. Describe binds the
   exact current identity projection/keel, never trusting just manifest fields.
-- [ ] Test a new request through one issued owner without writing the root request.
+- [x] Test a new request through one issued owner without writing the root request.
   Recheck Realm after completion, preserve facade issuance before any clone, and
   retain exact native/provider byte/credential rejection behavior.
-- [ ] Run owner tests plus local-artifact workflow, reconciliation, Realm-binding,
+- [x] Run owner tests plus local-artifact workflow, reconciliation, Realm-binding,
   operator-creation and admitted-effect-only reconciliation tests. Review and commit.
+
+Task-3 checkpoint: six owner cases pass, exit 0, 3237.9814 ms. The six-file
+targeted gate passes all 37 cases, exit 0, 10067.4021 ms. Independent source
+review cleared the owner and literal genesis path extraction. Separate REDs
+caught re-pinned policy/Realm and manifest/genesis inconsistencies in inert
+description; both now reject. The mutation test uses a mutable caller clone of
+the prepared frozen request and verifies the original dispatched mission survives.
+Preparation's existing provider directories remain unchanged during description;
+no provider construction, credential lookup or residency claim is introduced.
+
+Minor diagnostic follow-up: simultaneous callback and in-flight operation errors
+currently report the drained operation error. Lock cleanup and authority remain
+correct; preserving both causes can be handled without changing the runtime lane.
+Tasks 4 and 5 have not started. No live-model quality, full-suite or release claim
+follows from this targeted gate.
 
 ## Task 4: immutable operator program, resolution store and source
 

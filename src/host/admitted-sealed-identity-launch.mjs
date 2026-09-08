@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { verifyGenesisAdmission } from '../genesis/verify.mjs';
-import { createLocalKeelBackend } from '../keel/local-reference-backend.mjs';
+import { localGenesisAdmission } from './local-genesis-admission.mjs';
 import { verifyIdentityBoundNativeTransportDescriptor } from '../runtime/identity-bound-native-contracts.mjs';
 import { verifyIdentityBoundMissionVesselRequest } from '../runtime/identity-bound-mission-vessel-contracts.mjs';
 import { verifyLocalArtifactEffectRequest } from './structured-effect-producer.mjs';
@@ -289,19 +289,7 @@ export async function launchAdmittedSealedIdentityMission({
     fail('policy-mismatch', error);
   }
 
-  const genesisAdmission = {
-    receiptPath: join(root, 'transaction', 'genesis-receipt.json'),
-    creationDir: join(root, 'creation'),
-    distributionDir: join(root, 'distribution'),
-    expectedPolicyDigest: binding.policyDigest,
-    expectedCreationBuildId: binding.creationBuildId,
-    instanceId: binding.instanceId,
-    creatorRef: binding.creatorRef,
-    transactionDir: join(root, 'transaction'),
-    journalPath: join(root, 'vessel', 'journal.jsonl'),
-    snapshotPath: join(root, 'vessel', 'snapshot.json'),
-    keelAdapter: createLocalKeelBackend({ root: join(root, 'keels') }),
-  };
+  const genesisAdmission = localGenesisAdmission(root, binding);
   let verifiedAdmission;
   try {
     verifiedAdmission = await verifyGenesisAdmission(genesisAdmission);
