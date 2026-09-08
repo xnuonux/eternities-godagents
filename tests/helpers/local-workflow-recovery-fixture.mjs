@@ -11,8 +11,9 @@ import { prepareLocalWorkflow } from '../../examples/local-artifact-workflow/pre
 import { setupAdmittedIdentity, expectedCreationPolicyDigest } from './admitted-identity-fixture.mjs';
 import { vesselRequest } from './identity-bound-mission-vessel-certification-fixture.mjs';
 import { validOpenAICompatiblePhasePolicy } from './openai-compatible-phase-policy-fixture.mjs';
+import { prepareLocalArtifactEffectRequest } from '../../src/host/structured-effect-producer.mjs';
 
-export async function prepareRecoveryFixture(t) {
+export async function prepareRecoveryFixture(t, { effectOnlyTask } = {}) {
   const source = await setupAdmittedIdentity(null, `process-recovery-${randomUUID()}`);
   const workspace = join(source.root, 'operator-workspace');
   t.after(async () => {
@@ -33,7 +34,9 @@ export async function prepareRecoveryFixture(t) {
     await rm(source.root, { recursive: true, force: true });
   });
   const providerPolicyPath = join(source.root, 'provider-policy.json');
-  await writeFile(providerPolicyPath, `${canonicalJson(validOpenAICompatiblePhasePolicy())}\n`);
+  const providerPolicy = validOpenAICompatiblePhasePolicy();
+  if (effectOnlyTask) providerPolicy.provider.profile = 'chat-completions-json-schema-reasoning-split-v1';
+  await writeFile(providerPolicyPath, `${canonicalJson(providerPolicy)}\n`);
   const request = vesselRequest();
   request.mission.missionId = `recovery-${randomUUID()}`;
   request.mission.objective = 'write a short answer to the supplied arithmetic question';
@@ -61,6 +64,25 @@ export async function prepareRecoveryFixture(t) {
     },
     maximumReviewMaterializedBytes: 65_536, maximumRevisionMaterializedBytes: 32_768,
   };
+  if (effectOnlyTask) {
+    configuration.schemaVersion = 2;
+    const repositoryRoot = 'C:/dev/eternities-godskills/.worktrees/effect-only-v2';
+    configuration.effectOnly = { repositoryRoot,
+      producerDescriptorDigest: 'bd00071f046bd5f8612a65cfe674d417b8b21c3fb25bad41634bb734b08bfc26' };
+    for (const [field, kind] of [['routingExecutable', 'executable'], ['verifierExecutable', 'verifier']]) {
+      const path = `receipts/effect-only-${kind}-v2.json`;
+      const bytes = await readFile(join(repositoryRoot, path), 'utf8');
+      const receipt = JSON.parse(bytes);
+      configuration.effectOnly[field] = { protocolId: receipt.protocolId, entrypoint: receipt.entrypoint,
+        executableReceipt: { path, sha256: sha256Text(bytes), receiptDigest: receipt.receiptDigest } };
+    }
+    for (const key of ['releasePin', 'routingPin', 'maximumReviewMaterializedBytes', 'maximumRevisionMaterializedBytes']) delete configuration[key];
+    for (const key of ['maximumGodskillsDispatchBytes', 'maximumGodskillsCompletionBytes', 'maximumGodskillsResultBytes']) delete configuration.hostPolicy.limits[key];
+    request.mission.objective = canonicalJson(effectOnlyTask);
+    request.observation.summary = 'The mission contains the complete comparison task.';
+    configuration.request = prepareLocalArtifactEffectRequest({ ...request, schemaVersion: 2, routeMode: 'effect-only' },
+      { expectedProducerDescriptorDigest: configuration.effectOnly.producerDescriptorDigest });
+  }
   const prepared = await prepareLocalWorkflow({ workspace, configuration });
   return { ...prepared, workspace, instanceId: source.admission.instanceId, missionId: request.mission.missionId };
 }

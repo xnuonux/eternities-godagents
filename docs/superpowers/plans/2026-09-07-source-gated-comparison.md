@@ -63,6 +63,30 @@ callback and reads no credential.
 
 ## 2. Sequential two-arm execution
 
+### Preparation implementation checkpoint
+
+`scripts/evaluation/comparison-preparation.mjs` now composes bounded workflow
+capture, task/resource binding, the existing host policy/request validators,
+provider-policy verification, exact native transport descriptor matching, and
+pinned routing/verifier validation. `prepareComparison` takes the closed input
+`{ directory, preregistration, expectedDigest }`, where preregistration contains
+`schemaVersion: 1`, `comparison`, `armOrder`, `sources`, and
+`oracle: { id, source: { path, sha256 } }`. The expected digest is the SHA-256 of
+canonical preregistration JSON without a trailing newline.
+
+The output is an exclusive, flushed `comparison.json` in a fresh directory,
+with `executionAuthorized: false`. It retains the exact captured inputs and
+declared source bytes. The oracle identifier is declaration-only at this stage;
+it is not dynamically imported and has not been qualified. This is not full
+source-closure certification, admission execution, spending approval, or a live
+comparison. The runner must still resolve an allowed repository-owned oracle,
+verify the executing source closure and all preparation bindings, and enforce
+the independently approved dispatch bounds. Recovered admission state remains
+the authenticated host's responsibility at execution.
+
+Real admitted-v2 preparation coverage now proves policy/provider drift is
+rejected without inference. Development fixtures do not establish live quality.
+
 Create `scripts/evaluation/comparison.mjs` and `tests/evaluation-comparison.test.mjs`.
 
 Interface: `runComparison({preparationPath, expectedPreparationDigest})`.
