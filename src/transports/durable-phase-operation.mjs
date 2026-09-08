@@ -12,6 +12,7 @@ import { acquireFileLock } from '../state/file-lock.mjs';
 import {
   buildProviderPhaseResponseWitness,
   ProviderPhaseResolutionError,
+  snapshotProviderProcessResponse,
   verifyProviderPhaseResolutionDecision,
   verifyProviderPhaseResponseWitness,
 } from './provider-phase-resolution.mjs';
@@ -295,6 +296,7 @@ function verifyResolutionRecord(value, {
   request,
   attempt,
   loadedPolicy,
+  processMode = false,
 } = {}) {
   exactKeys(value, [
     'schemaVersion', 'protocolId', 'status', 'phase', 'dispatchDigest',
@@ -317,6 +319,9 @@ function verifyResolutionRecord(value, {
   const witness = value.responseWitness === null
     ? null
     : verifyProviderPhaseResponseWitness(value.responseWitness);
+  if (witness && (witness.schemaVersion === 2) !== processMode) {
+    throw new IntegrityError('provider phase response witness transport mismatch');
+  }
   if (value.schemaVersion !== 1 || value.protocolId !== RESOLUTION_PROTOCOL
       || value.status !== 'accepted' || value.phase !== phase
       || value.dispatchDigest !== dispatch.dispatchDigest
@@ -411,6 +416,7 @@ async function inspectOperation({
   paths, phase, policyDigest, dispatch, descriptor, request, expectedPrepared,
   verifyProviderEvidence, ignoreLock = false, returnFailure = false,
   loadedResolutionPolicy,
+  processMode = false,
 }) {
   if (!await operationExists(paths)) return { status: 'absent' };
   const entries = await readdir(paths.operationRoot);
@@ -439,6 +445,7 @@ async function inspectOperation({
     dispatch,
     request,
     attempt,
+    processMode,
     ...(loadedResolutionPolicy ? { loadedPolicy: loadedResolutionPolicy } : {}),
   });
   if (evidence && !completion) {
@@ -483,21 +490,66 @@ export async function createDurablePhaseOperationSuite({
   verifyProviderEvidence,
   network,
   networkRequest,
+  process: processAdapter,
   clock = () => new Date().toISOString(),
   checkpoint = async () => {},
   checkpointPrefix = 'provider-phase',
   lockOptions = {},
 } = {}) {
+  const processMode = processAdapter !== undefined;
+  const invocationValid = processMode
+    ? processAdapter && typeof processAdapter === 'object' && !Array.isArray(processAdapter)
+      && Object.keys(processAdapter).sort().join(',') === 'assertCredentialAbsent,invoke'
+      && typeof processAdapter.invoke === 'function' && typeof processAdapter.assertCredentialAbsent === 'function'
+      && network === undefined && networkRequest === undefined
+      && policy?.provider?.transportKind === 'subprocess-json-v1'
+      && Number.isSafeInteger(policy?.provider?.maximumResponseBytes) && policy.provider.maximumResponseBytes > 0
+    : typeof network === 'function' && typeof networkRequest === 'function'
+      && policy?.provider?.transportKind !== 'subprocess-json-v1';
   if (!policy || typeof policy !== 'object' || !DIGEST.test(policyDigest ?? '')
       || !descriptors || typeof descriptors !== 'object'
       || typeof runtimeRoot !== 'string' || runtimeRoot.length === 0 || /[\0\r\n]/.test(runtimeRoot)
       || !credentialResolver || typeof credentialResolver.resolve !== 'function'
       || typeof compileRequest !== 'function' || typeof inspectResponse !== 'function'
-      || typeof verifyProviderEvidence !== 'function' || typeof network !== 'function'
-      || typeof networkRequest !== 'function' || typeof clock !== 'function'
+      || typeof verifyProviderEvidence !== 'function' || !invocationValid || typeof clock !== 'function'
       || typeof checkpoint !== 'function' || !lockOptions || typeof lockOptions !== 'object'
       || Array.isArray(lockOptions) || typeof checkpointPrefix !== 'string' || checkpointPrefix.length === 0) {
     throw new TypeError('durable phase operation configuration is invalid');
+  }
+  if (processMode) {
+    try {
+      policy = deepFreeze(clone(policy));
+      descriptors = deepFreeze(clone(descriptors));
+      if (sha256Value(policy) !== policyDigest) throw new Error('process policy digest mismatch');
+    } catch (error) {
+      throw new TypeError('durable phase operation configuration is invalid', { cause: error });
+    }
+  }
+  const invokeProcess = processMode ? processAdapter.invoke.bind(processAdapter) : null;
+  const screenProcess = processMode ? processAdapter.assertCredentialAbsent.bind(processAdapter) : null;
+  function screenProcessText(text, credential, code) {
+    try {
+      const screened = screenProcess({ text, credential });
+      if (screened !== true) {
+        // A mistakenly asynchronous guard never grants permission and must not
+        // leave an unhandled rejection behind while we fail closed.
+        if (screened && typeof screened.then === 'function') Promise.resolve(screened).catch(() => {});
+        fail(code);
+      }
+    } catch (error) {
+      fail(code, error);
+    }
+  }
+  function witnessForMode(response) {
+    if ((response?.kind === 'subprocess-json-v1') !== processMode) {
+      throw new ProviderPhaseResolutionError('decision-invalid');
+    }
+    return buildProviderPhaseResponseWitness(response);
+  }
+  function responseSucceeded(response) {
+    if (processMode) return witnessForMode(response).outcome === 'completed';
+    return response?.kind === undefined && Number.isInteger(response?.status)
+      && response.status >= 200 && response.status < 300;
   }
   await mkdir(resolve(runtimeRoot), { recursive: true });
   const root = await realpath(resolve(runtimeRoot));
@@ -513,6 +565,11 @@ export async function createDurablePhaseOperationSuite({
       };
     }
     function assertSecretAbsent(dispatch, request, credential) {
+      if (processMode) {
+        screenProcessText(canonicalJson(dispatch), credential, 'credential-in-input');
+        screenProcessText(request.body, credential, 'credential-in-input');
+        return;
+      }
       if (canonicalJson(dispatch).includes(credential) || request.body.includes(credential)) fail('credential-in-input');
     }
     async function closeFailure({ paths, dispatch, request, attempt, reasonCode, response }) {
@@ -569,6 +626,7 @@ export async function createDurablePhaseOperationSuite({
         const state = await inspectOperation({
           paths, phase, policyDigest, dispatch, descriptor, request, expectedPrepared,
           verifyProviderEvidence, returnFailure: true, loadedResolutionPolicy: loadedPolicy,
+          processMode,
         });
         if (state.status === 'pending' && state.attempt) {
           return deepFreeze({
@@ -594,6 +652,7 @@ export async function createDurablePhaseOperationSuite({
     }
 
     async function resolveOperation({ dispatch, signedDecision, response, loadedPolicy }) {
+      if (processMode && response !== undefined) response = snapshotProviderProcessResponse(response);
       const { request, expectedPrepared, paths } = prepare(dispatch);
       try {
         if (!await operationExists(paths)) fail('resolution-not-pending');
@@ -607,12 +666,13 @@ export async function createDurablePhaseOperationSuite({
           paths, phase, policyDigest, dispatch, descriptor, request, expectedPrepared,
           verifyProviderEvidence, ignoreLock: true, returnFailure: true,
           loadedResolutionPolicy: loadedPolicy,
+          processMode,
         });
         if (!state.attempt) fail('resolution-not-pending');
         const operation = operationProjection(state);
         const responseWitness = response === undefined
           ? null
-          : buildProviderPhaseResponseWitness(response);
+          : witnessForMode(response);
         if (responseWitness
             && responseWitness.bodyBytes > loadedPolicy.policy.maximumAdoptedResponseBytes) {
           throw new ProviderPhaseResolutionError('decision-invalid');
@@ -640,7 +700,7 @@ export async function createDurablePhaseOperationSuite({
         if (state.resolution) {
           acceptedAt = state.resolution.acceptedAt;
           verifyResolutionRecord(state.resolution, {
-            phase, dispatch, request, attempt: state.attempt, loadedPolicy,
+            phase, dispatch, request, attempt: state.attempt, loadedPolicy, processMode,
           });
           verifiedDecision = verifyProviderPhaseResolutionDecision({
             signedDecision,
@@ -673,11 +733,12 @@ export async function createDurablePhaseOperationSuite({
         let providerEvidence = null;
         let evidence = null;
         if (record.disposition === 'adopt-response') {
-          if (!responseWitness || response.status < 200 || response.status >= 300) {
+          if (!responseWitness || !responseSucceeded(response)) {
             throw new ProviderPhaseResolutionError('decision-invalid');
           }
           const credential = credentialResolver.resolve();
           assertSecretAbsent(dispatch, request, credential);
+          if (processMode) screenProcessText(response.bodyText, credential, 'credential-reflected');
           const inspected = inspectResponse({
             phase, dispatch, descriptor, policy, response, credential,
             startedAt: state.attempt.startedAt, completedAt: acceptedAt,
@@ -709,7 +770,7 @@ export async function createDurablePhaseOperationSuite({
           if (!await publishRecord(paths.resolution, record)) {
             const stored = await readCanonical(paths.resolution, 'provider phase resolution record');
             verifyResolutionRecord(stored, {
-              phase, dispatch, request, attempt: state.attempt, loadedPolicy,
+              phase, dispatch, request, attempt: state.attempt, loadedPolicy, processMode,
             });
             if (canonicalJson(stored) !== canonicalJson(record)) {
               throw new IntegrityError('provider phase resolution changed under one operation');
@@ -756,6 +817,7 @@ export async function createDurablePhaseOperationSuite({
           paths, phase, policyDigest, dispatch, descriptor, request, expectedPrepared,
           verifyProviderEvidence, ignoreLock: true, returnFailure: true,
           loadedResolutionPolicy: loadedPolicy,
+          processMode,
         });
         return resolutionResult(state);
       } catch (error) {
@@ -782,6 +844,7 @@ export async function createDurablePhaseOperationSuite({
         try {
           const state = await inspectOperation({
             paths, phase, policyDigest, dispatch, descriptor, request, expectedPrepared, verifyProviderEvidence,
+            processMode,
           });
           return state.status === 'completed'
             ? deepFreeze({ status: 'completed', completion: clone(state.completion) })
@@ -813,6 +876,7 @@ export async function createDurablePhaseOperationSuite({
           const existing = await inspectOperation({
             paths, phase, policyDigest, dispatch, descriptor, request, expectedPrepared,
             verifyProviderEvidence, ignoreLock: true,
+            processMode,
           });
           if (existing.status === 'completed') {
             return deepFreeze({ status: 'completed', completion: clone(existing.completion) });
@@ -834,7 +898,9 @@ export async function createDurablePhaseOperationSuite({
 
           let response;
           try {
-            response = await network(networkRequest({ policy, credential, request }));
+            response = processMode
+              ? await invokeProcess({ policy, credential, request })
+              : await network(networkRequest({ policy, credential, request }));
           } catch (error) {
             if (error?.name === 'ResponseTooLargeError') {
               await closeFailure({
@@ -843,8 +909,21 @@ export async function createDurablePhaseOperationSuite({
             }
             fail('provider-ambiguous', error);
           }
+          if (processMode) {
+            try { response = snapshotProviderProcessResponse(response); } catch {
+              await closeFailure({ paths, dispatch, request, attempt, reasonCode: 'response-invalid', response: null });
+            }
+          }
           await checkpoint(`after-${checkpointPrefix}-response-received`, phase, dispatch.dispatchDigest);
-          if (!Number.isInteger(response?.status) || response.status < 200 || response.status >= 300) {
+          if (processMode) {
+            if (Buffer.byteLength(response.bodyText, 'utf8') > policy.provider.maximumResponseBytes) {
+              await closeFailure({ paths, dispatch, request, attempt, reasonCode: 'response-over-budget', response: null });
+            }
+            try { screenProcessText(response.bodyText, credential, 'credential-reflected'); } catch {
+              await closeFailure({ paths, dispatch, request, attempt, reasonCode: 'credential-reflected', response });
+            }
+          }
+          if (!responseSucceeded(response)) {
             await closeFailure({ paths, dispatch, request, attempt, reasonCode: 'provider-rejected', response });
           }
 

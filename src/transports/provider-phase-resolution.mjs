@@ -13,6 +13,27 @@ const DISPOSITIONS = new Set(['adopt-response', 'abandon']);
 const PIN_VARIABLE = 'GODAGENT_PROVIDER_PHASE_RESOLUTION_POLICY_SHA256';
 const DECISION_PROTOCOL = 'eternities-provider-phase-resolution-decision-v1';
 const RESPONSE_WITNESS_PROTOCOL = 'eternities-provider-phase-response-witness-v1';
+const PROCESS_WITNESS_PROTOCOL = 'eternities-provider-process-response-witness-v1';
+
+function verifyProcessOutcome(value) {
+  if (!['completed', 'rejected'].includes(value.outcome)
+      || !Number.isSafeInteger(value.exitCode) || value.exitCode < 0 || value.exitCode > 0xffffffff
+      || (value.outcome === 'completed' && value.exitCode !== 0)) fail('decision-invalid');
+}
+
+export function snapshotProviderProcessResponse(response) {
+  if (!response || typeof response !== 'object' || Array.isArray(response)
+      || ![Object.prototype, null].includes(Object.getPrototypeOf(response))) fail('decision-invalid');
+  const properties = Object.getOwnPropertyDescriptors(response);
+  const keys = Reflect.ownKeys(properties);
+  if (keys.some(key => typeof key !== 'string')
+      || keys.sort().join(',') !== 'bodyText,exitCode,kind,outcome'
+      || keys.some(key => !Object.hasOwn(properties[key], 'value') || !properties[key].enumerable)) fail('decision-invalid');
+  const value = Object.fromEntries(keys.map(key => [key, properties[key].value]));
+  if (value.kind !== 'subprocess-json-v1' || typeof value.bodyText !== 'string') fail('decision-invalid');
+  verifyProcessOutcome(value);
+  return Object.freeze(value);
+}
 
 const MESSAGES = Object.freeze({
   'policy-integrity': 'Provider phase resolution policy integrity failed',
@@ -75,6 +96,18 @@ function sameDigest(left, right) {
 
 export function verifyProviderPhaseResponseWitness(value) {
   try {
+    if (value?.schemaVersion === 2) {
+      exactKeys(value, [
+        'schemaVersion', 'protocolId', 'outcome', 'exitCode', 'bodyBytes', 'bodySha256', 'witnessDigest',
+      ]);
+      verifyProcessOutcome(value);
+      const { witnessDigest, ...unsigned } = value;
+      if (value.protocolId !== PROCESS_WITNESS_PROTOCOL
+          || !Number.isSafeInteger(value.bodyBytes) || value.bodyBytes < 0
+          || !DIGEST.test(value.bodySha256) || !DIGEST.test(witnessDigest)
+          || witnessDigest !== sha256Value(unsigned)) fail('decision-invalid');
+      return deepFreeze(structuredClone(value));
+    }
     exactKeys(value, [
       'schemaVersion', 'protocolId', 'status', 'contentType', 'bodyBytes',
       'bodySha256', 'witnessDigest',
@@ -98,6 +131,18 @@ export function verifyProviderPhaseResponseWitness(value) {
 }
 
 export function buildProviderPhaseResponseWitness(response) {
+  if (response?.kind === 'subprocess-json-v1') {
+    response = snapshotProviderProcessResponse(response);
+    const unsigned = {
+      schemaVersion: 2,
+      protocolId: PROCESS_WITNESS_PROTOCOL,
+      outcome: response.outcome,
+      exitCode: response.exitCode,
+      bodyBytes: Buffer.byteLength(response.bodyText, 'utf8'),
+      bodySha256: sha256Text(response.bodyText),
+    };
+    return verifyProviderPhaseResponseWitness({ ...unsigned, witnessDigest: sha256Value(unsigned) });
+  }
   if (!response || typeof response !== 'object' || Array.isArray(response)
       || !Number.isInteger(response.status) || response.status < 100 || response.status > 599
       || typeof response.bodyText !== 'string') {
