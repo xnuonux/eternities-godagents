@@ -33,7 +33,7 @@ deep-frozen closed wrapper. `restoreGrokNativeObjectiveView(view,
 {expectedInputDigest, maximumBytes})` returns the exact frozen original input or
 throws a closed `view-invalid` error. It never obtains trust from the view alone.
 
-- [ ] Add failing compiler and pin tests before production edits. Core assertions:
+- [x] Add failing compiler and pin tests before production edits. Core assertions:
 
 ```js
 const full = compileGrokCliPhaseRequest({phase, dispatch, descriptor, policy});
@@ -46,8 +46,8 @@ assert.deepEqual(view.input.missionPackage.mission.objective,
   {$ref:'/modelProjection/mission/objective'});
 ```
 
-- [ ] Run `node --test tests/grok-cli-phase-policy.test.mjs tests/grok-cli-phase-protocol.test.mjs` and preserve intended failures.
-- [ ] Add codec tests for round-trip, detached freezing, byte ceilings, Unicode and escaping, mismatch, changed metadata, and rehashed tampering against an external expected digest. Implement only fixed reference reconstruction:
+- [x] Run `node --test tests/grok-cli-phase-policy.test.mjs tests/grok-cli-phase-protocol.test.mjs` and preserve intended failures.
+- [x] Add codec tests for round-trip, detached freezing, byte ceilings, Unicode and escaping, mismatch, changed metadata, and rehashed tampering against an external expected digest. Implement only fixed reference reconstruction:
 
 ```js
 const restored = structuredClone(view.input);
@@ -55,12 +55,18 @@ restored.missionPackage.mission.objective = restored.modelProjection.mission.obj
 if (sha256Value(restored) !== expectedInputDigest) fail();
 ```
 
-- [ ] Load the optional field only under exact policy validation; compiler rejects unknown values and invokes the codec only for native. Keep original output schema, response and receipt machinery.
-- [ ] Run the three targeted test files plus `tests/grok-cli-phase-transport.test.mjs`; retain closed failure evidence and green result. Independently reconstruct the saved live request in a new offline output, never overwriting the historical profile.
-- [ ] Review full diff independently. Resolve confirmed defects test-first. Commit exact owned paths only.
+- [x] Load the optional field only under exact policy validation; compiler rejects unknown values and invokes the codec only for native. Keep original output schema, response and receipt machinery.
+- [x] Run the three targeted test files plus `tests/grok-cli-phase-transport.test.mjs`; retain closed failure evidence and green result. Independently reconstruct the saved live request in a new offline output, never overwriting the historical profile.
+- [x] Review full diff independently. Resolve confirmed defects test-first. Commit exact owned paths only.
 
 ## Task 2: Integration and honest handoff
 
-- [ ] At final integration gate, run the full suite with bounded console output and a durable TAP log; fetch/reconcile upstream, merge verified branch and rerun affected merged gates before push.
-- [ ] Record exact source, commands, counts, hashes, offline byte delta and limits in an audit. Keep profile opt-in and unqualified for live model behavior. No claim of quality, token, billing, or latency gain from offline bytes.
-- [ ] Update current-state and README with a concise capability/limit link. Push verified main under standing approval. Next product work remains a multi-step/interruption-sensitive user workflow, not another evaluation platform.
+- [x] At final integration gate, run the full suite with bounded console output and a durable TAP log; fetch/reconcile upstream, merge verified branch and rerun affected merged gates before push.
+- [x] Record exact source, commands, counts, hashes, offline byte delta and limits in an audit. Keep profile opt-in and unqualified for live model behavior. No claim of quality, token, billing, or latency gain from offline bytes.
+- [x] Update current-state and README with a concise capability/limit link. Next product work remains a multi-step/interruption-sensitive user workflow, not another evaluation platform.
+
+Publication: push verified main under standing approval after this docs closeout
+is committed; confirm the resulting remote ref in the task handoff. Runtime
+`bb5a0ab` passed 1,321 full tests and 33 merged focused checks. See the dated audit
+and external `integration-closeout.json`; no live compact-profile qualification
+or default enablement is claimed.

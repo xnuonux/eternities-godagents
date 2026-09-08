@@ -8,8 +8,9 @@ mission, recovery, and authority boundaries have substantial deterministic
 coverage. That does not establish live model quality, a qualified external
 host, or a finished agent product.
 
-The immediate work is release-evidence integrity and one usable end-to-end
-host path. Godskills is a separate, independently usable skill pack and
+The local host path now has the bounded live evidence described below. Remaining
+product qualification includes interruption-sensitive useful work and a second
+independent host. Godskills is a separate, independently usable skill pack and
 optional capability-routing dependency. More receipt layers are not the
 completion criterion. Soul, Inspiration, hosted civilization, and Lunari
 integration remain outside this release.
@@ -43,9 +44,12 @@ of superiority over plain Grok or a completed universal product. A first matched
 comparison is now [recorded](docs/audits/2026-09-08-grok-matched-development-comparison.md):
 both plain Grok and the Godagent returned the same optimal answer. The Godagent
 used 37.40% more input tokens in this one development pair, with similar elapsed
-time. No general quality gain is claimed. Next work is exact context-cost profiling
-and an interruption-sensitive or multi-step workflow where persistence has a
-measurable purpose.
+time. No general quality gain is claimed. The subsequent
+[opt-in objective view](docs/audits/2026-09-08-grok-native-objective-view.md)
+reduces the recorded request by 8.7445% in bytes with exact input reconstruction,
+without enabling itself by default or claiming token/quality gains. Next is an
+interruption-sensitive or multi-step workflow where persistence has a measurable
+purpose.
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 

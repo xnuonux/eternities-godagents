@@ -14,9 +14,12 @@ zero observed Grok executable attempts. See the
 The subsequent [matched Grok comparison](audits/2026-09-08-grok-matched-development-comparison.md)
 completed on `66ef6ce`: both arms returned the same optimal answer, with 37.40%
 more reported input tokens for the Godagent. This is one development sample,
-not general quality superiority. Next work is exact context-cost profiling and a
-multi-step or interruption-sensitive workflow, not another synthetic transport
-probe. MiniMax remains a candidate; its two latest
+not general quality superiority. Exact context-cost profiling now identified a
+duplicated objective. The [opt-in objective view](audits/2026-09-08-grok-native-objective-view.md)
+preserves the original input while reducing this recorded request by 8.7445% in
+bytes; it remains unqualified for live behavior or token savings. Next product
+work is a multi-step or interruption-sensitive workflow, not another synthetic
+transport probe. MiniMax remains a candidate; its two latest
 attempts stopped at response-format boundaries without a scored quality result.
 The dated follow-ups below retain their historical scope rather than redefining
 past results as current product completion.
