@@ -94,3 +94,38 @@ test('invalid arm ordering and unsupported oracle stop before any run directory 
     assert.equal((await readdir(dirname(prepared.preparationPath))).includes('run'), false);
   }
 });
+
+test('malformed model output retains measured usage but never receives a quality score', async t => {
+  const prepared = await prepare(t);
+  let calls = 0;
+  const report = await api.runControlledComparison({ ...prepared, fetchImpl: async (_url, init) => {
+    calls++;
+    const request = JSON.parse(init.body);
+    return new Response(JSON.stringify({ model: request.model,
+      choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: 'not a JSON envelope' } }],
+      usage: { prompt_tokens: 100, completion_tokens: 20, total_tokens: 120,
+        prompt_tokens_details: { cached_tokens: 0 }, completion_tokens_details: { reasoning_tokens: 5 } },
+    }), { headers: { 'content-type': 'application/json' } });
+  } });
+  assert.equal(calls, 2);
+  assert.equal(report.comparable, false);
+  assert.equal(report.arms.baseline.usage.completionTokens, 20);
+  for (const arm of Object.values(report.arms)) {
+    assert.notEqual(arm.status, 'completed');
+    assert.equal(arm.quality.status, 'unscored');
+    assert.equal(arm.artifactDigest, null);
+    assert.equal(arm.oracleInputDigest, null);
+    assert.equal(arm.attemptedCalls, 1);
+  }
+});
+
+test('workflow bytes changed after preparation stop before dispatch or run output', async t => {
+  const prepared = await prepare(t);
+  const record = JSON.parse(await readFile(prepared.preparationPath, 'utf8'));
+  const missionFile = record.inspected.files.find(file => file.path.endsWith('mission-request.json'));
+  await writeFile(missionFile.path, '{}');
+  let calls = 0;
+  await assert.rejects(api.runControlledComparison({ ...prepared, fetchImpl: async () => { calls++; } }), /digest/);
+  assert.equal(calls, 0);
+  assert.equal((await readdir(dirname(prepared.preparationPath))).includes('run'), false);
+});

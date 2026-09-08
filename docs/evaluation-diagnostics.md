@@ -54,8 +54,38 @@ is unknown. Never silently retry an old attempt or replace a routing refusal wit
 native execution. A pending workflow is not evidence of a terminated provider call.
 
 No production runtime, trusted release pins, Soul, Lunari integration or global
-instructions are changed by these helpers. A fresh source-gated live runner,
-full two-arm comparison and useful-task qualification remain separate work.
+instructions are changed by these helpers. A fresh source-gated live runner and
+useful-task qualification remain separate work. Controlled two-arm development
+execution is available as described below.
+
+## Controlled two-arm comparison
+
+`scripts/evaluation/comparison-preparation.mjs` exports `prepareComparison` for
+an inert, digest-bound registration. `scripts/evaluation/comparison.mjs` exports
+`runControlledComparison({ preparationPath, preparationDigest, fetchImpl })`.
+It accepts only reserved test endpoints, uses a synthetic credential, and labels
+every report `executionKind: "controlled"`. It is not a live account entrypoint.
+
+The fixed oracle registry currently supports bounded weighted-interval scheduling.
+The registry constructs one task contract for both arms and scores answers without
+placing the optimum into either task payload. The Godagent arm goes through the
+actual admitted local workflow, not a mock actor. The baseline and Godagent each
+have independently fixed physical-call/token reservations and attempt journals.
+
+Reports distinguish completion status, scored correctness or an unscored reason,
+measured usage or null, reserved completion tokens, actual artifact identity, and
+the normalized oracle-input digest. Malformed answers and uncertain dispatches
+cannot receive successful quality scores. An existing run directory prevents
+reuse; stale workflow bytes are rejected before dispatch. Unknown oracle IDs do
+not load arbitrary modules.
+
+These checks cover deterministic development behavior, not model superiority.
+Declared sources are pinned but do not prove a complete executing import closure.
+The injected test transport is trusted code, not sandboxed code. Live-provider
+qualification, complete source binding, fresh held-out tasks, broader usable-task
+coverage, and current resource/spending approval are still required before a live
+quality claim. Grok's verified subscription CLI needs its own bounded adapter;
+it is not an HTTP URL substitution.
 
 ## Native route boundary
 
