@@ -138,6 +138,15 @@ assert.deepEqual(await readFile(join(sourceRoot, 'app.js')), originalBytes);
 
 ## Task 3: exact integration gate and host handoff
 
+Complete for this plan's bounded substrate. Frozen source
+`a4cf1df05891d0b2e8eb0801689cb15bffa98cd0` passed the serial full gate: 1432 tests,
+zero failed/cancelled/skipped/todo, 1550634.2236ms. Independent final review cleared
+the seven-file source closure, unchanged legacy runtime/schema/SDK and receipts,
+and recomputed full-log hash. Main was fast-forwarded to that exact source, then
+all 42 focused post-merge tests passed in 2261.4915ms. Branch and user lockfile were
+preserved. Exact logs and scope are in the
+[closeout](../../audits/2026-09-08-workspace-revisions-closeout.md).
+
 **Files:** add `docs/workspace-revisions.md`; update this plan and current-state.
 
 - [x] Document actual APIs and proof boundaries, including pending retention,
@@ -146,7 +155,7 @@ assert.deepEqual(await readFile(join(sourceRoot, 'app.js')), originalBytes);
   substrate a released coding agent.
 - [x] Run targeted store and existing file-lock/publication tests selected from
   their actual filenames. Inspect the exact implementation diff and source closure.
-- [ ] At final integration, freeze the candidate and run the complete suite
+- [x] At final integration, freeze the candidate and run the complete suite
   serially once. Preserve failures, all historical receipts and exact logs.
   Review, reconcile origin, merge only the verified branch, run focused merged
   checks and push under standing approval. No cleanup of the user's untracked file.

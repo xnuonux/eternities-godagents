@@ -5,13 +5,14 @@ on `main`, reconciled with `origin/main`. Remote:
 `https://github.com/xnuonux/eternities-godagents.git`.
 This is a product and release-process review, not a new certification.
 
-Workspace revision candidate, 2026-09-08: the internal host-only store now captures
+Workspace revision milestone, 2026-09-08: runtime `a4cf1df` is merged. The internal host-only store captures
 explicit pinned files, derives successor revisions without mutating parents or
 original projects, verifies actual bytes, and preserves bounded interrupted
 staging. Capture and revision slices passed independent review; the focused
-workspace, lock and publication gate passed 42 tests. The branch is awaiting the
-full serial integration gate and is not a merged release. See the
-[API and exact remaining host requirements](workspace-revisions.md) and
+workspace, lock and publication gate passed 42 tests. The full serial gate passed
+1,432 tests; the merged focused gate passed 42, with all 69 historical receipts
+preserved. See the [verified closeout](audits/2026-09-08-workspace-revisions-closeout.md),
+[API and exact remaining host requirements](workspace-revisions.md), and
 [plan status](superpowers/plans/2026-09-08-workspace-revisions.md). This adds no
 execution, Workspace Realm authority, public SDK route, provider or Lunari use.
 
