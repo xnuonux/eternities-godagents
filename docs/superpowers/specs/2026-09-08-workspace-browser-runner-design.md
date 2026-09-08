@@ -95,6 +95,8 @@ image/font assets with closed MIME mapping. Unselected resources and unsupported
 formats reject; there is no filesystem discovery, directory server, localhost
 application server, package installation or implicit remote dependency resolution.
 Limits for selected file count and bytes cannot exceed the store's limits.
+Initial reference ceilings are16 selected files and4MiB of app bytes; output is
+at most16KiB. These are conservative implementation bounds, not performance claims.
 
 `runtime` binds exact host-selected browser executable and named driver source
 pins, their identities/versions, the runner's source descriptor, and fixed launch
@@ -133,6 +135,8 @@ private absolute installation roots stay in host configuration, not requests or
 model-visible receipts. `runtimePinScope` is exactly `named-driver-and-engine-files`.
 The descriptor digest covers the canonical unsigned record. Unknown fields or a
 claim of full-engine/OS closure fail rather than silently upgrading this profile.
+Static named-file verification accepts at most32 files, at most1GiB per file,
+using streaming hash buffers rather than engine-sized allocations.
 Bind both executable and engine rows: changing one cannot reuse a prior descriptor.
 Pinning is consistency within the trusted host, not protection from a malicious
 operator who controls the allowlist, binaries and pins together.
