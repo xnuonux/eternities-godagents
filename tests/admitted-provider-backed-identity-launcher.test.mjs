@@ -10,6 +10,7 @@ import { sha256Text, sha256Value } from '../src/core/digest.mjs';
 import { createProviderBackedMissionDependencies } from '../src/host/provider-backed-mission-dependencies.mjs';
 import { createProviderPhaseHost } from '../src/host/provider-phase-host-sdk.mjs';
 import { validOpenAICompatiblePhasePolicy } from './helpers/openai-compatible-phase-policy-fixture.mjs';
+import { validAnthropicMessagesPhasePolicy } from './helpers/anthropic-messages-phase-policy-fixture.mjs';
 
 async function loadSubject() {
   try {
@@ -20,20 +21,21 @@ async function loadSubject() {
   }
 }
 
-async function providerHost(t) {
+async function providerHost(t, family = 'openai-compatible-chat-completions-v1') {
   const root = await mkdtemp(join(tmpdir(), 'godagents-admitted-provider-launcher-'));
   t.after(() => rm(root, { recursive: true, force: true }));
-  const policy = validOpenAICompatiblePhasePolicy();
+  const anthropic = family === 'anthropic-messages-v1';
+  const policy = anthropic ? validAnthropicMessagesPhasePolicy() : validOpenAICompatiblePhasePolicy();
   const policyPath = join(root, 'provider-policy.json');
   const policyDigest = sha256Text(canonicalJson(policy));
   await writeFile(policyPath, `${canonicalJson(policy)}\n`, 'utf8');
   let providerCalls = 0;
   const host = await createProviderPhaseHost({
-    family: 'openai-compatible-chat-completions-v1',
+    family,
     policyPath,
     runtimeRoot: join(root, 'provider-operations'),
     env: {
-      GODAGENT_PHASE_TRANSPORT_POLICY_SHA256: policyDigest,
+      [anthropic ? 'GODAGENT_ANTHROPIC_PHASE_TRANSPORT_POLICY_SHA256' : 'GODAGENT_PHASE_TRANSPORT_POLICY_SHA256']: policyDigest,
       [policy.provider.credentialEnv]: 'admitted-launcher-secret-canary',
     },
     fetchImpl: async () => {
@@ -42,6 +44,37 @@ async function providerHost(t) {
     },
   });
   return { host, get providerCalls() { return providerCalls; } };
+}
+
+test('effect-only launcher accepts an issued native host without skill review dependencies', async t => {
+  const subject = await import('../src/host/admitted-effect-only-identity-launcher.mjs').catch(() => ({}));
+  assert.equal(typeof subject.createAdmittedEffectOnlyIdentityLauncher, 'function');
+  const state = await providerHost(t);
+  const launcher = subject.createAdmittedEffectOnlyIdentityLauncher({ host: state.host, hostKind: 'provider' });
+  assert.equal(launcher.describe().schemaVersion, 2);
+  assert.equal(launcher.describe().mode, 'effect-only');
+  assert.equal(launcher.describe().nativeTransport.descriptorDigest, state.host.describe().descriptors.native.descriptorDigest);
+  assert.equal(state.providerCalls, 0);
+  assert.throws(() => subject.createAdmittedEffectOnlyIdentityLauncher({ host: { ...state.host }, hostKind: 'provider' }), /issued/);
+  assert.throws(() => subject.createAdmittedEffectOnlyIdentityLauncher({ host: state.host, hostKind: 'portable' }), /issued/);
+  assert.throws(() => subject.createAdmittedEffectOnlyIdentityLauncher({ host: state.host, hostKind: 'provider', releasePin: {} }), /configuration/);
+  await assert.rejects(launcher.launch({ admissionRoot: 'unused', policyPath: 'unused', identityPolicyDigest: 'f'.repeat(64),
+    request: { schemaVersion: 1 } }), /effect-only/);
+  await assert.rejects(launcher.launch({ admissionRoot: 'unused', policyPath: 'unused', identityPolicyDigest: 'f'.repeat(64),
+    request: { schemaVersion: 2, routeMode: 'effect-only' }, nativeTransport: state.host.native }), /fields/);
+  assert.equal(state.providerCalls, 0);
+});
+
+for (const family of ['openai-compatible-chat-completions-v1', 'anthropic-messages-v1']) {
+  test(`effect-only ${family} screens credentials before admission or dispatch`, async t => {
+    const { createAdmittedEffectOnlyIdentityLauncher } = await import('../src/sdk/index.mjs');
+    const state = await providerHost(t, family);
+    const launcher = createAdmittedEffectOnlyIdentityLauncher({ host: state.host, hostKind: 'provider' });
+    await assert.rejects(launcher.launch({ admissionRoot: 'unused', policyPath: 'unused',
+      identityPolicyDigest: 'f'.repeat(64), request: { schemaVersion: 2, routeMode: 'effect-only',
+        text: 'admitted-launcher-secret-canary' } }), /credential|secret/i);
+    assert.equal(state.providerCalls, 0);
+  });
 }
 
 test('one certified provider dependency stack becomes one frozen admitted launcher', async (t) => {

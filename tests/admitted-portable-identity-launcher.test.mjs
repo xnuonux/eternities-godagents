@@ -61,6 +61,20 @@ async function portableHost(t) {
   return { host, get providerCalls() { return providerCalls; } };
 }
 
+test('public effect-only SDK launcher accepts portable issuance without review construction', async t => {
+  const sdk = await import('../src/sdk/index.mjs');
+  assert.equal(typeof sdk.createAdmittedEffectOnlyIdentityLauncher, 'function');
+  const state = await portableHost(t);
+  const launcher = sdk.createAdmittedEffectOnlyIdentityLauncher({ host: state.host, hostKind: 'portable' });
+  assert.equal(launcher.describe().mode, 'effect-only');
+  assert.equal(launcher.describe().hostKind, 'portable');
+  assert.equal(state.providerCalls, 0);
+  assert.throws(() => sdk.createAdmittedEffectOnlyIdentityLauncher({ host: { ...state.host }, hostKind: 'portable' }), /issued/);
+  await assert.rejects(launcher.launch({ admissionRoot: 'unused', policyPath: 'unused',
+    identityPolicyDigest: '0'.repeat(64), request: { schemaVersion: 1 } }), /effect-only/);
+  assert.equal(state.providerCalls, 0);
+});
+
 test('one certified portable dependency stack becomes one frozen explicit admitted launcher', async (t) => {
   const subject = await loadSubject();
   assert.equal(typeof subject.createAdmittedPortableIdentityLauncher, 'function');

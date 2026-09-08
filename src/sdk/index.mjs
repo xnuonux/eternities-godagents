@@ -40,6 +40,8 @@ const DESCRIPTION = deepFreeze({
 export const GODAGENT_SDK_PROTOCOL_ID = PROTOCOL_ID;
 export const GODAGENT_SDK_VERSION = VERSION;
 
+export { createAdmittedEffectOnlyIdentityLauncher } from '../host/admitted-effect-only-identity-launcher.mjs';
+
 export function describeGodagentSdk() {
   return deepFreeze(structuredClone(DESCRIPTION));
 }

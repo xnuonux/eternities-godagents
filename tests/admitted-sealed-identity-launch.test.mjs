@@ -236,12 +236,26 @@ test('authenticated v2 launcher runs pinned effect-only routing and recovers nat
     { expectedProducerDescriptorDigest: policy.runtime.effectProducerDescriptorDigest });
   const { launchAdmittedSealedIdentityMission } = await launcherModule();
   const args = launchArgs(fixture, { request });
-  const first = await launchAdmittedSealedIdentityMission(args);
+  const { buildPortablePhaseHostDescription, createPortablePhaseHostAdapter } = await import('../src/sdk/portable-phase-host.mjs');
+  const { createAdmittedEffectOnlyIdentityLauncher } = await import('../src/sdk/index.mjs');
+  const portable = await createPortablePhaseHostAdapter({
+    description: buildPortablePhaseHostDescription({ adapterId: 'effect-only-integration-host', adapterVersion: '1',
+      policyDigest: fixture.env.GODAGENT_IDENTITY_POLICY_SHA256,
+      descriptors: { native: fixture.native.descriptor, review: fixture.review.descriptor, revision: fixture.revision.descriptor } }),
+    native: fixture.native.adapter, review: fixture.review.adapter, revision: fixture.revision.adapter,
+    assertCredentialAbsent: () => {}, createOperatorResolutionController: () => { throw new Error('not used'); },
+  });
+  const facade = createAdmittedEffectOnlyIdentityLauncher({ host: portable, hostKind: 'portable' });
+  const facadeArgs = { admissionRoot: args.admissionRoot, policyPath: args.policyPath, request,
+    identityPolicyDigest: fixture.env.GODAGENT_IDENTITY_POLICY_SHA256,
+    registryRoot: args.registryRoot, clock: args.clock };
+  const first = await facade.launch(facadeArgs);
   assert.equal(first.status, 'completed');
   assert.equal(first.receipt.schemaVersion, 2);
   assert.equal(first.mission.verdict.reason, 'native-no-review');
   const calls = operationCount(fixture.native.calls);
   assert.deepEqual(await launchAdmittedSealedIdentityMission(args), first);
+  assert.deepEqual(await facade.launch(facadeArgs), first);
   assert.equal(operationCount(fixture.native.calls), calls);
   const changed = prepareLocalArtifactEffectRequest({ ...fixture.request, schemaVersion: 2, routeMode: 'effect-only', sourceStateEpoch: 1 },
     { expectedProducerDescriptorDigest: policy.runtime.effectProducerDescriptorDigest });

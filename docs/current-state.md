@@ -41,13 +41,21 @@ See [the migration decision and checkpoints](effect-only-vessel-migration-decisi
 This does not issue a new v2 release certificate, promote the Godskills feature
 to its main branch, or establish live model-quality gains.
 
-The next operator-path gap is concrete: `admitted-provider-backed-identity-launcher.mjs`
+The original operator-path gap was concrete: `admitted-provider-backed-identity-launcher.mjs`
 and `admitted-portable-identity-launcher.mjs` unconditionally construct review and
 revision dependencies. Their existing factories therefore cannot launch a v2
 native-only policy. The root SDK exports those wrappers but not the new lower-level
 host path. The local-artifact preparation workflow likewise still builds the v1
 release/classifier policy. Do not present the v2 integration test as a complete
 operator-facing migration.
+
+The [effect-only SDK launcher](effect-only-sdk-launch.md) now adds a separate,
+explicit v2 facade over an issued provider or portable host's native port. It
+preserves the v1 factories, screens credentials, rejects dependency injection,
+and exercises authenticated execution/replay through a controlled portable host.
+Both provider families have pre-dispatch credential-rejection coverage, not yet
+successful end-to-end provider execution coverage for this new facade. The local
+artifact preparation/retrieval migration remains open.
 
 Next bounded outcome: an explicit effect-only launch mode consuming the existing
 issued host's native transport, with no review/revision construction or calls,
