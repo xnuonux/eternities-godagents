@@ -20,6 +20,32 @@
 
 ## 1. Inert preregistration and source gate
 
+### Exact first-version decisions
+
+- The task is a closed object with `objective` (nonempty string), `input`
+  (JSON value), `requirements` (nonempty unique string array), and `outputFormat`
+  (nonempty string). Canonical JSON of this object is the subject text. Baseline
+  user-message content and Godagent mission objective must equal that exact text;
+  the oracle receives the same frozen task plus answer content. Subject text
+  contains no oracle answers. Host instructions remain disclosed treatment context.
+- The initial host uses fixed repository-owned adapters imported by the runner.
+  Do not implement a generic callback-registration service. Source pins verify
+  declared local files, not arbitrary function identity. A controlled fetch seam
+  is test-only injection and must label the run controlled, never live-qualified.
+  An oracle is selected by an explicit local registry identifier whose module is
+  part of the pinned source closure; no arbitrary module path is executed.
+- The model binding is exact endpoint URL, model identifier and reasoning-split
+  profile, matched to the prepared provider policy. Wrapper instructions may
+  differ and are recorded; that is not a claim of identical full context.
+- Budgets are fixed independent baseline/Godagent allocations with explicit
+  totals checked as their sum. Unused capacity is never transferred. Cost ceilings
+  require explicit operator approval; reservation accounting is not billing proof.
+- The comparison record binds preparation/task/source digests and, per arm,
+  status, nullable category, quality (`scored` with boolean correct, or `unscored`
+  with a bounded reason), elapsed milliseconds, attempted calls, reserved
+  completion tokens, nullable measured usage and artifact digest. Comparability
+  is explicit; no winner is inferred merely from transport completion.
+
 Create `scripts/evaluation/comparison-preparation.mjs` and `tests/evaluation-comparison-preparation.test.mjs`.
 
 Interface: `prepareComparison({directory, preregistration, expectedDigest})`.
@@ -39,12 +65,12 @@ callback and reads no credential.
 
 Create `scripts/evaluation/comparison.mjs` and `tests/evaluation-comparison.test.mjs`.
 
-Interface: `runComparison({preparationPath, expectedPreparationDigest, host})`.
-`host` is a trusted in-process implementation, not serialized configuration or a
-module loaded from an acquired repository. It owns the credential-safe response
-check, local oracle and network implementation. Their exact registered source
-pins must match preparation; callback identity is not established by a caller's
-arbitrary label or self-reported digest.
+Interface: `runComparison({preparationPath, expectedPreparationDigest})`.
+The production entrypoint imports the fixed local host adapter and oracle
+registry. It accepts neither serialized callbacks nor arbitrary module paths.
+Declared source pins must match preparation; they do not establish arbitrary
+function identity. Controlled transport injection belongs to the test seam and
+is labeled controlled, never live-qualified.
 
 - [ ] Add controlled-response tests for correct, valid-but-wrong and malformed answers; the same oracle receives content from both arms and records quality independently of attempt status.
 - [ ] Use `createBoundedDispatch` for both physical transport paths, with separately approved per-arm reservations and the same selected model/profile. Wrap the Godagent host factory rather than bypassing authenticated v2 execution.
