@@ -64,14 +64,15 @@ full-suite tests and 26 post-fast-forward checks; see the
 [integration audit](audits/2026-09-07-effect-only-operator-integration.md).
 Live useful-task qualification remains open.
 
-Next bounded outcome: an explicit effect-only launch mode consuming the existing
-issued host's native transport, with no review/revision construction or calls,
-followed by v2 preparation/artifact retrieval through the existing operator flow.
-Keep v1 behavior and descriptor contracts unchanged; reject policy/mode mismatch
-before execution. Prove both provider families through controlled transports,
-credential-free preflight, denied-effect zero dispatch, and persisted replay.
-Do not add a new model client, infer provider selection, broaden authority, or
-run paid qualification before its exact model and resource envelope are approved.
+The formerly proposed effect-only operator outcome above is implemented, not
+the next unfinished task. As of 2026-09-08, the immediate critical path is the
+[pinned Grok subscription adapter](audits/2026-09-08-grok-subscription-phase-transport.md),
+bounded live transport qualification, and separately preregistered within-model
+comparisons. MiniMax and subscription Grok are candidates; neither a transport
+probe nor structural fixtures establish better task outcomes. Preserve v1
+behavior, authority ceilings and historical receipts. Do not infer provider
+selection, broaden authority, or use a paid fallback. Judge qualification and
+exact resource/contrast binding remain gates before claiming improvement.
 
 Evaluation follow-up, 2026-09-07: [bounded diagnostic helpers](evaluation-diagnostics.md)
 provide offline-tested attempt preservation, baseline dispatch/validation and
