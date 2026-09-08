@@ -12,12 +12,19 @@ async function certifier() {
   return import('../scripts/build-portable-realm-consequence-sdk-v1-receipt.mjs');
 }
 
-test('portable Realm consequence SDK fixture is canonical and deterministic', async () => {
+test('historical Realm fixture remains canonical and current behavior permits only the explicit SDK addition', async () => {
   const committedText = await readFile(fixturePath, 'utf8');
   const committed = JSON.parse(committedText);
   const fresh = await buildDeterministicPortableRealmConsequenceSdkFixture();
   assert.equal(committedText, `${canonicalJson(committed)}\n`);
-  assert.deepEqual(committed, fresh);
+  // Preserve the historical fixture/receipt. The independent closed SDK surface
+  // test gates current exports; this comparison permits only this additive API
+  // and continues checking every Realm execution and safety field exactly.
+  const currentExpected = structuredClone(committed);
+  currentExpected.sdk.rootExports = [...committed.sdk.rootExports, 'createAdmittedEffectOnlyIdentityLauncher'].sort();
+  const { fixtureDigest: previousDigest, ...currentUnsigned } = currentExpected;
+  currentExpected.fixtureDigest = sha256Value(currentUnsigned);
+  assert.deepEqual(currentExpected, fresh);
   const { fixtureDigest, ...unsigned } = committed;
   assert.equal(fixtureDigest, sha256Value(unsigned));
   assert.deepEqual(committed.assertions, {

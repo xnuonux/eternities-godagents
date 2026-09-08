@@ -21,6 +21,7 @@ const EXPECTED_EXPORTS = [
   'assertRecoverableRealmConsequenceHost',
   'buildExternalHostQualificationDossier',
   'buildPortablePhaseHostDescription',
+  'createAdmittedEffectOnlyIdentityLauncher',
   'createAdmittedPortableIdentityLauncher',
   'createAdmittedProviderBackedIdentityLauncher',
   'createPortablePhaseHostAdapter',
