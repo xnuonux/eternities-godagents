@@ -2,6 +2,7 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text } from '../core/digest.mjs';
 import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { snapshotProviderProcessResponse } from './provider-phase-resolution.mjs';
+import { GROK_REJECTION_STAGES } from './grok-cli-rejection-diagnostic.mjs';
 import {
   buildProviderNeutralPhaseCompletion, providerNeutralPhaseInput,
   providerNeutralPhaseOutputSchema, PROVIDER_NEUTRAL_PHASE_SYSTEM_PROMPTS,
@@ -15,12 +16,14 @@ const USAGE_KEYS = ['input_tokens', 'cache_read_input_tokens', 'cache_creation_i
 const MODEL_KEYS = ['inputTokens', 'cacheReadInputTokens', 'cacheCreationInputTokens', 'outputTokens', 'modelCalls', 'costUSD'];
 
 export class GrokCliPhaseProtocolError extends Error {
-  constructor(code) {
+  constructor(code, stage = null) {
     if (!['dispatch-invalid', 'request-over-budget', 'response-invalid'].includes(code)) throw new TypeError('invalid Grok protocol error code');
+    if (stage !== null && !GROK_REJECTION_STAGES.includes(stage)) throw new TypeError('invalid Grok rejection stage');
     // Never attach raw provider output or parser errors to durable failures.
     super(`Grok CLI phase ${code}`);
     this.name = 'GrokCliPhaseProtocolError';
     this.code = code;
+    this.stage = stage;
   }
 }
 function fail(code = 'response-invalid') { throw new GrokCliPhaseProtocolError(code); }
@@ -128,21 +131,28 @@ export function verifyGrokCliProviderEvidence(value) {
 
 export function inspectGrokCliPhaseResponse({ phase, dispatch, descriptor, policy, response, startedAt, completedAt } = {}) {
   dispatchCheck(phase, dispatch, descriptor);
+  let stage = 'process-envelope';
   try {
     const captured = snapshotProviderProcessResponse(response);
     if (captured.outcome !== 'completed' || captured.exitCode !== 0
         || policy?.provider?.usageProfile !== PROFILE
         || !positive(policy.provider.maximumResponseBytes)
         || Buffer.byteLength(captured.bodyText, 'utf8') > policy.provider.maximumResponseBytes) fail();
+    stage = 'terminal-json';
     const envelope = JSON.parse(captured.bodyText);
+    stage = 'terminal-shape';
     if (!object(envelope) || envelope.stopReason !== 'end_turn' || typeof envelope.text !== 'string') fail();
+    stage = 'artifact-json';
     const content = JSON.parse(envelope.text);
+    stage = 'artifact-boundary';
     assertNoCredentialFields(content);
     if (!positive(policy.phases?.[phase]?.maximumCompletionBytes)
         || Buffer.byteLength(canonicalJson(content), 'utf8') > policy.phases[phase].maximumCompletionBytes) fail();
+    stage = 'usage-accounting';
     const providerUsage = evidenceFrom(envelope, policy.provider.modelId, dispatch.maxCompletionTokens);
+    stage = 'phase-contract';
     const completion = buildProviderNeutralPhaseCompletion({ phase, dispatch, descriptor, content,
       usage: providerUsage.normalized, startedAt, completedAt });
     return freeze({ completion, providerUsage });
-  } catch { fail(); }
+  } catch { throw new GrokCliPhaseProtocolError('response-invalid', stage); }
 }

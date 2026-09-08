@@ -133,3 +133,13 @@ test('request and response ceilings, changed dispatch digest, and malformed term
     assert.throws(() => inspect('native', dispatch, {}, { response: r }), { code: 'response-invalid' });
   }
 });
+test('rejected terminal reports a closed failure stage without raw provider text',async t=>{
+  const dispatch=await nativeDispatch(t,descriptors.native);
+  const value=terminal({content:'private-provider-text'});
+  delete value.modelUsage;
+  assert.throws(()=>inspect('native',dispatch,value),error=>{
+    assert.equal(error.stage,'usage-accounting');
+    assert.equal(JSON.stringify(error).includes('private-provider-text'),false);
+    return true;
+  });
+});

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile, unlink } from 'node:fs/promises';
+import { readFile, unlink, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { grokProcessFixture } from './helpers/grok-cli-process-fixture.mjs';
 import { nativeDispatch, reviewDispatch, revisionDispatch } from './helpers/openai-compatible-phase-operation-fixture.mjs';
@@ -60,5 +60,40 @@ test('reflected credentials become terminal sanitized failures without publicati
   assert.equal(failure.includes(f.auth.account.key),false);
   assert.equal(JSON.parse(failure).httpStatus,null);
   await assert.rejects(readFile(join(slot,'provider-evidence.json')),{code:'ENOENT'});
+  assert.equal(await f.calls(),1);
+});
+test('a rejected real-child response leaves bound safe diagnostic facts and terminal replay',async t=>{
+  const f=await grokProcessFixture(t,'missing-ledger');
+  const suite=await createGrokCliPhaseTransportSuite(config(f));
+  const dispatch=await nativeDispatch(t,suite.descriptors.native);
+  await assert.rejects(suite.native.execute(dispatch),{code:'response-invalid'});
+  const slot=join(f.root,'operations','native',dispatch.dispatchDigest);
+  const diagnostic=JSON.parse(await readFile(join(f.root,'operations','grok-rejection-diagnostics-v1',`native-${dispatch.dispatchDigest}.json`),'utf8'));
+  const failure=JSON.parse(await readFile(join(slot,'failure.json'),'utf8'));
+  assert.equal(diagnostic.stage,'usage-accounting');
+  assert.equal(diagnostic.responseDigest,failure.responseDigest);
+  assert.equal(diagnostic.requestDigest,failure.requestDigest);
+  assert.equal(diagnostic.policyDigest,suite.policyDigest);
+  assert.equal(diagnostic.observed.fields.modelUsage.type,'missing');
+  assert.equal(diagnostic.observed.usage.input_tokens.value,100);
+  assert.equal(JSON.stringify(diagnostic).includes('synthetic native'),false);
+  await assert.rejects(suite.native.execute(dispatch),{code:'response-invalid'});
+  assert.equal(await f.calls(),1);
+});
+test('diagnostic conflicts cannot overwrite evidence, mask rejection, or cause another provider call',async t=>{
+  const f=await grokProcessFixture(t,'missing-ledger');
+  const diagnosticRoot=join(f.root,'operations','grok-rejection-diagnostics-v1');
+  let target;
+  const suite=await createGrokCliPhaseTransportSuite({...config(f),checkpoint:async(name,phase,digest)=>{
+    if(name==='after-grok-cli-phase-attempt-persisted') {
+      await mkdir(diagnosticRoot);
+      target=join(diagnosticRoot,`${phase}-${digest}.json`);
+      await writeFile(target,'preexisting conflicting evidence');
+    }
+  }});
+  const dispatch=await nativeDispatch(t,suite.descriptors.native);
+  await assert.rejects(suite.native.execute(dispatch),{code:'response-invalid'});
+  assert.equal(await readFile(target,'utf8'),'preexisting conflicting evidence');
+  await assert.rejects(suite.native.execute(dispatch),{code:'response-invalid'});
   assert.equal(await f.calls(),1);
 });

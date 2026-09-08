@@ -39,6 +39,7 @@ module.exports = { ...bridge,
       usage:{input_tokens:100,cache_read_input_tokens:15,cache_creation_input_tokens:5,output_tokens:10,reasoning_tokens:3,total_tokens:130},
       modelUsage:{'grok-4.6':{inputTokens:100,cacheReadInputTokens:15,outputTokens:10,modelCalls:1}}};
     if(mode==='secret') value.text=JSON.stringify({content:'fixture-access-secret-123456'});
+    if(mode==='missing-ledger') delete value.modelUsage;
     if(mode==='uncertain') throw new Error('fixture uncertain result');
     if(mode==='nonzero') return bridge.runProcess(process.execPath,['-e','process.stdout.write('+JSON.stringify(JSON.stringify(value))+');process.exit(7)'],options);
     if(mode==='timeout') return bridge.runProcess(process.execPath,['-e','setTimeout(()=>{},20000)'],options);

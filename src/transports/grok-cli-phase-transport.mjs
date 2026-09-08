@@ -9,6 +9,7 @@ import { createGrokCliPhaseProcess } from './grok-cli-phase-process.mjs';
 import { compileGrokCliPhaseRequest, inspectGrokCliPhaseResponse, verifyGrokCliProviderEvidence } from './grok-cli-phase-protocol.mjs';
 import { createDurablePhaseOperationSuite } from './durable-phase-operation.mjs';
 import { loadProviderPhaseResolutionPolicy } from './provider-phase-resolution.mjs';
+import { projectGrokCliRejectionDiagnostic, persistGrokCliRejectionDiagnostic } from './grok-cli-rejection-diagnostic.mjs';
 
 export async function createGrokCliPhaseTransportSuite({policyPath,env,runtimeRoot,
   clock=()=>new Date().toISOString(),checkpoint=async()=>{},lockOptions={}}={}) {
@@ -26,9 +27,28 @@ export async function createGrokCliPhaseTransportSuite({policyPath,env,runtimeRo
   });
   await mkdir(resolve(runtimeRoot),{recursive:true});
   const root=await realpath(resolve(runtimeRoot));
+  function inspectResponse(options) {
+    try { return inspectGrokCliPhaseResponse(options); }
+    catch(error) {
+      if(error?.code==='response-invalid'&&error.stage) {
+        try {
+          const request=compileGrokCliPhaseRequest(options);
+          const diagnostic=projectGrokCliRejectionDiagnostic({phase:options.phase,policyDigest:digest,
+            dispatchDigest:options.dispatch.dispatchDigest,requestDigest:request.requestDigest,
+            modelId:policy.provider.modelId,stage:error.stage,maximumResponseBytes:policy.provider.maximumResponseBytes,
+            bodyText:options.response.bodyText});
+          persistGrokCliRejectionDiagnostic({runtimeRoot:root,diagnostic});
+        } catch {
+          // Best-effort diagnostics are not authority or a recovery decision.
+          // Their persistence failure must never mask the original rejection.
+        }
+      }
+      throw error;
+    }
+  }
   const phases=await createDurablePhaseOperationSuite({policy,policyDigest:digest,descriptors,runtimeRoot:root,
     credentialResolver:runner.credentialResolver,process:runner.process,
-    compileRequest:compileGrokCliPhaseRequest,inspectResponse:inspectGrokCliPhaseResponse,
+    compileRequest:compileGrokCliPhaseRequest,inspectResponse,
     verifyProviderEvidence:verifyGrokCliProviderEvidence,clock,checkpoint,lockOptions,checkpointPrefix:'grok-cli-phase'});
   async function createOperatorResolutionController({policyPath:resolutionPath,env:resolutionEnv}={}) {
     const loaded=await loadProviderPhaseResolutionPolicy({path:resolutionPath,env:resolutionEnv,
