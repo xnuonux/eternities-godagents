@@ -80,7 +80,8 @@ export async function runAttempt(directory, operation) {
     async recordUsage(value) {
       const keys = ['inputTokens', 'completionTokens', 'reasoningTokens', 'cachedInputTokens'];
       if (!value || Object.keys(value).length !== keys.length
-          || keys.some((key) => !Number.isSafeInteger(value[key]) || value[key] < 0)
+          || keys.some((key) => !(key === 'cachedInputTokens' && value[key] === null)
+            && (!Number.isSafeInteger(value[key]) || value[key] < 0))
           || value.reasoningTokens > value.completionTokens || value.cachedInputTokens > value.inputTokens) {
         throw diagnosticFailure('usage-invalid');
       }

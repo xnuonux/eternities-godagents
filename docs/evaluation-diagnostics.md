@@ -37,6 +37,14 @@ CLI or a new provider route.
 
 ## Caller obligations before a live trial
 
+Cache telemetry is nullable in evaluation usage records: missing or null provider
+cache detail is preserved as `cachedInputTokens: null`, while explicit zero stays
+zero. `usageKnown` means a validated usage record exists, not that every optional
+dimension was measured. Consumers must not subtract null from input tokens,
+infer a cache hit, or turn it into zero cost. Core input/completion/reasoning
+counts remain required. Invalid negative, fractional, string or over-input cache
+counts still stop publication. Historical attempt records are not rewritten.
+
 Freeze a new preregistration and source digests; verify the exact runtime and
 Godskills release pins; configure the bounded dispatch under the existing approved
 spending envelope; bind the safety callback to real credential-reflection checks;

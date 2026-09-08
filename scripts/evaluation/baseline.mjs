@@ -21,8 +21,9 @@ export async function runBaseline({ directory, model, maximumCompletionTokens,
     const rawUsage = envelope.usage;
     const usage = { inputTokens: rawUsage?.prompt_tokens, completionTokens: rawUsage?.completion_tokens,
       reasoningTokens: rawUsage?.completion_tokens_details?.reasoning_tokens,
-      cachedInputTokens: rawUsage?.prompt_tokens_details?.cached_tokens ?? 0 };
-    if (Object.values(usage).some((value) => !Number.isSafeInteger(value) || value < 0)
+      cachedInputTokens: rawUsage?.prompt_tokens_details?.cached_tokens ?? null };
+    if (Object.entries(usage).some(([key, value]) => !(key === 'cachedInputTokens' && value === null)
+        && (!Number.isSafeInteger(value) || value < 0))
         || usage.completionTokens > maximumCompletionTokens
         || rawUsage?.total_tokens !== usage.inputTokens + usage.completionTokens) {
       throw diagnosticFailure('usage-invalid');

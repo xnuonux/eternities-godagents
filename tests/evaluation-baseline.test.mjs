@@ -33,6 +33,25 @@ test('baseline validates the actual envelope and records measured usage before a
   assert.ok(events.some((e) => e.event === 'usage-recorded' && e.usage.reasoningTokens === 3));
 });
 
+test('missing cache telemetry remains unknown while explicit zero remains measured', async () => {
+  for (const [reported, expected] of [[undefined, null], [null, null], [0, 0], [2, 2]]) {
+    const body = envelope();
+    if (reported === undefined) delete body.usage.prompt_tokens_details;
+    else body.usage.prompt_tokens_details.cached_tokens = reported;
+    const { result, directory } = await execute(body);
+    assert.equal(result.status, 'completed');
+    assert.equal(result.usage.cachedInputTokens, expected);
+    const events = await Promise.all((await readdir(directory)).map(async name => JSON.parse(await readFile(join(directory, name), 'utf8'))));
+    assert.equal(events.find(event => event.event === 'usage-recorded').usage.cachedInputTokens, expected);
+  }
+  for (const invalid of [-1, 11, '0', 0.5]) {
+    const body = envelope(); body.usage.prompt_tokens_details.cached_tokens = invalid;
+    const { result, outputs } = await execute(body);
+    assert.equal(result.category, 'usage-invalid');
+    assert.equal(outputs.length, 0);
+  }
+});
+
 test('response safety gate runs before parsing or publishing reflected material', async () => {
   const body = envelope(); body.choices[0].message.content = 'synthetic-reflected-credential';
   let checks = 0;
