@@ -3,6 +3,7 @@ import { sha256Text } from '../core/digest.mjs';
 import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { snapshotProviderProcessResponse } from './provider-phase-resolution.mjs';
 import { GROK_REJECTION_STAGES } from './grok-cli-rejection-diagnostic.mjs';
+import { buildGrokNativeObjectiveView } from './grok-native-objective-view.mjs';
 import {
   buildProviderNeutralPhaseCompletion, providerNeutralPhaseInput,
   providerNeutralPhaseOutputSchema, PROVIDER_NEUTRAL_PHASE_SYSTEM_PROMPTS,
@@ -47,20 +48,29 @@ function dispatchCheck(phase, dispatch, descriptor) {
 
 export function compileGrokCliPhaseRequest({ phase, dispatch, descriptor, policy } = {}) {
   dispatchCheck(phase, dispatch, descriptor);
+  if (policy?.provider && Object.hasOwn(policy.provider, 'nativeContextProfile')
+      && policy.provider.nativeContextProfile !== 'objective-reference-v1') fail('dispatch-invalid');
   if (policy?.provider?.modelId !== 'grok-4.6' || policy.provider.usageProfile !== PROFILE
       || !['low', 'medium', 'high'].includes(policy.provider.reasoningEffort)
       || !positive(policy.phases?.[phase]?.maximumCompletionTokens)
       || dispatch.maxCompletionTokens > policy.phases[phase].maximumCompletionTokens
       || !positive(policy.provider.maximumRequestBytes)) fail('request-over-budget');
   const schema = providerNeutralPhaseOutputSchema({ phase, dispatch, descriptor });
+  let input = providerNeutralPhaseInput({ phase, dispatch, descriptor,
+    protocolId: 'eternities-grok-cli-phase-request-v1' });
+  let presentation = '';
+  if (phase === 'native' && policy.provider.nativeContextProfile === 'objective-reference-v1') {
+    try { input = buildGrokNativeObjectiveView(input, {maximumBytes:policy.provider.maximumRequestBytes}); }
+    catch (error) { fail(error?.reason === 'over-budget' ? 'request-over-budget' : 'dispatch-invalid'); }
+    presentation = '\nThe user message wraps input in an objective-reference view. Within input, missionPackage.mission.objective references /modelProjection/mission/objective, the exact same objective. All other fields retain their meaning.';
+  }
   const request = {
     model: policy.provider.modelId,
     maxCompletionTokens: dispatch.maxCompletionTokens,
     reasoningEffort: policy.provider.reasoningEffort,
     messages: [
-      { role: 'system', content: `${PROVIDER_NEUTRAL_PHASE_SYSTEM_PROMPTS[phase]}\nReturn only JSON matching this schema: ${canonicalJson(schema)}` },
-      { role: 'user', content: canonicalJson(providerNeutralPhaseInput({ phase, dispatch, descriptor,
-        protocolId: 'eternities-grok-cli-phase-request-v1' })) },
+      { role: 'system', content: `${PROVIDER_NEUTRAL_PHASE_SYSTEM_PROMPTS[phase]}${presentation}\nReturn only JSON matching this schema: ${canonicalJson(schema)}` },
+      { role: 'user', content: canonicalJson(input) },
     ],
   };
   const body = canonicalJson(request);

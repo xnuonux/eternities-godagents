@@ -31,9 +31,11 @@ function validate(p) {
   const v = p.provider;
   keys(v, ['transportKind', 'modelId', 'reasoningEffort', 'usageProfile', 'timeoutMs',
     'maximumRequestBytes', 'maximumResponseBytes', 'binary', 'bridge', 'authFile',
-    ...(v && Object.hasOwn(v, 'reportedModelId') ? ['reportedModelId'] : [])]);
+    ...(v && Object.hasOwn(v, 'reportedModelId') ? ['reportedModelId'] : []),
+    ...(v && Object.hasOwn(v, 'nativeContextProfile') ? ['nativeContextProfile'] : [])]);
   if (v.transportKind !== 'subprocess-json-v1' || v.modelId !== 'grok-4.6'
       || (Object.hasOwn(v, 'reportedModelId') && !['grok-4.6', 'grok-4.6-build'].includes(v.reportedModelId))
+      || (Object.hasOwn(v, 'nativeContextProfile') && v.nativeContextProfile !== 'objective-reference-v1')
       || v.usageProfile !== 'grok-headless-additive-v1' || !['low', 'medium', 'high'].includes(v.reasoningEffort)
       || !absolute(v.authFile)) fail('policy-invalid');
   integer(v.timeoutMs, 5000, 240000);

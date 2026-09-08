@@ -62,6 +62,21 @@ test('reported deployment name is an explicit digest-changing pin, not an inferr
   }
 });
 
+test('native objective presentation requires an explicit supported policy pin', async t => {
+  const f = await fixture(t);
+  const old = await f.load();
+  const p = structuredClone(f.policy);
+  p.provider.nativeContextProfile = 'objective-reference-v1';
+  const loaded = await f.load(p);
+  assert.notEqual(loaded.digest, old.digest);
+  assert.equal(loaded.policy.provider.nativeContextProfile, 'objective-reference-v1');
+  await assert.rejects(f.load(p, `${canonicalJson(p)}\n`, old.digest), {code:'policy-integrity'});
+  for (const invalid of [null, '', 'objective-reference-v2', 'full', {}, 1]) {
+    p.provider.nativeContextProfile = invalid;
+    await assert.rejects(f.load(p), {code:'policy-invalid'});
+  }
+});
+
 test('policy rejects paid routes, unpinned programs, unsupported semantics and excessive budgets', async t => {
   const f = await fixture(t);
   const mutations = [

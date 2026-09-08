@@ -35,6 +35,11 @@ module.exports = { ...bridge,
     const input=JSON.parse(prompt.split('[user message 2]\\n')[1].split('\\n\\n[execution constraint]')[0]);
     const content=input.phase==='review' ? {recommendation:'accept',findings:[],summary:'synthetic exact review'}
       : input.phase==='revision' ? {addressedFindingIds:['bind-evidence'],content:'synthetic revision'} : {content:'synthetic native'};
+    if(mode==='objective-view') {
+      if(input.protocolId!=='eternities-grok-native-objective-view-v1'
+        || input.input?.missionPackage?.mission?.objective?.$ref!=='/modelProjection/mission/objective') throw new Error('expected exact objective reference');
+      content.content=input.input.modelProjection.mission.objective;
+    }
     const value={text:JSON.stringify(content),stopReason:'end_turn',num_turns:1,
       usage:{input_tokens:100,cache_read_input_tokens:15,cache_creation_input_tokens:5,output_tokens:10,reasoning_tokens:3,total_tokens:130},
       modelUsage:{'grok-4.6':{inputTokens:100,cacheReadInputTokens:15,outputTokens:10,modelCalls:1}}};

@@ -14,6 +14,7 @@ const policy = {
   phases: Object.fromEntries(['native', 'review', 'revision'].map(p => [p, { maximumCompletionTokens: 800, maximumCompletionBytes: 32768 }])),
 };
 const at = '2026-08-31T20:01:00.000Z';
+const compactPolicy = {...policy, provider:{...policy.provider, nativeContextProfile:'objective-reference-v1'}};
 const descriptors = {
   native: buildIdentityBoundNativeTransportDescriptor({ transportId: 'grok-native-fixture', maximumDispatchBytes: 131072, maximumCompletionBytes: 65536 }),
   review: buildGodskillsReviewTransportDescriptor({ transportId: 'grok-review-fixture', maximumCompletionBytes: 65536 }),
@@ -34,6 +35,41 @@ function inspect(phase, dispatch, value, overrides = {}) {
   return inspectGrokCliPhaseResponse({ phase, dispatch, descriptor: descriptors[phase], policy,
     response: response(value), startedAt: at, completedAt: at, ...overrides });
 }
+
+test('opt-in native wire view restores the exact full input and leaves dispatch and completion identities intact', async t => {
+  const dispatch = await nativeDispatch(t, descriptors.native);
+  const before = canonicalJson(dispatch);
+  const args = {phase:'native', dispatch, descriptor:descriptors.native};
+  const full = compileGrokCliPhaseRequest({...args, policy});
+  const compact = compileGrokCliPhaseRequest({...args, policy:compactPolicy});
+  assert.notEqual(compact.requestDigest, full.requestDigest);
+  const view = JSON.parse(JSON.parse(compact.body).messages[1].content);
+  assert.equal(view.protocolId, 'eternities-grok-native-objective-view-v1');
+  assert.deepEqual(view.input.missionPackage.mission.objective, {$ref:'/modelProjection/mission/objective'});
+  const restored = structuredClone(view.input);
+  restored.missionPackage.mission.objective = restored.modelProjection.mission.objective;
+  const fullInputText = JSON.parse(full.body).messages[1].content;
+  assert.equal(canonicalJson(restored), fullInputText);
+  assert.equal(view.inputDigest, sha256Text(fullInputText));
+  const {viewDigest, ...unsigned} = view;
+  assert.equal(viewDigest, sha256Text(canonicalJson(unsigned)));
+  assert.equal(canonicalJson(dispatch), before);
+  assert.deepEqual(compileGrokCliPhaseRequest({...args, policy}), full);
+  assert.deepEqual(inspect('native',dispatch,terminal({content:'same artifact'}),{policy:compactPolicy}),
+    inspect('native',dispatch,terminal({content:'same artifact'})));
+  assert.throws(() => compileGrokCliPhaseRequest({...args, policy:{...compactPolicy,
+    provider:{...compactPolicy.provider, maximumRequestBytes:1024}}}), {code:'request-over-budget'});
+});
+
+test('native context profile never changes review or revision and unknown profiles fail closed', async t => {
+  for (const phase of ['review','revision']) {
+    const dispatch = phase === 'review' ? await reviewDispatch(descriptors[phase]) : revisionDispatch(descriptors[phase]);
+    const args = {phase, dispatch, descriptor:descriptors[phase]};
+    assert.deepEqual(compileGrokCliPhaseRequest({...args, policy:compactPolicy}), compileGrokCliPhaseRequest({...args, policy}));
+    assert.throws(() => compileGrokCliPhaseRequest({...args, policy:{...policy,
+      provider:{...policy.provider, nativeContextProfile:'unknown'}}}), {code:'dispatch-invalid'});
+  }
+});
 
 for (const [phase, content] of Object.entries({ native: { content: 'native artifact' },
   review: { recommendation: 'accept', findings: [], summary: 'checked exact subject' },

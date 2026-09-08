@@ -52,6 +52,25 @@ test('uncertain Grok subprocess remains pending across restart and never silentl
   assert.equal(await f.calls(),1);
 });
 
+test('opt-in objective view reaches the real child boundary and replays with original dispatch identities',async t=>{
+  const f=await grokProcessFixture(t,'objective-view');
+  f.policy.provider.nativeContextProfile='objective-reference-v1';
+  await writeFile(f.policyPath,canonicalJson(f.policy)+'\n');
+  f.env.GODAGENT_GROK_PHASE_POLICY_SHA256=sha256Value(f.policy);
+  const suite=await createGrokCliPhaseTransportSuite(config(f));
+  const dispatch=await nativeDispatch(t,suite.descriptors.native);
+  const result=await suite.native.execute(dispatch);
+  assert.equal(result.completion.artifact.content,dispatch.modelProjection.mission.objective);
+  const slot=join(f.root,'operations','native',dispatch.dispatchDigest);
+  const prepared=JSON.parse(await readFile(join(slot,'prepared.json'),'utf8'));
+  assert.equal(prepared.dispatchDigest,dispatch.dispatchDigest);
+  assert.equal(prepared.policyDigest,suite.policyDigest);
+  await unlink(f.authPath);
+  const restarted=await createGrokCliPhaseTransportSuite(config(f));
+  assert.deepEqual(await restarted.native.execute(dispatch),result);
+  assert.equal(await f.calls(),1);
+});
+
 test('host-pinned build ledger survives durable completion and auth-free replay for every phase',async t=>{
   const f=await grokProcessFixture(t,'build-ledger');
   f.policy.provider.reportedModelId='grok-4.6-build';
