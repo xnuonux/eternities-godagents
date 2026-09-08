@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { mkdtemp, realpath, writeFile } from 'node:fs/promises';
-import { resolve, join } from 'node:path';
+import { resolve, join, toNamespacedPath } from 'node:path';
 import { assertVerifiedEffectOnlyExecutable, assertVerifiedEffectOnlyVerifier,
   materializeEffectOnlyExecutable } from './effect-only-executable-verifier.mjs';
 
@@ -51,7 +51,7 @@ export async function createEffectOnlyProcessAdapters({ routingExecutable,
     const sourceBytes = encoded(expectedSource, 1_048_576);
     const resultBytes = result === undefined ? null : encoded(result, 2_097_152);
     const root = await existingDirectory(operationRoot);
-    const folder = await mkdtemp(join(root, 'process-input-'));
+    const folder = await mkdtemp(toNamespacedPath(join(root, 'process-input-')));
     const requestPath = join(folder, 'request.json');
     const sourcePath = join(folder, 'source.json');
     await writeFile(requestPath, requestBytes, { flag: 'wx', mode: 0o600 });

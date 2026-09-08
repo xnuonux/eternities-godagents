@@ -261,6 +261,16 @@ test('authenticated v2 launcher runs pinned effect-only routing and recovers nat
     registryRoot: args.registryRoot, clock: args.clock };
   const first = await facade.launch(facadeArgs);
   assert.equal(first.status, 'completed');
+  const { assertAdmittedEffectOnlyTerminalResult } = await import('../src/host/admitted-effect-only-identity-launcher.mjs');
+  assert.equal(typeof assertAdmittedEffectOnlyTerminalResult, 'function');
+  assert.deepEqual(assertAdmittedEffectOnlyTerminalResult(first), first.receipt);
+  assert.throws(() => assertAdmittedEffectOnlyTerminalResult(structuredClone(first)), /issued/);
+  assert.throws(() => assertAdmittedEffectOnlyTerminalResult({ status: 'pending' }), /issued/);
+  const originalMission = first.mission;
+  first.mission = structuredClone(originalMission);
+  first.mission.artifact.content = 'changed after authenticated completion';
+  assert.throws(() => assertAdmittedEffectOnlyTerminalResult(first), /changed/);
+  first.mission = originalMission;
   assert.equal(first.receipt.schemaVersion, 2);
   assert.equal(first.mission.verdict.reason, 'native-no-review');
   const calls = operationCount(fixture.native.calls);

@@ -7,6 +7,8 @@ import { assertNoCredentialFields } from '../../src/cortex/receipt-safety.mjs';
 import { acquireFileLock } from '../../src/state/file-lock.mjs';
 import { launchProviderBackedIdentity, verifyProviderBackedIdentityTerminalResult } from '../../src/host/provider-backed-cli.mjs';
 import { writeAcceptedArtifact } from './artifact.mjs';
+import { createProviderPhaseHost } from '../../src/host/provider-phase-host-sdk.mjs';
+import { createAdmittedEffectOnlyIdentityLauncher, assertAdmittedEffectOnlyTerminalResult } from '../../src/host/admitted-effect-only-identity-launcher.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
 const pathIdentity = (path) => process.platform === 'win32' ? path.toLowerCase() : path;
@@ -31,11 +33,12 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
   const text = await boundedText(path);
   if (sha256Text(text) !== expectedManifestDigest) throw new Error('workflow manifest digest changed');
   const manifest = JSON.parse(text);
+  const effectOnly = manifest.schemaVersion === 2;
   const keys = ['schemaVersion', 'status', 'workspaceRoot', 'family', 'instanceId', 'missionId', 'genesisId',
-    'identityPolicyDigest', 'maximumReviewMaterializedBytes', 'maximumRevisionMaterializedBytes', 'inputs'];
+    'identityPolicyDigest', 'inputs', ...(!effectOnly ? ['maximumReviewMaterializedBytes', 'maximumRevisionMaterializedBytes'] : [])];
   if (text !== `${canonicalJson(manifest)}\n`
       || canonicalJson(Object.keys(manifest).sort()) !== canonicalJson(keys.sort())
-      || manifest.schemaVersion !== 1 || manifest.status !== 'prepared'
+      || ![1, 2].includes(manifest.schemaVersion) || manifest.status !== 'prepared'
       || pathIdentity(manifest.workspaceRoot) !== pathIdentity(root)
       || canonicalJson(Object.keys(manifest.inputs).sort()) !== '["identityPolicy","mission","providerPolicy"]') {
     throw new Error('workflow manifest is invalid');
@@ -53,7 +56,30 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
     if (policy.runtime.instanceId !== manifest.instanceId || mission.mission.missionId !== manifest.missionId) {
       throw new Error('workflow identity or mission differs from preparation');
     }
-    const result = structuredClone(await launchProviderBackedIdentity({
+    let rawResult;
+    let effectReceipt;
+    if (effectOnly) {
+      if (policy.schemaVersion !== 2 || mission.schemaVersion !== 2 || mission.routeMode !== 'effect-only') {
+        throw new Error('effect-only workflow versions differ');
+      }
+      const providerPins = {
+        'openai-compatible-chat-completions-v1': 'GODAGENT_PHASE_TRANSPORT_POLICY_SHA256',
+        'anthropic-messages-v1': 'GODAGENT_ANTHROPIC_PHASE_TRANSPORT_POLICY_SHA256',
+      };
+      if (!Object.hasOwn(providerPins, manifest.family)) throw new Error('workflow provider family is unsupported');
+      const host = await (createProviderPhaseHostImpl ?? createProviderPhaseHost)({
+        family: manifest.family, policyPath: join(root, 'provider-policy.json'),
+        runtimeRoot: join(root, 'admission', 'vessel', 'provider-phase', manifest.family),
+        env: { ...env, [providerPins[manifest.family]]: sha256Text(canonicalJson(JSON.parse(texts.providerPolicy))) },
+      });
+      const launcher = createAdmittedEffectOnlyIdentityLauncher({ host, hostKind: 'provider' });
+      rawResult = await launcher.launch({ admissionRoot: join(root, 'admission'),
+        policyPath: join(root, 'identity-policy.json'), request: mission,
+        identityPolicyDigest: manifest.identityPolicyDigest });
+      // Assert the original issued object before cloning. The authenticated host
+      // already verifies completion against recovered admission/kernel evidence.
+      if (rawResult.status === 'completed') effectReceipt = assertAdmittedEffectOnlyTerminalResult(rawResult);
+    } else rawResult = await launchProviderBackedIdentity({
       family: manifest.family,
       providerPolicyPath: join(root, 'provider-policy.json'),
       admissionRoot: join(root, 'admission'),
@@ -68,7 +94,10 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
       readFileImpl: (input, encoding) => input === join(root, 'mission-request.json')
         ? Promise.resolve(texts.mission) : readFile(input, encoding),
       ...(createProviderPhaseHostImpl ? { createProviderPhaseHostImpl } : {}),
-    }));
+    });
+    const result = effectOnly && rawResult.status === 'needs-decision'
+      ? { status: 'needs-decision', unresolvedDecisions: structuredClone(rawResult.result?.routeReceipt?.unresolvedDecisions) }
+      : structuredClone(rawResult);
     if (result.status === 'needs-decision') {
       assertNoCredentialFields(result);
       if (canonicalJson(Object.keys(result).sort()) !== '["status","unresolvedDecisions"]'
@@ -85,7 +114,8 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
       return Object.freeze({ status: 'pending', instanceId: manifest.instanceId,
         missionId: manifest.missionId, artifact: null });
     }
-    const receipt = verifyProviderBackedIdentityTerminalResult(result);
+    const receipt = effectOnly ? effectReceipt : verifyProviderBackedIdentityTerminalResult(result);
+    if (!receipt) throw new Error('workflow terminal result is not verified');
     const rejected = receipt.acceptedArtifactDigest === null;
     const disposition = rejected ? 'rejected' : 'accepted';
     if (result.mission.receipt.disposition !== disposition || result.mission.verdict.disposition !== disposition) {

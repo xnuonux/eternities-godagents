@@ -18,8 +18,11 @@ import { validOpenAICompatiblePhasePolicy } from './helpers/openai-compatible-ph
 import { runLocalWorkflowCli } from '../examples/local-artifact-workflow/cli.mjs';
 import { prepareLocalArtifactEffectRequest } from '../src/host/structured-effect-producer.mjs';
 
-for (const scenario of ['authority-required', 'accepted', 'rejected', 'uncertain', 'effect-only-prepare']) {
-test(`local workflow ${scenario}: preparation and real host execution`, async (t) => {
+for (const variant of ['authority-required', 'accepted', 'rejected', 'uncertain',
+  'effect-only-accepted', 'effect-only-authority-required', 'effect-only-uncertain']) {
+const effectOnly = variant.startsWith('effect-only-');
+const scenario = effectOnly ? variant.slice('effect-only-'.length) : variant;
+test(`local workflow ${variant}: preparation and real host execution`, async (t) => {
   const suffix = `local-workflow-${randomUUID()}`;
   const source = await setupAdmittedIdentity(null, suffix);
   const workspace = join(source.root, 'operator-workspace');
@@ -83,7 +86,7 @@ test(`local workflow ${scenario}: preparation and real host execution`, async (t
   };
   const { prepareLocalWorkflow } = await import('../examples/local-artifact-workflow/prepare.mjs');
   const { runLocalWorkflow } = await import('../examples/local-artifact-workflow/run.mjs');
-  if (scenario === 'effect-only-prepare') {
+  if (effectOnly) {
     configuration.schemaVersion = 2;
     const repositoryRoot = 'C:/dev/eternities-godskills/.worktrees/effect-only-v2';
     configuration.effectOnly = { repositoryRoot,
@@ -104,14 +107,14 @@ test(`local workflow ${scenario}: preparation and real host execution`, async (t
     throw new Error('preparation must not call a provider');
   });
   let prepared;
-  if (scenario === 'accepted' || scenario === 'effect-only-prepare') {
+  if (scenario === 'accepted' || effectOnly) {
     const configPath = join(source.root, 'workflow-config.json');
     const relativeConfig = structuredClone(configuration);
     relativeConfig.providerPolicyPath = 'operator-provider-policy.json';
     for (const key of ['creationDir', 'promptArtifactPath', 'realmContractPath']) {
       relativeConfig.admission[key] = relative(source.root, relativeConfig.admission[key]);
     }
-    if (scenario === 'effect-only-prepare') {
+    if (effectOnly) {
       relativeConfig.effectOnly.repositoryRoot = relative(source.root, relativeConfig.effectOnly.repositoryRoot);
     } else relativeConfig.releasePin.repositoryRoot = relative(source.root, relativeConfig.releasePin.repositoryRoot);
     await writeFile(configPath, `${canonicalJson(relativeConfig)}\n`);
@@ -133,7 +136,7 @@ test(`local workflow ${scenario}: preparation and real host execution`, async (t
   assert.equal(verifyIdentityHostRequest(loaded.policy, configuration.request).mission.missionId, request.mission.missionId);
   await assert.rejects(prepareLocalWorkflow({ workspace, configuration }));
   assert.equal(await readFile(prepared.manifestPath, 'utf8'), manifestText);
-  if (scenario === 'effect-only-prepare') {
+  if (effectOnly) {
     assert.equal(manifest.schemaVersion, 2);
     assert.equal(loaded.policy.schemaVersion, 2);
     for (const key of ['godskillsRelease', 'activationClassifier', 'reviewExecutor', 'revisionExecutor']) {
@@ -150,7 +153,6 @@ test(`local workflow ${scenario}: preparation and real host execution`, async (t
       await assert.rejects(prepareLocalWorkflow({ workspace: invalidWorkspace, configuration: changed }));
       await assert.rejects(readFile(join(invalidWorkspace, 'workflow.json')), { code: 'ENOENT' });
     }
-    return;
   }
 
   const phases = [];
@@ -226,7 +228,9 @@ test(`local workflow ${scenario}: preparation and real host execution`, async (t
   if (scenario === 'authority-required') {
     assert.equal(first.status, 'needs-decision');
     assert.equal(first.artifact, null);
-    assert.deepEqual(first.unresolvedDecisions, ['authority:local-read', 'authority:local-write']);
+    assert.deepEqual(first.unresolvedDecisions, effectOnly
+      ? ['authority-missing:local-read', 'authority-missing:local-write']
+      : ['authority:local-read', 'authority:local-write']);
     assert.deepEqual(phases, []);
     await assert.rejects(readdir(join(workspace, 'artifacts')), { code: 'ENOENT' });
     const cli = await cliRun();
@@ -234,7 +238,7 @@ test(`local workflow ${scenario}: preparation and real host execution`, async (t
     assert.equal(JSON.parse(cli.stdout).status, 'needs-decision');
     return;
   }
-  assert.equal(first.status, 'completed');
+  assert.equal(first.status, 'completed', canonicalJson({ first, phases }));
   const artifactText = await readFile(first.artifact.path, 'utf8');
   assert.equal(JSON.parse(artifactText).content, 'two plus two is four.');
   assert.equal(phases.filter((phase) => phase === 'native').length, 1);

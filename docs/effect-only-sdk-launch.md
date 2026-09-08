@@ -78,6 +78,8 @@ provider qualification or model-quality evidence. No API credits are consumed.
 The local-artifact CLI can now prepare an inert v2 workspace using the explicit
 configuration described in the [workflow migration plan](superpowers/plans/2026-09-07-effect-only-local-workflow.md).
 Preparation verifies both source pins and the structured request before emitting
-a ready manifest. The run/retrieval flow still accepts only v1 manifests, so do
-not treat v2 preparation as an executable end-to-end workflow yet. The remaining
-execution and terminal-verification migration is open.
+a ready manifest. The [run/retrieval flow](local-artifact-workflow.md) now accepts
+the explicit v2 manifest and verifies the original facade-issued completion
+before cloning and publishing its artifact. Offline workflow tests cover accepted
+publication, credential-free replay, denied authority and uncertain dispatch.
+Final integration and live qualification remain separate gates.

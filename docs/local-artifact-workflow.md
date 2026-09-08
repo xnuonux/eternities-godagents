@@ -95,6 +95,36 @@ investigating the cause, not automatic cleanup of an existing identity.
 
 ## run and resume
 
+### Explicit effect-only v2 configuration
+
+V1 remains unchanged. To prepare a native-only effect-bound mission, use these
+exact root fields: `schemaVersion: 2`, `admission`, `family`,
+`providerPolicyPath`, `effectOnly`, `request`, and `hostPolicy`.
+`admission`, provider selection and the host authority envelope retain their
+existing meaning. Do not include v1 `releasePin`, `routingPin` or review/revision
+materialization fields.
+
+`effectOnly` contains exactly `repositoryRoot`, `routingExecutable`,
+`verifierExecutable`, and `producerDescriptorDigest`. Supply externally approved
+pins in the shapes documented by the [effect-only migration decision](effect-only-vessel-migration-decision.md).
+The repository root resolves relative to the configuration file. The request
+must already be a valid structured effect-only v2 request; preparation does not
+infer or rewrite its effects. Remove the three `maximumGodskills*Bytes` fields
+from `hostPolicy.limits`; the bounded v2 source process contract supplies those
+fixed ceilings. Other host and native limits remain explicit.
+
+The same prepare/run commands consume the versioned manifest. Preparation
+verifies source pins before publishing it. Run uses the issued-host v2 facade,
+and checks in-process terminal provenance before publishing an artifact. A
+copied or independently rehashed completion is not an issued result. Fresh-process
+replay must go through authenticated admission and journal verification again.
+
+Offline tests cover accepted publication, credential-free replay, denied effects
+with zero provider calls, and uncertain dispatch remaining pending without retry.
+The v2 decision labels come directly from its routing contract, for example
+`authority-missing:local-write`; they are not translated to v1 labels. This is
+offline workflow evidence, not live provider quality or a release certificate.
+
 Only after explicitly approving the configured network call and spending limits:
 
 ```powershell

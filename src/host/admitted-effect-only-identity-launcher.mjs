@@ -1,6 +1,20 @@
 import { assertProviderPhaseHostInstance } from './provider-phase-host-sdk.mjs';
 import { assertPortablePhaseHostInstance } from '../sdk/portable-phase-host.mjs';
 import { launchAdmittedSealedIdentityMission } from './admitted-sealed-identity-launch.mjs';
+import { canonicalJson } from '../core/canonical-json.mjs';
+import { sha256Text } from '../core/digest.mjs';
+import { OpenAICompatiblePhasePolicyError } from '../transports/openai-compatible-phase-policy.mjs';
+import { AnthropicMessagesPhasePolicyError } from '../transports/anthropic-messages-phase-policy.mjs';
+
+const terminalResults = new WeakMap();
+
+// In-process provenance only. Persistent recovery must pass through the
+// authenticated host again; a self-hashed or deserialized receipt is not issued.
+export function assertAdmittedEffectOnlyTerminalResult(value) {
+  if (!terminalResults.has(value)) throw new Error('effect-only terminal result was not issued by the facade');
+  if (sha256Text(canonicalJson(value)) !== terminalResults.get(value)) throw new Error('issued effect-only terminal result changed');
+  return structuredClone(value.receipt);
+}
 
 const fields = new Set(['admissionRoot', 'policyPath', 'request', 'identityPolicyDigest',
   'registryRoot', 'clock', 'checkpoint', 'lockOptions']);
@@ -34,13 +48,21 @@ export function createAdmittedEffectOnlyIdentityLauncher(configuration) {
       if (request?.schemaVersion !== 2 || request.routeMode !== 'effect-only') {
         throw new TypeError('effect-only launcher requires a v2 effect-only request');
       }
-      host.assertCredentialAbsent(request);
-      return launchAdmittedSealedIdentityMission({ admissionRoot: input.admissionRoot,
+      try { host.assertCredentialAbsent(request); } catch (error) {
+        // Issued provider transports require credentials for new dispatch, not
+        // verified persisted replay. Skip only literal-key screening when that
+        // key is unavailable; never suppress a leak or a portable-host error.
+        if (hostKind !== 'provider' || error.code !== 'credential-unavailable'
+            || !(error instanceof OpenAICompatiblePhasePolicyError || error instanceof AnthropicMessagesPhasePolicyError)) throw error;
+      }
+      const result = await launchAdmittedSealedIdentityMission({ admissionRoot: input.admissionRoot,
         policyPath: input.policyPath, request,
         env: { GODAGENT_IDENTITY_POLICY_SHA256: input.identityPolicyDigest },
         nativeTransport, reviewExecutor: null, revisionExecutor: null,
         registryRoot: input.registryRoot, clock: input.clock, checkpoint: input.checkpoint,
         lockOptions: input.lockOptions });
+      if (result.status === 'completed') terminalResults.set(result, sha256Text(canonicalJson(result)));
+      return result;
     },
   });
 }

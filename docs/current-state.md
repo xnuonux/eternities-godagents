@@ -57,7 +57,10 @@ Both registered provider families also complete the authenticated path using
 controlled HTTP responses: denied write intent makes zero calls, successful
 native artifact publication makes one, and replay makes no additional calls.
 This is offline integration coverage, not live provider/model qualification.
-The local artifact preparation/retrieval migration remains open.
+The local artifact workflow now prepares and executes explicit v2 manifests,
+publishes only facade-issued terminal artifacts, and exercises denied authority
+and uncertain-dispatch replay offline. This operator branch still awaits final
+integration verification; live useful-task qualification remains open.
 
 Next bounded outcome: an explicit effect-only launch mode consuming the existing
 issued host's native transport, with no review/revision construction or calls,
