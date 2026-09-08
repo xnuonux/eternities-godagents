@@ -35,7 +35,7 @@ Absence is only returned after the same admission/descriptor verification and
 phase materialization used by run, followed by the existing executor/transport's
 actual reconciliation. No missing workflow or mission file is an absence shortcut.
 
-- [ ] Write focused behavior tests. A fresh reconcile must prepare/reconcile but
+- [x] Write focused behavior tests. A fresh reconcile must prepare/reconcile but
   never execute; pending stays pending; a persisted completion reaches terminal
   evidence without execute. Reuse the same kernel for a following normal run to
   catch a leaked mode flag. Keep counters at the existing executor boundary:
@@ -51,9 +51,9 @@ assert.deepEqual(await kernel.reconcile(input), finished);
 assert.equal(calls.execute, 1);
 ```
 
-- [ ] Run `node --test tests/mission-review-kernel-reconciliation.test.mjs` and
+- [x] Run `node --test tests/mission-review-kernel-reconciliation.test.mjs` and
   retain the expected missing-method failures.
-- [ ] Extract the shared driver and add the absent branch immediately after
+- [x] Extract the shared driver and add the absent branch immediately after
   existing executor reconciliation, before `before-*-execute` or execute:
 
 ```js
@@ -66,10 +66,16 @@ if (reconciled.status === 'absent' && !mayExecute) {
   Pass `mayExecute` through the one existing prepared-phase call. Return
   `Object.freeze({ run: input => drive(input, true), reconcile: input => drive(input, false) })`.
   Keep unchanged input validation and all existing terminal and journal checks.
-- [ ] Run the new test and `tests/mission-review-kernel.test.mjs`. Add regression
+- [x] Run the new test and `tests/mission-review-kernel.test.mjs`. Add regression
   cases for descriptor drift, changed admission and malformed saved evidence;
   assert rejection rather than false absence and zero execute calls.
-- [ ] Commit the verified kernel slice without new certification claims.
+- [x] Commit the verified kernel slice without new certification claims.
+
+**Task-1 checkpoint:** seven initial RED cases failed on the missing method.
+An initial argument-placement error stopped normal runs; existing compatibility
+tests caught it. Forwarding the per-call flag at the actual execution boundary
+restored all 25 focused tests (7 new, 18 existing), exit 0, 9,132.7272 ms.
+Independent review cleared this slice. Tasks 2 and 3 remain unimplemented.
 
 ## Task 2: authenticated native-only reconciliation and issuance
 

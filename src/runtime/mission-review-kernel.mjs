@@ -273,7 +273,7 @@ export function createResumableMissionReviewKernel({
     await checkpoint(name, deepFreeze({ missionId, requestDigest }));
   }
 
-  async function executePrepared({ handle, evidence, phase, round, executor, descriptor }) {
+  async function executePrepared({ handle, evidence, phase, round, executor, descriptor, mayExecute }) {
     const prepared = preparedFor(evidence, phase, round);
     if (!prepared || prepared.result) throw new IntegrityError('mission recovery lacks its prepared phase');
     if (!same(prepared.descriptor, descriptor)) {
@@ -294,6 +294,10 @@ export function createResumableMissionReviewKernel({
       });
     }
     let result;
+    if (reconciled.status === 'absent' && !mayExecute) {
+      return deepFreeze({ status: 'absent', missionId: evidence.admission.mission.missionId,
+        phase, round, requestDigest: request.requestDigest });
+    }
     if (reconciled.status === 'completed') {
       result = reconciled.result;
       await mark(`after-${phaseLabel}-reconcile-completed`, evidence.admission.mission.missionId, request.requestDigest);
@@ -307,7 +311,7 @@ export function createResumableMissionReviewKernel({
     return null;
   }
 
-  async function run(input = {}) {
+  async function drive(input = {}, mayExecute) {
     exactKeys(input, [
       'authorityCeilingDigest', 'budgets', 'godskillsBinding', 'godskillsTrustPin', 'mission',
     ], 'mission review kernel input');
@@ -391,6 +395,7 @@ export function createResumableMissionReviewKernel({
           round,
           executor: executors[phase],
           descriptor: descriptors[phase],
+          mayExecute,
         });
         if (pending) return pending;
         continue;
@@ -432,5 +437,8 @@ export function createResumableMissionReviewKernel({
     throw new IntegrityError('mission review kernel transition ceiling exceeded');
   }
 
-  return Object.freeze({ run });
+  return Object.freeze({
+    run: input => drive(input, true),
+    reconcile: input => drive(input, false),
+  });
 }
