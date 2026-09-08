@@ -22,8 +22,13 @@ Read-only coordination with the Perseus task
   fallback for this subscription request. No Grok-through-ClovAPI HTTP route has
   been verified in this investigation.
 
-Current authentication freshness, subscription headroom and live availability
-remain unverified. No credentials were read or inference calls made here.
+At initial inspection, authentication freshness, subscription headroom and live
+availability were unverified. A subsequent bounded native probe refreshed the
+existing login and obtained one compatible response. See
+[the subscription probe receipt](2026-09-08-grok-subscription-readiness.md).
+Headroom remains unverified; this does not qualify the Godagent adapter or the
+two-arm comparison. The probe read the existing credential only through the
+native bridge and did not expose credential values.
 
 ## Integration implications
 
