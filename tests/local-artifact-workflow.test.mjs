@@ -16,8 +16,9 @@ import { setupAdmittedIdentity, expectedCreationPolicyDigest } from './helpers/a
 import { vesselRequest } from './helpers/identity-bound-mission-vessel-certification-fixture.mjs';
 import { validOpenAICompatiblePhasePolicy } from './helpers/openai-compatible-phase-policy-fixture.mjs';
 import { runLocalWorkflowCli } from '../examples/local-artifact-workflow/cli.mjs';
+import { prepareLocalArtifactEffectRequest } from '../src/host/structured-effect-producer.mjs';
 
-for (const scenario of ['authority-required', 'accepted', 'rejected', 'uncertain']) {
+for (const scenario of ['authority-required', 'accepted', 'rejected', 'uncertain', 'effect-only-prepare']) {
 test(`local workflow ${scenario}: preparation and real host execution`, async (t) => {
   const suffix = `local-workflow-${randomUUID()}`;
   const source = await setupAdmittedIdentity(null, suffix);
@@ -82,18 +83,37 @@ test(`local workflow ${scenario}: preparation and real host execution`, async (t
   };
   const { prepareLocalWorkflow } = await import('../examples/local-artifact-workflow/prepare.mjs');
   const { runLocalWorkflow } = await import('../examples/local-artifact-workflow/run.mjs');
+  if (scenario === 'effect-only-prepare') {
+    configuration.schemaVersion = 2;
+    const repositoryRoot = 'C:/dev/eternities-godskills/.worktrees/effect-only-v2';
+    configuration.effectOnly = { repositoryRoot,
+      producerDescriptorDigest: 'bd00071f046bd5f8612a65cfe674d417b8b21c3fb25bad41634bb734b08bfc26' };
+    for (const [field, kind] of [['routingExecutable', 'executable'], ['verifierExecutable', 'verifier']]) {
+      const path = `receipts/effect-only-${kind}-v2.json`;
+      const bytes = await readFile(join(repositoryRoot, path), 'utf8');
+      const receipt = JSON.parse(bytes);
+      configuration.effectOnly[field] = { protocolId: receipt.protocolId, entrypoint: receipt.entrypoint,
+        executableReceipt: { path, sha256: sha256Text(bytes), receiptDigest: receipt.receiptDigest } };
+    }
+    for (const key of ['releasePin', 'routingPin', 'maximumReviewMaterializedBytes', 'maximumRevisionMaterializedBytes']) delete configuration[key];
+    for (const key of ['maximumGodskillsDispatchBytes', 'maximumGodskillsCompletionBytes', 'maximumGodskillsResultBytes']) delete configuration.hostPolicy.limits[key];
+    configuration.request = prepareLocalArtifactEffectRequest({ ...request, schemaVersion: 2, routeMode: 'effect-only' },
+      { expectedProducerDescriptorDigest: configuration.effectOnly.producerDescriptorDigest });
+  }
   const noNetwork = t.mock.method(globalThis, 'fetch', async () => {
     throw new Error('preparation must not call a provider');
   });
   let prepared;
-  if (scenario === 'accepted') {
+  if (scenario === 'accepted' || scenario === 'effect-only-prepare') {
     const configPath = join(source.root, 'workflow-config.json');
     const relativeConfig = structuredClone(configuration);
     relativeConfig.providerPolicyPath = 'operator-provider-policy.json';
     for (const key of ['creationDir', 'promptArtifactPath', 'realmContractPath']) {
       relativeConfig.admission[key] = relative(source.root, relativeConfig.admission[key]);
     }
-    relativeConfig.releasePin.repositoryRoot = relative(source.root, relativeConfig.releasePin.repositoryRoot);
+    if (scenario === 'effect-only-prepare') {
+      relativeConfig.effectOnly.repositoryRoot = relative(source.root, relativeConfig.effectOnly.repositoryRoot);
+    } else relativeConfig.releasePin.repositoryRoot = relative(source.root, relativeConfig.releasePin.repositoryRoot);
     await writeFile(configPath, `${canonicalJson(relativeConfig)}\n`);
     let output = '';
     const exit = await runLocalWorkflowCli({ argv: ['prepare', '--config', configPath, '--workspace', workspace],
@@ -110,9 +130,28 @@ test(`local workflow ${scenario}: preparation and real host execution`, async (t
   assert.equal(sha256Text(manifestText), prepared.manifestDigest);
   const loaded = await loadIdentityHostPolicy(join(workspace, 'identity-policy.json'));
   assert.equal(loaded.digest, manifest.identityPolicyDigest);
-  assert.equal(verifyIdentityHostRequest(loaded.policy, request).mission.missionId, request.mission.missionId);
+  assert.equal(verifyIdentityHostRequest(loaded.policy, configuration.request).mission.missionId, request.mission.missionId);
   await assert.rejects(prepareLocalWorkflow({ workspace, configuration }));
   assert.equal(await readFile(prepared.manifestPath, 'utf8'), manifestText);
+  if (scenario === 'effect-only-prepare') {
+    assert.equal(manifest.schemaVersion, 2);
+    assert.equal(loaded.policy.schemaVersion, 2);
+    for (const key of ['godskillsRelease', 'activationClassifier', 'reviewExecutor', 'revisionExecutor']) {
+      assert.equal(Object.hasOwn(loaded.policy.runtime, key), false);
+    }
+    assert.equal(Object.hasOwn(manifest, 'maximumReviewMaterializedBytes'), false);
+    for (const [name, mutate] of [
+      ['bad-pin', c => { c.effectOnly.verifierExecutable.executableReceipt.sha256 = 'f'.repeat(64); }],
+      ['mixed-request', c => { c.request = request; }],
+      ['review-injection', c => { c.maximumReviewMaterializedBytes = 65_536; }],
+    ]) {
+      const changed = structuredClone(configuration); mutate(changed);
+      const invalidWorkspace = join(source.root, `invalid-${name}`);
+      await assert.rejects(prepareLocalWorkflow({ workspace: invalidWorkspace, configuration: changed }));
+      await assert.rejects(readFile(join(invalidWorkspace, 'workflow.json')), { code: 'ENOENT' });
+    }
+    return;
+  }
 
   const phases = [];
   const hostFactory = (options) => createProviderPhaseHost({

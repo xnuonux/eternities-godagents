@@ -6,7 +6,7 @@ import { sha256Text } from '../../src/core/digest.mjs';
 import { admitLocalCreation } from '../../src/genesis/local-admission.mjs';
 import { createProviderPhaseHost } from '../../src/host/provider-phase-host-sdk.mjs';
 import { createAdmittedProviderBackedIdentityLauncher } from '../../src/host/admitted-provider-backed-identity-launcher.mjs';
-import { loadIdentityHostPolicy } from '../../src/host/identity-policy.mjs';
+import { loadIdentityHostPolicy, verifyIdentityHostPolicyRouting } from '../../src/host/identity-policy.mjs';
 import { verifyIdentityHostRequest } from '../../src/host/admitted-sealed-identity-launch.mjs';
 import { verifyGodskillsRoutingExecutable } from '../../src/skills/routing-executable-verifier.mjs';
 import { createRoutingEvidenceActivationClassifier } from '../../src/skills/routing-evidence-activation-classifier.mjs';
@@ -27,8 +27,12 @@ function exact(value, keys) {
 
 export async function prepareLocalWorkflow({ workspace, configuration } = {}) {
   const config = structuredClone(configuration);
-  exact(config, ['admission', 'family', 'providerPolicyPath', 'releasePin', 'routingPin', 'request',
-    'hostPolicy', 'maximumReviewMaterializedBytes', 'maximumRevisionMaterializedBytes']);
+  const effectOnly = config?.schemaVersion === 2;
+  exact(config, effectOnly
+    ? ['schemaVersion', 'admission', 'family', 'providerPolicyPath', 'effectOnly', 'request', 'hostPolicy']
+    : ['admission', 'family', 'providerPolicyPath', 'releasePin', 'routingPin', 'request',
+      'hostPolicy', 'maximumReviewMaterializedBytes', 'maximumRevisionMaterializedBytes']);
+  if (effectOnly) exact(config.effectOnly, ['repositoryRoot', 'routingExecutable', 'verifierExecutable', 'producerDescriptorDigest']);
   exact(config.admission, ['creationDir', 'expectedPolicyDigest', 'expectedCreationBuildId',
     'promptArtifactPath', 'realmContractPath', 'instanceId', 'creatorRef', 'checkpointPurpose']);
   exact(config.hostPolicy, ['policyId', 'realmId', 'authority', 'hostContext', 'limits']);
@@ -64,35 +68,49 @@ export async function prepareLocalWorkflow({ workspace, configuration } = {}) {
     env: { [pins[config.family]]: sha256Text(canonicalJson(providerPolicy)) },
     runtimeRoot: join(admissionRoot, 'vessel', 'provider-phase', config.family),
   });
-  const launcher = await createAdmittedProviderBackedIdentityLauncher({
-    host,
-    releasePin: config.releasePin,
-    maximumReviewMaterializedBytes: config.maximumReviewMaterializedBytes,
-    maximumRevisionMaterializedBytes: config.maximumRevisionMaterializedBytes,
-    executorIdPrefix: 'local-workflow',
-  });
-  const dependencies = launcher.describe().providerBackedDependencies.dependencies;
-  const verifiedRoutingExecutable = await verifyGodskillsRoutingExecutable({
-    releasePin: config.releasePin, routingPin: config.routingPin,
-  });
-  const classifier = createRoutingEvidenceActivationClassifier({ verifiedRoutingExecutable, reviewAvailable: true });
-  const policy = {
-    schemaVersion: 1,
-    policyId: config.hostPolicy.policyId,
-    runtime: {
-      protocolId: 'eternities-admitted-sealed-identity-host-v1',
-      instanceId: config.admission.instanceId,
-      distributionDir: 'admission/distribution',
-      journalPath: 'admission/vessel/journal.jsonl',
-      snapshotPath: 'admission/vessel/snapshot.json',
-      hostAdapterId: config.request.task.hostAdapterId,
-      revocationEpoch: config.request.task.revocationEpoch,
+  let routingFields;
+  if (effectOnly) {
+    routingFields = {
+      effectOnlyRepositoryRoot: config.effectOnly.repositoryRoot,
+      routingExecutable: config.effectOnly.routingExecutable,
+      verifierExecutable: config.effectOnly.verifierExecutable,
+      effectProducerDescriptorDigest: config.effectOnly.producerDescriptorDigest,
+      nativeTransport: host.describe().descriptors.native,
+    };
+  } else {
+    const launcher = await createAdmittedProviderBackedIdentityLauncher({
+      host,
+      releasePin: config.releasePin,
+      maximumReviewMaterializedBytes: config.maximumReviewMaterializedBytes,
+      maximumRevisionMaterializedBytes: config.maximumRevisionMaterializedBytes,
+      executorIdPrefix: 'local-workflow',
+    });
+    const dependencies = launcher.describe().providerBackedDependencies.dependencies;
+    const verifiedRoutingExecutable = await verifyGodskillsRoutingExecutable({
+      releasePin: config.releasePin, routingPin: config.routingPin,
+    });
+    const classifier = createRoutingEvidenceActivationClassifier({ verifiedRoutingExecutable, reviewAvailable: true });
+    routingFields = {
       godskillsRelease: config.releasePin,
       routingExecutable: config.routingPin,
       activationClassifier: classifier.descriptor,
       nativeTransport: dependencies.nativeTransport,
       reviewExecutor: dependencies.reviewExecutor,
       revisionExecutor: dependencies.revisionExecutor,
+    };
+  }
+  const policy = {
+    schemaVersion: effectOnly ? 2 : 1,
+    policyId: config.hostPolicy.policyId,
+    runtime: {
+      protocolId: effectOnly ? 'eternities-admitted-sealed-identity-host-v2' : 'eternities-admitted-sealed-identity-host-v1',
+      instanceId: config.admission.instanceId,
+      distributionDir: 'admission/distribution',
+      journalPath: 'admission/vessel/journal.jsonl',
+      snapshotPath: 'admission/vessel/snapshot.json',
+      hostAdapterId: config.request.task.hostAdapterId,
+      revocationEpoch: config.request.task.revocationEpoch,
+      ...routingFields,
       limits: config.hostPolicy.limits,
     },
     realmId: config.hostPolicy.realmId,
@@ -104,10 +122,11 @@ export async function prepareLocalWorkflow({ workspace, configuration } = {}) {
   await writeFile(identityPolicyPath, identityText, { flag: 'wx', mode: 0o600 });
   const loaded = await loadIdentityHostPolicy(identityPolicyPath);
   verifyIdentityHostRequest(loaded.policy, config.request);
+  if (effectOnly) await verifyIdentityHostPolicyRouting(loaded.policy);
   const missionText = textOf(config.request);
   await writeFile(join(root, 'mission-request.json'), missionText, { flag: 'wx', mode: 0o600 });
   const manifest = {
-    schemaVersion: 1,
+    schemaVersion: effectOnly ? 2 : 1,
     status: 'prepared',
     workspaceRoot: await realpath(root),
     family: config.family,
@@ -115,8 +134,8 @@ export async function prepareLocalWorkflow({ workspace, configuration } = {}) {
     missionId: config.request.mission.missionId,
     genesisId: admission.genesisId,
     identityPolicyDigest: loaded.digest,
-    maximumReviewMaterializedBytes: config.maximumReviewMaterializedBytes,
-    maximumRevisionMaterializedBytes: config.maximumRevisionMaterializedBytes,
+    ...(!effectOnly ? { maximumReviewMaterializedBytes: config.maximumReviewMaterializedBytes,
+      maximumRevisionMaterializedBytes: config.maximumRevisionMaterializedBytes } : {}),
     inputs: {
       providerPolicy: sha256Text(providerText),
       identityPolicy: sha256Text(identityText),

@@ -75,6 +75,9 @@ write causes zero HTTP calls, an authorized native artifact causes one, and
 persisted replay causes no additional calls. These are offline tests, not live
 provider qualification or model-quality evidence. No API credits are consumed.
 
-The local-artifact CLI preparation and retrieval flow still targets v1. A full
-v2 operator workflow remains the next migration work. This SDK entrypoint alone
-does not complete that work.
+The local-artifact CLI can now prepare an inert v2 workspace using the explicit
+configuration described in the [workflow migration plan](superpowers/plans/2026-09-07-effect-only-local-workflow.md).
+Preparation verifies both source pins and the structured request before emitting
+a ready manifest. The run/retrieval flow still accepts only v1 manifests, so do
+not treat v2 preparation as an executable end-to-end workflow yet. The remaining
+execution and terminal-verification migration is open.
