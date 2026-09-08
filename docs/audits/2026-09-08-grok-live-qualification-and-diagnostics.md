@@ -163,3 +163,13 @@ SHA256 `02ff647c02532a8ec00e75dde30f0dce6907537dedce6f6f6732c72a562b3011`.
 
 The subsequent documentation-only closeout does not alter runtime or test code.
 Merge/push and post-merge targeted/published-head checks remain separate gates.
+
+Publication closeout: `164b31c2628869a63d6c472842ad0682c7a29f83` was fast-forward
+merged into main and pushed. Its runtime/test bytes equal tested `4cd4cfa`;
+the intervening commit changes documentation only. Post-merge adapter, shared
+durable-process and portable-host tests passed **46/46**, 7,803.5197 ms, exit 0.
+The published-head v2 test file then passed **3/3**, 54,695.3603 ms, exit 0,
+including stale/ref-drift rejection and unchanged v1 artifact checks. All gate
+processes are closed. This final documentation-only note records those results;
+it is not a new runtime or a new full-suite certification. The feature branch
+is retained, and the user's untracked `package-lock.json` is untouched.
