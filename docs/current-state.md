@@ -5,6 +5,16 @@ on `main`, reconciled with `origin/main`. Remote:
 `https://github.com/xnuonux/eternities-godagents.git`.
 This is a product and release-process review, not a new certification.
 
+Local-operator milestone, 2026-09-08: `756e872` is merged and pushed. A standalone
+first-party creator catalog now produces a fresh agent with an explicit local
+artifact Realm, exact pre-dispatch/pre-publication bindings, accepted artifact
+publication and fresh-process recovery. All 1,344 integration tests and 28 focused
+post-merge tests passed. A separate inert operator preparation verified 25 source
+pins with zero fetch attempts. See the [closeout and limits](audits/2026-09-08-local-artifact-realm-closeout.md).
+The fixture-only Realm boundary described in the historical preflight below is
+resolved for this explicit profile, not globally relaxed. Live second-provider
+and multi-step comparative quality remain open; Soul and Lunari remain excluded.
+
 Latest verified follow-up, 2026-09-08: runtime `61251c7` connects the native Grok
 subscription host to the full v2 local artifact workflow. All 1,314 integration
 tests passed. One real admitted scheduling task produced the independently

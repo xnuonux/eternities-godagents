@@ -61,7 +61,7 @@ const contract = {
 };
 ```
 
-- [ ] Write failing behavior tests for valid profile inspection, closed fields,
+- [x] Write failing behavior tests for valid profile inspection, closed fields,
   wrong version/profile/producer, malformed digests, negative/overlarge ceilings,
   false capabilities, absolute/traversing output roots and unsupported retention.
   Exercise a real distribution compile/load round-trip with a fresh matching
@@ -74,16 +74,16 @@ assert.deepEqual(first.manifest.compatibility.schemaRange, '1');
 await assert.rejects(() => createPersistentLocalRealm({ contract, statePath }));
 ```
 
-- [ ] Run `node --test tests/local-artifact-realm-contract.test.mjs` and record
+- [x] Run `node --test tests/local-artifact-realm-contract.test.mjs` and record
   failures caused by the missing profile support.
-- [ ] Implement the closed schema and dispatcher. Use it in both compilation
+- [x] Implement the closed schema and dispatcher. Use it in both compilation
   and loading; keep source/artifact hashing, projection and manifest checks
   otherwise unchanged. The old reader rejects Realm v2 because its embedded
   schema is unsupported, not because the distribution identity lacks hashing.
-- [ ] Run the new tests plus `tests/foundry.test.mjs` and
+- [x] Run the new tests plus `tests/foundry.test.mjs` and
   `tests/distribution-verification.test.mjs`. Verify unchanged legacy distribution
   bytes, source-hash drift rejection, and unsupported consumer rejection.
-- [ ] Commit the verified task without changing any historical receipt.
+- [x] Commit the verified task without changing any historical receipt.
 
 ## Task 2: bind the real artifact workflow before dispatch and publication
 
@@ -117,7 +117,7 @@ distribution location from the admitted workspace, not a caller-controlled new
 path. Bind its verified build ID and Realm source hash; do not duplicate the
 distribution or create a second artifact store.
 
-- [ ] Write failing tests for fresh protocol-3 preparation, stale Realm bytes,
+- [x] Write failing tests for fresh protocol-3 preparation, stale Realm bytes,
   wrong profile/build/producer, incompatible ceiling, and version downgrade.
   Assert zero dispatch for preflight failures and zero artifact publication for
   drift introduced while the controlled model operation is pending:
@@ -128,22 +128,22 @@ assert.equal(await artifactDirectoryExists(), false); // post-dispatch drift
 assert.equal(await originalEvidenceHash(), originalHash); // no rewritten history
 ```
 
-- [ ] Run `node --test tests/local-artifact-workflow-realm-binding.test.mjs` and
+- [x] Run `node --test tests/local-artifact-workflow-realm-binding.test.mjs` and
   verify the missing binding causes the intended failures.
-- [ ] Implement profile-3 capture during preparation and exact re-verification
+- [x] Implement profile-3 capture during preparation and exact re-verification
   before launch and before artifact publication. Retain old profile branches.
   Pass the narrower effective byte ceiling to the existing writer. Unsupported
   versions must fail before workspace creation where preflight has enough input.
-- [ ] Exercise real creator finalization and admission, a controlled accepted
+- [x] Exercise real creator finalization and admission, a controlled accepted
   result, actual artifact bytes, and a fresh-process recovery with no second
   controlled dispatch. Test that a v1/v2 workspace is neither reinterpreted nor
   silently upgraded. Test credential-field rejection and path-alias rejection
   remain intact through the new path.
-- [ ] Run the new tests, `tests/local-artifact-workflow.test.mjs`,
+- [x] Run the new tests, `tests/local-artifact-workflow.test.mjs`,
   `tests/local-workflow-artifact.test.mjs`,
   `tests/local-workflow-process-recovery.test.mjs`, and
   `tests/grok-local-artifact-workflow.test.mjs`.
-- [ ] Commit only after those checks pass; do not publish a live qualification.
+- [x] Commit only after those checks pass; do not publish a live qualification.
 
 **Implementation evidence:** the initial protocol-3 tests failed on absent
 workflow support, then on the old counter-only cortex projection. The controlled
@@ -176,19 +176,19 @@ additional cortex profiles require their own explicit mapping and qualification.
 Godskills capability policy remains separate from the host-pinned release and
 ephemeral mission stack. No skill bodies are copied.
 
-- [ ] Write a failing test that starts from the public creator CLI and standalone
+- [x] Write a failing test that starts from the public creator CLI and standalone
   operator library, reviews/finalizes a new selection, prepares a profile-3
   admission and runs the controlled publication/recovery path. No test-helper
   creation factory or precompiled fixture may supply the agent's inputs.
-- [ ] Run `node --test tests/operator-artifact-creation.test.mjs` and verify the
+- [x] Run `node --test tests/operator-artifact-creation.test.mjs` and verify the
   failure is the missing operator path, then add only its required source assets.
-- [ ] Verify mismatched source/policy/preview digests reject; independently read
+- [x] Verify mismatched source/policy/preview digests reject; independently read
   the resulting genome, admission, Realm binding and final artifact. Distinguish
   identity/presentation attributes from measured model quality.
-- [ ] Independently review the complete change. Run the full repository suite
+- [x] Independently review the complete change. Run the full repository suite
   at the final integration gate, preserve the log and source pins, reconcile
   upstream, merge under standing approval, rerun focused merged checks and push.
-- [ ] Perform a new operational preparation from the documented operator steps.
+- [x] Perform a new operational preparation from the documented operator steps.
   Keep it inert until a separate live study has an exact model/endpoint, budget,
   source freeze and quality oracle. Do not renew the exhausted MiniMax allowance.
 
@@ -200,3 +200,9 @@ not satisfied by this implementation's controlled responses. Universal product
 completion and comparative quality remain open afterward. No general Realm tools,
 old-agent migration, automatic retention enforcement, hosted tenancy, Soul or
 Lunari work belongs in this change.
+
+## Integrated closeout
+
+Completed and pushed at `756e872`: 1,344 full integration tests and 28 focused
+post-merge tests passed. Separate inert operator preparation and independent
+review completed. See [the exact evidence and remaining non-goals](../../audits/2026-09-08-local-artifact-realm-closeout.md).
