@@ -56,8 +56,14 @@ now checks a useful cleanup-plan task on synthetic inventory. An actual process
 kill after provider completion persistence was followed by fresh normal-workflow
 recovery, correct artifact publication and zero observed Grok relaunch attempts.
 This is one bounded recovery case, not multi-step planning, a native-quality
-advantage or a finished universal product. Next are second-host qualification and
-an operator path without fixture-derived preparation.
+advantage or a finished universal product. The later
+[standalone operator milestone](docs/audits/2026-09-08-local-artifact-realm-closeout.md)
+provides a first-party creator catalog and explicit local-artifact Realm without
+precompiled identities. The subsequent
+[authenticated reconciliation milestone](docs/audits/2026-09-08-authenticated-reconciliation-closeout.md)
+adds recovery without starting new inference, verified by 1,370 full-suite tests
+and actual killed-process cases. Next are dependent operator missions sharing
+one identity and aggregate budget, then broader matched model qualification.
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 

@@ -5,6 +5,17 @@ on `main`, reconciled with `origin/main`. Remote:
 `https://github.com/xnuonux/eternities-godagents.git`.
 This is a product and release-process review, not a new certification.
 
+Authenticated recovery milestone, 2026-09-08: runtime `6ca69d1` is merged and
+pushed. An issued native-only `reconcile` operation and workflow-3 CLI recover
+existing work without starting new inference, preserving identity, authority,
+Realm and output checks. All 1,370 integration tests and 31 merged focused tests
+passed; two actual killed-process cases preserved uncertainty or recovered saved
+completion with zero fresh-process network attempts. See the
+[closeout](audits/2026-09-08-authenticated-reconciliation-closeout.md).
+Next is a two-step dependent operator mission with one identity, bounded verified
+predecessor context and aggregate budgets, then matched live model comparisons.
+The dependent-mission adapter itself is not yet implemented.
+
 Local-operator milestone, 2026-09-08: `756e872` is merged and pushed. A standalone
 first-party creator catalog now produces a fresh agent with an explicit local
 artifact Realm, exact pre-dispatch/pre-publication bindings, accepted artifact
@@ -15,7 +26,7 @@ The fixture-only Realm boundary described in the historical preflight below is
 resolved for this explicit profile, not globally relaxed. Live second-provider
 and multi-step comparative quality remain open; Soul and Lunari remain excluded.
 
-Latest verified follow-up, 2026-09-08: runtime `61251c7` connects the native Grok
+Earlier live follow-up, 2026-09-08: runtime `61251c7` connects the native Grok
 subscription host to the full v2 local artifact workflow. All 1,314 integration
 tests passed. One real admitted scheduling task produced the independently
 verified optimum, published its artifact, and replayed in a fresh process with
@@ -33,8 +44,8 @@ unchanged runtime `9bfba9d`, completed a correct synthetic-inventory cleanup pla
 survived an actual host-process kill after provider completion persistence, and
 recovered/published through the normal workflow with zero observed Grok launch
 attempts. It does not qualify in-flight ambiguity, multi-step planning or native
-superiority. Next product work is second-host qualification and an operator path
-without fixture-derived preparation. MiniMax remains a candidate; its two latest
+superiority. Its then-next operator preparation gap was addressed by the later
+local-operator milestone above; second-host qualification remains open. MiniMax remains a candidate; its two latest
 attempts stopped at response-format boundaries without a scored quality result.
 The [baseline diagnostic follow-up](audits/2026-09-08-baseline-response-shape.md)
 adds redacted structural observations for future HTTP comparisons without

@@ -164,7 +164,7 @@ unchanged. CLI `reconcile` accepts the same manifest flags as `run`.
 - [x] Run new and existing local workflow tests plus the task-1/task-2 tests.
   Exercise real interruption after provider completion with fresh-process
   reconcile and no model/HTTP attempt; retain the actual stale-lock delay.
-- [ ] Obtain independent review of the full source range, fix confirmed findings,
+- [x] Obtain independent review of the full source range, fix confirmed findings,
   run one full integration gate with exact source/log pins, reconcile upstreams,
   fast-forward/merge under standing approval, run focused merged checks and push.
   Preserve old receipts and distinguish controlled evidence from live qualification.
@@ -179,6 +179,13 @@ attempts with and without synthetic credentials. The selected process gate
 passed 2 tests, exit 0, 63,061.6276 ms; it did not rerun the three historical `run`
 fault cases. Independent review cleared the full feature for final integration.
 The full suite, merged check and push are still pending at this checkpoint.
+
+**Final integration:** runtime `6ca69d1d6037f578c2cfb06a4b304664a6f5f1df`
+passed all 1,370 tests, zero failures/cancellations/skips/todos, exit 0,
+625,542.2587 ms. Upstream was reconciled, main fast-forwarded to the identical
+source, and 31 focused merged checks passed in 9,492.4753 ms. Main was pushed
+and its exact remote ref verified. See the [closeout](../../audits/2026-09-08-authenticated-reconciliation-closeout.md)
+for source/log hashes and remaining product boundaries. This bounded plan is done.
 
 ## Coverage and next boundary
 

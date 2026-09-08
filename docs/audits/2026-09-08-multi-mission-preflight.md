@@ -5,6 +5,11 @@ Inspected and exercised source:
 This is a controlled SDK characterization and source audit. It is not a live
 multi-step product certificate or an automatic-memory demonstration.
 
+Follow-up: the reconciliation prerequisite described below is implemented and
+merged at runtime `6ca69d1`; see its [verified closeout](2026-09-08-authenticated-reconciliation-closeout.md).
+The source characterization below retains its earlier `9da9575` scope. The
+dependent-mission adapter remains the next bounded product connection.
+
 ## Observed execution
 
 One fresh fixture-derived local-artifact admission was passed through the public
