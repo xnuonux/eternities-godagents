@@ -68,3 +68,36 @@ full-system native-versus-agent evaluation. Three-phase availability does not
 authorize unequal calls or budgets across study arms. Its failed visual-judge
 identity control is not repaired by these transport tests. Soul, Inspiration,
 Lunari integration, and universal product completion remain excluded.
+
+## Integrated gate closeout
+
+Tested and fast-forwarded runtime commit:
+`5d3d0ba2d4f54fb6b3cae79dbb5f5ce3da997e6c`.
+
+- Initial full spec-reporter run reported one ledger failure at 28,779.540 ms.
+  It was stopped before the reporter emitted its final failure stack, so the
+  cause is **unresolved**, not classified as a harmless flake. The preserved
+  incomplete log is
+  `D:/00-INDEX/operations/2026-09-08-controlled-comparison-integration/godagents-5d3d0ba-full-suite.log`,
+  SHA256 `3359faf618b22e70798151eafa2a44cb1b3c3ad66d134e2227125173e76a4db2`.
+- The exact isolated 69-receipt ledger test passed unchanged: 1 test,
+  123,535.0447 ms total, exit 0. No source repair or receipt regeneration followed.
+- The diagnostic full TAP rerun passed **1,300/1,300**, zero failures,
+  cancellations, skips or todos, 595,652.2659 ms, exit 0. This includes nested
+  tests; its top-level TAP plan is 1..1294, not the total test count.
+  Log: `D:/00-INDEX/operations/2026-09-08-controlled-comparison-integration/godagents-5d3d0ba-full-suite-tap-2.log`.
+  SHA256: `9cbc2cdb03273a816b54786335bfabad56b85fbed1b2bb9a7b02483fbe7aa80c`.
+  Its ledger test passed at 202,910.659 ms. Independent named-path inspection
+  found no concrete shared mutation or deterministic receipt defect. This
+  supports the successful gate, not an invented explanation for the first run.
+- Fast-forward `main` preserved the exact tested runtime. Post-merge Grok,
+  durable-process, and portable-host checks passed **37/37**, 7,660.0271 ms,
+  exit 0. The runtime was pushed to `origin/main`.
+- Published current-head-v2 verification passed **3/3**, 51,759.8055 ms,
+  exit 0, including the unchanged v1 cross-repository artifacts.
+
+The feature branch and all prior receipts remain preserved. The user-owned
+untracked `package-lock.json` was not staged or changed. Documentation-only
+closeout may follow this runtime commit; it is not a new runtime certificate.
+Next: bounded live adapter qualification, then separately authorized and
+preregistered matched useful-task studies with a qualified judging path.
