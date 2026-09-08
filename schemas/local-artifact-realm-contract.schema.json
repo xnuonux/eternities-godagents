@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "profile", "realmId", "version", "trustModel", "capabilities", "artifactStore", "privacy"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "profile": { "const": "local-artifact-v2" },
+    "realmId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z0-9][a-z0-9._:-]*$" },
+    "version": { "const": "1.0.0" },
+    "trustModel": { "const": "operator-local" },
+    "capabilities": {
+      "type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true,
+      "items": { "enum": ["artifact.publish", "artifact.verify"] }
+    },
+    "artifactStore": {
+      "type": "object", "additionalProperties": false,
+      "required": ["operation", "producerDescriptorDigest", "relativeRoot", "maximumBytes", "naming", "publication", "replay"],
+      "properties": {
+        "operation": { "const": "publish-local-artifact" },
+        "producerDescriptorDigest": { "type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[a-f0-9]{64}$" },
+        "relativeRoot": { "const": "artifacts" },
+        "maximumBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 },
+        "naming": { "const": "sha256-canonical-json" },
+        "publication": { "const": "exclusive-hard-link" },
+        "replay": { "const": "verify-identical-canonical-json" }
+      }
+    },
+    "privacy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["retention", "automaticDeletion"],
+      "properties": {
+        "retention": { "const": "operator-managed" },
+        "automaticDeletion": { "const": false }
+      }
+    }
+  }
+}

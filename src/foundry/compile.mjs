@@ -6,6 +6,7 @@ import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
 import { inspectPromptArtifact } from './prompt-os-adapter.mjs';
+import { verifyDistributionRealmContract } from '../realm/distribution-contract.mjs';
 
 function localPath(path) {
   return path instanceof URL ? fileURLToPath(path) : path;
@@ -81,7 +82,7 @@ export async function loadVerifiedDistribution(distributionDir) {
     throw new Error('distribution JSON artifact is not canonical');
   }
   assertSchema('agent-genome', genome);
-  assertSchema('realm-contract', realm);
+  verifyDistributionRealmContract(realm);
 
   const contents = {
     'agent-genome.json': genomeText,
@@ -110,7 +111,7 @@ export async function loadVerifiedDistribution(distributionDir) {
   const expectedCompatibility = {
     cortexAdapters: [...genome.cortex.allowedAdapters].sort(),
     realmIds: [realm.realmId],
-    schemaRange: '1',
+    schemaRange: '1', // Distribution container version; the embedded Realm is validated separately.
   };
   if (canonicalJson(manifest.compatibility) !== canonicalJson(expectedCompatibility)) {
     throw new Error('distribution compatibility mismatch');
@@ -155,7 +156,7 @@ export async function compileDistribution({
     inspectPromptArtifact(promptArtifactPath),
   ]);
   assertSchema('agent-genome', genome);
-  assertSchema('realm-contract', realm);
+  verifyDistributionRealmContract(realm);
 
   const realmCapabilities = new Set(realm.capabilities);
   for (const capability of genome.realm.requiredCapabilities) {

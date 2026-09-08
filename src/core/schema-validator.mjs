@@ -9,6 +9,7 @@ const schemaFiles = {
   'godagent-profile': 'godagent-profile.schema.json',
   'distribution-manifest': 'distribution-manifest.schema.json',
   'realm-contract': 'realm-contract.schema.json',
+  'local-artifact-realm-contract': 'local-artifact-realm-contract.schema.json',
   'realm-negotiation': 'realm-negotiation.schema.json',
   'realm-negotiated-action': 'realm-negotiated-action.schema.json',
   'realm-negotiated-consequence': 'realm-negotiated-consequence.schema.json',
