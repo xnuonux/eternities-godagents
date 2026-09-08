@@ -46,11 +46,37 @@ real credential was needed for these tests.
 Existing reviewer seat `01a07e22-93d9-7c82-981e-91ea6f493e98` reviewed the scoped
 diff. Review suggestions were tested instead of accepted as proof. The response
 snapshot gap was reproduced and fixed in this batch rather than deferred. Final
-review and the full integration gate must be recorded before merge completion.
+review of the fix reported no concrete blocking defect. Review did not replace
+the execution gates below.
+
+## Integrated verification
+
+Runtime commit `5a7a2b1fb083dec5617e95bd27f76c9faf782ea3`:
+
+- Full `node --test`: **1279/1279 passed**, zero failures, cancellations, skips
+  or todo; **612554.3852 ms**, exit 0. Process handle 69236 completed and closed.
+- Log: `D:/00-INDEX/operations/2026-09-08-controlled-comparison-integration/godagents-5a7a2b1-full-suite.log`.
+  SHA-256 `a1e72192e84cda365a210806e77c5cfa665e4d1ee7c517c3b166d946363c725a`.
+- Reconciled main and origin/main were equal before integration. Fast-forward
+  main from `72faed4` to the exact full-tested runtime commit; no source merge
+  changes.
+- Merged targeted command above plus
+  `tests/current-head-historical-compatibility.test.mjs`: **61/61 passed**,
+  zero failures/cancellations/skips/todo; **31265.886 ms**, exit 0. Handle 48942
+  completed and closed.
+- Pushed main. Both local and origin/main resolved to the exact runtime commit.
+- `node --test tests/cross-repository-current-head-v2.test.mjs` on the published
+  refs: **3/3 passed**, zero failures/cancellations/skips/todo;
+  **57657.7323 ms**, exit 0. Handle 93206 completed and closed.
+
+These gates certify their stated boundaries at the runtime commit, not every
+later documentation-only commit. No additional full suite was repeated after
+the fast-forward because the code tree was unchanged; merged runtime/historical
+and published-ref checks cover the changed ref-dependent context.
 
 ## Remaining proof
 
-Full-suite integration and merged-head checks remain pending at this checkpoint.
+Full-suite integration and merged-head checks are complete for this boundary.
 No historical receipts have been regenerated. Production Grok source/version
 binding, credential lifecycle, process controls, actual phase-port qualification,
 usage interpretation and live same-provider comparisons are still future work.

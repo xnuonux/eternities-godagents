@@ -49,15 +49,15 @@ accept the versioned union; callers need no separate resolution authority.
   prepared/attempt publication and existing failure/reconciliation ordering.
 - [x] Run new tests and existing `tests/anthropic-messages-phase-transport.test.mjs`
   and provider resolution tests selected from their actual filenames.
-- [ ] Independent review focused on uncertainty, adoption, mode binding and
+- [x] Independent review focused on uncertainty, adoption, mode binding and
   credential serialization. Resolve confirmed defects with regression tests.
 
 ## Task 2: Integration gate
 
-- [ ] Reconcile upstream and inspect exact diff. Run the full suite only at the
+- [x] Reconcile upstream and inspect exact diff. Run the full suite only at the
   final integration gate, preserve failures and new evidence, and inspect
   current-head source/certificate effects before merging or claiming completion.
-- [ ] Merge/push only verified work under standing approval. Report this boundary
+- [x] Merge/push only verified work under standing approval. Report this boundary
   separately from the still-unimplemented Grok transport and live comparison.
 
 ## Next milestone, not part of this boundary's completion claim
@@ -67,3 +67,12 @@ strict phase parsing, authenticated credential handling, bounded child cleanup,
 proven usage mapping and source-bound live admission. Then qualify a fresh fair
 same-provider native-versus-Godagent task comparison. A successful subprocess
 fixture cannot replace those deliverables.
+
+## Verified closeout
+
+Runtime commit `5a7a2b1fb083dec5617e95bd27f76c9faf782ea3` was fast-forwarded
+to main and pushed. Full suite 1279/1279; merged targeted/historical gate 61/61;
+published current-head v2 gate 3/3. See
+`docs/audits/2026-09-08-subprocess-phase-boundary.md` for exact commands, timings
+and the full-suite evidence digest. Subsequent closeout edits are documentation
+only and do not claim a separate runtime certification of their new commit ID.

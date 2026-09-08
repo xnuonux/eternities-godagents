@@ -102,3 +102,14 @@ receipt verification, reuse without redispatch, durable uncertainty after an
 interrupted subprocess, credential-safe evidence, and versioned raw usage
 mapping. A current runtime/compiler/source binding and a separately frozen fair
 comparison task remain prerequisites for the live two-arm quality claim.
+
+## Subsequent upstream check
+
+Pinned upstream documentation defines uncached input and separate cache buckets,
+and warns that built-in tool allowlisting does not itself remove MCP meta-tools.
+The earlier probe's tool-free configuration claim therefore does not establish
+complete MCP denial. Its synthetic task and retained observations are unchanged.
+See [upstream contract](https://github.com/xai-org/grok-build/blob/72a61251fcffb464bcc687aeb5a998e5a98ec0c9/crates/codegen/xai-grok-pager/docs/user-guide/14-headless-mode.md)
+and local `grok-upstream-72a6125/source-receipt.json` under the evidence root.
+The installed binary's signature verified as X.AI LLC, but its exact build-source
+mapping remains unverified. No new inference was used for these checks.
