@@ -89,6 +89,15 @@ rejected without inference. Development fixtures do not establish live quality.
 
 Create `scripts/evaluation/comparison.mjs` and `tests/evaluation-comparison.test.mjs`.
 
+The initial implementation is `runControlledComparison({ preparationPath,
+preparationDigest, fetchImpl })`. It admits only reserved test endpoints with
+a synthetic credential and labels its output `executionKind: "controlled"`.
+It runs the real admitted workflow and baseline with separate bounded transports
+and one fixed oracle. Artifact identity and normalized oracle-input digests are
+reported separately. A supplied test transport is trusted test code, not a
+sandbox. The live entrypoint still requires executing source-closure binding,
+current provider qualification, and explicit resource/spending authority.
+
 Interface: `runComparison({preparationPath, expectedPreparationDigest})`.
 The production entrypoint imports the fixed local host adapter and oracle
 registry. It accepts neither serialized callbacks nor arbitrary module paths.
