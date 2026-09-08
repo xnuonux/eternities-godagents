@@ -61,9 +61,9 @@ claimed expected name. Changing the pin changes the complete policy digest.
 - [x] Implement in `grok-cli-phase-policy.mjs`, `grok-cli-phase-protocol.mjs`,
   and the policy-bound verifier closure in `grok-cli-phase-transport.mjs`.
   Thirty adapter tests pass; original receipt representation remains unchanged.
-- [ ] Independent actual-diff review and commit, then one newly recorded native
+- [x] Independent actual-diff review and commit, then one newly recorded native
   compatibility qualification using production suite and exact new source pin.
-- [ ] Final integration gate before merge/push. Preserve all failed attempts.
+- [x] Final integration gate before merge/push. Preserve all failed attempts.
 
 No inferred alias table, fallback, arbitrary new model acceptance, billing
 claim, public model-equivalence assertion, quality pilot or architecture change.

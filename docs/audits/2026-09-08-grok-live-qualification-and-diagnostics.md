@@ -119,3 +119,47 @@ name consistency and all-three-phase auth-free replay. This is not automatic
 alias inference, an assertion of identical model weights, a billing guarantee,
 or live task-quality proof. Independent review and a new production-suite live
 qualification remain the next gates before final integration.
+
+## Qualification 4: production native phase passes
+
+Independent actual-diff review found no critical or important issue in the
+explicit deployment-pin change, committed as
+`4cd4cfae0dc0756cf0d5f19d609aa9060648f63c`. A new one-shot production-suite
+qualification used this exact clean tracked source and unchanged binary/bridge
+pins. The host policy explicitly selected reported `grok-4.6-build` while the
+request selected `grok-4.6`. Fresh native OIDC auth was available.
+
+Evidence root:
+`D:/00-INDEX/operations/2026-09-08-controlled-comparison-integration/grok-phase-live-qualification-4`.
+
+- one inference dispatch; no automatic retry or paid fallback; 5,596 ms
+- correct synthetic arithmetic artifact; native completion verified
+- normalized input 14,574, cached input 128, reasoning 27, visible output 16,
+  inclusive completion 43; raw total 14,617
+- requested and reported model names preserved separately in provider evidence
+- fresh-process reconciliation returned the same completion without inference
+- completion digest `71fc45792fd1eca06e426522e3eafc041a4822d1d42a9e9abb09447ddc1fb9fb`
+- result file SHA256 `6b3495b528d452708a43ca3d5d410b8c0d2621ffc873840cb484f8f6b32927cd`
+- intent file SHA256 `a112f96e4ff53e55886d7c3f34128da4788c3b75d883b8ed78e14a86f80f9098`
+- reconciliation file SHA256 `27c918c877cb1639675a1cd790c7fb62a415ab4207710d4f2ccb5d1ac82087e9`
+
+This qualifies the observed production native phase only. It still uses a real
+synthetic creation/cortex fixture with synthetic outer vessel/authority digest
+bindings, not a full admitted effect-only host launch. Review/revision live
+qualification, useful-task quality, cross-provider equivalence, remote physical
+exactly-once guarantees, and actual subscription charges remain unproven.
+
+## Full integration gate
+
+`node --test --test-reporter=tap` on runtime `4cd4cfa` passed **1,309/1,309**,
+zero failed/cancelled/skipped/todo, exit 0, **662,913.6182 ms**. The top-level
+TAP plan is 1..1303; the total includes nested tests. Both the 69-receipt ledger
+and release-lineage/environment-redirection checks passed. No historical
+receipt was regenerated or rewritten. The full gate process is complete.
+
+Log:
+`D:/00-INDEX/operations/2026-09-08-controlled-comparison-integration/godagents-4cd4cfa-full-suite-tap.log`.
+SHA256 `02ff647c02532a8ec00e75dde30f0dce6907537dedce6f6f6732c72a562b3011`.
+
+The subsequent documentation-only closeout does not alter runtime or test code.
+Merge/push and post-merge targeted/published-head checks remain separate gates.

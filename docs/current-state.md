@@ -74,6 +74,17 @@ behavior, authority ceilings and historical receipts. Do not infer provider
 selection, broaden authority, or use a paid fallback. Judge qualification and
 exact resource/contrast binding remain gates before claiming improvement.
 
+Native-phase follow-up, 2026-09-08: the [Grok live qualification and diagnostic
+audit](audits/2026-09-08-grok-live-qualification-and-diagnostics.md) records a
+successful production-suite native call and fresh-process reconciliation on
+runtime `4cd4cfa`. The host explicitly pins reported `grok-4.6-build` separately
+from requested `grok-4.6`; no model-equivalence claim follows. All 1,309 full
+integration tests passed. This clears native transport compatibility, not live
+review/revision, a full effect-only host launch, or task-quality improvement.
+The next bounded product work remains useful-task qualification through the
+existing operator path and a separately registered same-model baseline. MiniMax
+still needs a fresh bounded qualification; its old failure remains unclassified.
+
 Evaluation follow-up, 2026-09-07: [bounded diagnostic helpers](evaluation-diagnostics.md)
 provide offline-tested attempt preservation, baseline dispatch/validation and
 Godagent outcome accounting. They are not yet a source-gated live comparison CLI.
