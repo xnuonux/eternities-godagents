@@ -173,8 +173,19 @@
         "realmContractVersion": { "$ref": "#/$defs/identifier" }, "realmContractDigest": { "$ref": "#/$defs/digest" },
         "realmCapabilities": { "$ref": "#/$defs/identifierSet" },
         "resourceLimits": {
-          "type": "object", "additionalProperties": false, "required": ["maxActionsPerCycle"],
-          "properties": { "maxActionsPerCycle": { "type": "integer", "minimum": 1 } }
+          "oneOf": [
+            {
+              "type": "object", "additionalProperties": false, "required": ["maxActionsPerCycle"],
+              "properties": { "maxActionsPerCycle": { "type": "integer", "minimum": 1 } }
+            },
+            {
+              "type": "object", "additionalProperties": false, "required": ["profile", "maximumArtifactBytes"],
+              "properties": {
+                "profile": { "const": "local-artifact-v2" },
+                "maximumArtifactBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 }
+              }
+            }
+          ]
         },
         "activationRequirements": {
           "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true,

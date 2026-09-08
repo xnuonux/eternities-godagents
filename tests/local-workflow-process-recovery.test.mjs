@@ -7,6 +7,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { prepareRecoveryFixture } from './helpers/local-workflow-recovery-fixture.mjs';
+import { prepareArtifactRealmFixture } from './helpers/local-artifact-realm-fixture.mjs';
 
 const harness = fileURLToPath(new URL('./helpers/local-workflow-recovery-child.mjs', import.meta.url));
 const cli = fileURLToPath(new URL('../examples/local-artifact-workflow/cli.mjs', import.meta.url));
@@ -71,9 +72,10 @@ test('the recovery network witness detects and blocks intentional attempts', { t
   } finally { clearTimeout(timer); }
 });
 
-for (const boundary of ['dispatch-uncertain', 'completion-persisted']) {
-  test(`a killed workflow recovers safely from ${boundary} in a fresh process`, { timeout: 90_000 }, async (t) => {
-    const fixture = await prepareRecoveryFixture(t);
+for (const [boundary, profile] of [['dispatch-uncertain', 'legacy'], ['completion-persisted', 'legacy'],
+  ['completion-persisted', 'artifact-v3']]) {
+  test(`a killed ${profile} workflow recovers safely from ${boundary} in a fresh process`, { timeout: 90_000 }, async (t) => {
+    const fixture = profile === 'artifact-v3' ? await prepareArtifactRealmFixture(t) : await prepareRecoveryFixture(t);
     const originalManifest = await readFile(fixture.manifestPath, 'utf8');
     const originalInputs = await Promise.all(['mission-request.json', 'identity-policy.json', 'provider-policy.json']
       .map((name) => readFile(join(fixture.workspace, name), 'utf8')));

@@ -28,7 +28,8 @@ process.once('message', async ({ manifestPath, manifestDigest, boundary }) => {
           return new Response(canonicalJson({ id: 'controlled-recovery', object: 'chat.completion', model: body.model,
             choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant',
               content: canonicalJson({ content: 'two plus two is four.' }) } }],
-            usage: { prompt_tokens: 100, completion_tokens: 20, total_tokens: 120 },
+            usage: { prompt_tokens: 100, completion_tokens: 20, total_tokens: 120,
+              completion_tokens_details: { reasoning_tokens: 10 }, prompt_tokens_details: { cached_tokens: 0 } },
           }), { status: 200, headers: { 'content-type': 'application/json' } });
         },
       }),

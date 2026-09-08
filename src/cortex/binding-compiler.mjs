@@ -193,7 +193,9 @@ function compileFullEnvelope({ verified, request, bindingCandidateId }) {
       realmContractVersion: realm.version,
       realmContractDigest: sha256Value(realm),
       realmCapabilities: sorted(realm.capabilities),
-      resourceLimits: clone(realm.resources),
+      resourceLimits: realm.schemaVersion === 2
+        ? { profile: realm.profile, maximumArtifactBytes: realm.artifactStore.maximumBytes }
+        : clone(realm.resources),
       activationRequirements: [
         'verified-binding-registry',
         'exclusive-writer-lease',

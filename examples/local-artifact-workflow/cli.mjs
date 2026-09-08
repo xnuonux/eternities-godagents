@@ -47,7 +47,7 @@ export async function runLocalWorkflowCli({ argv, stdout = process.stdout, stder
       for (const key of ['creationDir', 'promptArtifactPath', 'realmContractPath']) {
         configuration.admission[key] = resolve(base, configuration.admission[key]);
       }
-      if (configuration.schemaVersion === 2) {
+      if ([2, 3].includes(configuration.schemaVersion)) {
         configuration.effectOnly.repositoryRoot = resolve(base, configuration.effectOnly.repositoryRoot);
       } else configuration.releasePin.repositoryRoot = resolve(base, configuration.releasePin.repositoryRoot);
       result = await prepareLocalWorkflow({ workspace: resolve(options['--workspace']), configuration });

@@ -11,6 +11,8 @@ import { loadIdentityHostPolicy, verifyIdentityHostPolicyRouting } from '../../s
 import { verifyIdentityHostRequest } from '../../src/host/admitted-sealed-identity-launch.mjs';
 import { verifyGodskillsRoutingExecutable } from '../../src/skills/routing-executable-verifier.mjs';
 import { createRoutingEvidenceActivationClassifier } from '../../src/skills/routing-evidence-activation-classifier.mjs';
+import { loadVerifiedDistribution } from '../../src/foundry/compile.mjs';
+import { captureArtifactRealmBinding, inspectArtifactRealmForHost } from './realm-binding.mjs';
 
 const pins = {
   'openai-compatible-chat-completions-v1': 'GODAGENT_PHASE_TRANSPORT_POLICY_SHA256',
@@ -29,7 +31,8 @@ function exact(value, keys) {
 
 export async function prepareLocalWorkflow({ workspace, configuration } = {}) {
   const config = structuredClone(configuration);
-  const effectOnly = config?.schemaVersion === 2;
+  const realmBound = config?.schemaVersion === 3;
+  const effectOnly = config?.schemaVersion === 2 || realmBound;
   exact(config, effectOnly
     ? ['schemaVersion', 'admission', 'family', 'providerPolicyPath', 'effectOnly', 'request', 'hostPolicy']
     : ['admission', 'family', 'providerPolicyPath', 'releasePin', 'routingPin', 'request',
@@ -59,11 +62,21 @@ export async function prepareLocalWorkflow({ workspace, configuration } = {}) {
   if (providerText !== textOf(providerPolicy)) throw new Error('provider policy must be canonical JSON');
   const realm = JSON.parse(await readFile(config.admission.realmContractPath, 'utf8'));
   if (realm.realmId !== config.hostPolicy.realmId) throw new Error('workflow Realm does not match the admission');
+  const realmInspection = realmBound ? inspectArtifactRealmForHost({ contract: realm,
+    maximumArtifactBytes: config.hostPolicy.limits.maxArtifactBytes + 1 }) : null;
+  if (!realmBound && realm.schemaVersion !== 1) throw new Error('legacy workflow requires the fixture Realm profile');
 
   // Exclusive creation protects existing operator data. Partial preparation is retained on failure.
   await mkdir(root, { mode: 0o700 });
   const admission = await admitLocalCreation({ ...config.admission, workspace: root });
   const admissionRoot = join(root, 'admission');
+  const realmBinding = realmBound ? captureArtifactRealmBinding({
+    verifiedDistribution: await loadVerifiedDistribution(join(admissionRoot, 'distribution')),
+    maximumArtifactBytes: config.hostPolicy.limits.maxArtifactBytes + 1,
+  }) : null;
+  if (realmBound && realmBinding.contractDigest !== realmInspection.contractDigest) {
+    throw new Error('artifact Realm source changed during preparation');
+  }
   const providerPolicyPath = join(root, 'provider-policy.json');
   await writeFile(providerPolicyPath, providerText, { flag: 'wx', mode: 0o600 });
   const host = await (grok ? createGrokCliPortablePhaseHost : createProviderPhaseHost)({
@@ -130,7 +143,7 @@ export async function prepareLocalWorkflow({ workspace, configuration } = {}) {
   const missionText = textOf(config.request);
   await writeFile(join(root, 'mission-request.json'), missionText, { flag: 'wx', mode: 0o600 });
   const manifest = {
-    schemaVersion: effectOnly ? 2 : 1,
+    schemaVersion: realmBound ? 3 : effectOnly ? 2 : 1,
     status: 'prepared',
     workspaceRoot: await realpath(root),
     family: config.family,
@@ -138,6 +151,7 @@ export async function prepareLocalWorkflow({ workspace, configuration } = {}) {
     missionId: config.request.mission.missionId,
     genesisId: admission.genesisId,
     identityPolicyDigest: loaded.digest,
+    ...(realmBound ? { realmBinding } : {}),
     ...(!effectOnly ? { maximumReviewMaterializedBytes: config.maximumReviewMaterializedBytes,
       maximumRevisionMaterializedBytes: config.maximumRevisionMaterializedBytes } : {}),
     inputs: {

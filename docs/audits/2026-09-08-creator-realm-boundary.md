@@ -1,8 +1,10 @@
 # Creator-to-use preflight and local-artifact Realm decision
 
 Source inspected and exercised: `77603139347840df8b2a005fae484f63afad9827`.
-This is a verified product-gap audit and prospective design, not a new runtime
-certificate. The implementation described below does not yet exist.
+This is a verified product-gap audit and architecture decision, not a new runtime
+certificate. The observations below describe the pinned source above. Subsequent
+implementation progress is tracked in the linked plan; it does not retroactively
+change this probe's results.
 
 ## Verified observations
 

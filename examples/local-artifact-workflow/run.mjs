@@ -10,6 +10,8 @@ import { writeAcceptedArtifact } from './artifact.mjs';
 import { createProviderPhaseHost } from '../../src/host/provider-phase-host-sdk.mjs';
 import { createGrokCliPortablePhaseHost } from '../../src/transports/grok-cli-phase-transport.mjs';
 import { createAdmittedEffectOnlyIdentityLauncher, assertAdmittedEffectOnlyTerminalResult } from '../../src/host/admitted-effect-only-identity-launcher.mjs';
+import { loadVerifiedDistribution } from '../../src/foundry/compile.mjs';
+import { verifyArtifactRealmBinding } from './realm-binding.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
 const pathIdentity = (path) => process.platform === 'win32' ? path.toLowerCase() : path;
@@ -20,6 +22,20 @@ async function boundedText(path) {
     throw new Error('workflow input is not a bounded regular file');
   }
   return readFile(path, 'utf8');
+}
+
+async function verifiedWorkflowDistribution(root) {
+  for (const directory of [join(root, 'admission'), join(root, 'admission', 'distribution')]) {
+    const stat = await lstat(directory);
+    if (!stat.isDirectory() || stat.isSymbolicLink() || pathIdentity(await realpath(directory)) !== pathIdentity(directory)) {
+      throw new Error('artifact Realm distribution directory is aliased');
+    }
+  }
+  const directory = join(root, 'admission', 'distribution');
+  for (const name of ['agent-genome.json', 'distribution-manifest.json', 'prompt-os-artifact.md', 'realm-contract.json']) {
+    await boundedText(join(directory, name));
+  }
+  return loadVerifiedDistribution(directory);
 }
 
 export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, env = process.env,
@@ -34,12 +50,14 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
   const text = await boundedText(path);
   if (sha256Text(text) !== expectedManifestDigest) throw new Error('workflow manifest digest changed');
   const manifest = JSON.parse(text);
-  const effectOnly = manifest.schemaVersion === 2;
+  const realmBound = manifest.schemaVersion === 3;
+  const effectOnly = manifest.schemaVersion === 2 || realmBound;
   const keys = ['schemaVersion', 'status', 'workspaceRoot', 'family', 'instanceId', 'missionId', 'genesisId',
-    'identityPolicyDigest', 'inputs', ...(!effectOnly ? ['maximumReviewMaterializedBytes', 'maximumRevisionMaterializedBytes'] : [])];
+    'identityPolicyDigest', 'inputs', ...(realmBound ? ['realmBinding'] : []),
+    ...(!effectOnly ? ['maximumReviewMaterializedBytes', 'maximumRevisionMaterializedBytes'] : [])];
   if (text !== `${canonicalJson(manifest)}\n`
       || canonicalJson(Object.keys(manifest).sort()) !== canonicalJson(keys.sort())
-      || ![1, 2].includes(manifest.schemaVersion) || manifest.status !== 'prepared'
+      || ![1, 2, 3].includes(manifest.schemaVersion) || manifest.status !== 'prepared'
       || pathIdentity(manifest.workspaceRoot) !== pathIdentity(root)
       || canonicalJson(Object.keys(manifest.inputs).sort()) !== '["identityPolicy","mission","providerPolicy"]') {
     throw new Error('workflow manifest is invalid');
@@ -56,6 +74,14 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
     const mission = JSON.parse(texts.mission);
     if (policy.runtime.instanceId !== manifest.instanceId || mission.mission.missionId !== manifest.missionId) {
       throw new Error('workflow identity or mission differs from preparation');
+    }
+    const verifyRealm = async () => verifyArtifactRealmBinding({
+      verifiedDistribution: await verifiedWorkflowDistribution(root), binding: manifest.realmBinding,
+      maximumArtifactBytes: policy.runtime.limits.maxArtifactBytes + 1,
+    });
+    if (realmBound) await verifyRealm();
+    else if (JSON.parse(await boundedText(join(root, 'admission', 'distribution', 'realm-contract.json'))).schemaVersion !== 1) {
+      throw new Error('legacy workflow requires the fixture Realm profile');
     }
     let rawResult;
     let effectReceipt;
@@ -128,13 +154,14 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
       return Object.freeze({ status: 'rejected', instanceId: manifest.instanceId,
         missionId: manifest.missionId, receipt, artifact: null, usage: result.mission.receipt.usage });
     }
+    const realmMaximumBytes = realmBound ? await verifyRealm() : Infinity;
     const directory = join(root, 'artifacts');
     try { await mkdir(directory, { mode: 0o700 }); } catch (error) { if (error.code !== 'EEXIST') throw error; }
     const artifact = await writeAcceptedArtifact({
       directory,
       artifact: result.mission.artifact,
       expectedDigest: receipt.acceptedArtifactDigest,
-      maximumBytes: policy.runtime.limits.maxArtifactBytes + 1,
+      maximumBytes: Math.min(policy.runtime.limits.maxArtifactBytes + 1, realmMaximumBytes),
     });
     return Object.freeze({ status: 'completed', instanceId: manifest.instanceId,
       missionId: manifest.missionId, receipt, artifact, usage: result.mission.receipt.usage });

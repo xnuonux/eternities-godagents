@@ -22,6 +22,10 @@
 
 ## Task 1: explicit embedded Realm profile and foundry compatibility
 
+**Checkpoint:** implemented in `ae3b9dc`. Eighteen focused foundry/profile tests
+passed, including the measured unchanged legacy build and manifest digests.
+Independent review cleared the additive embedded-profile/container distinction.
+
 **Files:** create `schemas/local-artifact-realm-contract.schema.json`,
 `src/realm/distribution-contract.mjs`, `tests/local-artifact-realm-contract.test.mjs`;
 modify `src/core/schema-validator.mjs` only to register the new schema and
@@ -85,7 +89,12 @@ await assert.rejects(() => createPersistentLocalRealm({ contract, statePath }));
 
 **Files:** create `examples/local-artifact-workflow/realm-binding.mjs`,
 `tests/local-artifact-workflow-realm-binding.test.mjs`; modify
-`examples/local-artifact-workflow/prepare.mjs` and `run.mjs`.
+`examples/local-artifact-workflow/prepare.mjs`, `run.mjs`, and `cli.mjs`.
+Also update `src/cortex/binding-compiler.mjs` and
+`schemas/cortex-identity-envelope.schema.json`: the real end-to-end test exposed
+an unconditional counter-resource projection. Realm v2 must project its actual
+artifact byte ceiling, not invent `maxActionsPerCycle`. The legacy shape remains
+unchanged. Recovery coverage uses test-only helpers under `tests/helpers/`.
 Keep the existing artifact writer and effect producer unless a regression proves
 an enforcement change is necessary.
 
@@ -135,6 +144,19 @@ assert.equal(await originalEvidenceHash(), originalHash); // no rewritten histor
   `tests/local-workflow-process-recovery.test.mjs`, and
   `tests/grok-local-artifact-workflow.test.mjs`.
 - [ ] Commit only after those checks pass; do not publish a live qualification.
+
+**Implementation evidence:** the initial protocol-3 tests failed on absent
+workflow support, then on the old counter-only cortex projection. The controlled
+workflow now publishes accepted bytes and verifies them in a fresh process with
+no repeated dispatch. Binding mutation, downgrade, incompatible ceiling, aliased
+distribution and reflected credentials reject. Realm drift during inference
+preserves the original prepared, attempt and completion files and publishes no
+artifact. An additional actual SIGKILL after persisted completion also recovered
+through the public CLI without a network attempt (31.6 seconds); the real stale
+lock delay was observed, not bypassed. These are controlled-provider results,
+not live-model quality evidence. The final task-2 gate passed all 35 tests with
+zero failures, skips or cancellations in 95.2 seconds. Independent follow-up
+review cleared the evidence preservation and actual-kill tests for commit.
 
 ## Task 3: a reviewed operator starter and integrated proof
 
