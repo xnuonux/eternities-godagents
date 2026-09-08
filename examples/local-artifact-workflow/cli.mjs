@@ -6,7 +6,7 @@ import { prepareLocalWorkflow } from './prepare.mjs';
 import { runLocalWorkflow } from './run.mjs';
 
 const help = 'prepare --config PATH --workspace PATH\nrun --manifest PATH --manifest-digest SHA256\n'
-  + 'prepare is inert. run may contact the explicitly configured provider. credentials come from its configured environment variable only.\n';
+  + 'prepare is inert. run may contact the explicitly configured provider. HTTP credentials come from the configured environment variable; Grok subscription credentials come from the auth file named in its pinned policy.\n';
 
 function parse(argv) {
   if (!Array.isArray(argv) || !['prepare', 'run'].includes(argv[0]) || argv.length !== 5) return null;

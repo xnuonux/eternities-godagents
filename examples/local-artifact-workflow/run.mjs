@@ -8,6 +8,7 @@ import { acquireFileLock } from '../../src/state/file-lock.mjs';
 import { launchProviderBackedIdentity, verifyProviderBackedIdentityTerminalResult } from '../../src/host/provider-backed-cli.mjs';
 import { writeAcceptedArtifact } from './artifact.mjs';
 import { createProviderPhaseHost } from '../../src/host/provider-phase-host-sdk.mjs';
+import { createGrokCliPortablePhaseHost } from '../../src/transports/grok-cli-phase-transport.mjs';
 import { createAdmittedEffectOnlyIdentityLauncher, assertAdmittedEffectOnlyTerminalResult } from '../../src/host/admitted-effect-only-identity-launcher.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -65,14 +66,16 @@ export async function runLocalWorkflow({ manifestPath, expectedManifestDigest, e
       const providerPins = {
         'openai-compatible-chat-completions-v1': 'GODAGENT_PHASE_TRANSPORT_POLICY_SHA256',
         'anthropic-messages-v1': 'GODAGENT_ANTHROPIC_PHASE_TRANSPORT_POLICY_SHA256',
+        'grok-cli-subscription-v1': 'GODAGENT_GROK_PHASE_POLICY_SHA256',
       };
       if (!Object.hasOwn(providerPins, manifest.family)) throw new Error('workflow provider family is unsupported');
-      const host = await (createProviderPhaseHostImpl ?? createProviderPhaseHost)({
-        family: manifest.family, policyPath: join(root, 'provider-policy.json'),
+      const grok = manifest.family === 'grok-cli-subscription-v1';
+      const host = await (grok ? createGrokCliPortablePhaseHost : (createProviderPhaseHostImpl ?? createProviderPhaseHost))({
+        ...(!grok ? { family: manifest.family } : {}), policyPath: join(root, 'provider-policy.json'),
         runtimeRoot: join(root, 'admission', 'vessel', 'provider-phase', manifest.family),
         env: { ...env, [providerPins[manifest.family]]: sha256Text(canonicalJson(JSON.parse(texts.providerPolicy))) },
       });
-      const launcher = createAdmittedEffectOnlyIdentityLauncher({ host, hostKind: 'provider' });
+      const launcher = createAdmittedEffectOnlyIdentityLauncher({ host, hostKind: grok ? 'portable' : 'provider' });
       rawResult = await launcher.launch({ admissionRoot: join(root, 'admission'),
         policyPath: join(root, 'identity-policy.json'), request: mission,
         identityPolicyDigest: manifest.identityPolicyDigest });

@@ -20,11 +20,11 @@ The example creates a fresh **inert admission** from these explicit inputs.
 
 The operator must choose and approve the exact provider, model, endpoint, task,
 authority, materialization ceilings, and token budgets. Neither prepare nor run
-selects these for you. The two registered provider families are
+selects these for you. The two registered HTTP provider families are
 `openai-compatible-chat-completions-v1` and `anthropic-messages-v1`.
 Provider policies use the existing [OpenAI-compatible schema](../schemas/openai-compatible-phase-transport-policy.schema.json)
 or [Anthropic schema](../schemas/anthropic-messages-phase-transport-policy.schema.json).
-Credentials belong only in the environment variable named by that policy, never in
+HTTP credentials belong only in the environment variable named by that policy, never in
 the configuration, mission, command line, or artifact.
 
 For an explicitly qualified endpoint that supports `reasoning_split`, the
@@ -113,6 +113,27 @@ infer or rewrite its effects. Remove the three `maximumGodskills*Bytes` fields
 from `hostPolicy.limits`; the bounded v2 source process contract supplies those
 fixed ceilings. Other host and native limits remain explicit.
 
+V2 also accepts `family: "grok-cli-subscription-v1"`. This selects the existing
+issued Grok portable host, not an HTTP endpoint or an arbitrary host loader.
+`providerPolicyPath` must contain the canonical
+`eternities-grok-cli-phase-transport-policy-v1` policy. Pin the exact binary and
+bridge SHA256 values, explicit model/usage profile and completion ceilings there.
+Its absolute `provider.authFile` points to native OIDC subscription credentials;
+the credential values never belong in the workflow configuration or command line.
+Preparation does not read that auth file or start an inference. Run uses the
+prepared policy digest and validates the existing program/auth boundaries.
+An optional `reportedModelId` is a separate exact accounting pin, not a model
+alias or permission to choose a fallback. See the
+[Grok qualification audit](audits/2026-09-08-grok-live-qualification-and-diagnostics.md).
+
+The Grok family is intentionally rejected for v1 before workspace creation or
+admission. This addition exposes only the native-only v2 operation. It does not
+qualify live adaptive review/revision or grant model tool access. The
+[Grok workflow tests](../tests/grok-local-artifact-workflow.test.mjs) use an actual
+child process returning synthetic provider data, real admission/publication and
+auth-free fresh-process CLI replay. Those are workflow tests, not model-quality
+evidence. HTTP families retain their existing v1/v2 behavior.
+
 The same prepare/run commands consume the versioned manifest. Preparation
 verifies source pins before publishing it. Run uses the issued-host v2 facade,
 and checks in-process terminal provenance before publishing an artifact. A
@@ -163,7 +184,7 @@ code loader, host factory, or automatic retry option is exposed on the CLI.
 
 Tests exercise real creation/admission, policy validation, SDK/launcher, persistent
 mission state, checked publication, permission stops, rejected review, and ambiguous
-transport recovery. Only provider network responses are controlled. A terminal
+transport recovery. Provider network responses or subprocess inference are controlled. A terminal
 acceptance receipt and a matching digest establish acceptance and exact bytes, not
 truth, usefulness, or superiority to an ordinary model answer.
 

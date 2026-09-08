@@ -5,6 +5,7 @@ import { canonicalJson } from '../../src/core/canonical-json.mjs';
 import { sha256Text } from '../../src/core/digest.mjs';
 import { admitLocalCreation } from '../../src/genesis/local-admission.mjs';
 import { createProviderPhaseHost } from '../../src/host/provider-phase-host-sdk.mjs';
+import { createGrokCliPortablePhaseHost } from '../../src/transports/grok-cli-phase-transport.mjs';
 import { createAdmittedProviderBackedIdentityLauncher } from '../../src/host/admitted-provider-backed-identity-launcher.mjs';
 import { loadIdentityHostPolicy, verifyIdentityHostPolicyRouting } from '../../src/host/identity-policy.mjs';
 import { verifyIdentityHostRequest } from '../../src/host/admitted-sealed-identity-launch.mjs';
@@ -14,6 +15,7 @@ import { createRoutingEvidenceActivationClassifier } from '../../src/skills/rout
 const pins = {
   'openai-compatible-chat-completions-v1': 'GODAGENT_PHASE_TRANSPORT_POLICY_SHA256',
   'anthropic-messages-v1': 'GODAGENT_ANTHROPIC_PHASE_TRANSPORT_POLICY_SHA256',
+  'grok-cli-subscription-v1': 'GODAGENT_GROK_PHASE_POLICY_SHA256',
 };
 const pathIdentity = (path) => process.platform === 'win32' ? path.toLowerCase() : path;
 const textOf = (value) => `${canonicalJson(value)}\n`;
@@ -37,6 +39,8 @@ export async function prepareLocalWorkflow({ workspace, configuration } = {}) {
     'promptArtifactPath', 'realmContractPath', 'instanceId', 'creatorRef', 'checkpointPurpose']);
   exact(config.hostPolicy, ['policyId', 'realmId', 'authority', 'hostContext', 'limits']);
   if (!Object.hasOwn(pins, config.family)) throw new Error('workflow provider family is unsupported');
+  const grok = config.family === 'grok-cli-subscription-v1';
+  if (grok && !effectOnly) throw new Error('Grok workflow requires effect-only v2');
   for (const path of [workspace, config.providerPolicyPath, config.admission.creationDir,
     config.admission.promptArtifactPath, config.admission.realmContractPath]) {
     if (typeof path !== 'string' || !isAbsolute(path) || /[\0\r\n]/.test(path)) {
@@ -62,8 +66,8 @@ export async function prepareLocalWorkflow({ workspace, configuration } = {}) {
   const admissionRoot = join(root, 'admission');
   const providerPolicyPath = join(root, 'provider-policy.json');
   await writeFile(providerPolicyPath, providerText, { flag: 'wx', mode: 0o600 });
-  const host = await createProviderPhaseHost({
-    family: config.family,
+  const host = await (grok ? createGrokCliPortablePhaseHost : createProviderPhaseHost)({
+    ...(!grok ? { family: config.family } : {}),
     policyPath: providerPolicyPath,
     env: { [pins[config.family]]: sha256Text(canonicalJson(providerPolicy)) },
     runtimeRoot: join(admissionRoot, 'vessel', 'provider-phase', config.family),

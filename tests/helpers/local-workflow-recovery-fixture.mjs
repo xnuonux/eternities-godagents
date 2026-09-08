@@ -13,7 +13,7 @@ import { vesselRequest } from './identity-bound-mission-vessel-certification-fix
 import { validOpenAICompatiblePhasePolicy } from './openai-compatible-phase-policy-fixture.mjs';
 import { prepareLocalArtifactEffectRequest } from '../../src/host/structured-effect-producer.mjs';
 
-export async function prepareRecoveryFixture(t, { effectOnlyTask } = {}) {
+export async function prepareRecoveryFixture(t, { effectOnlyTask, configure = () => {} } = {}) {
   const source = await setupAdmittedIdentity(null, `process-recovery-${randomUUID()}`);
   const workspace = join(source.root, 'operator-workspace');
   t.after(async () => {
@@ -83,6 +83,7 @@ export async function prepareRecoveryFixture(t, { effectOnlyTask } = {}) {
     configuration.request = prepareLocalArtifactEffectRequest({ ...request, schemaVersion: 2, routeMode: 'effect-only' },
       { expectedProducerDescriptorDigest: configuration.effectOnly.producerDescriptorDigest });
   }
+  await configure(configuration, workspace);
   const prepared = await prepareLocalWorkflow({ workspace, configuration });
   return { ...prepared, workspace, instanceId: source.admission.instanceId, missionId: request.mission.missionId };
 }
