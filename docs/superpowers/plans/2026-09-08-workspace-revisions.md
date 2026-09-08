@@ -87,6 +87,16 @@ assert.equal((await store.inspect(revision.revisionDigest)).revisionDigest, revi
 
 ## Task 2: revision and crash-state semantics
 
+Implemented and independently reviewed. The absent-revise assertion failed before
+implementation; the initial two tests then passed. Ten revision/recovery tests now
+pass (846.0033 ms). A digest-correct forged manifest exposed RegExp coercion of an
+array-valued parentDigest; the observed missing-rejection failure was corrected by
+requiring a string before matching the digest. Independent review cleared that
+follow-up and the API documentation. The final focused four-file gate passed all
+42 tests (2521.7947 ms), including existing file-lock and publication checks.
+These are real temporary-directory and constructed interrupted-state tests, not
+process-kill, power-loss, executor-isolation or live model-quality evidence.
+
 **Files:** extend the same module and test; add a separate
 `tests/workspace-revision-recovery.test.mjs` only for publication/lock cases.
 
@@ -94,7 +104,7 @@ assert.equal((await store.inspect(revision.revisionDigest)).revisionDigest, revi
 the same revision projection. `inspect` remains the only completion verification
 primitive; no new generic operation journal or execution result is introduced.
 
-- [ ] Write the one-file replacement RED test against an actual two-file parent:
+- [x] Write the one-file replacement RED test against an actual two-file parent:
 
 ```js
 const child = await store.revise({ parentDigest: parent.revisionDigest, changes: [
@@ -107,40 +117,40 @@ assert.deepEqual(await readFile(join(child.filesRoot, 'asset.bin')), assetBytes)
 assert.deepEqual(await readFile(join(sourceRoot, 'app.js')), originalBytes);
 ```
 
-- [ ] Observe RED for the absent `revise` method, then add full-parent verification,
+- [x] Observe RED for the absent `revise` method, then add full-parent verification,
   exact preimage comparison, copied unchanged siblings and deterministic child
   publication. Reject duplicate or unknown change paths before any publication.
-- [ ] Add stale-preimage, changed parent, occupied-conflict and concurrent-invoke
+- [x] Add stale-preimage, changed parent, occupied-conflict and concurrent-invoke
   tests. Assert actual unchanged parent/source bytes on every rejected write.
-- [ ] Create partial pending directories and incomplete completed directories as
+- [x] Create partial pending directories and incomplete completed directories as
   owned test fixtures. Reopen normally: pending stays inert/counts against budget;
   incomplete digest destinations reject, never get overwritten or reported done.
   Verify no automatic removal. This is interrupted-state recovery, not a claimed
   real process-kill or power-loss test.
-- [ ] Test published identical replay at a full maxRevisions budget, and rejection
+- [x] Test published identical replay at a full maxRevisions budget, and rejection
   of new work when pending/complete directories exhaust that budget. Use small
   fixture limits rather than generating hundreds of files.
   Independently sum actual pending/completed file lengths to check storedBytes;
   test byte exhaustion separately from slot exhaustion. Include manifest bytes,
   preserve partial staging files, and reject aliased or unexpected quota entries.
-- [ ] Run both targeted test files, independent review, correct evidenced defects
+- [x] Run both targeted test files, independent review, correct evidenced defects
   test-first, and commit the coherent revision slice.
 
 ## Task 3: exact integration gate and host handoff
 
 **Files:** add `docs/workspace-revisions.md`; update this plan and current-state.
 
-- [ ] Document actual APIs and proof boundaries, including pending retention,
+- [x] Document actual APIs and proof boundaries, including pending retention,
   no hostile-same-user isolation, no execution and no in-place project mutation.
   State the remaining actor/Realm/runner integration rather than calling this
   substrate a released coding agent.
-- [ ] Run targeted store and existing file-lock/publication tests selected from
+- [x] Run targeted store and existing file-lock/publication tests selected from
   their actual filenames. Inspect the exact implementation diff and source closure.
 - [ ] At final integration, freeze the candidate and run the complete suite
   serially once. Preserve failures, all historical receipts and exact logs.
   Review, reconcile origin, merge only the verified branch, run focused merged
   checks and push under standing approval. No cleanup of the user's untracked file.
-- [ ] Record the next host integration requirements from W-5 with explicit trusted
+- [x] Record the next host integration requirements from W-5 with explicit trusted
   executor authority. Do not connect an unqualified runner or change old actors'
   permissions just to demonstrate the store.
 

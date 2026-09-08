@@ -203,7 +203,7 @@ export async function createWorkspaceRevisionStore(input) {
     exact(value, ['schemaVersion', 'protocolId', 'storePolicyDigest', 'parentDigest', 'files', 'totalBytes', 'revisionDigest'], 'workspace revision');
     const { revisionDigest, ...unsigned } = value;
     requireValue(value.schemaVersion === 1 && value.protocolId === REVISION && value.storePolicyDigest === storePolicyDigest
-      && (value.parentDigest === null || DIGEST.test(value.parentDigest)) && revisionDigest === digest
+      && (value.parentDigest === null || (typeof value.parentDigest === 'string' && DIGEST.test(value.parentDigest))) && revisionDigest === digest
       && sha256Value(unsigned) === digest, 'workspace manifest digest or policy mismatch');
     requireValue(Array.isArray(value.files) && value.files.length > 0 && value.files.length <= limits.maxFiles, 'workspace manifest file count is invalid');
     checkedPaths(value.files);
@@ -274,6 +274,42 @@ export async function createWorkspaceRevisionStore(input) {
           contents.push({ path: row.path, bytes: found.bytes });
         }
         return publish(null, contents);
+      });
+    },
+    async revise(input) {
+      exact(input, ['parentDigest', 'changes'], 'workspace revision request');
+      requireValue(typeof input.parentDigest === 'string' && DIGEST.test(input.parentDigest), 'workspace parent digest is invalid');
+      requireValue(Array.isArray(input.changes) && input.changes.length > 0
+        && input.changes.length <= limits.maxFiles, 'workspace change count is invalid');
+      let replacementBytes = 0;
+      for (const row of input.changes) {
+        exact(row, ['path', 'expectedSha256', 'bytes'], 'workspace change');
+        checkedPath(row.path);
+        requireValue(typeof row.expectedSha256 === 'string' && DIGEST.test(row.expectedSha256), 'workspace change preimage is invalid');
+        requireValue(row.bytes instanceof Uint8Array && row.bytes.byteLength <= limits.maxFileBytes, 'workspace change bytes are invalid');
+        replacementBytes += row.bytes.byteLength;
+        requireValue(replacementBytes <= limits.maxTotalBytes, 'workspace replacement bytes exceed limit');
+      }
+      checkedPaths(input.changes);
+      // Copy only bounded byte views, including views backed by shared memory.
+      const request = { parentDigest: input.parentDigest, changes: input.changes.map(row =>
+        ({ path: row.path, expectedSha256: row.expectedSha256, bytes: new Uint8Array(row.bytes) })) };
+      return operation(async () => {
+        await accounting();
+        const parent = await verifyAt(join(revisions, request.parentDigest), request.parentDigest);
+        const changes = new Map(request.changes.map(row => [row.path, row]));
+        for (const change of changes.values()) {
+          const row = parent.files.find(row => row.path === change.path);
+          requireValue(row, 'workspace changed path is not admitted');
+          requireValue(row.sha256 === change.expectedSha256, 'workspace change preimage digest differs');
+        }
+        const contents = [];
+        for (const row of parent.files) {
+          const found = await fileBytes(await below(parent.filesRoot, row.path), limits.maxFileBytes);
+          requireValue(hash(found.bytes) === row.sha256, 'workspace parent bytes changed during revision');
+          contents.push({ path: row.path, bytes: changes.get(row.path)?.bytes ?? found.bytes });
+        }
+        return publish(request.parentDigest, contents);
       });
     },
     async inspect(digest) {

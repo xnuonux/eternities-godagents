@@ -5,6 +5,16 @@ on `main`, reconciled with `origin/main`. Remote:
 `https://github.com/xnuonux/eternities-godagents.git`.
 This is a product and release-process review, not a new certification.
 
+Workspace revision candidate, 2026-09-08: the internal host-only store now captures
+explicit pinned files, derives successor revisions without mutating parents or
+original projects, verifies actual bytes, and preserves bounded interrupted
+staging. Capture and revision slices passed independent review; the focused
+workspace, lock and publication gate passed 42 tests. The branch is awaiting the
+full serial integration gate and is not a merged release. See the
+[API and exact remaining host requirements](workspace-revisions.md) and
+[plan status](superpowers/plans/2026-09-08-workspace-revisions.md). This adds no
+execution, Workspace Realm authority, public SDK route, provider or Lunari use.
+
 Dependent-mission milestone, 2026-09-08: `fc21492` is merged and pushed. A fresh
 operator-created actor can run up to eight explicitly ordered native artifact
 missions with verified predecessor evidence, one identity and aggregate budgets.
