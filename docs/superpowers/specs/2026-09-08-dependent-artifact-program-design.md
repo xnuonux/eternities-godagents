@@ -106,7 +106,7 @@ identity and digests without content. No transcript or unrelated skill body is l
 A pure contract compiler derives the existing mission-program input:
 
 - actor comes from D-1, never the definition;
-- missionDigest binds definition plus the workflow/source binding;
+- missionDigest binds definition, the workflow/source binding, and the exact base request digest;
 - authorityCeilingDigest binds the existing host ceiling and requested authority;
 - each step kind is `artifact-mission` and its inputDigest binds only its immutable
   recipe and source binding, not an unknown future output;
