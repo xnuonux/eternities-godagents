@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "personality",
+  "id": "patient-skeptic",
+  "version": "1.0.0",
+  "provenance": {
+    "author": "eternities",
+    "source": "phase 3 alternative creator fixture"
+  },
+  "baseModuleRefs": [],
+  "compatibility": {
+    "requiresTags": [],
+    "providesTags": [
+      "personality.patient-skeptic"
+    ]
+  },
+  "capabilities": [],
+  "presentationTags": [
+    "patient",
+    "skeptical"
+  ],
+  "payload": {
+    "dimensions": {
+      "cautiousDaring": 28,
+      "literalPoetic": 38,
+      "orderlyImprovisational": 30,
+      "patientUrgent": 18,
+      "reservedExpressive": 34,
+      "skepticalTrusting": 20
+    }
+  }
+}

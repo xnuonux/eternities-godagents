@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "voice",
+  "id": "quiet-precise",
+  "version": "1.0.0",
+  "provenance": {
+    "author": "eternities",
+    "source": "phase 3 alternative creator fixture"
+  },
+  "baseModuleRefs": [],
+  "compatibility": {
+    "requiresTags": [],
+    "providesTags": [
+      "voice.quiet-precise"
+    ]
+  },
+  "capabilities": [],
+  "presentationTags": [
+    "precise",
+    "quiet"
+  ],
+  "payload": {
+    "tone": "measured",
+    "register": "direct",
+    "vocabularyProfile": "technical",
+    "pacing": "deliberate"
+  }
+}

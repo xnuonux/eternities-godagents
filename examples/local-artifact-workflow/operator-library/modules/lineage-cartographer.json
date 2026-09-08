@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "lineage",
+  "id": "synthetic-cartographer",
+  "version": "1.0.0",
+  "provenance": {
+    "author": "eternities",
+    "source": "phase 3 alternative creator fixture"
+  },
+  "baseModuleRefs": [],
+  "compatibility": {
+    "requiresTags": [],
+    "providesTags": [
+      "lineage.synthetic-cartographer"
+    ]
+  },
+  "capabilities": [
+    "reasoning"
+  ],
+  "presentationTags": [
+    "cartographer",
+    "synthetic"
+  ],
+  "payload": {
+    "attributeModifiers": {
+      "adaptability": 6,
+      "memoryDiscipline": 4,
+      "perception": 5,
+      "resilience": 4
+    },
+    "compatibleArchetypeTags": [
+      "research-strategist"
+    ],
+    "defaultOrganIds": [
+      "perception",
+      "planning"
+    ],
+    "defaultGodskillEntrypoints": [
+      "brainstorm",
+      "plan"
+    ]
+  }
+}

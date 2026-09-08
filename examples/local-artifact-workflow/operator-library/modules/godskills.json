@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "godskills",
+  "id": "portable-artifact",
+  "version": "1.0.0",
+  "provenance": {
+    "author": "eternities",
+    "source": "derived from canonical creation fixture godskills.json; artifact starter removes filesystem capability claims"
+  },
+  "baseModuleRefs": [],
+  "compatibility": {
+    "requiresTags": [
+      "organs.builder-core"
+    ],
+    "providesTags": [
+      "godskills.portable-artifact"
+    ]
+  },
+  "capabilities": [],
+  "presentationTags": [
+    "builder"
+  ],
+  "payload": {
+    "protocolId": "eternities-godskills-adapter-v1",
+    "profile": "all-rounder",
+    "preferredFamilies": [],
+    "prohibitedFamilies": [],
+    "prohibitedCapabilities": [],
+    "maxComposition": 3,
+    "entrypointIds": [
+      "brainstorm",
+      "plan",
+      "build"
+    ]
+  }
+}

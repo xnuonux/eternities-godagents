@@ -95,6 +95,66 @@ investigating the cause, not automatic cleanup of an existing identity.
 
 ## run and resume
 
+### Standalone operator starter and explicit Realm-bound v3
+
+The [operator library](../examples/local-artifact-workflow/operator-library/README.md)
+contains a small standalone first-party Evidence Steward preset. It supplies
+creation sources, not a compiled identity, credential, skill body or live-quality
+certificate. Its numeric attributes describe design preferences, not measured IQ.
+Soul is dormant and evolution is frozen. Its cortex declares OpenAI-compatible
+operation; other model families need separately compatible profiles.
+
+From the repository root, inspect the source policy and preset, then use the
+public creator interface. Hash the canonical JSON value, not the pretty file's
+raw bytes (the host-policy hash CLI validates a different policy schema):
+
+```powershell
+$starter = (Resolve-Path examples/local-artifact-workflow/operator-library).Path
+node --input-type=module -e "import {readFile} from 'node:fs/promises'; import {sha256Value} from './src/core/digest.mjs'; console.log(sha256Value(JSON.parse(await readFile(process.argv[1], 'utf8'))));" "$starter\creation-policy.json"
+```
+
+Use the returned policy digest as `<policy-sha256>` below. Choose fresh source
+and build destinations whose parent exists. These placeholder paths are examples,
+not permission to replace an existing directory.
+
+```powershell
+node src/creator/local-cli.mjs catalog --policy "$starter\creation-policy.json" --policy-digest <policy-sha256> --modules "$starter\modules" --expressions "$starter\expressions" --presets "$starter\presets"
+node src/creator/local-cli.mjs preview-preset --policy "$starter\creation-policy.json" --policy-digest <policy-sha256> --modules "$starter\modules" --expressions "$starter\expressions" --presets "$starter\presets" --preset preset:evidence-steward@1.0.0 --creator creator:operator
+node src/creator/local-cli.mjs finalize-preset --policy "$starter\creation-policy.json" --policy-digest <policy-sha256> --modules "$starter\modules" --expressions "$starter\expressions" --presets "$starter\presets" --preset preset:evidence-steward@1.0.0 --creator creator:operator --expected-preview-digest <reviewed-preview-sha256> --source-dir C:\agent-inputs\selected-source --output-dir C:\agent-inputs\creation
+```
+
+Review the preview before finalizing. Changed source, policy or preview pins
+reject. Keep `creationBuildId` from finalization. Use that fresh creation and
+policy digest in `admission`; choose a new `instanceId` and set `promptArtifactPath`
+and `realmContractPath` to this starter's `prompt-os.md` and `realm-contract.json`.
+
+V3 uses the exact effect-only v2 configuration fields below, except for explicit
+`configuration.schemaVersion: 3`. Its mission and host policy remain protocol 2.
+Set `hostPolicy.realmId: "operator-artifacts"`. The Realm has only
+`artifact.publish` and `artifact.verify`, not generic filesystem tools. The host
+must still grant the effects and authority required by the effect request.
+Choose the provider, endpoint, credentials, budgets and external Godskills pins
+separately; none are selected by the starter. Use the same prepare command.
+
+The prepared manifest's `realmBinding` pins the verified distribution build,
+Realm contract digest/profile and existing artifact producer digest. Run checks
+these before provider construction and again before publishing accepted bytes.
+The model sees the actual artifact byte ceiling, not a fabricated counter limit.
+The host's `maxArtifactBytes` plus the canonical newline must fit within the
+contract ceiling (65,536 bytes in this starter).
+
+Wrong pins, drift, aliases and attempted version downgrade fail closed. V1/v2
+retain their legacy Realm profile; do not edit an old workspace into v3. Prepare
+a new admission explicitly. No automatic retention deletion or old-agent migration
+is introduced. The distribution container remains v1; embedded Realm v2 and
+workflow v3 are separate versions.
+
+The [standalone creation test](../tests/operator-artifact-creation.test.mjs)
+starts from this source catalog through the public creator CLI, freshly admits,
+publishes a controlled accepted artifact, and replays in a new process. Actual
+SIGKILL recovery is also covered for workflow v3 by the process-recovery tests.
+Controlled responses establish plumbing and recovery, not provider quality.
+
 ### Explicit effect-only v2 configuration
 
 V1 remains unchanged. To prepare a native-only effect-bound mission, use these

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "policyId": "creation-ceiling-local-artifact-v1",
+  "allowedEffects": [
+    "local-read",
+    "local-write"
+  ],
+  "allowedCapabilities": [
+    "cortex.proposals",
+    "memory",
+    "planning",
+    "presentation.local",
+    "reasoning"
+  ],
+  "allowedPromptAdapters": [
+    "prompt-os-v1"
+  ],
+  "allowedCortexAdapters": [
+    "openai-compatible"
+  ],
+  "allowedGodskillsContracts": [
+    "eternities-portable-router-v1"
+  ],
+  "allowedGodskillEntrypoints": [
+    "brainstorm",
+    "build",
+    "plan"
+  ],
+  "allowedRealmCapabilities": [
+    "artifact.publish",
+    "artifact.verify"
+  ],
+  "maxGodskillsComposition": 3
+}

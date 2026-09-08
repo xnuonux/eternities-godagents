@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "cortex",
+  "id": "openai-compatible",
+  "version": "1.0.0",
+  "provenance": {
+    "author": "eternities",
+    "source": "canonical creation fixture"
+  },
+  "baseModuleRefs": [],
+  "compatibility": {
+    "requiresTags": [
+      "archetype.systems-architect"
+    ],
+    "providesTags": [
+      "cortex.openai-compatible"
+    ]
+  },
+  "capabilities": [
+    "cortex.proposals"
+  ],
+  "presentationTags": [
+    "replaceable-cortex"
+  ],
+  "payload": {
+    "allowedAdapters": [
+      "openai-compatible"
+    ],
+    "requiredCapabilities": [
+      "cortex.proposals"
+    ]
+  }
+}

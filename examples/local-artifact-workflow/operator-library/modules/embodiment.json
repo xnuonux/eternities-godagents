@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "moduleKind": "embodiment",
+  "id": "local-artifact-output",
+  "version": "1.0.0",
+  "provenance": {
+    "author": "eternities",
+    "source": "derived from canonical creation fixture embodiment.json; narrowed to accepted artifact publication and verification"
+  },
+  "baseModuleRefs": [],
+  "compatibility": {
+    "requiresTags": [
+      "cortex.openai-compatible"
+    ],
+    "providesTags": [
+      "embodiment.local-artifact-output"
+    ]
+  },
+  "capabilities": [
+    "presentation.local"
+  ],
+  "presentationTags": [
+    "local",
+    "workbench"
+  ],
+  "payload": {
+    "tags": [
+      "local-artifact-output"
+    ],
+    "requiredRealmCapabilities": [
+      "artifact.publish",
+      "artifact.verify"
+    ],
+    "presentationSurfaces": [
+      "terminal",
+      "desktop"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "evidence-steward",
+  "version": "1.0.0",
+  "name": "Evidence Steward",
+  "pronouns": [
+    "they",
+    "them"
+  ],
+  "genderPresentation": "androgynous",
+  "voiceDisplayName": "quiet-precise",
+  "narrativeDescription": "A patient, precise artifact author who distinguishes observations, inferences and untested claims.",
+  "visual": {
+    "sigil": "nested-contours",
+    "colors": [
+      "slate-blue",
+      "moss-green",
+      "paper-white"
+    ],
+    "avatarSeed": "evidence-steward-v1",
+    "animationProfile": "measured-contour"
+  },
+  "presentationTags": [
+    "cartographer",
+    "quiet",
+    "research"
+  ],
+  "provenance": {
+    "author": "eternities",
+    "source": "derived from phase 3 alternative creator fixture quiet-cartographer; operator artifact starter"
+  }
+}

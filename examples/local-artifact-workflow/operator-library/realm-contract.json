@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 2,
+  "profile": "local-artifact-v2",
+  "realmId": "operator-artifacts",
+  "version": "1.0.0",
+  "trustModel": "operator-local",
+  "capabilities": [
+    "artifact.publish",
+    "artifact.verify"
+  ],
+  "artifactStore": {
+    "operation": "publish-local-artifact",
+    "producerDescriptorDigest": "bd00071f046bd5f8612a65cfe674d417b8b21c3fb25bad41634bb734b08bfc26",
+    "relativeRoot": "artifacts",
+    "maximumBytes": 65536,
+    "naming": "sha256-canonical-json",
+    "publication": "exclusive-hard-link",
+    "replay": "verify-identical-canonical-json"
+  },
+  "privacy": {
+    "retention": "operator-managed",
+    "automaticDeletion": false
+  }
+}
