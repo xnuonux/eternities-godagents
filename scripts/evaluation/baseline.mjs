@@ -1,4 +1,7 @@
 import { runAttempt, readResponseJson, diagnosticFailure } from './attempt.mjs';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { responseShape } from './response-shape.mjs';
 
 // Caller supplies a ceiling-enforcing dispatch and an answer publisher/oracle.
 // There is no credential lookup, network implementation or retry in this module.
@@ -11,6 +14,10 @@ export async function runBaseline({ directory, model, maximumCompletionTokens,
   }
   return runAttempt(directory, async (journal) => {
     const { httpStatus, envelope } = await readResponseJson(journal, dispatch, maximumResponseBytes, assertResponseSafe);
+    // Separate from the numbered attempt journal; existing event ordering is unchanged.
+    // Exclusive persistence stops acceptance if evidence would be overwritten or lost.
+    await writeFile(join(directory, 'response-shape.json'), JSON.stringify(responseShape(envelope, model)) + '\n',
+      { flag: 'wx', flush: true });
     const choice = envelope?.choices?.[0];
     if (httpStatus < 200 || httpStatus >= 300 || envelope?.model !== model
         || !Array.isArray(envelope?.choices) || envelope.choices.length !== 1

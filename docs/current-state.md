@@ -26,6 +26,10 @@ attempts. It does not qualify in-flight ambiguity, multi-step planning or native
 superiority. Next product work is second-host qualification and an operator path
 without fixture-derived preparation. MiniMax remains a candidate; its two latest
 attempts stopped at response-format boundaries without a scored quality result.
+The [baseline diagnostic follow-up](audits/2026-09-08-baseline-response-shape.md)
+adds redacted structural observations for future HTTP comparisons without
+weakening acceptance or rerunning those closed attempts. It is not a new model
+qualification or runtime-quality result.
 The dated follow-ups below retain their historical scope rather than redefining
 past results as current product completion.
 
