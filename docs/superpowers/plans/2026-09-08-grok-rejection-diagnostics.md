@@ -31,10 +31,39 @@ failure receipts and recovery protocols remain unchanged.
   field; rejection leaves bound safe diagnostics and unchanged terminal replay.
 - [x] Add synchronous, bounded, provider-specific persistence in the suite.
   Test existing-file conflicts and symlink refusal without provider redispatch.
-- [ ] Independent review, targeted verification, commit. Only then consider a
+- [x] Independent review, targeted verification, commit. Only then consider a
   separately recorded diagnostic live attempt with a new explicit purpose and
   bounded envelope. Preserve qualification 1 permanently. Do not merge unverified
   behavior or claim the live deployment qualified.
 
 Non-goals: no full provider-output capture, new acceptance profile, generic
 telemetry framework, automatic retry, billing assumption, pilot, Soul or Lunari.
+
+## Evidence-driven follow-up: explicit reported deployment pin
+
+Diagnostic 2 on `23b4bbe` isolated usage-accounting rejection: one model row
+existed, but not under the requested `grok-4.6` name. Diagnostic 3 used a
+separately reviewed one-shot observation script, the same durable engine and
+unchanged acceptance codec. It observed the exact row `grok-4.6-build`, complete
+additive counters, one reported model call, and a correct synthetic arithmetic
+artifact. These are deployment observations, not proof of model equivalence.
+
+The bounded follow-up is an optional `provider.reportedModelId` policy pin,
+restricted to `grok-4.6` or the observed `grok-4.6-build`. Omission preserves the
+old exact-name policy. The request still selects `grok-4.6`; the receipt preserves
+the actual ledger key and separately records the reported name when different.
+The suite binds replay verification to the host policy, never to a receipt's
+claimed expected name. Changing the pin changes the complete policy digest.
+
+- [x] Red tests: explicit deployment policy admission and old-pin rejection;
+  explicit-name-only codec acceptance, receipt tamper/default rejection;
+  all-three-phase completion and auth-free replay under the new host pin.
+- [x] Implement in `grok-cli-phase-policy.mjs`, `grok-cli-phase-protocol.mjs`,
+  and the policy-bound verifier closure in `grok-cli-phase-transport.mjs`.
+  Thirty adapter tests pass; original receipt representation remains unchanged.
+- [ ] Independent actual-diff review and commit, then one newly recorded native
+  compatibility qualification using production suite and exact new source pin.
+- [ ] Final integration gate before merge/push. Preserve all failed attempts.
+
+No inferred alias table, fallback, arbitrary new model acceptance, billing
+claim, public model-equivalence assertion, quality pilot or architecture change.

@@ -57,3 +57,65 @@ with no critical or important finding; it did not rerun providers or tests.
 This is targeted diagnostic evidence, not a merged release gate or successful
 live deployment. A future diagnostic attempt requires a separate preserved
 purpose/envelope and newly pinned source. Qualification 1 must remain unchanged.
+
+## Diagnostic 2: exact rejection boundary
+
+The reviewed diagnostic implementation was committed as `23b4bbe`. A separate
+attempt under `grok-phase-live-diagnostic-2` used that exact source, unchanged
+acceptance, fresh native auth and matching program pins. It failed in 5,250 ms
+at `usage-accounting`. The safe diagnostic records one model ledger row but
+`requestedModelPresent: false` for `grok-4.6`; terminal JSON and artifact JSON
+were objects, stop reason was `end_turn`, and the reported round count was one.
+All six additive usage counters were present and numeric. No reported model
+label was retained by this projection. The result SHA256 is
+`6c22e78055a6ea782c6ba1f9d3dbfc7e87ef39b5ce6d86a1c281285dcae5d38b`.
+
+A non-inference `grok --no-auto-update models` check listed `grok-4.6` as
+default and `grok-4.5` as another available selection, with no reported-name
+mapping. A user-config warning was observed, but this listing did not run the
+isolated inference transport and does not establish its rejection cause.
+
+## Diagnostic 3: observed reported deployment
+
+A separately reviewed one-shot script under `grok-phase-live-diagnostic-3`
+used the same pinned source and durable engine with a local observation wrapper.
+It retained only bounded vendor-shaped model labels, known numeric counters,
+hash bindings and artifact shape/correctness facts. It did not persist raw
+provider text, hidden reasoning or arbitrary metadata. The wrapper did not
+change codec acceptance. Source/program pin checks were also placed before its
+read-only reconciliation mode after review found a provenance gap in that mode.
+
+One dispatch completed in 26,911 ms and was rejected by the unchanged codec.
+The actual row label was `grok-4.6-build`, with one reported model call and:
+
+- uncached input 14,440; cache read 128; cache creation 0
+- output 49, including reasoning 33; total 14,617
+- reported cost 0.00497046 USD; actual subscription charge remains unknown
+- exactly one artifact field, string content, arithmetic check correct
+
+Result SHA256:
+`232659897ed4d07e3d853d3e03ab2643db2882e24c96657433c4630992ad43f4`.
+Model-metadata file SHA256:
+`b6a2256a5f48df69bf2a56109a641fe08c1095f0327d5da120b47b86bd5db744`.
+Response digest:
+`8f5e842df4ad40f0572ccafb269205b2f66774fefeab272d55ae6de13565d28e`.
+
+All attempts remain separate and immutable. These later observations do not
+retroactively establish the unknown response contents of qualification 1.
+
+## Bounded compatibility change
+
+`provider.reportedModelId` becomes an optional exact host pin. Only `grok-4.6`
+and the observed `grok-4.6-build` are supported; omission retains the old exact
+`grok-4.6` requirement. The requested model does not change. New build receipts
+retain the real ledger key and carry a separate `reportedModelId`; legacy
+receipt shape stays unchanged. Replay verification is closed over host policy,
+not a receipt-supplied expected name. A changed pin requires a new policy digest.
+
+Three new tests first failed on missing policy/codec admission. The full targeted
+adapter group then passed 30/30, 7,578.8595 ms, exit 0. Tests cover pin changes,
+unknown names, default rejection, tampered/mismatched evidence, strict top-level
+name consistency and all-three-phase auth-free replay. This is not automatic
+alias inference, an assertion of identical model weights, a billing guarantee,
+or live task-quality proof. Independent review and a new production-suite live
+qualification remain the next gates before final integration.

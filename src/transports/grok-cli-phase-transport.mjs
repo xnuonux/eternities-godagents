@@ -49,7 +49,8 @@ export async function createGrokCliPhaseTransportSuite({policyPath,env,runtimeRo
   const phases=await createDurablePhaseOperationSuite({policy,policyDigest:digest,descriptors,runtimeRoot:root,
     credentialResolver:runner.credentialResolver,process:runner.process,
     compileRequest:compileGrokCliPhaseRequest,inspectResponse,
-    verifyProviderEvidence:verifyGrokCliProviderEvidence,clock,checkpoint,lockOptions,checkpointPrefix:'grok-cli-phase'});
+    verifyProviderEvidence:value=>verifyGrokCliProviderEvidence(value,{modelId:policy.provider.modelId,
+      reportedModelId:policy.provider.reportedModelId}),clock,checkpoint,lockOptions,checkpointPrefix:'grok-cli-phase'});
   async function createOperatorResolutionController({policyPath:resolutionPath,env:resolutionEnv}={}) {
     const loaded=await loadProviderPhaseResolutionPolicy({path:resolutionPath,env:resolutionEnv,
       transportPolicyDigest:digest,maximumProviderResponseBytes:policy.provider.maximumResponseBytes});

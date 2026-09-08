@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile, unlink, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { canonicalJson } from '../src/core/canonical-json.mjs';
+import { sha256Value } from '../src/core/digest.mjs';
 import { grokProcessFixture } from './helpers/grok-cli-process-fixture.mjs';
 import { nativeDispatch, reviewDispatch, revisionDispatch } from './helpers/openai-compatible-phase-operation-fixture.mjs';
 import { createGrokCliPhaseTransportSuite, createGrokCliPortablePhaseHost } from '../src/transports/grok-cli-phase-transport.mjs';
@@ -48,6 +50,26 @@ test('uncertain Grok subprocess remains pending across restart and never silentl
   assert.deepEqual(await restarted.native.reconcile(dispatch),{status:'pending'});
   await assert.rejects(restarted.native.execute(dispatch),{code:'operation-pending'});
   assert.equal(await f.calls(),1);
+});
+
+test('host-pinned build ledger survives durable completion and auth-free replay for every phase',async t=>{
+  const f=await grokProcessFixture(t,'build-ledger');
+  f.policy.provider.reportedModelId='grok-4.6-build';
+  await writeFile(f.policyPath,canonicalJson(f.policy)+'\n');
+  f.env.GODAGENT_GROK_PHASE_POLICY_SHA256=sha256Value(f.policy);
+  const suite=await createGrokCliPhaseTransportSuite(config(f));
+  const dispatches={native:await nativeDispatch(t,suite.descriptors.native),review:await reviewDispatch(suite.descriptors.review),revision:revisionDispatch(suite.descriptors.revision)};
+  const results={};
+  for(const phase of ['native','review','revision']) {
+    results[phase]=await suite[phase].execute(dispatches[phase]);
+    const evidence=JSON.parse(await readFile(join(f.root,'operations',phase,dispatches[phase].dispatchDigest,'provider-evidence.json'),'utf8'));
+    assert.equal(evidence.providerUsage.reportedModelId,'grok-4.6-build');
+    assert.equal(evidence.providerUsage.modelId,'grok-4.6');
+  }
+  await unlink(f.authPath);
+  const restarted=await createGrokCliPhaseTransportSuite(config(f));
+  for(const phase of ['native','review','revision']) assert.deepEqual(await restarted[phase].reconcile(dispatches[phase]),results[phase]);
+  assert.equal(await f.calls(),3);
 });
 test('reflected credentials become terminal sanitized failures without publication or retry',async t=>{
   const f=await grokProcessFixture(t,'secret');

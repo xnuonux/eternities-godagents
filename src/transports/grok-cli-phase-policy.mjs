@@ -30,8 +30,10 @@ function validate(p) {
       || typeof p.policyId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(p.policyId)) fail('policy-invalid');
   const v = p.provider;
   keys(v, ['transportKind', 'modelId', 'reasoningEffort', 'usageProfile', 'timeoutMs',
-    'maximumRequestBytes', 'maximumResponseBytes', 'binary', 'bridge', 'authFile']);
+    'maximumRequestBytes', 'maximumResponseBytes', 'binary', 'bridge', 'authFile',
+    ...(v && Object.hasOwn(v, 'reportedModelId') ? ['reportedModelId'] : [])]);
   if (v.transportKind !== 'subprocess-json-v1' || v.modelId !== 'grok-4.6'
+      || (Object.hasOwn(v, 'reportedModelId') && !['grok-4.6', 'grok-4.6-build'].includes(v.reportedModelId))
       || v.usageProfile !== 'grok-headless-additive-v1' || !['low', 'medium', 'high'].includes(v.reasoningEffort)
       || !absolute(v.authFile)) fail('policy-invalid');
   integer(v.timeoutMs, 5000, 240000);

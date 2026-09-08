@@ -143,3 +143,29 @@ test('rejected terminal reports a closed failure stage without raw provider text
     return true;
   });
 });
+
+test('a reported build deployment requires its exact host pin and stays distinct in replay evidence', async t => {
+  const dispatch = await nativeDispatch(t, descriptors.native);
+  const value = terminal({content:'artifact'});
+  value.modelUsage['grok-4.6-build'] = value.modelUsage['grok-4.6'];
+  delete value.modelUsage['grok-4.6'];
+  assert.throws(() => inspect('native', dispatch, value), {code:'response-invalid'});
+  const pinned = {...policy, provider:{...policy.provider, reportedModelId:'grok-4.6-build'}};
+  const result = inspect('native', dispatch, value, {policy:pinned});
+  assert.equal(result.providerUsage.modelId, 'grok-4.6');
+  assert.equal(result.providerUsage.reportedModelId, 'grok-4.6-build');
+  assert.equal(Object.hasOwn(result.providerUsage.raw.modelUsage, 'grok-4.6'), false);
+  assert.equal(result.providerUsage.raw.modelUsage['grok-4.6-build'].modelCalls, 1);
+  assert.throws(() => verifyGrokCliProviderEvidence(result.providerUsage), {code:'response-invalid'});
+  verifyGrokCliProviderEvidence(result.providerUsage, {reportedModelId:'grok-4.6-build'});
+  for (const mutate of [v=>{delete v.reportedModelId;}, v=>{v.reportedModelId='grok-4.5';},
+    v=>{v.raw.modelUsage['grok-4.6']=v.raw.modelUsage['grok-4.6-build'];}]) {
+    const tampered=structuredClone(result.providerUsage); mutate(tampered);
+    assert.throws(() => verifyGrokCliProviderEvidence(tampered,{reportedModelId:'grok-4.6-build'}), {code:'response-invalid'});
+  }
+  assert.throws(() => inspect('native',dispatch,terminal({content:'artifact'}),{policy:pinned}),{code:'response-invalid'});
+  value.model='grok-4.6';
+  assert.throws(() => inspect('native',dispatch,value,{policy:pinned}),{code:'response-invalid'});
+  value.model='grok-4.6-build';
+  assert.equal(inspect('native',dispatch,value,{policy:pinned}).providerUsage.modelAttribution,'top-level-and-per-model-ledger');
+});

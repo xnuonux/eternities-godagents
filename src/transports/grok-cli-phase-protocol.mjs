@@ -69,17 +69,18 @@ export function compileGrokCliPhaseRequest({ phase, dispatch, descriptor, policy
   return freeze({ body, bodyBytes, requestDigest: sha256Text(body) });
 }
 
-function evidenceFrom(envelope, modelId, maximumCompletionTokens) {
+function evidenceFrom(envelope, modelId, maximumCompletionTokens, reportedModelId = modelId) {
   if (!object(envelope) || modelId !== 'grok-4.6' || envelope.num_turns !== 1
-      || (Object.hasOwn(envelope, 'model') && envelope.model !== modelId)
+      || !['grok-4.6', 'grok-4.6-build'].includes(reportedModelId)
+      || (Object.hasOwn(envelope, 'model') && envelope.model !== reportedModelId)
       || !object(envelope.modelUsage) || Object.keys(envelope.modelUsage).length !== 1
-      || !object(envelope.modelUsage[modelId])) fail();
+      || !object(envelope.modelUsage[reportedModelId])) fail();
   for (const flag of ['usage_is_incomplete', 'cost_is_partial']) {
     if (Object.hasOwn(envelope, flag) && typeof envelope[flag] !== 'boolean') fail();
   }
   if (envelope.usage_is_incomplete === true || !object(envelope.usage)) fail();
   const u = envelope.usage;
-  const row = envelope.modelUsage[modelId];
+  const row = envelope.modelUsage[reportedModelId];
   if (Object.keys(u).some(k => !USAGE_KEYS.includes(k)) || Object.keys(row).some(k => !MODEL_KEYS.includes(k))) fail();
   const values = [u.input_tokens, u.cache_read_input_tokens, u.output_tokens, u.reasoning_tokens, u.total_tokens];
   if (!values.every(count) || u.reasoning_tokens > u.output_tokens
@@ -105,9 +106,10 @@ function evidenceFrom(envelope, modelId, maximumCompletionTokens) {
 
   const raw = selected(envelope, ['num_turns', 'model', 'usage_is_incomplete', 'cost_is_partial', 'total_cost_usd', 'total_cost_usd_ticks']);
   raw.usage = selected(u, USAGE_KEYS);
-  raw.modelUsage = { [modelId]: selected(row, MODEL_KEYS) };
+  raw.modelUsage = { [reportedModelId]: selected(row, MODEL_KEYS) };
   return freeze({
     usageProfile: PROFILE, modelId, raw,
+    ...(reportedModelId !== modelId ? { reportedModelId } : {}),
     modelAttribution: Object.hasOwn(envelope, 'model') ? 'top-level-and-per-model-ledger' : 'per-model-ledger-only',
     cacheCreationInputTokens: creation,
     cacheCreationOrigin: reportedCreation ? 'reported' : 'derived-from-total',
@@ -118,12 +120,14 @@ function evidenceFrom(envelope, modelId, maximumCompletionTokens) {
   });
 }
 
-export function verifyGrokCliProviderEvidence(value) {
+export function verifyGrokCliProviderEvidence(value, { modelId = 'grok-4.6', reportedModelId = modelId } = {}) {
   try {
-    if (!object(value) || value.usageProfile !== PROFILE) fail();
+    if (!object(value) || value.usageProfile !== PROFILE || value.modelId !== modelId) fail();
     // This closed numeric codec deliberately handles provider token-counter
     // names rejected by the generic credential-shaped-key heuristic.
-    const rebuilt = evidenceFrom(value.raw, value.modelId, MAX_TOKENS);
+    // The host supplies the expected reported deployment, never the receipt.
+    // Default verification retains the original exact-model contract.
+    const rebuilt = evidenceFrom(value.raw, modelId, MAX_TOKENS, reportedModelId);
     if (canonicalJson(rebuilt) !== canonicalJson(value)) fail();
     return rebuilt;
   } catch { fail(); }
@@ -149,7 +153,7 @@ export function inspectGrokCliPhaseResponse({ phase, dispatch, descriptor, polic
     if (!positive(policy.phases?.[phase]?.maximumCompletionBytes)
         || Buffer.byteLength(canonicalJson(content), 'utf8') > policy.phases[phase].maximumCompletionBytes) fail();
     stage = 'usage-accounting';
-    const providerUsage = evidenceFrom(envelope, policy.provider.modelId, dispatch.maxCompletionTokens);
+    const providerUsage = evidenceFrom(envelope, policy.provider.modelId, dispatch.maxCompletionTokens, policy.provider.reportedModelId);
     stage = 'phase-contract';
     const completion = buildProviderNeutralPhaseCompletion({ phase, dispatch, descriptor, content,
       usage: providerUsage.normalized, startedAt, completedAt });

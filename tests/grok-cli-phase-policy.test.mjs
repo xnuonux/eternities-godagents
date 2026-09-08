@@ -46,6 +46,22 @@ test('noncanonical, oversized, missing and relative policy paths fail closed', a
   await assert.rejects(loadGrokCliPhasePolicy({ path: 'policy.json' }), { code: 'policy-integrity' });
 });
 
+test('reported deployment name is an explicit digest-changing pin, not an inferred alias', async t => {
+  const f = await fixture(t);
+  const original = await f.load();
+  const p = structuredClone(f.policy);
+  p.provider.reportedModelId = 'grok-4.6-build';
+  const loaded = await f.load(p);
+  assert.equal(loaded.policy.provider.modelId, 'grok-4.6');
+  assert.equal(loaded.policy.provider.reportedModelId, 'grok-4.6-build');
+  assert.notEqual(loaded.digest, original.digest);
+  await assert.rejects(f.load(p, `${canonicalJson(p)}\n`, original.digest), { code: 'policy-integrity' });
+  for (const invalid of ['grok-4.5', 'grok-4.6-unknown', '', null, ['grok-4.6-build']]) {
+    p.provider.reportedModelId = invalid;
+    await assert.rejects(f.load(p), { code: 'policy-invalid' });
+  }
+});
+
 test('policy rejects paid routes, unpinned programs, unsupported semantics and excessive budgets', async t => {
   const f = await fixture(t);
   const mutations = [
