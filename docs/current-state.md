@@ -33,6 +33,14 @@ qualification or runtime-quality result.
 The dated follow-ups below retain their historical scope rather than redefining
 past results as current product completion.
 
+Creator-to-use preflight, 2026-09-08: a fresh public-creator selection finalized
+and verified without a precompiled agent, but the distribution boundary still
+requires a fixture-local, test-only Realm. The [reproduced boundary and additive
+design](audits/2026-09-08-creator-realm-boundary.md) identify the next implementation
+milestone: a real local-artifact profile bound to the existing publisher, not a
+global relaxation of fixture semantics. No new admission or provider call was
+made, and the first-party catalog sources still carry fixture provenance.
+
 Integrity follow-up, 2026-09-07: the bounded compatibility and immutability
 repair at `5e82afe7a967e7afa2c4a3a4e2cab24b7be67d43` passed all 1,119
 integration tests and independent review with no blocking findings. The
