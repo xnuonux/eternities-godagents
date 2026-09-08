@@ -62,8 +62,13 @@ provides a first-party creator catalog and explicit local-artifact Realm without
 precompiled identities. The subsequent
 [authenticated reconciliation milestone](docs/audits/2026-09-08-authenticated-reconciliation-closeout.md)
 adds recovery without starting new inference, verified by 1,370 full-suite tests
-and actual killed-process cases. Next are dependent operator missions sharing
-one identity and aggregate budget, then broader matched model qualification.
+and actual killed-process cases. The
+[dependent artifact program](docs/audits/2026-09-08-dependent-artifact-program-closeout.md)
+now joins up to eight explicitly ordered native missions under one identity,
+verified predecessor context and aggregate budgets. It passed 1,406 full-suite
+tests and 48 merged focused tests, including controlled real-process recovery.
+This host publishes artifacts; it does not yet edit and test an app. Broader
+matched model qualification and useful local tool execution remain open.
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 

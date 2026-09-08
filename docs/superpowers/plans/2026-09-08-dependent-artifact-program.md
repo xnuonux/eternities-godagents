@@ -304,9 +304,12 @@ review-derived terminal rejection is not reachable in this profile. Routing
 mapping of an authenticated `rejected` outcome is implemented but is not claimed
 as tested native rejection. No fabricated owner or receipt substitutes for proof.
 
-Task 5 remains open: fresh public-creator program, real process interruption,
-full integration/review/merged gate and release documentation. No live call or
-credential lookup against a user's provider occurred in Task 4.
+Task-5 source and controlled proof are complete at `fc21492`. The frozen candidate
+passed all 1,406 full-suite tests, including the historical ledger and lineage.
+The real public-creator interruption gate passed three tests; the merged focused
+gate passed 48. See the [closeout](../../audits/2026-09-08-dependent-artifact-program-closeout.md)
+for exact evidence, the preserved interrupted parallel run and release scope.
+No live call or credential lookup against a user's provider occurred.
 
 **Files:** add `tests/artifact-program-process-recovery.test.mjs` and its owned
 child helper; reuse/refactor the public creator setup in
@@ -314,22 +317,28 @@ child helper; reuse/refactor the public creator setup in
 identity. Update `docs/local-artifact-workflow.md`, current-state and README with
 exact results/limits; add one closeout under `docs/audits`.
 
-- [ ] Public creator finalizes fresh standalone operator sources, prepares one
+- [x] Public creator finalizes fresh standalone operator sources, prepares one
   workflow/program and completes two dependent missions. Assert exact identity
   bindings, accepted outputs, total actual tokens/bytes, distinct deterministic
   mission IDs and immutable root/parent records.
-- [ ] Kill an owned child after first mission completion persistence but before
+- [x] Kill an owned child after first mission completion persistence but before
   publication/program commit; recover in a fresh process with the real 30-second
   lock delay. No repeat first inference; second mission receives the verified parent.
   Separately kill during an uncertain second call and prove recovery stays pending
   without another physical call. Observe network attempts with the existing witness.
-- [ ] Independent review of the full change range, targeted regression checks,
+- [x] Independent review of the full change range, targeted regression checks,
   freeze feature commit, full suite and historical ledger/lineage, reconcile origin,
   merge verified branch, focused merged checks and push exact main ref. Keep failed
   trial evidence, no regenerated historical receipts or claim of live superiority.
-- [ ] Record the next matched live comparison separately. Both arms receive the
+- [x] Record the next matched live comparison separately. Both arms receive the
   same context, previous result, durable transcript access, tools and model-specific
   budget. This plan does not renew MiniMax's exhausted allowance or qualify ClovAPI.
+
+Next-study preparation is recorded in the closeout, with the detailed read-only
+preflight under its evidence root. It is not a frozen or executed experiment.
+The current host has no app-edit/test tool loop, and the supplied known-defect
+candidate is ineligible for a fresh held-out quality claim. Do not silently
+substitute artifact acceptance for actual product usefulness.
 
 ## Coverage and completion
 

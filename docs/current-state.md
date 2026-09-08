@@ -5,6 +5,18 @@ on `main`, reconciled with `origin/main`. Remote:
 `https://github.com/xnuonux/eternities-godagents.git`.
 This is a product and release-process review, not a new certification.
 
+Dependent-mission milestone, 2026-09-08: `fc21492` is merged and pushed. A fresh
+operator-created actor can run up to eight explicitly ordered native artifact
+missions with verified predecessor evidence, one identity and aggregate budgets.
+The full serial gate passed 1,406 tests and the merged focused gate passed 48;
+real process-kill tests recover persisted work without repeating first inference
+and preserve uncertainty during a later dispatch. See the
+[closeout](audits/2026-09-08-dependent-artifact-program-closeout.md).
+This closes the dependent artifact adapter gap below, not universal agent-product
+completion. The reference host still publishes JSON artifacts rather than editing
+and testing an app. An eligible real-task comparison and the missing local tool
+connection remain next; no live superiority or Soul/Lunari readiness is claimed.
+
 Authenticated recovery milestone, 2026-09-08: runtime `6ca69d1` is merged and
 pushed. An issued native-only `reconcile` operation and workflow-3 CLI recover
 existing work without starting new inference, preserving identity, authority,
@@ -12,9 +24,8 @@ Realm and output checks. All 1,370 integration tests and 31 merged focused tests
 passed; two actual killed-process cases preserved uncertainty or recovered saved
 completion with zero fresh-process network attempts. See the
 [closeout](audits/2026-09-08-authenticated-reconciliation-closeout.md).
-Next is a two-step dependent operator mission with one identity, bounded verified
-predecessor context and aggregate budgets, then matched live model comparisons.
-The dependent-mission adapter itself is not yet implemented.
+Its then-next dependent-mission adapter is implemented by the milestone above.
+Matched live model comparisons remain separate qualification work.
 
 Local-operator milestone, 2026-09-08: `756e872` is merged and pushed. A standalone
 first-party creator catalog now produces a fresh agent with an explicit local
