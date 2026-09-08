@@ -21,6 +21,24 @@
 
 ## Task 1: capture and verified inspection
 
+Task 1 verified on `feat/workspace-revisions`, design commit `ca29041`.
+The initial four real-directory tests failed on the missing API, then passed
+against the first capture/inspection implementation. A fifth test reproduced
+acceptance of an unlisted empty directory; explicit expected-directory checking
+corrected it. A controlled actual-file growth regression then demonstrated that
+readFile delivered 4128 bytes past the 4096-byte policy ceiling. Checked reads now
+use a loop bounded to the prechecked size plus one detection byte. A directory
+enumeration regression demonstrated a whole three-entry listing before a one-slot
+budget rejection; incremental opendir enumeration now rejects at the first excess
+entry. Neither test injects substitute file contents.
+Latest targeted result: 16 passed, exit 0, 629.2138 ms. Coverage includes source and
+destination hard links, junctions, path/refusal checks, quotas, caller mutation,
+concurrent adoption, canonical policy and manifest tampering, nested Unicode and
+empty files, and preserved partial initialization. Independent reviewer Banach
+cleared this exact capture/inspection slice with no critical or important findings.
+This is not release evidence. Task-2 revision/recovery gates remain.
+No store has been exposed to a model, actor, live executor or public SDK.
+
 **Files:** create `src/workspace/revision-store.mjs` and
 `tests/workspace-revision-store.test.mjs`. Keep helpers in that test until actual
 reuse requires extraction.
@@ -31,7 +49,7 @@ host handle described in W-1; this task delivers `capture`, `inspect`, `read` an
 completedCount, pendingCount, storedBytes}`. Task 2 adds `revise` without changing
 those shapes.
 
-- [ ] Write the real-directory capture test first. It imports the missing module
+- [x] Write the real-directory capture test first. It imports the missing module
   dynamically and asserts the missing API before using it. The production change
   this test detects is publishing bytes different from the pinned source or
   mutating the original. Minimal example body:
@@ -52,20 +70,20 @@ assert.equal((await store.inspect(revision.revisionDigest)).revisionDigest, revi
 
   `emptyStore` and `sourceRoot` are separate mkdtemp children owned by the test;
   create their files with fs APIs inside the test and clean only those known roots.
-- [ ] Run `node --test --test-concurrency=1 tests/workspace-revision-store.test.mjs`;
+- [x] Run `node --test --test-concurrency=1 tests/workspace-revision-store.test.mjs`;
   observe the expected missing-API assertion, not an import/test syntax error.
-- [ ] Implement canonical policy/manifest validation, explicit file list and
+- [x] Implement canonical policy/manifest validation, explicit file list and
   checked root/path/read helpers. Read `src/state/file-lock.mjs` and
   `src/core/digest.mjs` before reuse. Snapshot inputs before awaiting.
   Acquire the existing exclusive lock before the final root-adoption decision;
   publish the marker last and reject partial initialization. Require nlink=1 and
   compare bigint device/inode identities, not only realpath. Test created/reopened
   metadata, concurrent adoption and a real hard link to an outside owned test file.
-- [ ] Add one failing test at a time for binary bytes, deterministic replay and
+- [x] Add one failing test at a time for binary bytes, deterministic replay and
   reopening, changed file/manifest/extra file rejection, alias/hard-link/root
   overlap/refusal to adopt a nonempty directory, limits and caller mutation.
   Implement only the missing behavior and rerun this file after each correction.
-- [ ] Review the exact source/test diff, then commit the coherent capture slice.
+- [x] Review the exact source/test diff, then commit the coherent capture slice.
 
 ## Task 2: revision and crash-state semantics
 
