@@ -59,8 +59,10 @@ native artifact publication makes one, and replay makes no additional calls.
 This is offline integration coverage, not live provider/model qualification.
 The local artifact workflow now prepares and executes explicit v2 manifests,
 publishes only facade-issued terminal artifacts, and exercises denied authority
-and uncertain-dispatch replay offline. This operator branch still awaits final
-integration verification; live useful-task qualification remains open.
+and uncertain-dispatch replay offline. Integration at `8b9e993` passed all 1,239
+full-suite tests and 26 post-fast-forward checks; see the
+[integration audit](audits/2026-09-07-effect-only-operator-integration.md).
+Live useful-task qualification remains open.
 
 Next bounded outcome: an explicit effect-only launch mode consuming the existing
 issued host's native transport, with no review/revision construction or calls,
