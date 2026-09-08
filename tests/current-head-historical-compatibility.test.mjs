@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import { sha256Value } from '../src/core/digest.mjs';
-import { verifyCrossRepositoryCurrentHeadCertificateV2 } from '../src/integration/current-head-certificate.mjs';
+import { buildCrossRepositoryCurrentHeadCertificateV2, verifyCrossRepositoryCurrentHeadCertificateV2 } from '../src/integration/current-head-certificate.mjs';
 
 const execFileAsync = promisify(execFile);
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
@@ -80,4 +83,22 @@ test('historical compatibility does not admit a newer adapter protocol into an o
   const receipt = await historicalReceipt(snapshots[1]);
   receipt.godagents.sdk.supportedAdapterProtocols.unshift('eternities-external-host-qualification-v1');
   await assert.rejects(verify(rehash(receipt)), /SDK supported adapter protocol set mismatch/);
+});
+
+test('external-qualified historical receipt cannot acquire a later effect-only SDK export', async () => {
+  const receipt = await historicalReceipt(snapshots[2]);
+  receipt.godagents.sdk.rootExports.push('createAdmittedEffectOnlyIdentityLauncher');
+  receipt.godagents.sdk.rootExports.sort();
+  await assert.rejects(verify(rehash(receipt)), /SDK root export set mismatch/);
+});
+
+test('copied effect-only SDK bytes cannot select a profile without its introduction ancestry', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'godagents-profile-ancestry-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const git = args => execFileAsync('git', ['-C', root, ...args], { encoding: 'utf8', windowsHide: true });
+  await execFileAsync('git', ['clone', '--shared', '--no-checkout', repositoryRoot, root], { encoding: 'utf8', windowsHide: true });
+  const { stdout: tree } = await git(['rev-parse', 'HEAD^{tree}']);
+  const { stdout: forged } = await git(['-c', 'user.name=godagents-test', '-c', 'user.email=test@invalid',
+    'commit-tree', tree.trim(), '-p', snapshots[2].sourceCommit, '-m', 'synthetic copied source without introduction ancestry']);
+  await assert.rejects(buildCrossRepositoryCurrentHeadCertificateV2({ godagentsRoot: root, godagentsCommit: forged.trim() }), /effect-only SDK introduction.*ancestor/);
 });

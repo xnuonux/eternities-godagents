@@ -340,6 +340,16 @@ const CURRENT_HEAD_V2_PROFILE = Object.freeze({
   certificationPath: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_PATH,
   certificationDocument: CROSS_REPOSITORY_CURRENT_HEAD_V2_CERTIFICATION_DOCUMENT,
 });
+const EFFECT_ONLY_SDK_LAUNCHER_PATH = 'src/host/admitted-effect-only-identity-launcher.mjs';
+const EFFECT_ONLY_SDK_INTRODUCTION_COMMIT = '8a621826ddf92420e52f4bcd20837daa7522e567';
+// Additive source-era profile. Keep CURRENT_HEAD_V2_PROFILE intact for receipts
+// issued after external qualification but before the effect-only SDK export.
+const EFFECT_ONLY_SDK_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  ...CURRENT_HEAD_V2_PROFILE,
+  sdkExports: Object.freeze([...V2_SDK_EXPORTS, 'createAdmittedEffectOnlyIdentityLauncher'].sort()),
+  boundaryPaths: Object.freeze([...V2_BOUNDARY_PATHS,
+    EFFECT_ONLY_SDK_LAUNCHER_PATH, 'tests/provider-phase-host-sdk.test.mjs']),
+});
 const PRE_EXTERNAL_HOST_QUALIFICATION_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/external-host-qualification-v1.json',
   'schemas/external-host-qualification-dossier.schema.json',
@@ -2527,7 +2537,7 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     commit,
     MISSION_OPERATION_ADAPTER_RECEIPT_PATH,
   );
-  const profile = forensicsPresent
+  const historicalProfile = forensicsPresent
     ? (agentProfilePresent
       ? (missionOperationAdapterPresent
         ? (deferredReviewMissionOperationAdapterPresent
@@ -2552,6 +2562,14 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
     : (agentProfilePresent
       ? (missionOperationAdapterPresent ? PRE_ADAPTER_CURRENT_HEAD_V2_PROFILE : PRE_FORENSICS_WITH_AGENT_PROFILE_CURRENT_HEAD_V2_PROFILE)
       : PRE_FORENSICS_CURRENT_HEAD_V2_PROFILE);
+  const effectOnlySdkPresent = await hasCommittedPath(repositoryRoot, commit, EFFECT_ONLY_SDK_LAUNCHER_PATH);
+  if (effectOnlySdkPresent && historicalProfile !== CURRENT_HEAD_V2_PROFILE) {
+    throw new Error('effect-only SDK source requires the qualified current-head base profile');
+  }
+  if (effectOnlySdkPresent) {
+    await isAncestor(repositoryRoot, EFFECT_ONLY_SDK_INTRODUCTION_COMMIT, commit, 'effect-only SDK introduction');
+  }
+  const profile = effectOnlySdkPresent ? EFFECT_ONLY_SDK_CURRENT_HEAD_V2_PROFILE : historicalProfile;
   return {
     forensicsPresent,
     agentProfilePresent,

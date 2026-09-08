@@ -109,6 +109,7 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     '.': './src/sdk/index.mjs',
     './economics': './src/sdk/economics.mjs',
   });
+  const effectOnlySdkPresent = await hasCommittedPath(godagentsCommit, 'src/host/admitted-effect-only-identity-launcher.mjs');
   assert.deepEqual(receipt.godagents.sdk.rootExports, [
     'EXTERNAL_HOST_QUALIFICATION_PROTOCOL_ID',
     'GODAGENT_SDK_PROTOCOL_ID',
@@ -120,6 +121,7 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     'assertRecoverableRealmConsequenceHost',
     'buildExternalHostQualificationDossier',
     'buildPortablePhaseHostDescription',
+    ...(effectOnlySdkPresent ? ['createAdmittedEffectOnlyIdentityLauncher'] : []),
     'createAdmittedPortableIdentityLauncher',
     'createAdmittedProviderBackedIdentityLauncher',
     'createPortablePhaseHostAdapter',
@@ -132,6 +134,11 @@ test('v2 names the current-head protocol and binds the merged portable surface',
     'verifyPortablePhaseHostDescription',
     'verifyProviderPhaseHostDescription',
   ]);
+  if (effectOnlySdkPresent) {
+    for (const path of ['src/host/admitted-effect-only-identity-launcher.mjs', 'tests/provider-phase-host-sdk.test.mjs']) {
+      assert.ok(receipt.godagents.evidence.boundaryFiles.some(entry => entry.path === path), 'effect-only SDK profile must bind its source and tests');
+    }
+  }
   assert.deepEqual(receipt.godagents.sdk.supportedAdapterProtocols, [
     'eternities-external-host-qualification-v1',
     'eternities-portable-phase-host-v1',
