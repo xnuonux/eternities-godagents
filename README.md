@@ -9,8 +9,10 @@ coverage. That does not establish live model quality, a qualified external
 host, or a finished agent product.
 
 The local host path now has the bounded live evidence described below. Remaining
-product qualification includes interruption-sensitive useful work and a second
-independent host. Godskills is a separate, independently usable skill pack and
+product qualification includes broader recovery, creation-to-use usability and a
+second independent host. The first live post-completion interruption proof is now
+recorded below; broader recovery and usability claims remain bounded. Godskills
+is a separate, independently usable skill pack and
 optional capability-routing dependency. More receipt layers are not the
 completion criterion. Soul, Inspiration, hosted civilization, and Lunari
 integration remain outside this release.
@@ -47,9 +49,15 @@ used 37.40% more input tokens in this one development pair, with similar elapsed
 time. No general quality gain is claimed. The subsequent
 [opt-in objective view](docs/audits/2026-09-08-grok-native-objective-view.md)
 reduces the recorded request by 8.7445% in bytes with exact input reconstruction,
-without enabling itself by default or claiming token/quality gains. Next is an
-interruption-sensitive or multi-step workflow where persistence has a measurable
-purpose.
+without enabling itself by default or claiming token/quality gains.
+
+The [live interrupted-workflow proof](docs/audits/2026-09-08-live-interrupted-workflow.md)
+now checks a useful cleanup-plan task on synthetic inventory. An actual process
+kill after provider completion persistence was followed by fresh normal-workflow
+recovery, correct artifact publication and zero observed Grok relaunch attempts.
+This is one bounded recovery case, not multi-step planning, a native-quality
+advantage or a finished universal product. Next are second-host qualification and
+an operator path without fixture-derived preparation.
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 

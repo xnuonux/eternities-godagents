@@ -17,9 +17,14 @@ more reported input tokens for the Godagent. This is one development sample,
 not general quality superiority. Exact context-cost profiling now identified a
 duplicated objective. The [opt-in objective view](audits/2026-09-08-grok-native-objective-view.md)
 preserves the original input while reducing this recorded request by 8.7445% in
-bytes; it remains unqualified for live behavior or token savings. Next product
-work is a multi-step or interruption-sensitive workflow, not another synthetic
-transport probe. MiniMax remains a candidate; its two latest
+bytes; it remains unqualified for live behavior or token savings. The subsequent
+[live interruption proof](audits/2026-09-08-live-interrupted-workflow.md), on
+unchanged runtime `9bfba9d`, completed a correct synthetic-inventory cleanup plan,
+survived an actual host-process kill after provider completion persistence, and
+recovered/published through the normal workflow with zero observed Grok launch
+attempts. It does not qualify in-flight ambiguity, multi-step planning or native
+superiority. Next product work is second-host qualification and an operator path
+without fixture-derived preparation. MiniMax remains a candidate; its two latest
 attempts stopped at response-format boundaries without a scored quality result.
 The dated follow-ups below retain their historical scope rather than redefining
 past results as current product completion.
