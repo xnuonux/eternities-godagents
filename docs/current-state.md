@@ -5,6 +5,18 @@ on `main`, reconciled with `origin/main`. Remote:
 `https://github.com/xnuonux/eternities-godagents.git`.
 This is a product and release-process review, not a new certification.
 
+Latest verified follow-up, 2026-09-08: runtime `61251c7` connects the native Grok
+subscription host to the full v2 local artifact workflow. All 1,314 integration
+tests passed. One real admitted scheduling task produced the independently
+verified optimum, published its artifact, and replayed in a fresh process with
+zero observed Grok executable attempts. See the
+[exact evidence and limits](audits/2026-09-08-grok-local-artifact-workflow.md).
+The next unfinished milestone is a matched plain-model versus Godagent comparison,
+not another synthetic transport probe. MiniMax remains a candidate; its two latest
+attempts stopped at response-format boundaries without a scored quality result.
+The dated follow-ups below retain their historical scope rather than redefining
+past results as current product completion.
+
 Integrity follow-up, 2026-09-07: the bounded compatibility and immutability
 repair at `5e82afe7a967e7afa2c4a3a4e2cab24b7be67d43` passed all 1,119
 integration tests and independent review with no blocking findings. The
@@ -41,13 +53,11 @@ See [the migration decision and checkpoints](effect-only-vessel-migration-decisi
 This does not issue a new v2 release certificate, promote the Godskills feature
 to its main branch, or establish live model-quality gains.
 
-The original operator-path gap was concrete: `admitted-provider-backed-identity-launcher.mjs`
-and `admitted-portable-identity-launcher.mjs` unconditionally construct review and
-revision dependencies. Their existing factories therefore cannot launch a v2
-native-only policy. The root SDK exports those wrappers but not the new lower-level
-host path. The local-artifact preparation workflow likewise still builds the v1
-release/classifier policy. Do not present the v2 integration test as a complete
-operator-facing migration.
+The original operator-path gap was concrete: the v1 provider-backed and portable
+identity factories construct review/revision dependencies and cannot launch a v2
+native-only policy. At that point the root SDK and local-artifact workflow had not
+exposed the separate native-only facade. The subsequent explicit v2 path below
+closed that seam without changing the v1 factories.
 
 The [effect-only SDK launcher](effect-only-sdk-launch.md) now adds a separate,
 explicit v2 facade over an issued provider or portable host's native port. It
@@ -81,9 +91,10 @@ runtime `4cd4cfa`. The host explicitly pins reported `grok-4.6-build` separately
 from requested `grok-4.6`; no model-equivalence claim follows. All 1,309 full
 integration tests passed. This clears native transport compatibility, not live
 review/revision, a full effect-only host launch, or task-quality improvement.
-The next bounded product work remains useful-task qualification through the
-existing operator path and a separately registered same-model baseline. MiniMax
-still needs a fresh bounded qualification; its old failure remains unclassified.
+The later `61251c7` follow-up at the top closes one useful-task qualification
+through the operator path. A separately registered same-model baseline remains
+open. MiniMax still needs valid response-format qualification; its original
+failure remains unclassified and its newer format failures are preserved.
 
 Evaluation follow-up, 2026-09-07: [bounded diagnostic helpers](evaluation-diagnostics.md)
 provide offline-tested attempt preservation, baseline dispatch/validation and

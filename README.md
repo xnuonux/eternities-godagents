@@ -19,8 +19,8 @@ as a current product-completion checklist.
 
 The [local artifact workflow](docs/local-artifact-workflow.md) composes inert
 preparation, an explicitly pinned provider-backed run, and checked artifact
-retrieval/replay. It is a reference host with controlled-transport tests, not live
-model qualification or a new authority layer.
+retrieval/replay. It is a reference host, not a new authority layer. Controlled
+tests and the bounded live qualification below have different evidence scopes.
 
 The experimental [Grok subscription adapter](docs/audits/2026-09-08-grok-subscription-phase-transport.md)
 adds a pinned native CLI path to the same portable phase host. Its local process,
@@ -31,8 +31,16 @@ a substitute baseline for a different model.
 The [native-phase live qualification](docs/audits/2026-09-08-grok-live-qualification-and-diagnostics.md)
 now passes with requested `grok-4.6` and explicitly pinned reported deployment
 `grok-4.6-build`: a correct synthetic artifact, validated usage, and fresh-process
-replay without another inference. This is not yet a useful-task comparison,
-live review/revision qualification, or complete effect-only identity-host launch.
+replay without another inference. That earlier result alone does not qualify the
+complete effect-only identity-host launch or live review/revision.
+
+The [full Grok artifact-workflow follow-up](docs/audits/2026-09-08-grok-local-artifact-workflow.md)
+now completes real admission, a useful scheduling task, independently checked
+optimal output, saved artifact publication and fresh-process replay without an
+observed Grok launch. Runtime `61251c7` passed 1,314 integration tests. This is one
+live development-task qualification with a fixture-derived identity, not a claim
+of superiority over plain Grok or a completed universal product. The next bounded
+milestone is a fresh matched same-model comparison, including token/latency overhead.
 
 Eternities Godagents is the provider-neutral vessel and foundry layer around replaceable model cortexes, governed Godskills, persistent continuity, and bounded Realm Contracts.
 
