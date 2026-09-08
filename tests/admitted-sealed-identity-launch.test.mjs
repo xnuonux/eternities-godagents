@@ -13,6 +13,10 @@ import { buildIdentityBoundNativeTransportDescriptor } from '../src/runtime/iden
 import { createRoutingEvidenceActivationClassifier } from '../src/skills/routing-evidence-activation-classifier.mjs';
 import { verifyGodskillsRoutingExecutable } from '../src/skills/routing-executable-verifier.mjs';
 import { setupAdmittedIdentity } from './helpers/admitted-identity-fixture.mjs';
+import { createProviderPhaseHost } from '../src/host/provider-phase-host-sdk.mjs';
+import { createAdmittedEffectOnlyIdentityLauncher } from '../src/sdk/index.mjs';
+import { validAnthropicMessagesPhasePolicy } from './helpers/anthropic-messages-phase-policy-fixture.mjs';
+import { validOpenAICompatiblePhasePolicy } from './helpers/openai-compatible-phase-policy-fixture.mjs';
 import {
   executors,
   identityTransport,
@@ -210,14 +214,14 @@ test('malformed launcher seams fail as input before filesystem or policy work', 
   );
 });
 
-test('authenticated v2 launcher runs pinned effect-only routing and recovers native work', async t => {
-  const fixture = await setup(t, 'effect-only-host', { reviewAvailable: false });
+async function prepareEffectOnlyFixture(fixture, nativeDescriptor = fixture.native.descriptor) {
   const sourceRoot = 'C:/dev/eternities-godskills/.worktrees/effect-only-v2';
   const policy = await rewritePolicy(fixture, p => {
     p.schemaVersion = 2;
     p.runtime.protocolId = 'eternities-admitted-sealed-identity-host-v2';
     p.runtime.effectProducerDescriptorDigest = 'bd00071f046bd5f8612a65cfe674d417b8b21c3fb25bad41634bb734b08bfc26';
     p.runtime.effectOnlyRepositoryRoot = sourceRoot;
+    p.runtime.nativeTransport = structuredClone(nativeDescriptor);
     for (const key of ['godskillsRelease', 'activationClassifier']) delete p.runtime[key];
     for (const key of ['maximumGodskillsDispatchBytes', 'maximumGodskillsCompletionBytes', 'maximumGodskillsResultBytes']) delete p.runtime.limits[key];
   });
@@ -234,6 +238,12 @@ test('authenticated v2 launcher runs pinned effect-only routing and recovers nat
   fixture.env.GODAGENT_IDENTITY_POLICY_SHA256 = sha256Text(canonicalJson(policy));
   const request = prepareLocalArtifactEffectRequest({ ...fixture.request, schemaVersion: 2, routeMode: 'effect-only' },
     { expectedProducerDescriptorDigest: policy.runtime.effectProducerDescriptorDigest });
+  return { policy, request };
+}
+
+test('authenticated v2 launcher runs pinned effect-only routing and recovers native work', async t => {
+  const fixture = await setup(t, 'effect-only-host', { reviewAvailable: false });
+  const { policy, request } = await prepareEffectOnlyFixture(fixture);
   const { launchAdmittedSealedIdentityMission } = await launcherModule();
   const args = launchArgs(fixture, { request });
   const { buildPortablePhaseHostDescription, createPortablePhaseHostAdapter } = await import('../src/sdk/portable-phase-host.mjs');
@@ -278,6 +288,62 @@ test('authenticated v2 launcher runs pinned effect-only routing and recovers nat
   await assert.rejects(launchAdmittedSealedIdentityMission(args));
   assert.equal(operationCount(fixture.native.calls), calls, 'tampered admission cannot reach native transport');
 });
+
+for (const family of ['openai-compatible-chat-completions-v1', 'anthropic-messages-v1']) {
+  test(`authenticated effect-only ${family} publishes native output and replays without provider work`, async t => {
+    const fixture = await setup(t, `effect-only-${family}`, { reviewAvailable: false });
+    const anthropic = family === 'anthropic-messages-v1';
+    const transportPolicy = anthropic ? validAnthropicMessagesPhasePolicy() : validOpenAICompatiblePhasePolicy();
+    const transportPolicyPath = join(fixture.root, 'controlled-provider-policy.json');
+    await writeFile(transportPolicyPath, `${canonicalJson(transportPolicy)}\n`);
+    let providerCalls = 0;
+    const content = 'controlled provider output through authenticated effect-only launch';
+    const host = await createProviderPhaseHost({ family, policyPath: transportPolicyPath,
+      runtimeRoot: join(fixture.root, 'controlled-provider-operations'),
+      env: {
+        [anthropic ? 'GODAGENT_ANTHROPIC_PHASE_TRANSPORT_POLICY_SHA256' : 'GODAGENT_PHASE_TRANSPORT_POLICY_SHA256']: sha256Text(canonicalJson(transportPolicy)),
+        [transportPolicy.provider.credentialEnv]: 'effect-only-provider-fixture-secret',
+      },
+      clock: () => new Date(fixture.clock()).toISOString(),
+      fetchImpl: async (_url, options) => {
+        providerCalls += 1;
+        const dispatched = JSON.parse(options.body);
+        assert.equal(dispatched.model, transportPolicy.provider.modelId);
+        const response = anthropic ? {
+          id: 'msg_effect_only', type: 'message', role: 'assistant', model: dispatched.model,
+          content: [{ type: 'text', text: canonicalJson({ content }) }],
+          stop_reason: 'end_turn', stop_sequence: null,
+          usage: { input_tokens: 100, cache_creation_input_tokens: 0, cache_read_input_tokens: 0,
+            output_tokens: 30, output_tokens_details: { thinking_tokens: 0 } },
+        } : {
+          id: 'chatcmpl_effect_only', object: 'chat.completion', model: dispatched.model,
+          choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: canonicalJson({ content }) } }],
+          usage: { prompt_tokens: 100, prompt_tokens_details: { cached_tokens: 0 }, completion_tokens: 30,
+            completion_tokens_details: { reasoning_tokens: 0 }, total_tokens: 130 },
+        };
+        return new Response(JSON.stringify(response), { status: 200, headers: { 'content-type': 'application/json' } });
+      },
+    });
+    const { request } = await prepareEffectOnlyFixture(fixture, host.describe().descriptors.native);
+    const launcher = createAdmittedEffectOnlyIdentityLauncher({ host, hostKind: 'provider' });
+    const args = { admissionRoot: fixture.admissionRoot, policyPath: fixture.policyPath, request,
+      identityPolicyDigest: fixture.env.GODAGENT_IDENTITY_POLICY_SHA256,
+      registryRoot: fixture.registryRoot, clock: fixture.clock };
+    const deniedRequest = prepareLocalArtifactEffectRequest({ ...fixture.request, schemaVersion: 2, routeMode: 'effect-only',
+      requestedAuthority: ['local-read'], mission: { ...request.mission, missionId: 'provider-denied-write' } },
+    { expectedProducerDescriptorDigest: 'bd00071f046bd5f8612a65cfe674d417b8b21c3fb25bad41634bb734b08bfc26' });
+    const denied = await launcher.launch({ ...args, request: deniedRequest });
+    assert.equal(denied.status, 'needs-decision');
+    assert.equal(providerCalls, 0, 'a declared write without authority cannot reach either provider');
+    const first = await launcher.launch(args);
+    assert.equal(first.status, 'completed');
+    assert.equal(first.mission.verdict.reason, 'native-no-review');
+    assert.equal(first.mission.artifact.content, content);
+    assert.equal(providerCalls, 1);
+    assert.deepEqual(await launcher.launch(args), first);
+    assert.equal(providerCalls, 1, 'persisted replay cannot redispatch native or call review/revision');
+  });
+}
 
 async function rewritePolicy(fixture, mutate) {
   const changed = structuredClone(fixture.policy);

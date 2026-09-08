@@ -68,10 +68,13 @@ work. Uncertain dispatch is not authorization for an automatic retry.
 
 The focused tests exercise both provider families' credential rejection before
 dispatch, issued portable/provider validation, and successful authenticated v2
-execution/replay through a controlled portable host and the pinned Godskills
-processes. These are offline tests, not live model quality or full provider
-end-to-end qualification. No API credits are consumed.
+execution/replay through a controlled portable host and both registered provider
+hosts, using the pinned Godskills processes. Provider tests exercise real host
+and transport implementations with controlled HTTP responses: an unauthorized
+write causes zero HTTP calls, an authorized native artifact causes one, and
+persisted replay causes no additional calls. These are offline tests, not live
+provider qualification or model-quality evidence. No API credits are consumed.
 
 The local-artifact CLI preparation and retrieval flow still targets v1. A full
-v2 operator workflow and controlled successful provider-family launches remain
-the next migration work. This SDK entrypoint alone does not complete that work.
+v2 operator workflow remains the next migration work. This SDK entrypoint alone
+does not complete that work.

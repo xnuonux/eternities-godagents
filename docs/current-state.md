@@ -53,9 +53,11 @@ The [effect-only SDK launcher](effect-only-sdk-launch.md) now adds a separate,
 explicit v2 facade over an issued provider or portable host's native port. It
 preserves the v1 factories, screens credentials, rejects dependency injection,
 and exercises authenticated execution/replay through a controlled portable host.
-Both provider families have pre-dispatch credential-rejection coverage, not yet
-successful end-to-end provider execution coverage for this new facade. The local
-artifact preparation/retrieval migration remains open.
+Both registered provider families also complete the authenticated path using
+controlled HTTP responses: denied write intent makes zero calls, successful
+native artifact publication makes one, and replay makes no additional calls.
+This is offline integration coverage, not live provider/model qualification.
+The local artifact preparation/retrieval migration remains open.
 
 Next bounded outcome: an explicit effect-only launch mode consuming the existing
 issued host's native transport, with no review/revision construction or calls,
