@@ -959,6 +959,23 @@ export async function createMissionProgramCoordinator({
     return inspectProjection(projection);
   }
 
+  // Read the same verified replay used by recovery. No adapter calls or lock
+  // acquisition: a dependent source may query this while its program holds the
+  // operation lock. Uncommitted is not a statement about provider absence.
+  async function readCommittedStep(programId, stepId) {
+    requireProgramId(programId);
+    requireIdentifier(stepId, 'mission program step id');
+    const paths = operationPaths(programId);
+    const projection = await replayState(paths.journal, paths.artifacts);
+    if (!projection) fail('program-missing', 'mission program journal is missing');
+    if (projection.state.programId !== programId) fail('program-binding', 'mission program path does not match its program id');
+    const step = projection.admission.steps.find(value => value.stepId === stepId);
+    if (!step) fail('step-missing', 'mission program step is missing');
+    const entry = projection.committed.get(step.stepIndex);
+    return deepFreeze({ status: entry ? 'committed' : 'uncommitted', programId,
+      stepId, stepIndex: step.stepIndex, ...(entry ? { completion: clone(entry.completion) } : {}) });
+  }
+
   async function forensics(programId, options = {}) {
     requireProgramId(programId);
     const paths = operationPaths(programId);
@@ -972,7 +989,7 @@ export async function createMissionProgramCoordinator({
     return buildForensicProjection(projection, selectedSequence);
   }
 
-  const coordinator = { execute, recover, inspect, forensics };
+  const coordinator = { execute, recover, inspect, forensics, readCommittedStep };
   coordinatorInstances.add(coordinator);
   return Object.freeze(coordinator);
 }

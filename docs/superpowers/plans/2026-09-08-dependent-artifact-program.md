@@ -33,7 +33,7 @@ malformed evidence throw. An admitted but uncommitted step returns
 `status:'committed', completion` with the exact existing verified completion.
 The result is deeply frozen, payload-free, and performs no adapter invocation.
 
-- [ ] Add tests beside the existing private `makeInput`, `makeAdapter` and
+- [x] Add tests beside the existing private `makeInput`, `makeAdapter` and
   `withRoot` helpers. Verify pending-first and committed-first/pending-second,
   completed replay, unknown identifiers, changed journal/artifact, and a read
   from inside step two while the existing program lock is held:
@@ -46,8 +46,8 @@ assert.deepEqual(entry.completion, expectedCompletion);
 assert.deepEqual(first.calls, before);
 ```
 
-- [ ] Run `node --test --test-name-pattern='committed-step' tests/mission-program.test.mjs`; observe missing-method RED.
-- [ ] Implement over existing `operationPaths` and `replayState`, with no new lock or raw-file classification:
+- [x] Run `node --test --test-name-pattern='committed-step' tests/mission-program.test.mjs`; observe missing-method RED.
+- [x] Implement over existing `operationPaths` and `replayState`, with no new lock or raw-file classification:
 
 ```js
 const projection = await replayState(paths.journal, paths.artifacts);
@@ -60,7 +60,12 @@ const entry = projection.committed.get(step.stepIndex);
   Return a frozen copy of `entry.completion`, which replay already verifies
   against the admitted dispatch and artifact reference. Export only through the
   existing issued coordinator; do not change existing serialized protocols.
-- [ ] Run `node --test tests/mission-program.test.mjs tests/mission-operation-adapter.test.mjs`, review and commit this read-port slice.
+- [x] Run `node --test tests/mission-program.test.mjs tests/mission-operation-adapter.test.mjs`, review and commit this read-port slice.
+
+Task-1 checkpoint: four new cases failed on the missing method, then all 27
+focused coordinator/adapter tests passed, exit 0, 491.9489 ms. Independent review
+cleared the read port. No inference, new journal format or mutating capability
+was added. Tasks 2 through 5 remain separate, with Task 2 in progress.
 
 ## Task 2: pure definitions and exact step resolution
 

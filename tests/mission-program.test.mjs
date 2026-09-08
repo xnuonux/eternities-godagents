@@ -154,6 +154,86 @@ async function createCoordinator(root, adapters, options = {}) {
   });
 }
 
+test('committed-step read distinguishes an uncommitted step without invoking adapters or writing state', async () => {
+  await withRoot(async root => {
+    const input = makeInput();
+    const first = makeAdapter('analysis', { pending: true });
+    const second = makeAdapter('synthesis');
+    const coordinator = await createCoordinator(root, [first, second]);
+    await assert.rejects(coordinator.readCommittedStep(input.programId, 'step-a'), { code: 'program-missing' });
+    assert.deepEqual(await readdir(root), []);
+    await coordinator.execute(input);
+    const journalPath = path.join(root, 'programs', input.programId, 'journal.json');
+    const before = await readFile(journalPath, 'utf8');
+    const calls = [structuredClone(first.calls), structuredClone(second.calls)];
+    assert.deepEqual(await coordinator.readCommittedStep(input.programId, 'step-a'),
+      { status: 'uncommitted', programId: input.programId, stepId: 'step-a', stepIndex: 0 });
+    assert.deepEqual(await coordinator.readCommittedStep(input.programId, 'step-b'),
+      { status: 'uncommitted', programId: input.programId, stepId: 'step-b', stepIndex: 1 });
+    assert.deepEqual([first.calls, second.calls], calls);
+    assert.equal(await readFile(journalPath, 'utf8'), before);
+  });
+});
+
+test('committed-step read returns exact frozen evidence from a partial program and fresh coordinator', async () => {
+  await withRoot(async root => {
+    const input = makeInput();
+    const first = makeAdapter('analysis');
+    const second = makeAdapter('synthesis', { pending: true });
+    const coordinator = await createCoordinator(root, [first, second]);
+    assert.equal((await coordinator.execute(input)).status, 'pending');
+    const entry = await coordinator.readCommittedStep(input.programId, 'step-a');
+    const expected = makeCompletion(first.observedDispatches.find(row => row.method === 'execute').dispatch);
+    assert.deepEqual(entry, { status: 'committed', programId: input.programId,
+      stepId: 'step-a', stepIndex: 0, completion: expected });
+    assert.throws(() => { entry.completion.usage.completionTokens = 0; }, TypeError);
+    const fresh = await createCoordinator(root, [first, second]);
+    const calls = [structuredClone(first.calls), structuredClone(second.calls)];
+    assert.deepEqual(await fresh.readCommittedStep(input.programId, 'step-a'), entry);
+    assert.deepEqual([first.calls, second.calls], calls);
+  });
+});
+
+test('committed-step read can run inside the next step without reacquiring the program lock', { timeout: 5000 }, async () => {
+  await withRoot(async root => {
+    const input = makeInput();
+    let coordinator;
+    const first = makeAdapter('analysis');
+    const second = makeAdapter('synthesis', { executeResponse: async dispatch => {
+      const parent = await coordinator.readCommittedStep(input.programId, 'step-a');
+      assert.equal(parent.status, 'committed');
+      assert.equal(parent.completion.resultDigest, digest('result-step-a'));
+      return { status: 'completed', completion: makeCompletion(dispatch) };
+    } });
+    coordinator = await createCoordinator(root, [first, second]);
+    const result = await coordinator.execute(input);
+    assert.equal(result.status, 'completed');
+    const calls = [structuredClone(first.calls), structuredClone(second.calls)];
+    assert.deepEqual((await coordinator.readCommittedStep(input.programId, 'step-b')).completion,
+      result.results[1].completion);
+    assert.deepEqual([first.calls, second.calls], calls);
+  });
+});
+
+test('committed-step read rejects invalid references and changed completion evidence, never false absence', async () => {
+  await withRoot(async root => {
+    const input = makeInput();
+    const first = makeAdapter('analysis');
+    const second = makeAdapter('synthesis');
+    const coordinator = await createCoordinator(root, [first, second]);
+    await coordinator.execute(input);
+    const calls = [structuredClone(first.calls), structuredClone(second.calls)];
+    await assert.rejects(coordinator.readCommittedStep(input.programId, 'not-a-step'), { code: 'step-missing' });
+    await assert.rejects(coordinator.readCommittedStep('../elsewhere', 'step-a'));
+    await assert.rejects(coordinator.readCommittedStep(input.programId, '../step-a'));
+    const artifacts = path.join(root, 'programs', input.programId, 'artifacts');
+    const files = await readdir(artifacts);
+    await writeFile(path.join(artifacts, files[0]), '{}\n');
+    await assert.rejects(coordinator.readCommittedStep(input.programId, 'step-a'), IntegrityError);
+    assert.deepEqual([first.calls, second.calls], calls);
+  });
+});
+
 test('mission program runs ordered steps through a bounded provider-neutral port', async () => {
   await withRoot(async (root) => {
     const analysis = makeAdapter('analysis');
