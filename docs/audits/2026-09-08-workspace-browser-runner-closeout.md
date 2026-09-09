@@ -1,9 +1,13 @@
 # Workspace browser runner qualification and integration status
 
-Date: 2026-09-08. Runtime candidate: `333fd1f` on
-`feat/workspace-browser-runner`. Main remains `51df9e0`.
-**Integration pending:** this record is not a claim that the full release gate
-has passed or that the branch is merged. Update that state only from final output.
+Date: 2026-09-08. Runtime source: `333fd1f`. Frozen full-gate candidate:
+`6a95c3e2d8190f8337da19f95a33ddea2926156f` on `feat/workspace-browser-runner`.
+Main was fast-forwarded from `51df9e0` to
+`374526098d7244915552b376eeee44d330fd3582` and pushed after full verification,
+upstream reconciliation and merged focused checks. The only change after the
+frozen gate candidate was the reviewed documentation clarification that there
+is no application server process, while a private browser-control server exists.
+Source, schemas, tests and scripts stayed byte-identical. The branch is preserved.
 
 ## Delivered and excluded
 
@@ -67,10 +71,21 @@ static preflight, real runner and Task4 refusal/failure slice. Task4 has no rema
 must-fix findings. Focused contract/runtime/runner tests:28 passed,0 failed,
 420.5094ms,exit0. Those are protocol/implementation tests, not model-quality proof.
 
-Full serial integration suite, final review, upstream reconciliation, merge,
-merged focused checks and push remain pending. All69 historical certification
-receipts must remain unchanged. The user's untracked package-lock.json and the
-feature branch are preserved.
+The complete serial gate passed all1460 tests, zero failed/cancelled/skipped/todo,
+exit0,1137663.4109ms. Log: `full-suite-serial-6a95c3e.log`, SHA256
+`8d9bb9fc73e10fa316192ced00a4af9105c133611d90ba439e0596c3ab5b8121`.
+Execution session45863 is CLOSED and must not be polled or restarted.
+
+After the exact fast-forward, seven focused browser/store/recovery/publication
+test files passed70 tests, zero failed/cancelled/skipped/todo,exit0,2702.9054ms.
+Log: `postmerge.log`, SHA256
+`f5c8cf569b569dcffcd45b2864f1eadbde6a65dc116cc9f88b47601f2e035f41`.
+The full gate verified all69 historical certification receipts, release lineage,
+older-head rejection and ambient Git control-variable resistance. Git comparison
+confirmed no receipt/artifact changes from the prior main. No historical evidence
+was regenerated. Final review cleared source/evidence contingent on this successful
+gate and the now-applied wording correction. The user's untracked package-lock.json
+and feature branch remain preserved.
 
 ## Next product outcome
 

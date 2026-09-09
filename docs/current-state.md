@@ -5,11 +5,11 @@ on `main`, reconciled with `origin/main`. Remote:
 `https://github.com/xnuonux/eternities-godagents.git`.
 This is a product and release-process review, not a new certification.
 
-Workspace browser candidate, 2026-09-08: runtime `333fd1f` on
-`feat/workspace-browser-runner` now tests actual interactive apps. The broken/fixed
-fixture and all ten browser control probes qualify, and 28 focused tests pass.
-Independent review cleared the failure-path slice. Full integration/merge remain
-pending; main is still `51df9e0`. See the [exact evidence and remaining gate](audits/2026-09-08-workspace-browser-runner-closeout.md)
+Workspace browser milestone, 2026-09-08: runtime `333fd1f` is merged and pushed
+at `3745260`. It tests actual interactive apps. The broken/fixed fixture and all
+ten browser control probes qualify; the full serial gate passed1460 tests and
+the merged focused gate passed70. Independent review cleared the source and
+evidence, and all69 historical receipts remain unchanged. See the [exact closeout](audits/2026-09-08-workspace-browser-runner-closeout.md)
 and [host API/limits](workspace-browser-runner.md). This still needs Workspace
 Realm/actor/mission ownership before it is a persistent coding agent, and does not
 establish live model-quality improvement.
@@ -158,7 +158,7 @@ full-suite tests and 26 post-fast-forward checks; see the
 Live useful-task qualification remains open.
 
 The formerly proposed effect-only operator outcome above is implemented, not
-the next unfinished task. As of 2026-09-08, the immediate critical path is the
+the next unfinished task. At that earlier checkpoint, the critical path was the
 [pinned Grok subscription adapter](audits/2026-09-08-grok-subscription-phase-transport.md),
 bounded live transport qualification, and separately preregistered within-model
 comparisons. MiniMax and subscription Grok are candidates; neither a transport
@@ -175,8 +175,9 @@ from requested `grok-4.6`; no model-equivalence claim follows. All 1,309 full
 integration tests passed. This clears native transport compatibility, not live
 review/revision, a full effect-only host launch, or task-quality improvement.
 The later `61251c7` follow-up at the top closes one useful-task qualification
-through the operator path. A separately registered same-model baseline remains
-open. MiniMax still needs valid response-format qualification; its original
+through the operator path. The subsequently recorded matched Grok development
+comparison closes one same-model sample, not broad task-quality qualification.
+MiniMax still needs valid response-format qualification; its original
 failure remains unclassified and its newer format failures are preserved.
 
 Evaluation follow-up, 2026-09-07: [bounded diagnostic helpers](evaluation-diagnostics.md)

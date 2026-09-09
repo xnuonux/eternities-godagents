@@ -207,12 +207,29 @@ full integration and merge are still pending. This is executor conformance only.
 
 ## Task 5: integration and next actor connection
 
+Complete. Full frozen candidate6a95c3e passed1460 tests,0 failures/skips,
+1137663.4109ms,exit0. Sartre's final review cleared source/evidence with one
+documentation correction (application server versus private browser-control
+server), applied in3745260. Runtime/tests/schemas/scripts stayed identical.
+After upstream reconciliation, main fast-forwarded to3745260;70 focused merged
+tests passed,0 failures/skips,2702.9054ms,exit0, then main was pushed. All69
+historical receipts remain unchanged. Full evidence hashes and closed execution
+handle are in docs/audits/2026-09-08-workspace-browser-runner-closeout.md.
+
+Next actor handoff is explicit, not implemented here:
+D:/00-INDEX/operations/2026-09-08-workspace-browser-runner/workspace-owner-decision-preflight.md.
+It maps fresh creation/admission, distribution Realm compatibility, cortex resource
+projection, issued owner, mission recovery, exact-child review and checked diff.
+Godskills owner supplied a separate minimum fairness checklist; symmetric review,
+feedback and baseline persistence are required before any new comparison. The
+broader Godagents goal and real-task quality qualification remain open.
+
 **Files:** add `docs/workspace-browser-runner.md`, a dated closeout, and update this plan/current-state. Existing SDK/Realm/runtime effect routes remain unchanged in this slice.
 
-- [ ] Document exact runtime pins, partial-pin scope, reviewed-content restriction, IPC/result contract, controls observed and exclusions. Link the real qualification receipt separately from deterministic contract tests.
-- [ ] Freeze the reviewed candidate; run targeted workspace-store and new runner tests, then one complete serial suite at the final integration gate. Preserve all69 historical receipts, failures and exact logs. Verify source has not moved.
-- [ ] Reconcile origin, independent final review, merge the verified branch, focused merged checks and push under standing approval. Preserve user files and feature branch. Do not broaden a failed environment preflight into permission to install or weaken controls.
-- [ ] Hand off the actual runner to the next Workspace Realm/owner/mission-source integration. That next phase must issue authority independently, bind revisions/results to an actor, preserve uncertain dispatch, export checked diffs, and only then preregister matched fresh model comparisons.
+- [x] Document exact runtime pins, partial-pin scope, reviewed-content restriction, IPC/result contract, controls observed and exclusions. Link the real qualification receipt separately from deterministic contract tests.
+- [x] Freeze the reviewed candidate; run targeted workspace-store and new runner tests, then one complete serial suite at the final integration gate. Preserve all69 historical receipts, failures and exact logs. Verify source has not moved.
+- [x] Reconcile origin, independent final review, merge the verified branch, focused merged checks and push under standing approval. Preserve user files and feature branch. Do not broaden a failed environment preflight into permission to install or weaken controls.
+- [x] Hand off the actual runner to the next Workspace Realm/owner/mission-source integration. That next phase must issue authority independently, bind revisions/results to an actor, preserve uncertain dispatch, export checked diffs, and only then preregister matched fresh model comparisons.
 
 ## Coverage and honest stopping point
 
