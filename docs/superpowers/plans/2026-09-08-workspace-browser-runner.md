@@ -82,6 +82,22 @@ assert.ok(Object.isFrozen(suite.cases[0].steps));
 
 ## Task 2: static runtime preflight before any driver import
 
+Complete, independently reviewed by Sartre01a083fc-7326-7112-aeec-af344cfead76.
+Missing API and CLI tests reproduced RED before implementation. Latest combined
+contract/runtime run:22passed,0failed,exit0,333.8224ms. Real file growth is rejected;
+read requests are <=65536bytes. Exact chunk-boundary tests disproved a reviewer
+hypothesis, which was withdrawn without changing production code.
+
+Actual Edge selection failed because its engine has four vendor hardlink names.
+No exception or vendor file mutation was made. Explicit existing Chrome153.0.8010.36
+selection passed eight named file checks, scope named-driver-and-engine-files.
+Private operator config is D:/00-INDEX/operations/2026-09-08-workspace-browser-runner/runtime-config-chrome.json,
+file SHA256656092cc5521c489b089eb8655c5aea86bc5836ad0e15e8fcdfd39d6ce5204ca;
+canonical runtime digest1d7d78736e11272e5aa1909cdd26cd1939d7646283dc516c68ae54fb36d50cfd.
+The same operation directory preserves static-runtime-preflight.md, original
+failed Edge selection and explicit Chrome selection. No driver import/browser
+launch occurred. Native version declarations still require worker-time agreement.
+
 **Files:** create `src/workspace/browser-test-runtime.mjs`, `tests/browser-test-runtime.test.mjs`, and `scripts/prepare-browser-test-runtime.mjs`.
 
 **Interfaces:**
@@ -90,12 +106,12 @@ assert.ok(Object.isFrozen(suite.cases[0].steps));
 - `buildBrowserWorkerEnvironment({systemRoot,tempRoot})` returns only fixed required system/TEMP/TMP values and a system-directory PATH. Same host-owned policy applies independently to the browser child.
 - The preparation CLI takes explicit Node/driver/browser roots, executable/engine relative paths and expected versions, writes an operator runtime configuration only, and performs no imports, downloads or execution. It must not search user credentials or substitute another installation on failure.
 
-- [ ] Write real temporary-file RED tests before the verifier: a correctly pinned file verifies, changing its bytes rejects, and an alias/hard link or path outside the explicit root rejects without importing it. Use a non-executable file with a sentinel string; never execute acquired fixtures.
-- [ ] Implement checked streaming hashes with a bounded chunk buffer and pre/open/post bigint identity/size checks. Reject overdeclared/overread sizes rather than allocating an engine-sized Buffer. Named rows have a hard1GiB per-file read ceiling and at most32 files; these are metadata verification bounds, not accepted application sizes.
-- [ ] Test that environment construction ignores parent NODE_OPTIONS, PW_INSTRUMENT_MODULES, DEBUG, proxy and dummy provider variables. Use synthetic sentinels only. Confirm worker PATH contains no user-provided executable directory.
-- [ ] Inspect the actual host-provisioned package's named entry/bootstrap/core/utility files and declared metadata. Pin the browser launcher and explicit versioned engine DLL, not just its5MiB launcher. Record exactly which optional/system dependencies remain outside the partial-pin scope.
-- [ ] Generate the explicit runtime config under `D:/00-INDEX/operations/2026-09-08-workspace-browser-runner` from inspected host locations. Verify it statically, preserving the result and hashes. Stop qualification if any declared file/control is missing; no automatic install or broad pin-scope claim.
-- [ ] Run only runtime and contract tests, review and commit. No browser has been launched by this task.
+- [x] Write real temporary-file RED tests before the verifier: a correctly pinned file verifies, changing its bytes rejects, and an alias/hard link or path outside the explicit root rejects without importing it. Use a non-executable file with a sentinel string; never execute acquired fixtures.
+- [x] Implement checked streaming hashes with a bounded chunk buffer and pre/open/post bigint identity/size checks. Reject overdeclared/overread sizes rather than allocating an engine-sized Buffer. Named rows have a hard1GiB per-file read ceiling and at most32 files; these are metadata verification bounds, not accepted application sizes.
+- [x] Test that environment construction ignores parent NODE_OPTIONS, PW_INSTRUMENT_MODULES, DEBUG, proxy and dummy provider variables. Use synthetic sentinels only. Confirm worker PATH contains no user-provided executable directory.
+- [x] Inspect the actual host-provisioned package's named entry/bootstrap/core/utility files and declared metadata. Pin the browser launcher and explicit versioned engine DLL, not just its5MiB launcher. Record exactly which optional/system dependencies remain outside the partial-pin scope.
+- [x] Generate the explicit runtime config under `D:/00-INDEX/operations/2026-09-08-workspace-browser-runner` from inspected host locations. Verify it statically, preserving the result and hashes. Stop qualification if any declared file/control is missing; no automatic install or broad pin-scope claim.
+- [x] Run only runtime and contract tests, review and commit. No browser has been launched by this task.
 
 ## Task 3: actual browser runner and independent behavioral result
 

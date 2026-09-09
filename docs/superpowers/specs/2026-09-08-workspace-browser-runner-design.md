@@ -69,6 +69,15 @@ The separate primary engine `152.0.4191.66/msedge.dll` is343699272 bytes with
 SHA-256 `1de5608477f40579c32c85b8478aa3d9824d9e7c85b21c23f3bc3f30fc539845`.
 An executable-only pin therefore must not be described as whole-browser integrity.
 
+Task2 local preflight update: the Edge engine has four vendor hardlink names and
+was rejected by the unchanged single-link verification rule. The explicit
+alternative is the already-installed Chrome153.0.8010.36, whose launcher and
+engine are single-link files. All eight selected Node/driver/Chrome files passed
+static preflight; see Task2 in the implementation plan for the private configuration
+digest and preserved failure evidence. No security exception, installation,
+vendor copy or browser launch was needed. Browser choice remains host configuration,
+not a new actor permission or a claim of runtime qualification.
+
 ## B-3: neutral operation, concrete reference implementation
 
 One host-owned runner executes one suite on one verified revision:
