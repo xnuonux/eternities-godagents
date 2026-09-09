@@ -215,7 +215,7 @@ function resultFixture() {
   const expected = { revisionDigest: 'a'.repeat(64), suite, descriptor };
   const record = { schemaVersion: 1, revisionDigest: expected.revisionDigest, testId: 'tasks.filter',
     testSuiteDigest: suite.testSuiteDigest, descriptorDigest: descriptor.descriptorDigest,
-    outcome: 'passed', reason: null, elapsedMs: 100, cleanup: { confirmed: true, elapsedMs: 10 },
+    outcome: 'passed', reason: null, policyEvents: [], elapsedMs: 100, cleanup: { confirmed: true, elapsedMs: 10 },
     controls: { sandboxRequested: true, sandboxArgumentsChecked: true, freshContexts: true,
       nodeEnvironmentScrubbed: true, browserEnvironmentScrubbed: true, serviceWorkersBlocked: true,
       downloadsDisabled: true, permissionsEmpty: true, routeInterception: true, webSocketInterception: true },
@@ -227,6 +227,25 @@ function resultFixture() {
   return { record, expected };
 }
 const signResult = record => ({ ...record, receiptDigest: hashRecord(record) });
+
+test('browser run deadline interrupted steps retain a distinct infrastructure timeout cause', () => {
+  const { record, expected } = resultFixture();
+  record.outcome = 'infrastructure-error'; record.reason = 'run-timeout';
+  record.elapsedMs = expected.descriptor.limits.runTimeoutMs + 1;
+  Object.assign(record.cases[0].steps[0], { outcome: 'failed', reason: 'run-timeout', observation: null });
+  for (const step of record.cases[0].steps.slice(1))
+    Object.assign(step, { outcome: 'not-run', reason: 'prior-stop', observation: null, elapsedMs: 0 });
+  assert.equal(api.verifyBrowserTestResult(signResult(record), expected).reason, 'run-timeout');
+  record.elapsedMs = expected.descriptor.limits.runTimeoutMs - 1;
+  assert.throws(() => api.verifyBrowserTestResult(signResult(record), expected), /deadline/);
+  record.elapsedMs = expected.descriptor.limits.runTimeoutMs + 1;
+  record.reason = 'driver-error';
+  assert.throws(() => api.verifyBrowserTestResult(signResult(record), expected), /contradicts/);
+  record.reason = 'run-timeout';
+  Object.assign(record.cases[0].steps[0], { outcome: 'passed', reason: null });
+  Object.assign(record.cases[0].steps[1], { outcome: 'failed', reason: 'assertion-mismatch', observation: 2, elapsedMs: 1 });
+  assert.throws(() => api.verifyBrowserTestResult(signResult(record), expected), /contradicts/);
+});
 
 test('browser result requires the exact host suite, descriptor and observed assertion values', () => {
   assert.equal(typeof api.verifyBrowserTestResult, 'function', 'browser result verifier is required');
@@ -273,9 +292,9 @@ test('browser results distinguish assertion failure, policy violation and infras
     const changed = structuredClone(record); change(changed);
     assert.throws(() => api.verifyBrowserTestResult(signResult(changed), expected), /browser/);
   }
-  record.outcome = 'policy-violation'; record.reason = 'blocked-request';
+  record.outcome = 'policy-violation'; record.reason = 'blocked-request'; record.policyEvents = ['http-aborted'];
   assert.equal(api.verifyBrowserTestResult(signResult(record), expected).outcome, 'policy-violation');
-  record.outcome = 'infrastructure-error'; record.reason = 'launch-error';
+  record.outcome = 'infrastructure-error'; record.reason = 'launch-error'; record.policyEvents = [];
   for (const step of record.cases[0].steps) Object.assign(step,
     { outcome: 'not-run', reason: 'prior-stop', observation: null, elapsedMs: 0 });
   for (const key of Object.keys(record.controls)) record.controls[key] = false;
@@ -336,4 +355,17 @@ test('browser completed results cannot call action-only suites or overdue work a
   expected.suite = api.compileBrowserTestSuite(input); record.testSuiteDigest = expected.suite.testSuiteDigest;
   record.cases[0].steps.length = 1;
   assert.throws(() => api.verifyBrowserTestResult(signResult(record), expected), /assertions/);
+});
+
+test('browser result requires policy violations to dominate passing assertions with fixed observed event types', () => {
+  const { record, expected } = resultFixture();
+  assert.equal(api.verifyBrowserTestResult(signResult(record), expected).outcome, 'passed');
+  record.policyEvents = ['csp-blocked'];
+  assert.throws(() => api.verifyBrowserTestResult(signResult(record), expected), /policy/);
+  record.outcome = 'policy-violation'; record.reason = 'blocked-request';
+  assert.deepEqual(api.verifyBrowserTestResult(signResult(record), expected).policyEvents, ['csp-blocked']);
+  for (const events of [[], ['unknown'], ['csp-blocked', 'csp-blocked'], ['navigation-denied']]) {
+    const changed = structuredClone(record); changed.policyEvents = events;
+    assert.throws(() => api.verifyBrowserTestResult(signResult(changed), expected), /policy/);
+  }
 });

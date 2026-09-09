@@ -205,7 +205,7 @@ Completed records use this closed shape:
 
 ```text
 {schemaVersion, revisionDigest, testId, testSuiteDigest, descriptorDigest,
- outcome, reason, elapsedMs, cleanup:{confirmed,elapsedMs}, controls,
+ outcome, reason, policyEvents, elapsedMs, cleanup:{confirmed,elapsedMs}, controls,
  cases:[{caseId,steps:[{stepIndex,kind,outcome,reason,observation,elapsedMs}]}],
  receiptDigest}
 ```
@@ -222,8 +222,8 @@ text is streamed/bounded by the worker's observation implementation, not copied
 wholesale into the receipt. No claim of authenticated observation follows from
 a caller rehashing a record.
 
-Passed steps have reason null; failed steps use assertion-mismatch, step-timeout
-or driver-error; not-run steps use prior-stop and have null observation/zero time.
+Passed steps have reason null; failed steps use assertion-mismatch, step-timeout,
+run-timeout or driver-error; not-run steps use prior-stop and have null observation/zero time.
 The run reason is null for passed, assertion-mismatch/step-timeout for failed,
 blocked-request/unexpected-navigation/unexpected-page for policy-violation, or
 launch-error/driver-error/run-timeout for infrastructure-error. A failed step
@@ -231,7 +231,21 @@ without an observation is allowed only for timeout or driver error.
 The first failed step determines the run failure class and reason, except for
 the explicit policy-violation override. An assertion mismatch or step timeout
 cannot be relabeled as a launch/driver error. A step-level driver error requires
-the matching infrastructure-error/driver-error run outcome.
+the matching infrastructure-error/driver-error run outcome. A step interrupted
+by the overall deadline retains run-timeout and requires the matching
+infrastructure-error/run-timeout outcome and elapsed time at least that deadline.
+It cannot replace an already observed assertion mismatch with a timeout.
+
+`policyEvents` is a deduplicated array of at most six fixed observations, in first
+observed order: csp-blocked, http-aborted, websocket-closed, unexpected-page,
+navigation-denied, download-cancelled. A nonempty array requires policy-violation;
+its first event determines the reason. An empty array cannot certify a policy
+violation. CSP is observed through Chromium's native Audits.issueAdded event,
+not an application-callable callback. HTTP abort, socket closure and download
+cancellation are recorded after their driver acknowledgement. This records
+browser/application-layer observations, not complete network or DNS isolation.
+These fields refine the unreleased v1 branch; earlier branch receipts remain
+historical evidence and are not silently converted to the revised contract.
 
 Controls are closed boolean observations: sandboxRequested,
 sandboxArgumentsChecked, freshContexts, nodeEnvironmentScrubbed,

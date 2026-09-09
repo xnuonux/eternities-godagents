@@ -178,13 +178,32 @@ expected outcomes do not come from the runner's own digest or verifier.
 
 ## Task 4: refusal and failure-path qualification
 
+Complete, independently reviewed by Sartre01a083fc-7326-7112-aeec-af344cfead76.
+Targeted contract/runtime/runner gate:28 passed,0 failed,420.5094ms,exit0.
+Actual ten-case matrix: D:/00-INDEX/operations/2026-09-08-workspace-browser-runner/controls-zFmxZo,
+summary SHA256 ed38eb897b9d97e548465aa2b117e068d6926b7182f2bcd4bb78dfb0543a07f5.
+CSP HTTP, same-origin HTTP refusal, external/same-origin WebSockets, popup,
+navigation, download, step timeout, run timeout and text limit all returned the
+expected outcomes. Every run confirmed browser cleanup and unchanged source,
+revision and suite. Process inspection after the matrix found no owned worker
+or browser remaining. Final positive fixture qualification-oVYx2r again failed
+the broken app and passed the fixed app on the current runtime source.
+
+Two actual REDs informed production changes: controls-pr7Pk7 failed to report
+native CSP refusal (passing assertions masked it); controls-yS8KFH mislabeled an
+overall timeout as driver-error. Native Audits CSP events and bounded policyEvents
+now report the former; distinct step/run timeout semantics report the latter.
+All prior evidence is preserved. A refusal acknowledgement failure remains
+uncertain rather than falsely claiming an observed successful block. Task5
+full integration and merge are still pending. This is executor conformance only.
+
 **Files:** extend runner/runtime tests and the explicit qualification script; add inspected first-party control fixtures only when a distinct browser behavior needs them.
 
-- [ ] Add one failing regression at a time for stale descriptor/suite/revision, unknown resource routes, unexpected pages/navigation, app request refusal, changed engine pins, oversized diagnostics and deadline behavior.
-- [ ] Prove refusal at the actual launch or browser boundary. Any synthetic environment sentinels must be absent from the spawned worker and browser launch configuration. No real API key or user-browser profile is read to test secrecy.
-- [ ] Exercise a real inspected app's attempted external HTTP/WebSocket requests. Record whether CSP, request interception or socket closure was actually observed. Do not infer that DNS, WebRTC, background-browser traffic or OS egress were audited.
-- [ ] Exercise a bounded action/assertion timeout and an overall deadline. Confirm owned-browser closure through actual process/connection state where observable. If cleanup is uncertain, assert an uncertainty result rather than accepting termination intent as proof.
-- [ ] Rehash original source, suite and parent revision after each controlled rejected/failed run. Keep mismatch evidence, not an automatic repair. Run the targeted tests and explicit real-host controls, independent review, then commit this failure-path slice.
+- [x] Add one failing regression at a time for stale descriptor/suite/revision, unknown resource routes, unexpected pages/navigation, app request refusal, changed engine pins, oversized diagnostics and deadline behavior.
+- [x] Prove refusal at the actual launch or browser boundary. Any synthetic environment sentinels must be absent from the spawned worker and browser launch configuration. No real API key or user-browser profile is read to test secrecy.
+- [x] Exercise a real inspected app's attempted external HTTP/WebSocket requests. Record whether CSP, request interception or socket closure was actually observed. Do not infer that DNS, WebRTC, background-browser traffic or OS egress were audited.
+- [x] Exercise a bounded action/assertion timeout and an overall deadline. Confirm owned-browser closure through actual process/connection state where observable. If cleanup is uncertain, assert an uncertainty result rather than accepting termination intent as proof.
+- [x] Rehash original source, suite and parent revision after each controlled rejected/failed run. Keep mismatch evidence, not an automatic repair. Run the targeted tests and explicit real-host controls, independent review, then commit this failure-path slice.
 
 ## Task 5: integration and next actor connection
 

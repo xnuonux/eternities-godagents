@@ -185,6 +185,10 @@ const RUN_REASONS = {
   'policy-violation': ['blocked-request', 'unexpected-navigation', 'unexpected-page'],
   'infrastructure-error': ['launch-error', 'driver-error', 'run-timeout'],
 };
+export const BROWSER_POLICY_EVENT_REASONS = Object.freeze({
+  'csp-blocked': 'blocked-request', 'http-aborted': 'blocked-request', 'websocket-closed': 'blocked-request',
+  'unexpected-page': 'unexpected-page', 'navigation-denied': 'unexpected-navigation', 'download-cancelled': 'blocked-request',
+});
 function duration(value) {
   requireValue(typeof value === 'number' && Number.isFinite(value) && value >= 0
     && value <= Number.MAX_SAFE_INTEGER, 'browser elapsed time is invalid');
@@ -214,7 +218,7 @@ export function verifyBrowserTestResult(input, binding) {
   const suite = verifyBrowserTestSuite(binding.suite), descriptor = verifyBrowserRunnerDescriptor(binding.descriptor);
   const value = structuredClone(input);
   exact(value, ['schemaVersion', 'revisionDigest', 'testId', 'testSuiteDigest', 'descriptorDigest',
-    'outcome', 'reason', 'elapsedMs', 'cleanup', 'controls', 'cases', 'receiptDigest'], 'result');
+    'outcome', 'reason', 'policyEvents', 'elapsedMs', 'cleanup', 'controls', 'cases', 'receiptDigest'], 'result');
   requireValue(Buffer.byteLength(canonicalJson(value)) <= descriptor.limits.maxResultBytes, 'browser result bytes exceed limit');
   digest(value.receiptDigest);
   const { receiptDigest, ...unsigned } = value;
@@ -224,6 +228,12 @@ export function verifyBrowserTestResult(input, binding) {
     && value.descriptorDigest === descriptor.descriptorDigest, 'browser result source binding mismatch');
   requireValue(typeof value.outcome === 'string' && Object.hasOwn(RUN_REASONS, value.outcome)
     && RUN_REASONS[value.outcome].includes(value.reason), 'browser result outcome or reason is invalid');
+  requireValue(Array.isArray(value.policyEvents) && value.policyEvents.length <= 6
+    && value.policyEvents.every(event => typeof event === 'string' && Object.hasOwn(BROWSER_POLICY_EVENT_REASONS, event))
+    && new Set(value.policyEvents).size === value.policyEvents.length, 'browser policy events are invalid');
+  requireValue(value.policyEvents.length ? value.outcome === 'policy-violation'
+    && value.reason === BROWSER_POLICY_EVENT_REASONS[value.policyEvents[0]] : value.outcome !== 'policy-violation',
+  'browser policy event and outcome mismatch');
   duration(value.elapsedMs); exact(value.cleanup, ['confirmed', 'elapsedMs'], 'cleanup');
   requireValue(value.cleanup.confirmed === true, 'browser completed result requires confirmed cleanup');
   duration(value.cleanup.elapsedMs);
@@ -255,12 +265,14 @@ export function verifyBrowserTestResult(input, binding) {
         'browser observed step follows stop or lacks required controls');
       const assertion = step.kind.startsWith('assert-');
       if (step.outcome === 'passed') requireValue(step.reason === null, 'browser passed step has failure reason');
-      else requireValue(['assertion-mismatch', 'step-timeout', 'driver-error'].includes(step.reason),
+      else requireValue(['assertion-mismatch', 'step-timeout', 'driver-error', 'run-timeout'].includes(step.reason),
         'browser failed step reason is invalid');
+      if (step.reason === 'run-timeout') requireValue(value.elapsedMs >= descriptor.limits.runTimeoutMs,
+        'browser run timeout precedes its deadline');
       if (!assertion) requireValue(step.observation === null && step.reason !== 'assertion-mismatch',
         'browser action observation is invalid');
       else if (step.observation === null) requireValue(step.outcome === 'failed'
-        && ['step-timeout', 'driver-error'].includes(step.reason), 'browser assertion observation is missing');
+        && ['step-timeout', 'driver-error', 'run-timeout'].includes(step.reason), 'browser assertion observation is missing');
       else {
         const matches = assertionMatches(wantedStep, step.observation); assertionCount++;
         requireValue(matches ? step.outcome === 'passed' : step.outcome === 'failed' && step.reason === 'assertion-mismatch',
@@ -276,7 +288,7 @@ export function verifyBrowserTestResult(input, binding) {
     'browser completed test exceeds its deadline');
   if (value.outcome === 'failed') requireValue(failure === value.reason, 'browser failed run has no matching failed step');
   if (failure && value.outcome !== 'policy-violation') requireValue(value.reason === failure
-    && value.outcome === (failure === 'driver-error' ? 'infrastructure-error' : 'failed'),
+    && value.outcome === (['driver-error', 'run-timeout'].includes(failure) ? 'infrastructure-error' : 'failed'),
     'browser run outcome contradicts the recorded terminal step failure');
   return freeze(value);
 }

@@ -3,7 +3,7 @@ import { join, resolve, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { sha256Text, sha256Value } from '../core/digest.mjs';
 import { canonicalJson } from '../core/canonical-json.mjs';
-import { verifyBrowserTestResult } from './browser-test-contracts.mjs';
+import { verifyBrowserTestResult, BROWSER_POLICY_EVENT_REASONS } from './browser-test-contracts.mjs';
 import { verifyBrowserRuntimeFiles, buildBrowserWorkerEnvironment } from './browser-test-runtime.mjs';
 import { validatePayload, describeRuntime, ensure, REQUEST_MAX, ORIGIN, CSP, routeUrl } from './browser-test-profile.mjs';
 
@@ -64,14 +64,17 @@ async function run(request) {
   const { default: driver } = await import(pathToFileURL(join(runtime.driver.root, runtime.driver.entryPath)).href);
   const record = { schemaVersion: 1, revisionDigest: request.revision.revisionDigest,
     testId: suite.testId, testSuiteDigest: suite.testSuiteDigest, descriptorDigest: descriptor.descriptorDigest,
-    outcome: 'passed', reason: null, elapsedMs: 0, cleanup: { confirmed: false, elapsedMs: 0 },
+    outcome: 'passed', reason: null, policyEvents: [], elapsedMs: 0, cleanup: { confirmed: false, elapsedMs: 0 },
     controls: { sandboxRequested: false, sandboxArgumentsChecked: false, freshContexts: false,
       nodeEnvironmentScrubbed: true, browserEnvironmentScrubbed: false, serviceWorkersBlocked: false,
       downloadsDisabled: false, permissionsEmpty: false, routeInterception: false, webSocketInterception: false },
     cases: suite.cases.map(item => ({ caseId: item.caseId, steps: item.steps.map((step, stepIndex) => ({ stepIndex,
       kind: step.kind, outcome: 'not-run', reason: 'prior-stop', observation: null, elapsedMs: 0 })) })) };
   let server, browser, context, policyReason = null, deadlineHit = false, started = false;
-  const violate = reason => { policyReason ??= reason; };
+  const violate = event => {
+    if (!record.policyEvents.includes(event)) record.policyEvents.push(event);
+    policyReason ??= BROWSER_POLICY_EVENT_REASONS[event];
+  };
   const start = performance.now();
   const timer = setTimeout(() => { deadlineHit = true; void server?.kill().catch(() => {}); }, policy.limits.runTimeoutMs);
   try {
@@ -96,17 +99,29 @@ async function run(request) {
       Object.assign(record.controls, { freshContexts: true, serviceWorkersBlocked: true, downloadsDisabled: true, permissionsEmpty: true });
       await context.route('**/*', async route => {
         const request = route.request(), value = routes.get(request.url());
-        if (!value || request.method() !== 'GET') { violate('blocked-request'); await route.abort().catch(() => {}); return; }
+        if (!value || request.method() !== 'GET') {
+          const event = request.isNavigationRequest() ? 'navigation-denied' : 'http-aborted';
+          policyReason ??= BROWSER_POLICY_EVENT_REASONS[event];
+          await route.abort().then(() => violate(event)).catch(() => {}); return;
+        }
         await route.fulfill({ status: 200, contentType: value.contentType, body: value.bytes,
           headers: { 'Content-Security-Policy': CSP, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store' } }).catch(() => {});
       });
       record.controls.routeInterception = true;
-      await context.routeWebSocket('**/*', async socket => { violate('blocked-request'); await socket.close().catch(() => {}); });
+      await context.routeWebSocket('**/*', async socket => {
+        policyReason ??= 'blocked-request'; await socket.close().then(() => violate('websocket-closed')).catch(() => {});
+      });
       record.controls.webSocketInterception = true;
       const page = await context.newPage();
+      const audits = await context.newCDPSession(page);
+      audits.on('Audits.issueAdded', ({ issue }) => {
+        if (issue.code === 'ContentSecurityPolicyIssue' && issue.details?.contentSecurityPolicyIssueDetails?.isReportOnly === false)
+          violate('csp-blocked');
+      });
+      await audits.send('Audits.enable');
       context.on('page', other => { if (other !== page) { violate('unexpected-page'); void other.close().catch(() => {}); } });
-      page.on('download', download => { violate('blocked-request'); void download.cancel().catch(() => {}); });
-      page.on('framenavigated', frame => { if (!routes.has(frame.url())) violate('unexpected-navigation'); });
+      page.on('download', download => { policyReason ??= 'blocked-request'; void download.cancel().then(() => violate('download-cancelled')).catch(() => {}); });
+      page.on('framenavigated', frame => { if (!routes.has(frame.url())) violate('navigation-denied'); });
       await page.goto(routeUrl(suite.entryPath), { waitUntil: 'domcontentloaded', timeout: policy.limits.stepTimeoutMs });
       for (let s = 0; s < suite.cases[c].steps.length; s++) {
         if (policyReason) break outer;
@@ -115,13 +130,13 @@ async function run(request) {
           const observed = await bounded(observe(page, step, policy.limits.stepTimeoutMs), policy.limits.stepTimeoutMs);
           Object.assign(actual, { outcome: observed.matches ? 'passed' : 'failed', reason: observed.matches ? null : 'assertion-mismatch', observation: observed.observation });
         } catch (error) {
-          Object.assign(actual, { outcome: 'failed', reason: error.name === 'TimeoutError' && !deadlineHit ? 'step-timeout' : 'driver-error', observation: null });
+          Object.assign(actual, { outcome: 'failed', reason: deadlineHit ? 'run-timeout' : error.name === 'TimeoutError' ? 'step-timeout' : 'driver-error', observation: null });
         }
         actual.elapsedMs = performance.now() - stepStart;
         if (actual.outcome === 'passed' && actual.elapsedMs > policy.limits.stepTimeoutMs)
           Object.assign(actual, { outcome: 'failed', reason: 'step-timeout', observation: null });
         if (actual.outcome === 'failed') {
-          record.outcome = actual.reason === 'driver-error' ? 'infrastructure-error' : 'failed'; record.reason = actual.reason; break outer;
+          record.outcome = ['driver-error', 'run-timeout'].includes(actual.reason) ? 'infrastructure-error' : 'failed'; record.reason = actual.reason; break outer;
         }
       }
       await context.close(); context = null;
