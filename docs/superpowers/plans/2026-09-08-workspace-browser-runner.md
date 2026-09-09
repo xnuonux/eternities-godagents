@@ -32,6 +32,24 @@
 
 ## Task 1: closed suite and runner contracts
 
+Complete, independently reviewed. Design committed at04cf2ed and implementation plan atbf580fc.
+Initial suite compilation/verification tests failed on missing APIs; the basic
+compiler/verifier then passed both. Executable/authority/invalid-field and budget
+tests each reproduced missing rejection before validation was added. Latest
+single-file run:15 passed, exit0,77.6947ms. Suite, policy and descriptor
+compilation/verification and result verification are implemented. Descriptor and
+result missing-API RED were observed before implementation. Canonical reordering
+and typed-digest refusal are covered; an arbitrary count-expectation cap was
+removed after its regression reproduced. Deadline tests exposed overdue work
+accepted as passed and now reject it. Banach reviewed the pre-result layer and
+result design, requiring full-text digest/length equality and a terminal not-run
+suffix. Sartre01a083fc-7326-7112-aeec-af344cfead76 completed final review after
+Banach became unavailable (tool not-found). Review exposed a terminal-step failure
+being relabeled as an infrastructure error. Both regression cases reproduced RED,
+the cross-field invariant was fixed, all15 passed, and focused re-review cleared
+Task1. This is a protocol implementation commit, not browser qualification.
+No worker, driver import or browser launch has occurred in this implementation.
+
 **Files:** create `src/workspace/browser-test-contracts.mjs` and `tests/browser-test-contracts.test.mjs`.
 
 **Interfaces:**
@@ -40,9 +58,9 @@
 - Cases are `{caseId,steps}`. Steps are closed tagged records: `{kind:'click',selector}`, `{kind:'fill',selector,text}`, `{kind:'press',selector,key}`, `{kind:'assert-text',selector,text}`, `{kind:'assert-visible',selector,visible}`, `{kind:'assert-count',selector,count}`.
 - `compileBrowserRunnerPolicy(input)` accepts profile, approvedRevisionDigests and limits; returns frozen policy plus policyDigest. Revisions must be unique SHA-256 strings and sorted deterministically, with no model-controlled approval flag.
 - `buildBrowserRunnerDescriptor(unsigned)` and `verifyBrowserRunnerDescriptor(record)` enforce B-3's exact descriptor fields and partial-pin label.
-- `verifyBrowserTestResult(record,{revisionDigest,testId,testSuiteDigest,descriptorDigest,maxResultBytes})` verifies exact bindings, closed cases/steps, verdict consistency, actual bounded durations, cleanup confirmation and digest. A claimed passed outcome with a failed step rejects.
+- `verifyBrowserTestResult(record,{revisionDigest,suite,descriptor})` verifies exact bindings against the complete verified host suite/descriptor, closed cases/steps, verdict consistency, actual durations, cleanup confirmation and digest. This replaces digest-only inputs, which cannot prove exact step coverage. A claimed passed outcome with a failed/missing step rejects. B-4 defines the closed result and observation records, terminal not-run suffix and text digest/length comparison.
 
-- [ ] Add a missing-API RED test before production code:
+- [x] Add a missing-API RED test before production code:
 
 ```js
 const api = await import('../src/workspace/browser-test-contracts.mjs').catch(() => ({}));
@@ -57,10 +75,10 @@ assert.equal(suite.cases[0].steps[2].text, 'fix build');
 assert.ok(Object.isFrozen(suite.cases[0].steps));
 ```
 
-- [ ] Run `node --test tests/browser-test-contracts.test.mjs`; observe the missing-function assertion, not an accidental syntax/import error. Then implement only the closed suite validation and canonical digest using existing core canonical-json/digest helpers.
-- [ ] Add table-driven invalid suites for traversal, case collisions in IDs, duplicate cases, unknown kinds/fields, evaluate/script steps, excess cases/steps/text, invalid count/visibility, non-string digest coercion and caller mutation. Add canonical-record tampering tests against `verifyBrowserTestSuite`.
-- [ ] Add actual shape/binding tests for policy/descriptor/result before implementing them. Hand-derive expected rejection fields; do not use the production result verifier as the test oracle. Prove a mismatched revision, suite, runtime descriptor, failure verdict, missing cleanup confirmation or oversized result cannot be accepted.
-- [ ] Run the single contract file, independent review, and commit the coherent contracts. Label these as deterministic protocol tests, not browser evidence.
+- [x] Run `node --test tests/browser-test-contracts.test.mjs`; observe the missing-function assertion, not an accidental syntax/import error. Then implement only the closed suite validation and canonical digest using existing core canonical-json/digest helpers.
+- [x] Add table-driven invalid suites for traversal, case collisions in IDs, duplicate cases, unknown kinds/fields, evaluate/script steps, excess cases/steps/text, invalid count/visibility, non-string digest coercion and caller mutation. Add canonical-record tampering tests against `verifyBrowserTestSuite`.
+- [x] Add actual shape/binding tests for policy/descriptor/result before implementing them. Hand-derive expected rejection fields; do not use the production result verifier as the test oracle. Prove a mismatched revision, suite, runtime descriptor, failure verdict, missing cleanup confirmation or oversized result cannot be accepted.
+- [x] Run the single contract file, independent review, and commit the coherent contracts. Label these as deterministic protocol tests, not browser evidence.
 
 ## Task 2: static runtime preflight before any driver import
 

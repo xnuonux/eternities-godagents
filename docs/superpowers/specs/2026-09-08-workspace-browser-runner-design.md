@@ -169,6 +169,54 @@ policy-violation or infrastructure-error. A test failure is not a transport erro
 an observed policy violation cannot be hidden behind otherwise passing assertions.
 Only independently observed assertions can produce passed.
 
+The result verifier receives the verified host suite and descriptor, not only
+their digest strings. It requires every case and step in exact suite order.
+Execution stops on the first failed step or run-level stop; `not-run` is only
+the remaining global suffix. There is no implicit independent-case continuation.
+Completed records use this closed shape:
+
+```text
+{schemaVersion, revisionDigest, testId, testSuiteDigest, descriptorDigest,
+ outcome, reason, elapsedMs, cleanup:{confirmed,elapsedMs}, controls,
+ cases:[{caseId,steps:[{stepIndex,kind,outcome,reason,observation,elapsedMs}]}],
+ receiptDigest}
+```
+
+`receiptDigest` hashes the complete unsigned record; it is consistency evidence,
+not authentication. The runner/owner boundary must establish its source.
+Step outcomes are passed, failed or not-run. Action observations are null;
+assert-count observes a safe nonnegative integer, assert-visible a boolean, and
+assert-text `{sample,textDigest,textBytes}`. Text samples are <=512 UTF-8 bytes;
+only the full text digest and byte length determine exact-text equality, retaining
+the semantics of expected strings up to4096 bytes. If text is <=512 bytes the
+sample must be the full observed text, and its digest must match. Larger observed
+text is streamed/bounded by the worker's observation implementation, not copied
+wholesale into the receipt. No claim of authenticated observation follows from
+a caller rehashing a record.
+
+Passed steps have reason null; failed steps use assertion-mismatch, step-timeout
+or driver-error; not-run steps use prior-stop and have null observation/zero time.
+The run reason is null for passed, assertion-mismatch/step-timeout for failed,
+blocked-request/unexpected-navigation/unexpected-page for policy-violation, or
+launch-error/driver-error/run-timeout for infrastructure-error. A failed step
+without an observation is allowed only for timeout or driver error.
+The first failed step determines the run failure class and reason, except for
+the explicit policy-violation override. An assertion mismatch or step timeout
+cannot be relabeled as a launch/driver error. A step-level driver error requires
+the matching infrastructure-error/driver-error run outcome.
+
+Controls are closed boolean observations: sandboxRequested,
+sandboxArgumentsChecked, freshContexts, nodeEnvironmentScrubbed,
+browserEnvironmentScrubbed, serviceWorkersBlocked, downloadsDisabled,
+permissionsEmpty, routeInterception and webSocketInterception. All are required
+before an observed step is accepted. These are declarations checked at the
+worker boundary, not comprehensive network/OS attestation. Run-level policy
+violations override otherwise passing/failed steps. The exact descriptor binds
+runtime pins without duplicating them in each result. All completed outcomes
+require confirmed cleanup; uncertainty is returned outside this completed-record
+contract. Actual elapsed observations may exceed requested deadlines when an
+infrastructure timeout is reported; deadlines are not claimed as hard OS quotas.
+
 Return bounded diagnostics rather than raw HTML, full browser errors or unlimited
 console logs. Case/step IDs and fixed failure classes are mandatory; any captured
 app text is limited and belongs only to the admitted app. Never include environment,
