@@ -84,7 +84,10 @@ test('browser worker environment drops ambient options and uses only fixed Windo
     for (const name of names) process.env[name] = 'synthetic-untrusted-value';
     const environment = api.buildBrowserWorkerEnvironment({ systemRoot: 'C:\\Windows', tempRoot: 'C:\\runner-temp' });
     assert.deepEqual(environment, { SystemRoot: 'C:\\Windows', WINDIR: 'C:\\Windows',
-      TEMP: 'C:\\runner-temp', TMP: 'C:\\runner-temp', PATH: win32.join('C:\\Windows', 'System32') });
+      TEMP: 'C:\\runner-temp', TMP: 'C:\\runner-temp', PATH: win32.join('C:\\Windows', 'System32'),
+      SYSTEMDRIVE: 'C:', HOMEDRIVE: 'C:', HOMEPATH: '\\runner-temp', USERPROFILE: 'C:\\runner-temp',
+      USERNAME: 'godagent', USERDOMAIN: 'godagent', LOGONSERVER: 'local',
+      LOCALAPPDATA: 'C:\\runner-temp\\AppData\\Local', APPDATA: 'C:\\runner-temp\\AppData\\Roaming' });
     assert.ok(Object.isFrozen(environment));
     for (const input of [
       { systemRoot: 'relative', tempRoot: 'C:\\runner-temp' },
@@ -174,4 +177,21 @@ test('browser runtime accepts exact chunk boundaries and rejects oversized packa
     if (length === 65536) assert.equal((await api.verifyBrowserRuntimeFiles(config)).runtime.driver.version, '1.62.1');
     else await assert.rejects(api.verifyBrowserRuntimeFiles(config), /metadata size/);
   }
+});
+
+test('actual Windows Node creation cannot restore ambient user identity into the scrubbed environment', () => {
+  if (process.platform !== 'win32') return;
+  const environment = api.buildBrowserWorkerEnvironment({ systemRoot: 'C:\\Windows', tempRoot: 'C:\\runner-temp' });
+  const code = 'console.log(JSON.stringify({keys:Object.keys(process.env).sort(),exact:JSON.stringify(Object.entries(process.env).sort())===JSON.stringify(Object.entries(JSON.parse(process.argv[1])).sort())}))';
+  const child = spawnSync(process.execPath, ['-e', code, JSON.stringify(environment)], { env: environment, encoding: 'utf8', windowsHide: true, timeout: 5000 });
+  assert.equal(child.status, 0);
+  const observed = JSON.parse(child.stdout);
+  assert.deepEqual(observed.keys, Object.keys(environment).sort());
+  assert.equal(observed.exact, true);
+});
+
+test('scrubbed browser profile provides private application-data locations rather than the user profile', () => {
+  const environment = api.buildBrowserWorkerEnvironment({ systemRoot: 'C:\\Windows', tempRoot: 'C:\\runner-temp' });
+  assert.equal(environment.LOCALAPPDATA, 'C:\\runner-temp\\AppData\\Local');
+  assert.equal(environment.APPDATA, 'C:\\runner-temp\\AppData\\Roaming');
 });

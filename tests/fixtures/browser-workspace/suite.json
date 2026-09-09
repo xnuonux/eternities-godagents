@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "testId": "tasks.behavior",
+  "entryPath": "index.html",
+  "cases": [
+    {"caseId":"initial","steps":[{"kind":"assert-count","selector":".task","count":2}]},
+    {"caseId":"completed-only","steps":[
+      {"kind":"click","selector":"#completed"},
+      {"kind":"assert-count","selector":".task","count":1},
+      {"kind":"assert-text","selector":".task","text":"fix build"}
+    ]},
+    {"caseId":"add-task","steps":[
+      {"kind":"fill","selector":"#new-task","text":"ship tested work"},
+      {"kind":"press","selector":"#new-task","key":"Enter"},
+      {"kind":"assert-count","selector":".task","count":3},
+      {"kind":"assert-text","selector":".task:last-child","text":"ship tested work"}
+    ]}
+  ]
+}

@@ -153,5 +153,8 @@ export function buildBrowserWorkerEnvironment(input) {
   for (const path of Object.values(input)) requireValue(typeof path === 'string' && /^[A-Za-z]:\\/.test(path)
     && !/[\x00-\x1f\x7f;"<>|?*]/.test(path) && win32.normalize(path) === path, 'environment path is invalid');
   return Object.freeze({ SystemRoot: input.systemRoot, WINDIR: input.systemRoot,
-    TEMP: input.tempRoot, TMP: input.tempRoot, PATH: win32.join(input.systemRoot, 'System32') });
+    TEMP: input.tempRoot, TMP: input.tempRoot, PATH: win32.join(input.systemRoot, 'System32'),
+    SYSTEMDRIVE: input.systemRoot.slice(0, 2), HOMEDRIVE: input.tempRoot.slice(0, 2), HOMEPATH: input.tempRoot.slice(2),
+    USERPROFILE: input.tempRoot, USERNAME: 'godagent', USERDOMAIN: 'godagent', LOGONSERVER: 'local',
+    LOCALAPPDATA: win32.join(input.tempRoot, 'AppData', 'Local'), APPDATA: win32.join(input.tempRoot, 'AppData', 'Roaming') });
 }

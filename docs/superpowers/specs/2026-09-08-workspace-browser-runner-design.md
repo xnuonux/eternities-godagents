@@ -128,6 +128,25 @@ credentials, proxy variables, user PATH or unrelated process variables. Required
 fixed driver options, if discovered, must become reviewed profile constants, not
 caller overrides. Node and browser environment policies are independently bound.
 
+Actual Windows process creation restored seven omitted identity/home variables.
+The fixed implementation therefore supplies neutral USERNAME/USERDOMAIN/LOGONSERVER,
+system-only SYSTEMDRIVE, and HOMEDRIVE/HOMEPATH/USERPROFILE within the fresh temporary
+root before creation. APPDATA and LOCALAPPDATA also point to newly created private
+subdirectories there. A child-process test checks the entire resulting environment
+against this closed declaration before driver import; ambient values are not
+silently accepted. This completed the real Chrome launch without using the user's
+normal profile or changing any system setting. The five-key sketch above is
+superseded by the exact `ENV_POLICY` and `buildBrowserWorkerEnvironment` contract.
+
+Chromium's source treats an unknown default-data-directory determination as a
+remote-debugging refusal, not only a positively identified default directory:
+[remote-debugging gate](https://chromium.googlesource.com/chromium/src/+/main/chrome/browser/devtools/remote_debugging_server.cc).
+Its Windows default directory depends on local app data:
+[Windows path implementation](https://chromium.googlesource.com/chromium/src/+/main/chrome/common/chrome_paths_win.cc).
+This motivated the private app-data hypothesis, which the local broken/fixed
+execution then verified as resolving this host's launch failure. It is not an
+instruction to bypass Chrome's restriction or reuse a logged-in profile.
+
 The public descriptor has a closed shape:
 
 ```text

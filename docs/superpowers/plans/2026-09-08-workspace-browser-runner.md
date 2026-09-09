@@ -27,6 +27,7 @@
 - `src/workspace/browser-test-contracts.mjs`: suite, policy, descriptor and outcome validation/digests. No filesystem, process or browser import.
 - `src/workspace/browser-test-runtime.mjs`: canonical private runtime locations, bounded streaming file-pin checks and fixed environment construction. No model data or app execution.
 - `src/workspace/browser-test-runner.mjs`: issued parent handle, revision approval/materialization, bounded worker lifecycle and result verification.
+- `src/workspace/browser-test-profile.mjs`: shared fixed browser policy, source descriptor and copied-byte envelope validation; no execution at import.
 - `src/workspace/browser-test-worker.mjs`: fixed worker entrypoint, bounded stdin, pre-import validation, actual browser controls, declarative steps and cleanup.
 - Unit tests mirror those boundaries. `scripts/check-browser-workspace-runner.mjs` performs explicit real-host qualification using inspected fixture apps and a supplied runtime config. Do not silently skip absent browser qualification and call the runner certified.
 
@@ -115,14 +116,38 @@ launch occurred. Native version declarations still require worker-time agreement
 
 ## Task 3: actual browser runner and independent behavioral result
 
+Complete initial execution slice, independently reviewed by Sartre. Final targeted
+contract/runtime/runner tests26passed,0failed,362.0052ms,exit0. Actual final-candidate
+positive qualification is D:/00-INDEX/operations/2026-09-08-workspace-browser-runner/qualification-8hLOKn.
+Broken revision failed assertion-mismatch at the completed-only count; fixed revision
+passed all three independent cases. Source, parent revision and suite were unchanged.
+Both owned browsers closed; process inspection found no remaining owned worker/browser.
+Final negative launch-failure qualification-NPrAgS returns uncertain with unconfirmed
+cleanup. This is real executor conformance, not a live model-quality comparison.
+
+Execution exposed Windows-injected environment fields and Chrome's need for valid
+private app-data directories. Added precreation neutral identity/home bindings,
+APPDATA/LOCALAPPDATA under the owned temporary root, and real child-process tests.
+No system settings, default user profiles or sandbox flags were weakened. Parent
+refusal tests prove zero physical spawns for unapproved requests, unknown suites,
+extra fields, changed app bytes and changed runtime pins. A controlled launch-failure
+RED exposed a false cleanup claim from a missing server handle; it now returns
+uncertainty. Prior failed attempts remain preserved, not rewritten.
+
+Final descriptor5bbe0b229ecfa8e8510750b68615b737b9c6143922f95a7791ef67a6b6bc33b4;
+source9f02129db3d675d6863d2e5c159e507b2b39cd49966b24e4c7f185e887767bcb;
+worker3fbb2fc70ebfc0cce033591faaf32f7062fe5bc9454ff3c71c7d3931f121de7b.
+Summary file SHA256e7a6276399f216efd3aae6e6819439a198e90f69ba79dcf2e537f45db0e7be90.
+Task4 extended refusal/timeout tests and Task5 integration remain unfinished.
+
 **Files:** create parent/worker modules, `tests/browser-test-runner.test.mjs`, `scripts/check-browser-workspace-runner.mjs`, and three first-party fixtures under `tests/fixtures/browser-workspace/`: `broken.html`, `fixed.html`, `suite.json`.
 
 **Interfaces:** `createBrowserWorkspaceTestRunner({store,runtime,policy,suites})` returns frozen `describe()` and `run({revisionDigest,testId})`. Store is `{root,limits}`, not an injected verifier object. The worker consumes copied byte routes, one verified suite, runtime config/descriptor and bounded deadlines through one bounded IPC request. It returns only a closed verified result, never model text.
 
-- [ ] Write a missing-runner API test, then pre-launch refusal tests: unapproved digest, unknown test ID, forged runtime pins and tampered revision. Assert no worker/browser was started from the owning process boundary, not merely that a mock was called. Keep any observation helper in tests, not as a production bypass hook.
-- [ ] Build a small self-contained first-party task-list app with literal initial tasks `write docs` (incomplete) and `fix build` (complete), all/completed filtering and add-by-Enter. The broken version deliberately shows both tasks in the completed filter. The fixed version corrects that predicate. Do not use the known incident app or call these fixtures fresh quality evidence.
-- [ ] Write the independent suite before runner code. Cases must assert initial two tasks, completed-only count1/text`fix build`, and Enter adding a third task. Cases start with fresh context state; the suite itself is outside the writable app revision.
-- [ ] The real qualification must use the normal store and runner APIs:
+- [x] Write a missing-runner API test, then pre-launch refusal tests: unapproved digest, unknown test ID, forged runtime pins and tampered revision. Assert no worker/browser was started from the owning process boundary, not merely that a mock was called. Keep any observation helper in tests, not as a production bypass hook.
+- [x] Build a small self-contained first-party task-list app with literal initial tasks `write docs` (incomplete) and `fix build` (complete), all/completed filtering and add-by-Enter. The broken version deliberately shows both tasks in the completed filter. The fixed version corrects that predicate. Do not use the known incident app or call these fixtures fresh quality evidence.
+- [x] Write the independent suite before runner code. Cases must assert initial two tasks, completed-only count1/text`fix build`, and Enter adding a third task. Cases start with fresh context state; the suite itself is outside the writable app revision.
+- [x] The real qualification must use the normal store and runner APIs:
 
 ```js
 const broken = await store.capture({sourceRoot:fixtureRoot,files:[
@@ -145,11 +170,11 @@ It reads `fixed.html` as replacement bytes; neither committed fixture is mutated
 The fixture helper writes only its validated owned temporary directory. Literal
 expected outcomes do not come from the runner's own digest or verifier.
 
-- [ ] Observe the missing runner/behavior RED, then implement parent materialization through the existing store, exact route table, descriptor revalidation, fixed scrubbed worker spawn and bounded output handling. Use direct argument vectors, never a model-built shell string.
-- [ ] Implement worker validation before driver import. Request and observe sandbox-related arguments; use a fresh context, fixed permissions/download/service-worker settings, exact routes and denial policy, fresh state per case, and the six allowed step kinds. Never accept evaluate/module/command steps.
-- [ ] Implement independent assertion observations. Fixed failure classes and bounded app text may explain test failures; arbitrary browser exception stacks, HTML, URLs, console output and environment never become the result. A browser-layer policy violation overrides otherwise successful assertions.
-- [ ] Confirm cleanup before issuing completed evidence. Overall timeout or failed cleanup cannot become a passed receipt. The parent never retries an uncertain worker; later workspace-owner recovery remains separate.
-- [ ] Run the explicit real-host qualification command with the prepared config, preserving broken and fixed results, source/suite/runtime digests, observed controls, cleanup and exact source hashes. No provider call. Review the real evidence before committing the runner.
+- [x] Observe the missing runner/behavior RED, then implement parent materialization through the existing store, exact route table, descriptor revalidation, fixed scrubbed worker spawn and bounded output handling. Use direct argument vectors, never a model-built shell string.
+- [x] Implement worker validation before driver import. Request and observe sandbox-related arguments; use a fresh context, fixed permissions/download/service-worker settings, exact routes and denial policy, fresh state per case, and the six allowed step kinds. Never accept evaluate/module/command steps.
+- [x] Implement independent assertion observations. Fixed failure classes and bounded app text may explain test failures; arbitrary browser exception stacks, HTML, URLs, console output and environment never become the result. A browser-layer policy violation overrides otherwise successful assertions.
+- [x] Confirm cleanup before issuing completed evidence. Overall timeout or failed cleanup cannot become a passed receipt. The parent never retries an uncertain worker; later workspace-owner recovery remains separate.
+- [x] Run the explicit real-host qualification command with the prepared config, preserving broken and fixed results, source/suite/runtime digests, observed controls, cleanup and exact source hashes. No provider call. Review the real evidence before committing the runner.
 
 ## Task 4: refusal and failure-path qualification
 

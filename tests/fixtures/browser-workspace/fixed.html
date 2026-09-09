@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>First-party task list fixture</title>
+<body><h1>Tasks</h1><button id="all">All</button><button id="completed">Completed</button>
+<label>New task <input id="new-task"></label><ul id="tasks"></ul>
+<script>
+const tasks = [{text:'write docs',complete:false},{text:'fix build',complete:true}];
+let completedOnly = false;
+function render() {
+  const list = document.querySelector('#tasks'); list.replaceChildren();
+  for (const task of tasks.filter(task => !completedOnly || task.complete)) {
+    const row = document.createElement('li'); row.className = 'task'; row.textContent = task.text; list.append(row);
+  }
+}
+document.querySelector('#all').onclick = () => { completedOnly = false; render(); };
+document.querySelector('#completed').onclick = () => { completedOnly = true; render(); };
+document.querySelector('#new-task').onkeydown = event => {
+  if (event.key === 'Enter' && event.target.value.trim()) {
+    tasks.push({text:event.target.value.trim(),complete:false}); event.target.value = ''; render();
+  }
+};
+render();
+</script></body></html>
