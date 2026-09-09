@@ -5,6 +5,15 @@ on `main`, reconciled with `origin/main`. Remote:
 `https://github.com/xnuonux/eternities-godagents.git`.
 This is a product and release-process review, not a new certification.
 
+Workspace browser candidate, 2026-09-08: runtime `333fd1f` on
+`feat/workspace-browser-runner` now tests actual interactive apps. The broken/fixed
+fixture and all ten browser control probes qualify, and 28 focused tests pass.
+Independent review cleared the failure-path slice. Full integration/merge remain
+pending; main is still `51df9e0`. See the [exact evidence and remaining gate](audits/2026-09-08-workspace-browser-runner-closeout.md)
+and [host API/limits](workspace-browser-runner.md). This still needs Workspace
+Realm/actor/mission ownership before it is a persistent coding agent, and does not
+establish live model-quality improvement.
+
 Workspace revision milestone, 2026-09-08: runtime `a4cf1df` is merged. The internal host-only store captures
 explicit pinned files, derives successor revisions without mutating parents or
 original projects, verifies actual bytes, and preserves bounded interrupted
