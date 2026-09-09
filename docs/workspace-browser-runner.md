@@ -53,7 +53,7 @@ The runner clones its inputs and refuses concurrent execution on the same handle
 It verifies runtime pins, descriptor and revision bytes again before dispatch.
 
 Suites permit only click, fill, press, assert-count, assert-visible and assert-text.
-There is no evaluation/script step, npm install, shell, server process or arbitrary
+There is no evaluation/script step, npm install, shell, application server process or arbitrary
 project test command. At most8 cases/128 total steps belong to one suite; each
 case starts with a fresh browser context. The catalog holds at most16 suites.
 The host may set lower ceilings. See the [closed contracts](superpowers/specs/2026-09-08-workspace-browser-runner-design.md#b-4-independently-owned-suites-and-bounded-observations).
