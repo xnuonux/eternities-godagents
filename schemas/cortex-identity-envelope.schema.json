@@ -184,6 +184,19 @@
                 "profile": { "const": "local-artifact-v2" },
                 "maximumArtifactBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 }
               }
+            },
+            {
+              "type": "object", "additionalProperties": false,
+              "required": ["profile", "maximumArtifactBytes", "maximumFiles", "maximumRevisionBytes", "browserProfile", "independentReviewRequired", "sourceMutation"],
+              "properties": {
+                "profile": { "const": "local-workspace-v3" },
+                "maximumArtifactBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 },
+                "maximumFiles": { "type": "integer", "minimum": 1, "maximum": 16 },
+                "maximumRevisionBytes": { "type": "integer", "minimum": 1, "maximum": 4194304 },
+                "browserProfile": { "const": "host-reviewed-browser-local-v1" },
+                "independentReviewRequired": { "const": true },
+                "sourceMutation": { "const": false }
+              }
             }
           ]
         },

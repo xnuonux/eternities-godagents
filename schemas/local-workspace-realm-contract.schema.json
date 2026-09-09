@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion", "profile", "realmId", "version", "trustModel", "capabilities", "artifactStore", "workspace", "privacy"],
+  "properties": {
+    "schemaVersion": { "const": 3 },
+    "profile": { "const": "local-workspace-v3" },
+    "realmId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z0-9][a-z0-9._:-]*$" },
+    "version": { "const": "1.0.0" },
+    "trustModel": { "const": "operator-local" },
+    "capabilities": {
+      "type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true,
+      "items": { "enum": ["artifact.publish", "artifact.verify", "workspace.export", "workspace.revise", "workspace.test"] }
+    },
+    "artifactStore": {
+      "type": "object", "additionalProperties": false,
+      "required": ["operation", "producerDescriptorDigest", "relativeRoot", "maximumBytes", "naming", "publication", "replay"],
+      "properties": {
+        "operation": { "const": "publish-local-artifact" },
+        "producerDescriptorDigest": { "type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[a-f0-9]{64}$" },
+        "relativeRoot": { "const": "artifacts" },
+        "maximumBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 },
+        "naming": { "const": "sha256-canonical-json" },
+        "publication": { "const": "exclusive-hard-link" },
+        "replay": { "const": "verify-identical-canonical-json" }
+      }
+    },
+    "workspace": {
+      "type": "object", "additionalProperties": false,
+      "required": ["relativeRoot", "maximumFiles", "maximumRevisionBytes", "browserProfile", "independentReviewRequired", "sourceMutation"],
+      "properties": {
+        "relativeRoot": { "const": "workspace-revisions" },
+        "maximumFiles": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "maximumRevisionBytes": { "type": "integer", "minimum": 1, "maximum": 4194304 },
+        "browserProfile": { "const": "host-reviewed-browser-local-v1" },
+        "independentReviewRequired": { "const": true },
+        "sourceMutation": { "const": false }
+      }
+    },
+    "privacy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["retention", "automaticDeletion"],
+      "properties": {
+        "retention": { "const": "operator-managed" },
+        "automaticDeletion": { "const": false }
+      }
+    }
+  }
+}

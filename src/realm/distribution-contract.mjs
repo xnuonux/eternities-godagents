@@ -11,10 +11,11 @@ export function verifyDistributionRealmContract(input) {
   if (contract?.schemaVersion === 1) {
     assertSchema('realm-contract', contract);
     profile = 'fixture-local-v1';
-  } else if (contract?.schemaVersion === 2) {
-    assertSchema('local-artifact-realm-contract', contract);
+  } else if (contract?.schemaVersion === 2 || contract?.schemaVersion === 3) {
+    const schema = contract.schemaVersion === 2 ? 'local-artifact-realm-contract' : 'local-workspace-realm-contract';
+    assertSchema(schema, contract);
     if (contract.artifactStore.producerDescriptorDigest !== sha256Value(localArtifactEffectProducer)) {
-      throw new SchemaError('local-artifact-realm-contract', '/artifactStore/producerDescriptorDigest', 'producer mismatch');
+      throw new SchemaError(schema, '/artifactStore/producerDescriptorDigest', 'producer mismatch');
     }
     profile = contract.profile;
   } else {

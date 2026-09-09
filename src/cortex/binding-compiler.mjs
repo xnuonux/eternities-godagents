@@ -193,7 +193,12 @@ function compileFullEnvelope({ verified, request, bindingCandidateId }) {
       realmContractVersion: realm.version,
       realmContractDigest: sha256Value(realm),
       realmCapabilities: sorted(realm.capabilities),
-      resourceLimits: realm.schemaVersion === 2
+      resourceLimits: realm.schemaVersion === 3
+        ? { profile: realm.profile, maximumArtifactBytes: realm.artifactStore.maximumBytes,
+          maximumFiles: realm.workspace.maximumFiles, maximumRevisionBytes: realm.workspace.maximumRevisionBytes,
+          browserProfile: realm.workspace.browserProfile, independentReviewRequired: realm.workspace.independentReviewRequired,
+          sourceMutation: realm.workspace.sourceMutation }
+        : realm.schemaVersion === 2
         ? { profile: realm.profile, maximumArtifactBytes: realm.artifactStore.maximumBytes }
         : clone(realm.resources),
       activationRequirements: [

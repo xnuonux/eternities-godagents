@@ -20,6 +20,13 @@
 
 ## Task 1: closed profile through actual fresh admission
 
+Completed prerequisite. The real admission test first rejected compatibility
+before production changes. An earlier fixture-order policy-pin mismatch was
+corrected in the test, not by weakening policy verification. The new profile
+then reached actual genesis/cortex compilation with exact inert resource limits.
+Focused new/old caller gate:27 passed,0 failed,3455.324ms,exit0. The final explicit
+model-projection assertion also passed all5 new tests,542.9737ms,exit0.
+
 **Files:** create `schemas/local-workspace-realm-contract.schema.json`,
 `tests/local-workspace-admission.test.mjs`; modify
 `src/core/schema-validator.mjs`, `src/realm/distribution-contract.mjs`,
@@ -30,16 +37,16 @@ creation/admission/binding APIs unchanged. Its new-profile result has the same
 {schemaVersion,profile,contractDigest,capabilities} inspection shape. The full
 contract and cortex resource projection are fixed in the spec.
 
-- [ ] Write a test constructing first-party creation inputs, matching five Realm
+- [x] Write a test constructing first-party creation inputs, matching five Realm
   capabilities in candidate/policy/embodiment, then call real compileCreation,
   admitLocalCreation, readAdmissionBinding/localGenesisAdmission and
   compileCortexBindingCandidate. Assert literal workspace resource limits and
   inert/empty-granted-effects output. Run `node --test tests/local-workspace-admission.test.mjs`;
   observe rejection of the unsupported version before any production edit.
-- [ ] Implement the exact v3 schema and register it. Add the explicit profile
+- [x] Implement the exact v3 schema and register it. Add the explicit profile
   branch to verifyDistributionRealmContract, sharing artifact publication
   semantics without accepting unknown top-level or nested fields.
-- [ ] Add the explicit schema3 resource projection in compileFullEnvelope and
+- [x] Add the explicit schema3 resource projection in compileFullEnvelope and
   the third closed resourceLimits branch. Do not use a generic fallback:
 
 ```js
@@ -54,23 +61,28 @@ const resourceLimits = {
 };
 ```
 
-- [ ] Re-run the real admission test and existing local-artifact Realm/binding and
+- [x] Re-run the real admission test and existing local-artifact Realm/binding and
   cortex binding tests. Observe exact limits at the real caller, not only schema acceptance.
 
 ## Task 2: refusal boundaries and handoff
 
+Completed prerequisite. Sartre01a083fc-7326-7112-aeec-af344cfead76 independently
+reviewed the source, closed schemas, real caller coverage and legacy refusals,
+finding no must-fix issue. This branch remains unreleased; there is no new
+certificate, owner, execution host, provider result or full integration claim.
+
 **Files:** extend `tests/local-workspace-admission.test.mjs`; update this plan.
 
-- [ ] Exercise literal invalid changes for profile, capability, producer, fixed
+- [x] Exercise literal invalid changes for profile, capability, producer, fixed
   roots, maximumFiles0/17, maximumRevisionBytes0/4194305, fractional limits,
   independentReviewRequired:false, sourceMutation:true and unknown fields.
   Each must throw from verifyDistributionRealmContract; no corrected/coerced input.
-- [ ] Test a fresh creation with a missing required workspace capability against
+- [x] Test a fresh creation with a missing required workspace capability against
   the full contract, then verify no admitted actor was published.
-- [ ] Instantiate the old counter host with v3 and assert no state file. Pass
+- [x] Instantiate the old counter host with v3 and assert no state file. Pass
   v3 to inspectArtifactRealmForHost and assert rejection. Re-verify an admitted
   snapshot after changing Realm bytes and assert rejection, not a new binding.
-- [ ] Run the focused new/old caller tests, obtain independent review of this
+- [x] Run the focused new/old caller tests, obtain independent review of this
   additive boundary, and commit the coherent change. Do not label it a runnable
   agent or live quality result. Keep the larger workspace branch unreleased until
   the issued-owner execution path and its final integration gates are complete.
