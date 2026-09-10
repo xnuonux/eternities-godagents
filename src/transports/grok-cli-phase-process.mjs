@@ -131,7 +131,8 @@ function expectedArgs(run, request) {
     '--max-turns','1','--tools','','--no-subagents','--disable-web-search','--no-plan',
     '--permission-mode','dontAsk','--system-prompt-override',
     'You are a stateless inference worker. You have no tools. Return only the answer requested by the user messages.',
-    '--output-format','json','--cwd',join(run.root,'work'),'--verbatim','--reasoning-effort',request.reasoningEffort];
+    '--output-format','json','--cwd',join(run.root,'work'),'--verbatim','--reasoning-effort',request.reasoningEffort,
+    ...(Object.hasOwn(request,'outputSchema') ? ['--json-schema',JSON.stringify(request.outputSchema)] : [])];
 }
 function ownedRoot(root) {
   if (typeof root !== 'string' || resolve(root) !== root
@@ -188,7 +189,13 @@ export function createGrokCliPhaseProcess({policy} = {}) {
           || request.requestDigest !== sha256Text(request.body) || request.bodyBytes > provider.maximumRequestBytes
           || !screen({text:request.body,credential})) fail('request-invalid');
       const r = JSON.parse(request.body);
-      if (request.body !== canonicalJson(r) || Object.keys(r).sort().join(',') !== 'maxCompletionTokens,messages,model,reasoningEffort'
+      const structured = provider.structuredOutputProfile === 'json-schema-v1';
+      if ((Object.hasOwn(provider,'structuredOutputProfile') && !structured)
+          || request.body !== canonicalJson(r) || Object.keys(r).sort().join(',') !==
+            (structured ? 'maxCompletionTokens,messages,model,outputSchema,reasoningEffort' : 'maxCompletionTokens,messages,model,reasoningEffort')
+          || (structured && (!r.outputSchema || typeof r.outputSchema !== 'object' || Array.isArray(r.outputSchema)
+            || r.outputSchema.type !== 'object' || r.outputSchema.additionalProperties !== false
+            || !Array.isArray(r.outputSchema.required) || !r.outputSchema.required.length))
           || r.model !== provider.modelId || r.reasoningEffort !== provider.reasoningEffort
           || !Number.isSafeInteger(r.maxCompletionTokens) || r.maxCompletionTokens < 1 || r.maxCompletionTokens > 32000
           || !Array.isArray(r.messages) || r.messages.length !== 2
@@ -197,6 +204,7 @@ export function createGrokCliPhaseProcess({policy} = {}) {
       bridge = bridgeFor(provider);
       run = bridge.invocation(r.messages,{ binary:provider.binary.path,authFile:provider.authFile,
         model:r.model,max_tokens:r.maxCompletionTokens,reasoning:{effort:r.reasoningEffort},
+        ...(structured ? {response_format:{type:'json_schema',json_schema:{name:'godagent_phase',strict:true,schema:r.outputSchema}}} : {}),
         maxPromptBytes:provider.maximumRequestBytes,commandArgs:[...EXTRA_ARGS] });
       cleanupRoot = ownedRoot(run.root);
       if (run.command !== provider.binary.path || canonicalJson(run.args) !== canonicalJson(expectedArgs(run,r))) fail('invocation-invalid');

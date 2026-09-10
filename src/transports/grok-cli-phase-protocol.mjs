@@ -51,6 +51,8 @@ export function compileGrokCliPhaseRequest({ phase, dispatch, descriptor, policy
   dispatchCheck(phase, dispatch, descriptor);
   if (policy?.provider && Object.hasOwn(policy.provider, 'nativeContextProfile')
       && policy.provider.nativeContextProfile !== 'objective-reference-v1') fail('dispatch-invalid');
+  if (policy?.provider && Object.hasOwn(policy.provider, 'structuredOutputProfile')
+      && policy.provider.structuredOutputProfile !== 'json-schema-v1') fail('dispatch-invalid');
   if (policy?.provider?.modelId !== 'grok-4.6' || policy.provider.usageProfile !== PROFILE
       || !['low', 'medium', 'high'].includes(policy.provider.reasoningEffort)
       || !positive(policy.phases?.[phase]?.maximumCompletionTokens)
@@ -69,6 +71,7 @@ export function compileGrokCliPhaseRequest({ phase, dispatch, descriptor, policy
     model: policy.provider.modelId,
     maxCompletionTokens: dispatch.maxCompletionTokens,
     reasoningEffort: policy.provider.reasoningEffort,
+    ...(policy.provider.structuredOutputProfile === 'json-schema-v1' ? { outputSchema: schema } : {}),
     messages: [
       { role: 'system', content: `${phaseSystemPrompt({phase, base: PROVIDER_NEUTRAL_PHASE_SYSTEM_PROMPTS[phase], policy})}${presentation}\nReturn only JSON matching this schema: ${canonicalJson(schema)}` },
       { role: 'user', content: canonicalJson(input) },

@@ -25,6 +25,10 @@ module.exports = { ...bridge,
     fs.writeFileSync(path.join(__dirname,'last-root.txt'), run.root);
     const mode = fs.readFileSync(path.join(__dirname,'mode.txt'),'utf8');
     if(mode==='resume') run.args.push('--resume','previous-session');
+    if(mode==='schema-tamper') {
+      const index=run.args.indexOf('--json-schema');
+      if(index>=0) run.args[index+1]=JSON.stringify({type:'object',additionalProperties:false,required:['other'],properties:{other:{type:'string'}}});
+    }
     if(mode==='rotate') fs.appendFileSync(path.join(run.env.GROK_HOME,'auth.json'), ' ');
     return run;
   },
@@ -33,6 +37,13 @@ module.exports = { ...bridge,
     const mode = fs.readFileSync(path.join(__dirname,'mode.txt'),'utf8');
     const prompt=fs.readFileSync(args[args.indexOf('--prompt-file')+1],'utf8');
     const input=JSON.parse(prompt.split('[user message 2]\\n')[1].split('\\n\\n[execution constraint]')[0]);
+    if(mode.startsWith('schema-')) {
+      const index=args.indexOf('--json-schema');
+      if(index<0 || args.filter(x=>x==='--json-schema').length!==1) throw new Error('missing structured output control');
+      const schema=JSON.parse(args[index+1]);
+      if(schema.type!=='object'||schema.additionalProperties!==false
+        || !schema.required.includes(input.phase==='review'?'recommendation':'content')) throw new Error('wrong phase schema');
+    }
     const content=input.phase==='review' ? {recommendation:'accept',findings:[],summary:'synthetic exact review'}
       : input.phase==='revision' ? {addressedFindingIds:['bind-evidence'],content:'synthetic revision'} : {content:'synthetic native'};
     if(mode==='operating-guidance') content.content=prompt.split('[user message 2]\\n')[0];
@@ -45,6 +56,7 @@ module.exports = { ...bridge,
       usage:{input_tokens:100,cache_read_input_tokens:15,cache_creation_input_tokens:5,output_tokens:10,reasoning_tokens:3,total_tokens:130},
       modelUsage:{'grok-4.6':{inputTokens:100,cacheReadInputTokens:15,outputTokens:10,modelCalls:1}}};
     if(mode==='secret') value.text=JSON.stringify({content:'fixture-access-secret-123456'});
+    if(mode==='schema-malformed') value.text='not JSON';
     if(mode==='missing-ledger') delete value.modelUsage;
     if(mode==='build-ledger') { value.modelUsage['grok-4.6-build']=value.modelUsage['grok-4.6']; delete value.modelUsage['grok-4.6']; }
     if(mode==='uncertain') throw new Error('fixture uncertain result');
