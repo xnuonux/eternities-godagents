@@ -15,7 +15,7 @@ Independent host review owns whether exact child bytes may run under the existin
 - [x] Persist-before-dispatch and interruption tests return verified saved completion or explicit uncertainty without repeating side effects. Bind bounded failure feedback into a following mission.
 - [x] Non-mutating checked text replacement export from verified before/after bytes. Binary or invalid UTF-8 receives an honest refusal. Export publication is host-selected, never automatic source-tree mutation.
 - [x] Independent review and scoped regression gates, including the actual application caller. Preserve historical certification receipts and user package-lock.json.
-- [ ] Complete combined integration gate, reconcile upstream, commit and merge the verified branch. A failed gate is not waived by a targeted pass.
+- [x] Complete combined integration gate, reconcile upstream, commit and merge the verified branch. A failed gate is not waived by a targeted pass.
 
 ## Current evidence
 
@@ -28,6 +28,10 @@ Initial owner tests failed at the absent implementation; all four then passed. I
 - Aquinas `01a089ae-8951-7861-b8c3-d140e76b63ed` independently reviewed the owner, application caller, branded approval boundary and final process tests. Initial reviewer-provenance and absent-caller findings were addressed; final review found no new must-fix within the operator-host trust boundary. Review-file revocation is live; pin-map changes require reconstructing the host.
 
 The first combined run ended with 1491 passes, one older process-test failure and seven explicit runtime-opt-in skips, 504503.4289 ms. The old failure was `owned program child failed: unknown`. The unchanged exact case passed separately in 35596.2633 ms. That does not establish the original cause. A bounded sanitized test-harness cause report was added RED/GREEN (1 passed, 221.0851 ms), without changing runtime behavior, timeout budgets or authority. The diagnostic full integration run then passed: 1500 tests, 1493 passed, zero failed, seven explicit runtime-opt-in skips, 520163.7557 ms, exit zero. Both older process-recovery cases passed. The seven opt-in tests passed separately with the actual Chrome runtime as recorded above. The first failure remains unexplained rather than claimed repaired. Both full logs are preserved under `D:/00-INDEX/operations/2026-09-10-workspace-owner/`.
+
+## Integration record
+
+Upstream was fetched again and remained `901e4f76253dcb10bd10b0078e63ec51a8875c12`. The bounded diagnostic change is `7c09f8d`; workspace implementation is `c116303`. Main fast-forwarded to `c116303` with an identical verified candidate tree. The merged guidance/owner/export gate passed 27 tests, zero failures/skips, 6461.229 ms. Historical certification receipts were not modified, and the unrelated untracked `package-lock.json` was preserved. This qualifies the local application path and does not claim live-provider quality improvement.
 
 ## Non-goals
 
