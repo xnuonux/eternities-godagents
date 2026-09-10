@@ -4,6 +4,7 @@ import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { snapshotProviderProcessResponse } from './provider-phase-resolution.mjs';
 import { GROK_REJECTION_STAGES } from './grok-cli-rejection-diagnostic.mjs';
 import { buildGrokNativeObjectiveView } from './grok-native-objective-view.mjs';
+import { phaseSystemPrompt } from './operating-guidance.mjs';
 import {
   buildProviderNeutralPhaseCompletion, providerNeutralPhaseInput,
   providerNeutralPhaseOutputSchema, PROVIDER_NEUTRAL_PHASE_SYSTEM_PROMPTS,
@@ -69,7 +70,7 @@ export function compileGrokCliPhaseRequest({ phase, dispatch, descriptor, policy
     maxCompletionTokens: dispatch.maxCompletionTokens,
     reasoningEffort: policy.provider.reasoningEffort,
     messages: [
-      { role: 'system', content: `${PROVIDER_NEUTRAL_PHASE_SYSTEM_PROMPTS[phase]}${presentation}\nReturn only JSON matching this schema: ${canonicalJson(schema)}` },
+      { role: 'system', content: `${phaseSystemPrompt({phase, base: PROVIDER_NEUTRAL_PHASE_SYSTEM_PROMPTS[phase], policy})}${presentation}\nReturn only JSON matching this schema: ${canonicalJson(schema)}` },
       { role: 'user', content: canonicalJson(input) },
     ],
   };

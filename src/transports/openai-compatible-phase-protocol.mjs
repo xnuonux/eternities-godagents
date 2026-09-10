@@ -1,6 +1,7 @@
 import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text } from '../core/digest.mjs';
+import { phaseSystemPrompt } from './operating-guidance.mjs';
 import {
   buildProviderNeutralPhaseCompletion,
   providerNeutralPhaseInput,
@@ -82,7 +83,7 @@ export function compileOpenAICompatiblePhaseRequest({ phase, dispatch, descripto
       },
     },
     messages: [
-      { role: 'system', content: SYSTEM_PROMPTS[phase] },
+      { role: 'system', content: phaseSystemPrompt({phase, base: SYSTEM_PROMPTS[phase], policy}) },
       { role: 'user', content: canonicalJson(modelInput(phase, dispatch, descriptor)) },
     ],
   };

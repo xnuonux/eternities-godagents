@@ -1,6 +1,7 @@
 import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text } from '../core/digest.mjs';
+import { phaseSystemPrompt } from './operating-guidance.mjs';
 import {
   buildProviderNeutralPhaseCompletion,
   providerNeutralPhaseInput,
@@ -80,7 +81,7 @@ export function compileAnthropicMessagesPhaseRequest({ phase, dispatch, descript
     stream: false,
     system: [{
       type: 'text',
-      text: PROVIDER_NEUTRAL_PHASE_SYSTEM_PROMPTS[phase],
+      text: phaseSystemPrompt({phase, base: PROVIDER_NEUTRAL_PHASE_SYSTEM_PROMPTS[phase], policy}),
       cache_control: { type: 'ephemeral' },
     }],
     messages: [{ role: 'user', content: [{ type: 'text', text: canonicalJson(input) }] }],

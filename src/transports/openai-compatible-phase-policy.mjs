@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Text } from '../core/digest.mjs';
 import { assertSchema } from '../core/schema-validator.mjs';
+import { validateOperatingGuidance } from './operating-guidance.mjs';
 
 const DIGEST = /^[a-f0-9]{64}$/;
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
@@ -40,6 +41,7 @@ function deepFreeze(value) {
 }
 
 function validateSemantics(policy) {
+  if (Object.hasOwn(policy, 'operatingGuidance')) validateOperatingGuidance(policy.operatingGuidance);
   if (!IDENTIFIER.test(policy.policyId)) throw new Error('policyId is invalid');
   let origin;
   try {

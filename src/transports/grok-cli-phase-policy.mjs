@@ -2,6 +2,7 @@ import { open } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
+import { validateOperatingGuidance } from './operating-guidance.mjs';
 
 const PIN = 'GODAGENT_GROK_PHASE_POLICY_SHA256';
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -25,7 +26,11 @@ function freeze(value) {
   return value;
 }
 function validate(p) {
-  keys(p, ['schemaVersion', 'protocolId', 'policyId', 'provider', 'phases']);
+  keys(p, ['schemaVersion', 'protocolId', 'policyId', 'provider', 'phases',
+    ...(p && Object.hasOwn(p, 'operatingGuidance') ? ['operatingGuidance'] : [])]);
+  if (Object.hasOwn(p, 'operatingGuidance')) {
+    try { validateOperatingGuidance(p.operatingGuidance); } catch { fail('policy-invalid'); }
+  }
   if (p.schemaVersion !== 1 || p.protocolId !== 'eternities-grok-cli-phase-transport-policy-v1'
       || typeof p.policyId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(p.policyId)) fail('policy-invalid');
   const v = p.provider;
