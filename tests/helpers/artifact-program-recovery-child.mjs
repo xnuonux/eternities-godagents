@@ -7,6 +7,7 @@ import { runArtifactProgram } from '../../examples/local-artifact-workflow/progr
 process.once('message', async ({ programManifestPath, programManifestDigest, boundary }) => {
   let dispatchedStep;
   try {
+    if (boundary === 'diagnostic') throw new Error('controlled diagnostic synthetic-program-recovery-key');
     const result = await runArtifactProgram({ programManifestPath, expectedProgramManifestDigest: programManifestDigest,
       env: { GODAGENT_TEST_PHASE_KEY: 'synthetic-program-recovery-key' },
       createProviderPhaseHostImpl: options => createProviderPhaseHost({ ...options,
@@ -36,7 +37,17 @@ process.once('message', async ({ programManifestPath, programManifestDigest, bou
     });
     process.send({ event: 'completed', result });
   } catch (error) {
-    process.send({ event: 'child-failed', code: typeof error.code === 'string' ? error.code : null });
+    // This harness has a scrubbed environment, deny-all network witness, and
+    // synthetic inputs. Retain bounded causes so a failed gate is diagnosable;
+    // never emit the only synthetic credential or an unbounded stack/response.
+    const causes = [], seen = new Set();
+    for (let cause = error; cause && !seen.has(cause) && causes.length < 3; cause = cause.cause) {
+      seen.add(cause);
+      const clean = (value, limit) => typeof value === 'string'
+        ? value.replaceAll('synthetic-program-recovery-key', '[redacted]').replace(/[\r\n\t]/g, ' ').slice(0, limit) : null;
+      causes.push({ name: clean(cause.name, 40), code: clean(cause.code, 40), message: clean(cause.message, 240) });
+    }
+    process.send({ event: 'child-failed', code: typeof error.code === 'string' ? error.code : null, causes });
     process.exitCode = 1;
   } finally { process.disconnect(); }
 });

@@ -31,7 +31,7 @@ function childRun(p, boundary) {
       if (message.event === 'provider-call') calls.push(message);
       else if (message.event === 'network-attempt') attempts.push(message);
       else if (['kill-boundary', 'completed'].includes(message.event)) finish(null, message);
-      else finish(new Error(`owned program child failed: ${message.code ?? 'unknown'}`));
+      else finish(new Error(`owned program child failed: ${message.code ?? 'unknown'} ${JSON.stringify(message.causes ?? []).slice(0, 1200)}`));
     });
   });
   child.send({ ...p, boundary });
@@ -53,6 +53,20 @@ async function freshCli(p, credential = false) {
     return { code, stdout, stderr };
   } finally { clearTimeout(timer); }
 }
+
+test('owned recovery child reports a bounded sanitized cause instead of unknown', async () => {
+  const run = childRun({}, 'diagnostic');
+  try {
+    await assert.rejects(run.outcome, error => {
+      assert.match(error.message, /controlled diagnostic/);
+      assert.ok(!error.message.includes('synthetic-program-recovery-key'));
+      assert.ok(error.message.length < 1400); return true;
+    });
+  } finally {
+    if (run.child.exitCode === null && run.child.signalCode === null) run.child.kill('SIGKILL');
+    await run.closed;
+  }
+});
 
 for (const boundary of ['first-completion-persisted', 'second-dispatch-uncertain']) {
   test(`fresh public-creator program survives real process death at ${boundary}`, { timeout: 180000 }, async t => {
