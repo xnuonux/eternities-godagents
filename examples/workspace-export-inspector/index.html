@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Godagents export inspector</title><link rel="stylesheet" href="app.css">
+<main><h1>Review a workspace export</h1><p id="boundary-note">Read-only. Text hashes do not authenticate provenance or approve execution.</p>
+<label for="bundle-input">Export JSON</label><textarea id="bundle-input"></textarea><button id="inspect">Inspect</button><button id="clear">Clear</button>
+<p id="status" role="status" data-state="idle">Not implemented</p><nav id="files" aria-label="Changed files"></nav><h2 id="selected-path"></h2>
+<section><h3>Before</h3><pre id="before"></pre></section><section><h3>After</h3><pre id="after"></pre></section></main>
+<script type="module" src="viewer.js"></script></html>
