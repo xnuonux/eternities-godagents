@@ -25,21 +25,21 @@
 
 ## 1. Verified native selection and recovery
 
-- [ ] Add `tests/native-godskills-binding.test.mjs` against actual pinned local verifiers/adapter and a fresh admitted fixture. Before implementation, confirm missing consumer failure.
-- [ ] Implement `prepareNativeGodskills({options,candidate,request,grant,effectCeiling,stateDirectory,resume})`, returning `{recordDigest,disclosure,validate}`. `validate()` rechecks the pinned closure and rehydrates the exact stored receipt, never dispatches a route.
-- [ ] Test matching recovery, changed policy/mission/grant refusal, effect expansion, byte overflow, invalid protocol/pins, prohibited capability and no-route refusal, and persisted-record tampering. Assert real results, not mocked verifier brands.
-- [ ] Run `node --test tests/native-godskills-binding.test.mjs`.
+- [x] Add `tests/native-godskills-binding.test.mjs` against actual pinned local verifiers/adapter and a fresh admitted fixture. Before implementation, confirm missing consumer failure.
+- [x] Implement `prepareNativeGodskills({options,candidate,request,grant,effectCeiling,stateDirectory,resume})`, returning `{recordDigest,disclosure,validate}`. `validate()` rechecks the pinned closure and rehydrates the exact stored receipt, never dispatches a route.
+- [x] Test matching recovery, policy-pin and changed-mission refusal, effect expansion, byte overflow, invalid protocol/root pins, unknown explicit references, no-route refusal and persisted-record tampering. The Pi caller test separately verifies read-only grant refusal. Existing genome eligibility enforcement remains in the reused binder; these new tests do not claim a separate exhaustive eligibility audit.
+- [x] Run `node --test tests/native-godskills-binding.test.mjs`.
 
 ## 2. Native inference and operator integration
 
-- [ ] Add real Pi SDK scripted-provider tests before wiring: exact selected disclosure appears once per call, no unselected bodies; same association across resume; drift blocks next provider; compaction reuses selection; omitted option preserves previous behavior.
-- [ ] Wire the existing native stream through binding validation, persist selection digest in association, and add the optional operator config/preflight path. Test actual caller behavior and unchanged no-skill commands.
-- [ ] Run focused native consumer/operator/session suites with the installed optional SDK enabled.
+- [x] Add real Pi SDK scripted-provider tests before wiring: exact selected disclosure appears once per call, no unselected bodies; same association across resume; drift blocks next provider; compaction reuses selection; omitted option preserves previous behavior.
+- [x] Wire the existing native stream through binding validation, persist selection digest in association, and add the optional operator config/preflight path. Test actual caller behavior and unchanged no-skill commands.
+- [x] Run focused native consumer/operator/session suites with the installed optional SDK enabled.
 
 ## 3. Review, release and useful handoff
 
-- [ ] Independent source review on Grok subscription with bounded sterile review context; owner reproduces material findings and repairs test-first. No live quality claim from scripted providers.
-- [ ] Run targeted integration, full relevant release suite once, and historical ledger verification without receipt regeneration. Inspect diff and preserve user package-lock.json.
+- [x] Independent source review on Grok subscription with bounded sterile review context; owner reproduces material findings and repairs test-first. No live quality claim from scripted providers.
+- [x] Run targeted integration, full relevant release suite once, and historical ledger verification without receipt regeneration. Inspect diff and preserve user package-lock.json.
 - [ ] Fetch/reconcile, merge verified branch, push main, verify ref-aware merged gates, and publish the exact audit. A matched live benefit study is next, not implied by this consumer.
 
 Rollback: omit the option for newly created native associations. Already-bound sessions cannot strip skills or change roots by editing a digest; they require explicit new association/migration. No destructive cleanup or automatic retries.

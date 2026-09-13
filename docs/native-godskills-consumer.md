@@ -69,8 +69,9 @@ changing file in the working repository is hashed before each inference.
 `preflight` verifies roots and effect bounds without selecting skills, creating
 session state or invoking a model. A ready preflight does not guarantee a route
 exists. Launch must resolve and verify that route before any provider call.
-No route, pending route, invalid root, changed artifact, overlarge package or
-authority expansion fails closed. Errors use screened `native-godskills:` codes.
+An unresolved or pending route, invalid root, changed artifact, overlarge package
+or authority expansion causes rejection before inference. Errors use screened
+`native-godskills:` codes.
 
 The SDK uses the same option at `bindingOptions.godskills`; it does not discover
 global skills or import another agent's personal keel.

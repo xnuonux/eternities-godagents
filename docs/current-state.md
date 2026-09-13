@@ -1,5 +1,19 @@
 # Godagents current state and bounded completion path
 
+September 13 native Godskills consumer: implementation `12470b1` connects the
+existing verified selector/binder to the native Pi operator. The opt-in stack is
+bound to the admitted actor and mission, delivered once per inference, and
+revalidated across native tools, compaction and resume. All four actual policy
+modes are covered; review remains scheduled-only and skills never grant tools.
+The [qualification audit](audits/2026-09-13-native-godskills-consumer.md) records
+80 passing focused checks, **1,593 full-regression passes, zero failures, nine
+existing optional skips**, 69 unchanged historical receipts and completed
+independent review approval. The real Grok subscription preflight passed without
+inference or session creation. Integration closeout follows in that audit.
+Next: a matched live comparison of the same Godagent with versus without selected
+skills, holding model, host, source, tools and acceptance fixed. This consumer
+qualification is not yet evidence of a live quality or efficiency improvement.
+
 September 13 larger delivery batch: source `6efe4a9` adds the
 [native operator workflow](native-pi-operator.md): preflight, launch, resume,
 offline status/history and help, backed by the existing Pi SDK. Two live coding

@@ -1,5 +1,9 @@
 # Native Godskills consumer readiness
 
+Historical coordination note. The later [native consumer qualification](2026-09-13-native-godskills-consumer.md)
+implements this boundary and records the actual proof; the gap below describes
+the inspected pre-implementation revision, not a claim that it remains absent.
+
 Coordination-only review returned by the Godskills task on September 13 while
 the Godagents native operator batch was in progress. This note is **not** a new
 release verification, skill activation, certification or measured quality gain.

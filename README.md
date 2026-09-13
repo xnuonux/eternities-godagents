@@ -58,6 +58,14 @@ records independent acceptance, the stage2 environment repair, review approval
 and 1,572 passing regression tests. Creation/admission inputs are still explicit,
 not a finished consumer onboarding flow.
 
+The optional [native Godskills consumer](docs/native-godskills-consumer.md) now
+binds a host-pinned selected stack to that native mission. The actual Pi SDK
+receives the certified native/guardrail/method/review disclosure, validates it
+before inference, and preserves it across compaction and resume. Skills do not
+grant tools, and review scheduling is not review execution. The
+[qualification audit](docs/audits/2026-09-13-native-godskills-consumer.md) separates
+these mechanics from the still-required matched live benefit study.
+
 The experimental [Grok subscription adapter](docs/audits/2026-09-08-grok-subscription-phase-transport.md)
 adds a pinned native CLI path to the same portable phase host. Its local process,
 accounting and replay tests are separate from live subscription qualification
