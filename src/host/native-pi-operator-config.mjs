@@ -51,7 +51,8 @@ export function parseNativeOperatorArgs(argv = []) {
 export function validateNativeOperatorConfig(config) {
   noCredentials(config); exact(config, Object.hasOwn(config, 'godskills') ? [...TOP, 'godskills'] : TOP);
   if (config.schemaVersion !== 1 || config.protocolId !== PROTOCOL) fail('protocol');
-  exact(config.admission, ADMISSION); exact(config.model, MODEL); exact(config.grant, GRANT); exact(config.limits, LIMITS);
+  exact(config.admission, ADMISSION); exact(config.model, MODEL); exact(config.grant, GRANT);
+  exact(config.limits, object(config.limits)&&Object.hasOwn(config.limits,'maxProviderRetries')?[...LIMITS,'maxProviderRetries']:LIMITS);
   for (const key of ['piPackageRoot','authPath','cwd','sessionRoot']) if (!path(config[key])) fail('path');
   for (const key of ['receiptPath','creationDir','distributionDir','transactionDir','journalPath','keelRoot']) if (!path(config.admission[key])) fail('admission-path');
   for (const key of ['expectedPolicyDigest','expectedCreationBuildId']) if (!DIGEST.test(config.admission[key] ?? '')) fail('admission-digest');
@@ -60,6 +61,7 @@ export function validateNativeOperatorConfig(config) {
   if (!Array.isArray(config.grant.allowedTools) || config.grant.allowedTools.length === 0 || new Set(config.grant.allowedTools).size !== config.grant.allowedTools.length || config.grant.allowedTools.some(tool => !Object.hasOwn(nativeToolEffects, tool))) fail('tools');
   if (!boundedInt(config.grant.maxToolCalls, 1, 10000) || !ISO.test(config.grant.expiresAt) || new Date(config.grant.expiresAt).toISOString() !== config.grant.expiresAt) fail('grant');
   if (!boundedInt(config.limits.maxRunMs, 1000, 86400000)) fail('limits');
+  if (Object.hasOwn(config.limits,'maxProviderRetries')&&!boundedInt(config.limits.maxProviderRetries,0,2)) fail('limits');
   if (!object(config.mission)) fail('mission');
   if (Object.hasOwn(config, 'godskills')) {
     if (!object(config.godskills)) fail('godskills');

@@ -166,7 +166,8 @@ export async function runNativeOperator({command,config:inputConfig,expectedConf
     const admissionRoot=dirname(config.admission.transactionDir);
     host=await openPiGodagentSession({runtime,modelRuntime,model,sessionManager,
       agentDir:join(config.sessionRoot,'pi-agent'),
-      settingsManager:runtime.sdk.SettingsManager.inMemory({retry:{enabled:false,maxRetries:0,
+      settingsManager:runtime.sdk.SettingsManager.inMemory({retry:{enabled:(config.limits.maxProviderRetries??0)>0,
+        maxRetries:config.limits.maxProviderRetries??0,baseDelayMs:1000,
         provider:{maxRetries:0,timeoutMs:Math.min(180000,config.limits.maxRunMs)}},compaction:{enabled:true}}),
       bindingOptions:{admission:compiled.admission,request:metadata.request,grant:metadata.grant,
         expectedGrantDigest:sha256Value(metadata.grant),stateDirectory:join(config.sessionRoot,'native-state'),
@@ -174,6 +175,7 @@ export async function runNativeOperator({command,config:inputConfig,expectedConf
         resume:command==='resume',...(config.godskills?{godskills:config.godskills}:{})}});
     unsubscribe=host.subscribe(event=>{
       usage.record(event);
+      if(event.type==='auto_retry_start')onProgress?.({type:'provider-retry',attempt:event.attempt,maxAttempts:event.maxAttempts});
       if(event.type==='message_end'&&event.message?.role==='assistant') {
         finalText=(event.message.content??[]).filter(item=>item.type==='text').map(item=>item.text).join('\n');
       }

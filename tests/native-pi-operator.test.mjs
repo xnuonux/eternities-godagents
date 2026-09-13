@@ -25,13 +25,15 @@ async function setup(t,responses) {
       cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:128000,maxTokens:8000}],
     streamSimple(model,context) {
       contexts.push(JSON.parse(JSON.stringify(context)));
-      const content=responses.shift();assert.ok(content,'unexpected inference');
+      let content=responses.shift();assert.ok(content,'unexpected inference');
       if(content instanceof Error)throw content;
+      const errorMessage=Array.isArray(content)?undefined:content.errorMessage;
+      if(errorMessage)content=content.content??[];
       const stream=runtime.ai.createAssistantMessageEventStream();
       const message={role:'assistant',content,api:model.api,provider:model.provider,model:model.id,
-        usage:{input:3,output:2,cacheRead:1,cacheWrite:0,totalTokens:6,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},
-        stopReason:content.some(x=>x.type==='toolCall')?'toolUse':'stop',timestamp:Date.now()};
-      stream.push({type:'done',reason:message.stopReason,message});stream.end(message);return stream;
+        usage:errorMessage?{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}:{input:3,output:2,cacheRead:1,cacheWrite:0,totalTokens:6,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},
+        stopReason:errorMessage?'error':content.some(x=>x.type==='toolCall')?'toolUse':'stop',...(errorMessage?{errorMessage}:{}),timestamp:Date.now()};
+      stream.push(errorMessage?{type:'error',reason:'error',error:message}:{type:'done',reason:message.stopReason,message});stream.end(message);return stream;
     }});
   // Auth is the external seam; keep the real SDK, session, tools and actor validation.
   modelRuntime.checkAuth=async()=>({type:'oauth'});
@@ -129,6 +131,69 @@ nativeTest('provider failure is preserved once and console-safe, never automatic
   assert.equal(result.state.phase,'idle');
   const saved=JSON.parse(await readFile(join(result.runPath,'result.json'),'utf8'));
   assert.equal(saved.status,'failed');
+});
+
+for(const errorMessage of ['terminated','Error Code null: Internal error during token generation']) {
+  nativeTest(`opt-in native recovery continues after ${errorMessage} without repeating tools`,async t=>{
+    const x=await setup(t,[write('before-drop','before.txt','already done'),
+      {errorMessage,content:write('partial-drop','partial.txt','must not execute')},
+      write('after-drop','after.txt','recovered'),done]);
+    x.config.limits.maxProviderRetries=1;const progress=[];
+    const result=await x.run('launch','complete the coding work',{onProgress:e=>progress.push(e)});
+    assert.equal(result.status,'native-turn-settled');assert.equal(result.state.inferences.native,4);
+    assert.equal(result.state.actions.completed,2);assert.equal(result.state.actions.pending,0);
+    assert.equal(await readFile(join(x.f.cwd,'before.txt'),'utf8'),'already done');
+    assert.equal(await readFile(join(x.f.cwd,'after.txt'),'utf8'),'recovered');
+    await assert.rejects(access(join(x.f.cwd,'partial.txt')),e=>e.code==='ENOENT');
+    assert.equal(result.usage.missingUsageMessages,1);assert.equal(result.usage.totalTokens,null);
+    assert.ok(result.warnings.includes('native-provider-recovered'));
+    assert.deepEqual(progress.filter(e=>e.type==='provider-retry'),[{type:'provider-retry',attempt:1,maxAttempts:1}]);
+    assert.equal(result.state.phase,'idle');
+  });
+}
+
+nativeTest('opt-in recovery stops at its retry bound and leaves an honest failed record',async t=>{
+  const x=await setup(t,[{errorMessage:'terminated'},{errorMessage:'terminated'},done]);
+  x.config.limits.maxProviderRetries=1;
+  const result=await x.run('launch','recover only within allowance');
+  assert.equal(result.status,'failed');assert.equal(x.contexts.length,2);
+  assert.equal(result.usage.missingUsageMessages,2);assert.equal(result.usage.totalTokens,null);
+  assert.equal(result.state.phase,'idle');assert.equal(result.state.actions.total,0);
+});
+
+nativeTest('omitted or zero recovery allowance does not retry emitted transient errors',async t=>{
+  for(const allowance of [undefined,0]) {
+    const x=await setup(t,[{errorMessage:'terminated'},done]);
+    if(allowance!==undefined)x.config.limits.maxProviderRetries=allowance;
+    const result=await x.run('launch','one attempt only');
+    assert.equal(result.status,'failed');assert.equal(x.contexts.length,1);
+    assert.equal(result.usage.missingUsageMessages,1);
+  }
+});
+
+nativeTest('two-retry allowance permits exactly three failed generation attempts',async t=>{
+  const x=await setup(t,[{errorMessage:'terminated'},{errorMessage:'terminated'},{errorMessage:'terminated'},done]);
+  x.config.limits.maxProviderRetries=2;
+  const result=await x.run('launch','stop at the configured maximum');
+  assert.equal(result.status,'failed');assert.equal(x.contexts.length,3);
+  assert.equal(result.usage.missingUsageMessages,3);assert.equal(result.usage.totalTokens,null);
+});
+
+nativeTest('opt-in recovery never retries quota exhaustion or invalid credentials',async t=>{
+  for(const errorMessage of ['insufficient_quota','401 invalid credentials']) {
+    const x=await setup(t,[{errorMessage},done]);x.config.limits.maxProviderRetries=1;
+    const result=await x.run('launch','do not bypass billing or authentication');
+    assert.equal(result.status,'failed');assert.equal(x.contexts.length,1);
+  }
+});
+
+nativeTest('operator interruption during native retry backoff prevents another model call',async t=>{
+  const x=await setup(t,[{errorMessage:'terminated'},done]);x.config.limits.maxProviderRetries=1;
+  const controller=new AbortController();
+  const result=await x.run('launch','honor stop during recovery',{signal:controller.signal,
+    onProgress:e=>{if(e.type==='provider-retry')controller.abort();}});
+  assert.equal(result.status,'failed');assert.equal(result.category,'native-operator:interrupted');
+  assert.equal(x.contexts.length,1);assert.equal(result.state.phase,'revoked');
 });
 
 nativeTest('operator refuses host-owned roots inside the model project before any inference',async t=>{

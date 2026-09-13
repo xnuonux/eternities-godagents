@@ -18,6 +18,14 @@ experiment is not a certified Godagent tool binding. Preserve the strict
 structured-worker path below for matched inference/proposal comparisons and old
 receipts; do not relax it globally or silently recertify native effects.
 
+Dom's subsequent September 13 recovery direction: new ordinary native coding
+configs should explicitly pin `limits.maxProviderRetries: 1`. This enables Pi's
+existing bounded transient-response recovery, not a replacement agent loop.
+Keep the deadline and tool ceiling; never retry billing/auth failures, change
+models, or replay completed tools. Preserve errors and unknown usage. Frozen
+comparison configs retain their original no-retry policy; do not silently edit
+their pins or reuse failed trial slots. See `docs/native-pi-operator.md`.
+
 ### Structured inference and proposal comparisons
 
 Dom's 2026-09-12 instruction: use the native Grok 4.6 CLI subscription for

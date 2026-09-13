@@ -70,7 +70,7 @@ paths and the independently verified creation/policy pins:
     "maxToolCalls": 160,
     "expiresAt": "2026-09-14T00:00:00.000Z"
   },
-  "limits": {"maxRunMs": 900000}
+  "limits": {"maxRunMs": 900000, "maxProviderRetries": 1}
 }
 ```
 
@@ -119,7 +119,19 @@ result path. Tool progress shows only its known name and error flag. Provider
 error strings, raw arguments, responses and credentials are not printed.
 `native-turn-settled` means the native turn ended normally, **not** that its code
 passed independent tests. Failed and interrupted runs remain failures. There is
-no automatic retry, alternate model or paid fallback. Ctrl+C and timeout revoke
+no automatic retry by default, alternate model or paid fallback. A fresh,
+operator-pinned configuration may set `limits.maxProviderRetries` to `1` or `2`
+to use Pi's native transient-response recovery. Omission or `0` preserves the
+original single-attempt behavior, including historical experiment configurations.
+This is the retry count per failed response, not a new allowance for tool calls
+or a spending guarantee. The original run deadline, tool ceiling, actor, model
+and authority checks remain in force. Completed tools are not replayed; calls
+from an incomplete error response are not executed. Recovery is reported as
+`provider-retry` progress and `native-provider-recovered` in the run warnings;
+failed response events remain in the session and missing usage stays unknown.
+Billing/quota and authentication errors do not gain a fallback. A changed
+recovery allowance changes the configuration pin and cannot silently alter an
+existing session. Ctrl+C and timeout revoke
 subsequent dispatch; they cannot undo already executed tools or child processes.
 
 Usage is measured from provider-reported assistant events, with input, output,

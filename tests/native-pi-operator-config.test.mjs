@@ -50,6 +50,17 @@ test('accepts an opt-in pinned Godskills policy', () => {
   assert.deepEqual(validateNativeOperatorConfig(config), config);
 });
 
+test('accepts only a bounded operator-pinned transient recovery allowance', () => {
+  for(const maxProviderRetries of [0,1,2]) {
+    const config=base();config.limits.maxProviderRetries=maxProviderRetries;
+    assert.deepEqual(validateNativeOperatorConfig(config),config);
+  }
+  for(const maxProviderRetries of [-1,3,1.5,'1',null,undefined]) {
+    const config=base();config.limits.maxProviderRetries=maxProviderRetries;
+    errorCode(()=>validateNativeOperatorConfig(config));
+  }
+});
+
 test('rejects tampered Godskills pins and unknown wrapper fields', () => {
   const config = withGodskills(base());
   errorCode(() => validateNativeOperatorConfig({ ...config, godskills: { ...config.godskills, expectedPolicyDigest: 'c'.repeat(64) } }));

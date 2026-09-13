@@ -120,6 +120,7 @@ export async function openPiGodagentSession({runtime,bindingOptions,agentDir,mod
     session.agent.beforeToolCall=beforeGuard;
     session.agent.afterToolCall=afterGuard;
     session.subscribe(event=>{
+      if(event.type==='auto_retry_end'&&event.success)warnings.add('native-provider-recovered');
       if(event.type==='compaction_start')inferencePurpose='compaction';
       if(event.type==='compaction_end'){
         inferencePurpose='native';if(event.errorMessage||event.aborted)warnings.add('native-compaction-failed');
