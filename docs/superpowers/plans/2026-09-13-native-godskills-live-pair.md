@@ -31,8 +31,17 @@ this study is not blinded and those nuisance differences must be disclosed.
 
 ## Execution
 
-- [ ] Independent acceptance author implements real filesystem/CLI checks against the task contract, validates expected baseline failures and returns concrete test limitations. Keep tests outside both agent workspaces and freeze their hashes before inference.
+- [x] Independent acceptance author implements real filesystem/CLI checks against the task contract, validates expected baseline failures and returns concrete test limitations. Keep tests outside both agent workspaces and freeze their hashes before inference.
 - [x] Prepare identical source copies, admission profiles and pinned configs using existing creation/admission APIs. Reuse the established preparation pattern rather than build a new model loop. Check existing focused regressions in each copy before launch, route treatment and record exact release/selection metadata.
-- [ ] Freeze task, source, acceptance, config and execution-order digests. Verify real OAuth preflight for each arm, then use `runNativeOperator({command:'launch',config,expectedConfigDigest,prompt})` exactly once per arm. Preserve run start/result, native transcript and scope changes.
-- [ ] Independently score both artifacts with unchanged acceptance and original focused tests, inspect scope violations, missing evidence and measured overhead. Publish a limited paired-result report with exact source pointers. Do not promote a candidate solely because it wins this pair.
+- [x] Freeze task, source, acceptance, config and execution-order digests. Verify real OAuth preflight for each arm, then use `runNativeOperator({command:'launch',config,expectedConfigDigest,prompt})` exactly once per arm. Preserve run start/result, native transcript and scope changes.
+- [x] Independently score both artifacts with unchanged acceptance and original focused tests, inspect scope violations, missing evidence and measured overhead. Publish a limited paired-result report with exact source pointers. Do not promote a candidate solely because it wins this pair. Both provider streams failed before edits; result is inconclusive, not a quality tie.
 - [ ] Reconcile upstream and commit/merge/push verified study evidence under standing authorization. Leave any product candidate outside main until its own review and integration gates pass.
+
+## Confirmed post-trial repair
+
+Both terminal SDK error messages retained placeholder zero usage, and the
+existing history reader rejected legitimate Godskills error categories. After
+the frozen trials ended and were scored, implementation `a8bc116` corrects those
+two reporting issues test-first.83native checks pass and bounded independent
+Grok source review approves. The repair is not a model-produced query candidate,
+does not change trial records and does not turn the failed study into success.

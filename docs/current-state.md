@@ -1,5 +1,18 @@
 # Godagents current state and bounded completion path
 
+September13 native live pair: the same Godagent/Pi/Grok setup was tested with
+versus without automatic Godskills. Both provider streams failed before edits,
+so this is **inconclusive**, not a skill quality result. Forge/Mnemosyne guardrail
+delivery was confirmed, but the history-query task remains unimplemented. See
+the [frozen design, outcomes and diagnosis](audits/2026-09-13-native-godskills-live-pair.md).
+Owner correction `a8bc116` fixes two actual reporting defects found afterward:
+SDK placeholder-zero failure usage becomes unknown, and history accepts valid
+screened Godskills failure categories.83native checks and independent Grok source
+review pass. Full regression: **1,596passes, zero failures, nine existing optional
+skips**, including69 unchanged historical receipts. Next: bounded native
+provider-generation diagnostics before another registered coding comparison;
+do not change skill policy or claim a quality win from these failed calls.
+
 September 13 native Godskills consumer: implementation `12470b1` connects the
 existing verified selector/binder to the native Pi operator. The opt-in stack is
 bound to the admitted actor and mission, delivered once per inference, and
@@ -12,9 +25,8 @@ independent review approval. The real Grok subscription preflight passed without
 inference or session creation. The batch is merged and pushed at `b58b65e`;
 post-merge native checks passed80/80 and the post-push ref-aware
 cross-repository gate passed8/8. Exact source and evidence are in that audit.
-Next: a matched live comparison of the same Godagent with versus without selected
-skills, holding model, host, source, tools and acceptance fixed. This consumer
-qualification is not yet evidence of a live quality or efficiency improvement.
+The subsequent matched live comparison is recorded above. This consumer
+qualification is not evidence of a live quality or efficiency improvement.
 
 September 13 larger delivery batch: source `6efe4a9` adds the
 [native operator workflow](native-pi-operator.md): preflight, launch, resume,
