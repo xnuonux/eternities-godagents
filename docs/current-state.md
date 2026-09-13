@@ -9,8 +9,9 @@ needed the owner to restore omitted schema/example dependencies, so it is
 explicitly environment-assisted. The integrated targeted gate passed59/59;
 all69 historical receipts verify unchanged. Full regression passed **1,572 tests,
 zero failures, nine existing optional browser skips**. Independent review approved
-the revised batch; all reviewed source pins match. Main integration and its
-post-merge gate are recorded in the audit closeout. See the
+the revised batch; all reviewed source pins match. The batch is merged and pushed
+at `9ed8b9a`, with 59/59 merged native checks and 8/8 post-push cross-repository
+checks. Independent acceptance also passed against the merged source. See the
 [source, usage and scope audit](audits/2026-09-13-native-operator-workflow.md).
 The [Godskills consumer review](audits/2026-09-13-native-godskills-readiness.md)
 defines the next optional binding boundary; no skill activation occurred.

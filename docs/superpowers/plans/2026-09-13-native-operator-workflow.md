@@ -59,7 +59,12 @@
 - [x] Use a fresh admitted actor, workspace and pinned acceptance checks. Two dependent coding stages execute through the new command owner in separate processes under one actor/mission/grant. Use Grok 4.6 subscription only, no personal keel.
 - [x] Independently verify source, unchanged tests and rendered behavior as applicable; keep failed attempts and full usage categories.
 - [x] Obtain independent code review of changed production interfaces, address material findings, then targeted and full integration gates once at the release boundary. Preserve all historical receipts.
-- [ ] Reconcile upstream, merge verified batch and push main under standing approval; verify merged source and record exact implementation/live/remaining boundaries.
+- [x] Reconcile upstream, merge verified batch and push main under standing approval; verify merged source and record exact implementation/live/remaining boundaries.
+
+Completed at source `6efe4a9`, merged/pushed through `9ed8b9a`. The
+[delivery audit](../../audits/2026-09-13-native-operator-workflow.md) records the
+full regression, final independent review, 59 merged native checks, 8 post-push
+cross-repository checks, preserved receipts and environment-assisted live stage2.
 
 ## Parallel coordination and non-goals
 

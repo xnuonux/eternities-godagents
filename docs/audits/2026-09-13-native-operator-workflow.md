@@ -124,6 +124,26 @@ No historical receipt, personal-keel store, global model default or
 native selected-skill binding still needs its own real consumer gate. The named
 Godskills hashes were independently rechecked here; no root was rebound.
 
+## Release closeout
+
+The verified feature was fast-forward merged into `main` and pushed as
+`9ed8b9ab6f2c9b7b9c86e9f3da46f0887b96bc00`. Main/origin matched before the
+ref-aware gate. The production source, tests, fixtures, schemas, receipts,
+integrations and package manifest are unchanged from the full-regression
+implementation snapshot `6efe4a9`.
+
+- Merged-source native gate: **59 passed, zero failures/skips**, 8.028 seconds,
+  `merged-native.log`.
+- Post-push current-head and historical-receipt gate: **8 passed, zero
+  failures/skips**, 57.110 seconds, `merged-cross-repository.log`. No certificate
+  was regenerated or historical source map expanded.
+- The frozen independent live acceptance checker also passed against canonical
+  merged source, including actual CLI help/history parsing.
+- Final review source pins were rechecked before merge. No source correction
+  followed that approved snapshot; this closeout is documentation only.
+- The only untracked file remains the pre-existing user `package-lock.json`.
+  Trial workspaces, failed traces and review evidence remain preserved privately.
+
 ## Remaining boundaries
 
 - This delivers an operator workflow and real same-actor coding continuation,
