@@ -51,9 +51,12 @@ separate optional entrypoint, not a replacement tool loop or a live model-qualit
 certificate. The [live subscription qualification](docs/audits/2026-09-13-native-pi-live-qualification.md)
 completed a real coding mission and fresh-process resume. The
 [native operator](docs/native-pi-operator.md) now adds reusable preflight,
-launch/resume and offline status, with larger-batch integration verification in
-progress. Its creation/admission inputs are still explicit, not a finished
-consumer onboarding flow.
+launch/resume, offline status/history and help. A two-stage live trial continued
+the same actor in a fresh process and produced the history feature now adopted
+here. The [larger-batch audit](docs/audits/2026-09-13-native-operator-workflow.md)
+records independent acceptance, the stage2 environment repair, review approval
+and 1,572 passing regression tests. Creation/admission inputs are still explicit,
+not a finished consumer onboarding flow.
 
 The experimental [Grok subscription adapter](docs/audits/2026-09-08-grok-subscription-phase-transport.md)
 adds a pinned native CLI path to the same portable phase host. Its local process,

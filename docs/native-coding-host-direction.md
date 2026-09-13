@@ -6,7 +6,9 @@ give Godagents a real coding environment comparable to the current Codex host.
 Later September 13 evidence supersedes the original availability probe below:
 Pi xAI subscription login is now configured, the native binding has a successful
 live coding mission and clean fresh-process resume, and a reusable
-[operator workflow](native-pi-operator.md) is in development. The original probe
+[operator workflow](native-pi-operator.md) has now passed a two-stage coding
+continuation and full regression; its audit records the environment-assisted
+second stage and remaining qualification boundaries. The original probe
 remains historical evidence, not the current login state. The implemented adapter
 uses Agent stream/before/after-tool guards, not extension exception propagation;
 see [native-pi-session.md](native-pi-session.md) for the actual enforcement path.

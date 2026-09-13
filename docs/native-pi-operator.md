@@ -14,6 +14,9 @@ new script for each mission. The current optional host is Pi **0.85.1**.
   for another user prompt. No implicit identity/model/permission migration.
 - `status`: read the saved action/turn counters offline. This is a recorded
   snapshot, not permission to resume or independent product acceptance.
+- `history`: list the mission's saved runs, including failures and incomplete
+  attempts, with aggregate provider-reported usage. No model or credential load.
+- `--help`: show the command interface without configuration or credentials.
 
 Native Pi owns source retrieval, file/edit/shell tools, context, inference and
 automatic compaction. Its core prompt remains intact. Godagents supplies the
@@ -89,6 +92,7 @@ authority by changing configuration and suggesting a replacement digest.
 npm run native:pi -- preflight --config 'D:/operator/config.json' --pin <reviewed-digest>
 npm run native:pi -- launch --config 'D:/operator/config.json' --pin <reviewed-digest> --prompt-file 'D:/operator/first-task.md'
 npm run native:pi -- status --config 'D:/operator/config.json' --pin <reviewed-digest>
+npm run native:pi -- history --config 'D:/operator/config.json' --pin <reviewed-digest>
 npm run native:pi -- resume --config 'D:/operator/config.json' --pin <reviewed-digest> --prompt-file 'D:/operator/continue-task.md'
 ```
 
@@ -145,7 +149,7 @@ Grok trial is live evidence. Do not infer all-provider quality from Node tests.
 
 ```powershell
 $env:GODAGENTS_PI_PACKAGE_ROOT = 'absolute installed pi-coding-agent package root'
-node --test tests/native-pi-operator-config.test.mjs tests/native-session-report.test.mjs tests/native-pi-operator.test.mjs tests/native-host-binding.test.mjs tests/pi-native-session.test.mjs
+node --test tests/native-pi-operator-config.test.mjs tests/native-session-report.test.mjs tests/native-pi-operator.test.mjs tests/native-run-history.test.mjs tests/native-pi-operator-history.test.mjs tests/native-host-binding.test.mjs tests/pi-native-session.test.mjs
 ```
 
 The real-SDK mechanics tests use a scripted provider and no paid inference.

@@ -3,7 +3,7 @@
 Baseline: `9dfd9a7fac63f067294ed8ae0215f032d133e359`, main reconciled with origin.
 Dom requested a larger productive batch instead of stopping at a thin launcher.
 Source branch: `feat/native-operator-workflow`. This audit separates completed
-behavior from pending release checks and remaining product gaps.
+behavior, verified release checks and remaining product gaps.
 
 ## Delivered behavior
 
@@ -27,8 +27,13 @@ Initial integrated gate: **59 passed, zero failures, zero skips**, including the
 actual optional Pi SDK with a scripted provider. Historical ledger: **69 receipts
 verified unchanged**, digest
 `3d86253cb5947ca2f4c3a578de178642053487b6a8da6a67cdf037b210f0bdb4`.
-Final independent review, full regression and main integration remain pending
-at this source checkpoint; subsequent closeout below must record their results.
+Full regression at implementation commit
+`6efe4a9f0b10e862cae3040d7812910169d1fe52`: **1,572 passed, zero failures,
+nine existing optional browser skips**, 555.134 seconds. The installed Pi SDK
+was explicitly enabled. `full-regression.log` SHA-256:
+`effba75f147ed577345f7f329972c103b58e70404e4453b2ff12019a96abeba9`.
+Only documentation changed after that source snapshot. Main integration and
+post-merge checks are recorded in the release closeout below.
 
 ## Two-stage live coding trial
 
@@ -37,7 +42,7 @@ Real fresh creator/admission, first-party PromptOS artifact, fixture-local Realm
 native xAI OAuth subscription, model `grok-4.6`, max16,384 tokens per response,
 160 tool calls across the association,15minute deadline per prompt. Mission token
 fields are guidelines, not a certified provider spending cap. No personal Grok
-keel, automatic skill activation, other-model fallback or API-credit use.
+keel, automatic skill activation, other-model fallback or API-key route.
 
 Native session: `01a09be6-4c9e-7359-92f5-9434ba815545`.
 Association digest:
@@ -97,10 +102,21 @@ host preparation omission increased work; this is not a clean efficiency study.
 
 Initial review: `review/result.json` and `verdict.md`, one independent Grok
 inference,33,196 reported total tokens. It returned with-fixes, not approval.
-The original review session is reused for final review with exact revised source,
-avoiding a redundant full exploration. Source pins and returned text are saved
-under `review-followup` when it completes. Review acceptance is owned by Codex,
-not delegated to the raw model's confidence.
+The original review session was reused for final review with exact revised source,
+avoiding a redundant full exploration. Final verdict: **merge approved**, with no
+material remaining issue. All 11 supplied source/test pins matched the canonical
+files after review. The owner checked the findings against the implementation
+and regression tests rather than delegating acceptance to model confidence.
+`review-followup/result.json` retains the pins and 77,337 reported total tokens;
+`review-followup/verdict.md` SHA-256:
+`943593c54be852253cf3914d034d0cba1e780f9afd2e56cf0044bcc4a197ab53`.
+Both reviews used separate review context, not a distinct model family or proof
+of universal adversarial coverage.
+
+Accepted recovery limits: a hard kill before the first durable setup record
+cannot manufacture a diagnosis; `resume` on a setup-failed root fails closed
+while `status`/`history` explain recovery. History with metadata but no native
+state also fails closed. No destructive root recycling was introduced.
 
 No historical receipt, personal-keel store, global model default or
 `package-lock.json` was modified. See the companion

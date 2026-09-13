@@ -1,5 +1,20 @@
 # Godagents current state and bounded completion path
 
+September 13 larger delivery batch: source `6efe4a9` adds the
+[native operator workflow](native-pi-operator.md): preflight, launch, resume,
+offline status/history and help, backed by the existing Pi SDK. Two live coding
+stages used the same admitted actor across a fresh process; the Godagent authored
+the history reader and CLI integration. Independent acceptance passed. Stage2
+needed the owner to restore omitted schema/example dependencies, so it is
+explicitly environment-assisted. The integrated targeted gate passed59/59;
+all69 historical receipts verify unchanged. Full regression passed **1,572 tests,
+zero failures, nine existing optional browser skips**. Independent review approved
+the revised batch; all reviewed source pins match. Main integration and its
+post-merge gate are recorded in the audit closeout. See the
+[source, usage and scope audit](audits/2026-09-13-native-operator-workflow.md).
+The [Godskills consumer review](audits/2026-09-13-native-godskills-readiness.md)
+defines the next optional binding boundary; no skill activation occurred.
+
 September 13 live follow-through: the native Pi/xAI **subscription** path has now
 completed one real coding mission in a separate workspace. After a reproduced
 and corrected opaque-tool-ID compatibility defect, Grok implemented the path
@@ -12,7 +27,8 @@ checks and separate Grok review. The final full regression passed **1,539 tests,
 zero failures, nine existing optional browser skips**.
 Source `c7385d6` is merged and pushed. Merged-source native checks passed 26/26;
 the post-push, ref-reconciled cross-repository gate passed 11/11.
-Next: a thin operator launch/resume command around this same native SDK path.
+That checkpoint's next step, a thin operator launch/resume command, is delivered
+by the larger batch above.
 Production Realm semantics, automatic Godskills activation and general product
 qualification remain separate work. The verified filter candidate stays in the
 private trial workspace until deliberately promoted.

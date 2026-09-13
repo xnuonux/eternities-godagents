@@ -20,7 +20,7 @@
 - Admission JSON: `receiptPath, creationDir, distributionDir, expectedPolicyDigest, expectedCreationBuildId, instanceId, creatorRef, transactionDir, journalPath, keelRoot`. Convert only `keelRoot` into the existing local keel adapter.
 - Mission: existing cortex mission object, unchanged. The native UUID supplies taskId; `hostAdapterId=pi-sdk-v1`, revocationEpoch 0, maxProjectionBytes 32768.
 - Model: `provider, id, maxTokens`. Limits: `maxRunMs`. Grant inputs: `allowedTools, maxToolCalls, expiresAt`. No automatic renewal or resumed identity/mission/model changes.
-- Commands: `preflight|launch|resume|status --config <file> --pin <digest>`; launch/resume also require `--prompt-file <file>`. Pin failure, malformed config and unknown flags fail before SDK/auth loading.
+- Commands: `preflight|launch|resume|status|history --config <file> --pin <digest>`; launch/resume also require `--prompt-file <file>`. Standalone `--help` needs no configuration. Pin failure, malformed config and unknown flags fail before SDK/auth loading.
 - Preflight checks explicit installed SDK, selected model and OAuth subscription locally, no inference. Status is offline, credential-free and read-only; it reports recorded state, not authority to resume.
 - Launch reserves a fresh session directory, stores pinned metadata and a native session association, then runs once. Resume requires that exact metadata/config/history and uses existing fail-closed native validation. Timeout or interruption aborts without retry; preserve ambiguous effects.
 - Per-run output is private local data. Console result is a screened summary, not raw tools, prompts, credentials or provider error strings. Record supplied token fields separately; absent usage is unknown, not zero. Token fields are observations, not billing caps.
@@ -31,9 +31,9 @@
 
 **Produces:** `parseNativeOperatorArgs(argv) -> {command, configPath, expectedConfigDigest, promptPath?}`, `loadNativeOperatorConfig({configPath,expectedConfigDigest}) -> config`, `validateNativeOperatorConfig(config) -> config`. Errors have a screened `native-operator:<code>` message. Loading caps input at 1MiB and verifies pin before returning.
 
-- [ ] RED: unknown/duplicate flags, missing pin, inline auth fields, relative paths, unsupported schema, extra grant authority, changed config and invalid limits reject; valid explicit configuration round-trips.
-- [ ] Implement exact field checks and bounds, using existing digest and native tool map; mission semantics stay with existing cortex compiler.
-- [ ] GREEN: `node --test tests/native-pi-operator-config.test.mjs`.
+- [x] RED: unknown/duplicate flags, missing pin, inline auth fields, relative paths, unsupported schema, extra grant authority, changed config and invalid limits reject; valid explicit configuration round-trips.
+- [x] Implement exact field checks and bounds, using existing digest and native tool map; mission semantics stay with existing cortex compiler.
+- [x] GREEN: `node --test tests/native-pi-operator-config.test.mjs`.
 
 ## Task 2: Safe operator observability (worker B, disjoint ownership)
 
@@ -41,24 +41,24 @@
 
 **Produces:** `summarizeNativeState(state) -> {phase,sessionId,instanceId,turns,inferences,actions:{total,completed,pending,failed,byTool},stateDigest,associationDigest}`; verifies canonical stateDigest and protocol before summarizing, never raw actions/arguments/results. `createNativeUsageCollector() -> {record(event), snapshot()}` consumes native message_end assistant events; snapshot contains message count, each numeric usage field or null when unavailable, missing-usage count and stop-reason counts. No content/error strings or costs invented.
 
-- [ ] RED: altered state, malformed counts and missing usage cannot masquerade as verified totals; a token-bearing native event is counted once per distinct message id where supplied; content never leaks.
-- [ ] Implement pure summary and accounting without importing SDK, opening auth or writing files.
-- [ ] GREEN: `node --test tests/native-session-report.test.mjs`.
+- [x] RED: altered state, malformed counts and missing usage cannot masquerade as verified totals; a token-bearing native event is counted once per distinct message id where supplied; content never leaks.
+- [x] Implement pure summary and accounting without importing SDK, opening auth or writing files.
+- [x] GREEN: `node --test tests/native-session-report.test.mjs`.
 
 ## Task 3: Native lifecycle owner and CLI (main owner)
 
 **Files:** `src/host/native-pi-operator.mjs`, `src/host/native-pi-cli.mjs`, `tests/native-pi-operator.test.mjs`, package script, operator documentation.
 
-- [ ] RED using actual Pi SDK plus scripted provider at the external inference seam: launch writes a real file; resume retains actor/history and writes a second file; status does not call provider; wrong config/history, duplicate launch and unresolved state fail before effects.
-- [ ] Wire existing admission compiler/native adapter, exclusive session-root reservation, exact metadata integrity, local OAuth preflight, per-run evidence and cleanup.
-- [ ] Prove timeout/provider failure remains failure, no private raw data in console, and failed/tampered continuation is never retried automatically.
-- [ ] GREEN: config/report/operator/native binding suites with optional SDK explicitly configured.
+- [x] RED using actual Pi SDK plus scripted provider at the external inference seam: launch writes a real file; resume retains actor/history and writes a second file; status does not call provider; wrong config/history, duplicate launch and unresolved state fail before effects.
+- [x] Wire existing admission compiler/native adapter, exclusive session-root reservation, exact metadata integrity, local OAuth preflight, per-run evidence and cleanup.
+- [x] Prove timeout/provider failure remains failure, no private raw data in console, and failed/tampered continuation is never retried automatically.
+- [x] GREEN: config/report/operator/native binding suites with optional SDK explicitly configured.
 
 ## Task 4: Live multi-stage delivery and integration
 
-- [ ] Use a fresh admitted actor, workspace and pinned acceptance checks. Two dependent coding stages execute through the new command owner in separate processes under one actor/mission/grant. Use Grok 4.6 subscription only, no personal keel.
-- [ ] Independently verify source, unchanged tests and rendered behavior as applicable; keep failed attempts and full usage categories.
-- [ ] Obtain independent code review of changed production interfaces, address material findings, then targeted and full integration gates once at the release boundary. Preserve all historical receipts.
+- [x] Use a fresh admitted actor, workspace and pinned acceptance checks. Two dependent coding stages execute through the new command owner in separate processes under one actor/mission/grant. Use Grok 4.6 subscription only, no personal keel.
+- [x] Independently verify source, unchanged tests and rendered behavior as applicable; keep failed attempts and full usage categories.
+- [x] Obtain independent code review of changed production interfaces, address material findings, then targeted and full integration gates once at the release boundary. Preserve all historical receipts.
 - [ ] Reconcile upstream, merge verified batch and push main under standing approval; verify merged source and record exact implementation/live/remaining boundaries.
 
 ## Parallel coordination and non-goals
