@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,readFile,rm} from 'node:fs/promises';
+import {mkdtemp,mkdir,readFile,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {sample,row,inspectorSuite} from './helpers/export-inspector-cases.mjs';
 import {createWorkspaceRevisionStore} from '../src/workspace/revision-store.mjs';
+import {exportWorkspaceRevision} from '../src/workspace/revision-export.mjs';
 import {createBrowserWorkspaceTestRunner} from '../src/workspace/browser-test-runner.mjs';
 import {compileBrowserTestSuite} from '../src/workspace/browser-test-contracts.mjs';
 import {sha256Text} from '../src/core/digest.mjs';
@@ -28,13 +29,25 @@ test('inspector rejects unsupported shapes instead of accepting approval-like me
     {...sample,changes:[{...sample.changes[0],approved:true}]},{...sample,changes:[{...sample.changes[0],afterText:7}]}])await assert.rejects(inspect(value));
 });
 test('inspector rejects unsafe or duplicate paths, NUL and malformed UTF-16',async()=>{
-  for(const path of ['../secret','/absolute','C:/absolute','x\\y','x\u0000y'])await assert.rejects(inspect({...sample,changes:[row(path,'a','b')]}));
+  for(const path of ['../secret','/absolute','C:/absolute','x\\y','x\u0000y','\uD800'])await assert.rejects(inspect({...sample,changes:[row(path,'a','b')]}));
   await assert.rejects(inspect({...sample,changes:[sample.changes[0],{...sample.changes[0],path:'SRC/MAIN.JS'}]}));
   for(const text of ['x\u0000y','\uD800'])await assert.rejects(inspect({...sample,changes:[row('app.js','before',text)]}));
 });
 test('inspector bounds input and rows before expensive verification',async()=>{
   await assert.rejects(inspect(' '.repeat(1048577)));
   await assert.rejects(inspect({...sample,changes:Array.from({length:65},(_,i)=>row(`file-${i}.txt`,'a','b'))}));
+});
+
+test('inspector consumes an actual checked revision export without an adapter',async t=>{
+  const root=await mkdtemp(join(tmpdir(),'inspector-export-'));t.after(()=>rm(root,{recursive:true,force:true}));
+  const sourceRoot=join(root,'source'),storeRoot=join(root,'store');await mkdir(sourceRoot);await mkdir(storeRoot);
+  await writeFile(join(sourceRoot,'note.txt'),'original');
+  const store=await createWorkspaceRevisionStore({root:storeRoot,limits:{maxFiles:4,maxFileBytes:4096,maxTotalBytes:8192,maxRevisions:4,maxStoreBytes:65536}});
+  const parent=await store.capture({sourceRoot,files:[{path:'note.txt',sha256:sha256Text('original')}]});
+  const child=await store.revise({parentDigest:parent.revisionDigest,changes:[{path:'note.txt',expectedSha256:sha256Text('original'),bytes:new TextEncoder().encode('revised 🌙')}]});
+  const bundle=await exportWorkspaceRevision({store,parentDigest:parent.revisionDigest,revisionDigest:child.revisionDigest});
+  assert.deepEqual(await inspect(bundle),bundle);
+  assert.equal(await readFile(join(sourceRoot,'note.txt'),'utf8'),'original');
 });
 
 const runtimePath=process.env.GODAGENTS_WORKSPACE_BROWSER_RUNTIME;

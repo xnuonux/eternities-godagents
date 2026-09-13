@@ -1,2 +1,180 @@
-/* Admission seed, not a finished interface. */
-body { font-family: system-ui, sans-serif; margin: 2rem; }
+/* Read-only export inspector workbench. */
+:root {
+  --indigo: #151d36;
+  --coolpaper: #f1f4fa;
+  --mutedblue: #b6c5e1;
+  --copper: #bf825d;
+  --ink: #1c2843;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--coolpaper);
+  color: var(--ink);
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "heading heading heading" "note note note" "label label label" "input input input" "actions actions actions" "status status status" "files selected selected" "files before after";
+  gap: 0.75rem 1rem;
+  padding: 1rem 1.25rem 1.5rem;
+  min-height: 100vh;
+  align-items: start;
+  align-content: start;
+}
+
+h1 {
+  grid-area: heading;
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 650;
+  color: var(--indigo);
+  text-align: left;
+}
+
+#boundary-note {
+  grid-area: note;
+  margin: 0;
+  color: var(--indigo);
+  font-size: 0.95rem;
+}
+
+label[for="bundle-input"] {
+  grid-area: label;
+  font-weight: 600;
+}
+
+#bundle-input {
+  grid-area: input;
+  width: 100%;
+  min-height: 7rem;
+  resize: vertical;
+  padding: 0.6rem;
+  border: 1px solid var(--mutedblue);
+  background: #fff;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+.actions { grid-area: actions; display: flex; gap: 0.5rem; }
+
+#inspect,
+#clear {
+  grid-column: auto;
+  justify-self: start;
+  margin-right: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--indigo);
+  background: var(--indigo);
+  color: var(--coolpaper);
+  font: inherit;
+  cursor: pointer;
+}
+
+#clear {
+  background: #fff;
+  color: var(--indigo);
+}
+
+#inspect:focus-visible,
+#clear:focus-visible,
+#bundle-input:focus-visible,
+#files button:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
+#status {
+  grid-area: status;
+  margin: 0;
+  padding: 0.35rem 0;
+}
+
+#status[data-state="idle"] { color: var(--ink); }
+#status[data-state="checking"] { color: var(--indigo); }
+#status[data-state="valid"] { color: var(--indigo); }
+#status[data-state="invalid"] { color: #854b28; }
+
+#files {
+  grid-area: files;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: stretch;
+  border: 1px solid var(--mutedblue);
+  background: #fff;
+  padding: 0.4rem;
+  min-height: 12rem;
+}
+
+#files button {
+  overflow-wrap: anywhere;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.35rem 0.45rem;
+  cursor: pointer;
+}
+
+#files button[aria-current="true"] {
+  background: var(--mutedblue);
+  color: var(--indigo);
+}
+
+#selected-path {
+  grid-area: selected;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--indigo);
+  word-break: break-all;
+}
+
+section {
+  min-width: 0;
+  min-height: 18rem;
+  border: 1px solid var(--mutedblue);
+  background: #fff;
+  padding: 0.5rem 0.65rem 0.75rem;
+}
+section:first-of-type { grid-area: before; }
+section:last-of-type { grid-area: after; }
+
+section h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  color: var(--indigo);
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  main {
+    grid-template-columns: 1fr;
+    grid-template-areas: "heading" "note" "label" "input" "actions" "status" "files" "selected" "before" "after";
+  }
+
+  #files {
+    min-height: 0;
+  }
+}
