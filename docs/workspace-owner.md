@@ -51,7 +51,15 @@ Native inference reuses the existing durable admitted launcher. Staging is deter
 
 For a follow-up after process restart, reconstruct the original owner, reconcile its stage, reconstruct the reviewed test handle from the host's saved review, then call `continueAfter`. This verifies the predecessor chain rather than trusting a deserialized handle. No identity or personal-keel rewrite is involved.
 
-No live provider quality comparison has been completed for this path. Local tests use synthetic inference responses and real admission, routing, native sender, revision storage, browser and recovery machinery. They discriminate wiring and failure behavior, not model competence or production readiness. There is no automatic source-tree promotion, global multi-actor budget, cloud sandbox or Lunari integration here.
+Bounded live qualifications and a one-task comparison now exist; see the
+[September12 trial](audits/2026-09-12-grok-workspace-forensics.md). They do not
+establish general quality superiority. The later
+[multi-file inspector task](audits/2026-09-12-workspace-export-inspector.md) needed
+host corrections and exposed a concrete size limit: this owner serializes source
+and task into the request's4096-character mission objective. Larger coding tasks
+are not qualified by its wider revision-store file quotas. Local synthetic tests
+remain wiring/failure evidence, not model competence. There is no automatic
+source-tree promotion, global multi-actor budget, cloud sandbox or Lunari integration.
 
 ## Operator application entrypoint
 

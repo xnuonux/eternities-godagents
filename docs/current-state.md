@@ -1,5 +1,16 @@
 # Godagents current state and bounded completion path
 
+Latest product delivery, September12: `73212bb` adds a
+[read-only export inspector](../examples/workspace-export-inspector/README.md).
+The model supplied a three-file candidate; host corrections fixed syntax,
+malformed-path Unicode and layout.27 targeted checks passed, including8 browser
+scenarios, actual-export compatibility, and delayed-hash UI races. External model
+review did not yield a usable verdict. This is host-assisted delivery, not an
+unassisted Godagent qualification. See the [audit](audits/2026-09-12-workspace-export-inspector.md).
+The next critical coding-host improvement is explicit bounded source context:
+the current owner serializes the entire selected source into a4096-character
+mission objective. Do not keep shrinking toy tasks or silently lift that cap.
+
 Latest verified continuation, September 12 follow-through: runtime `06a3b94`
 adds prepared-evidence and result-publication hooks to the operational collector.
 The fresh two-arm Grok comparison reached terminal results for both arms. The

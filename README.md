@@ -34,6 +34,13 @@ That is integration evidence, not general coding superiority. Original app files
 are not automatically changed. The project [testing default](AGENTS.md) uses
 stateless Grok 4.6 CLI subscription workers without Grok personal-keel inheritance.
 
+A [read-only workspace export inspector](examples/workspace-export-inspector/README.md)
+now lets operators view changed files and before/after text locally, with text-hash
+checks and no apply or approval action. Its [multi-file delivery audit](docs/audits/2026-09-12-workspace-export-inspector.md)
+separates the raw Grok candidate from the host-corrected, browser-tested example.
+The trial also exposed the existing 4096-character mission-objective/source
+bottleneck, which remains a real limit for larger coding tasks.
+
 The experimental [Grok subscription adapter](docs/audits/2026-09-08-grok-subscription-phase-transport.md)
 adds a pinned native CLI path to the same portable phase host. Its local process,
 accounting and replay tests are separate from live subscription qualification
