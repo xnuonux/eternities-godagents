@@ -40,6 +40,6 @@
 
 - [x] Independent source review on Grok subscription with bounded sterile review context; owner reproduces material findings and repairs test-first. No live quality claim from scripted providers.
 - [x] Run targeted integration, full relevant release suite once, and historical ledger verification without receipt regeneration. Inspect diff and preserve user package-lock.json.
-- [ ] Fetch/reconcile, merge verified branch, push main, verify ref-aware merged gates, and publish the exact audit. A matched live benefit study is next, not implied by this consumer.
+- [x] Fetch/reconcile, merge verified branch, push main, verify ref-aware merged gates, and publish the exact audit. Integrated `b58b65e`: merged native80/80 and post-push ref-aware8/8. A matched live benefit study is next, not implied by this consumer.
 
 Rollback: omit the option for newly created native associations. Already-bound sessions cannot strip skills or change roots by editing a digest; they require explicit new association/migration. No destructive cleanup or automatic retries.

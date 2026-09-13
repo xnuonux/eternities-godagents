@@ -9,7 +9,9 @@ The [qualification audit](audits/2026-09-13-native-godskills-consumer.md) record
 80 passing focused checks, **1,593 full-regression passes, zero failures, nine
 existing optional skips**, 69 unchanged historical receipts and completed
 independent review approval. The real Grok subscription preflight passed without
-inference or session creation. Integration closeout follows in that audit.
+inference or session creation. The batch is merged and pushed at `b58b65e`;
+post-merge native checks passed80/80 and the post-push ref-aware
+cross-repository gate passed8/8. Exact source and evidence are in that audit.
 Next: a matched live comparison of the same Godagent with versus without selected
 skills, holding model, host, source, tools and acceptance fixed. This consumer
 qualification is not yet evidence of a live quality or efficiency improvement.

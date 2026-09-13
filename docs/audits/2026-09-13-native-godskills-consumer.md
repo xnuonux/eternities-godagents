@@ -108,6 +108,19 @@ documentation/data-only warehouse intake. Main/origin were independently
 rechecked. No skill/runtime/policy/receipt root changed; native release
 verification remains pinned rather than following arbitrary new main bytes.
 
+## Main integration
+
+The reviewed source and documentation were fast-forward merged and pushed to
+`main` at `b58b65e2464f5f2638be6b8e4ddc9d4dad0aa342`. Both local and remote-tracking
+main resolved to that commit. The post-merge native gate passed **80/80**, zero
+failures/skips, in 9.219 seconds (`merged-focused.log`). No implementation changes
+were made after the full-suite and review snapshot at `12470b1`.
+The post-push ref-aware cross-repository gate also passed **8/8**, zero
+failures/skips, in 57.043 seconds (`merged-current-head.log`). It used reconciled
+Godagents `b58b65e` and Godskills `d0781a9` refs. Historical certificate fixtures
+remain evidence for their recorded sources, not newly issued certification of
+this consumer. The final closeout commit changes documentation only.
+
 ## Explicit remaining work
 
 This proves a functioning native capability consumer, not a measured coding
