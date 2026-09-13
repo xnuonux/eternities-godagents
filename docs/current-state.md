@@ -9,7 +9,9 @@ Owner correction `a8bc116` fixes two actual reporting defects found afterward:
 SDK placeholder-zero failure usage becomes unknown, and history accepts valid
 screened Godskills failure categories.83native checks and independent Grok source
 review pass. Full regression: **1,596passes, zero failures, nine existing optional
-skips**, including69 unchanged historical receipts. Next: bounded native
+skips**, including69 unchanged historical receipts. Merged/pushed at `41f037a`,
+with83/83 merged native checks and8/8 post-push cross-repository checks.
+Next: bounded native
 provider-generation diagnostics before another registered coding comparison;
 do not change skill policy or claim a quality win from these failed calls.
 

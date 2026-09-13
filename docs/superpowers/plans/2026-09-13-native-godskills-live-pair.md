@@ -35,7 +35,7 @@ this study is not blinded and those nuisance differences must be disclosed.
 - [x] Prepare identical source copies, admission profiles and pinned configs using existing creation/admission APIs. Reuse the established preparation pattern rather than build a new model loop. Check existing focused regressions in each copy before launch, route treatment and record exact release/selection metadata.
 - [x] Freeze task, source, acceptance, config and execution-order digests. Verify real OAuth preflight for each arm, then use `runNativeOperator({command:'launch',config,expectedConfigDigest,prompt})` exactly once per arm. Preserve run start/result, native transcript and scope changes.
 - [x] Independently score both artifacts with unchanged acceptance and original focused tests, inspect scope violations, missing evidence and measured overhead. Publish a limited paired-result report with exact source pointers. Do not promote a candidate solely because it wins this pair. Both provider streams failed before edits; result is inconclusive, not a quality tie.
-- [ ] Reconcile upstream and commit/merge/push verified study evidence under standing authorization. Leave any product candidate outside main until its own review and integration gates pass.
+- [x] Reconcile upstream and commit/merge/push verified study evidence under standing authorization. Integrated `41f037a`, merged native83/83 and post-push cross-repository8/8. No query candidate exists to promote. The separate reporting correction passed1,596full tests with zero failures and9existing optional skips.
 
 ## Confirmed post-trial repair
 

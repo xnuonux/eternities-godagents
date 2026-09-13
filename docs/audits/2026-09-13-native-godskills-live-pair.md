@@ -176,9 +176,14 @@ Full log SHA256:
 
 ## Integration
 
-The verified reporting correction and study evidence are ready for the existing
-main integration gate. No historical receipt, frozen trial record, user
-package-lock or Godskills release artifact was rewritten.
+The verified reporting correction and study evidence were merged and pushed to
+main at `41f037a8633236773c81d5cd3307bce79b85770a`. The merged native gate passed
+**83/83**, zero failures/skips,9.093seconds. The post-push ref-aware
+cross-repository gate passed **8/8**, zero failures/skips,75.646seconds, with
+Godskills main/origin at `d0781a91a82898cc808e7fc681f145fdd972dade`. The final
+closeout changes documentation only. No historical receipt, frozen trial record,
+user package-lock or Godskills release artifact was rewritten. No live trial or
+review process remains running.
 
 ## Next meaningful step
 
