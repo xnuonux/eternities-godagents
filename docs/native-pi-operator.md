@@ -127,7 +127,11 @@ cache read, cache write and total preserved separately. Missing fields remain
 unknown (`null`). Counters do not add cache fields to an already reported total,
 infer money, or pretend that hidden reasoning is separately observable when it
 isn't. The collector stores counters rather than retaining private message
-bodies. Mission token fields are **not certified spending caps**; the configured
+bodies. Failed or aborted responses containing only zero/absent SDK counters
+make cumulative usage unknown: placeholder zeros do not prove a free call.
+Nonzero reported failure usage is retained as reported, not certified complete
+billing. Historical run records are not rewritten by this correction.
+Mission token fields are **not certified spending caps**; the configured
 per-response ceiling, tool-call ceiling, expiry and run deadline are distinct.
 
 ## Deliberate boundaries

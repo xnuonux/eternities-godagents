@@ -52,6 +52,12 @@ export function createNativeUsageCollector() {
       const values = { inputTokens: usage.inputTokens ?? usage.input, outputTokens: usage.outputTokens ?? usage.output,
         cacheReadTokens: usage.cacheReadTokens ?? usage.cacheRead, cacheWriteTokens: usage.cacheWriteTokens ?? usage.cacheWrite,
         totalTokens: usage.totalTokens ?? usage.total };
+      // The SDK initializes zero counters before streaming. On failure those
+      // placeholders cannot establish that the interrupted call consumed zero.
+      if(['error','aborted'].includes(message.stopReason)
+        &&fields.every(field=>values[field]===0||values[field]==null)) {
+        for(const field of fields)values[field]=undefined;
+      }
       for (const field of fields) {
         if(sums[field]!==null&&finite(values[field])&&finite(sums[field]+values[field]))sums[field]+=values[field];
         else sums[field]=null;

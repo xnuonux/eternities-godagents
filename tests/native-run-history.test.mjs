@@ -54,6 +54,19 @@ const read = (sessionRoot, overrides = {}) => readNativeRunHistory({
   sessionRoot, expectedSessionId: sessionId, expectedConfigDigest: configDigest, ...overrides,
 });
 
+test('retains legitimate Godskills failure categories without accepting raw diagnostics',async t=>{
+  for(const category of ['native-godskills:verification-failed','native-godskills:binding-mismatch']) {
+    const root=await session(t);await add(root,0,{status:'failed',category});
+    const report=await read(root);
+    assert.equal(report.entries[0].category,category);
+    assert.deepEqual(report.counts,{settled:0,failed:1,incomplete:0});
+  }
+  for(const category of ['native-godskills:Bearer-secret','native-godskills:failed\nprivate','native-godskills:','untrusted:failed']) {
+    const root=await session(t);await add(root,0,{status:'failed',category});
+    await assert.rejects(read(root),/native-run-history:category/);
+  }
+});
+
 test('aggregates settled and failed operator records without echoing private fields', async t => {
   const root = await session(t);
   await add(root, 0, {

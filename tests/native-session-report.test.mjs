@@ -52,3 +52,31 @@ test('report does not disclose arbitrary tool names or malformed native action s
   assert.throws(()=>summarizeNativeState(state({actions:[{toolName:'private-data',status:'completed',isError:false}]})),/shape/);
   assert.throws(()=>summarizeNativeState(state({actions:[{toolName:'read',status:'completed',isError:null}]})),/shape/);
 });
+
+test('failed or aborted SDK zero placeholders make cumulative usage unknown',()=>{
+  for(const stopReason of ['error','aborted']) {
+    const collector=createNativeUsageCollector();
+    collector.record({type:'message_end',message:{role:'assistant',id:'known',stopReason:'toolUse',
+      usage:{input:4,output:2,cacheRead:3,cacheWrite:0,totalTokens:9}}});
+    const failure={type:'message_end',message:{role:'assistant',id:'failed',stopReason,
+      usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0}}};
+    collector.record(failure);collector.record(failure);
+    assert.deepEqual(collector.snapshot(),{messageCount:2,inputTokens:null,outputTokens:null,
+      cacheReadTokens:null,cacheWriteTokens:null,totalTokens:null,missingUsageMessages:1,
+      stopReasons:{toolUse:1,[stopReason]:1}});
+  }
+});
+
+test('successful zero usage and nonzero reported failure usage are retained',()=>{
+  const collector=createNativeUsageCollector();
+  collector.record({type:'message_end',message:{role:'assistant',stopReason:'stop',
+    usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0}}});
+  assert.equal(collector.snapshot().totalTokens,0);
+  assert.equal(collector.snapshot().missingUsageMessages,0);
+  collector.record({type:'message_end',message:{role:'assistant',stopReason:'error',
+    usage:{input:4,output:2,cacheRead:3,cacheWrite:0,totalTokens:9}}});
+  assert.equal(collector.snapshot().totalTokens,9);
+  assert.equal(collector.snapshot().inputTokens,4);
+  assert.equal(collector.snapshot().cacheReadTokens,3);
+  assert.equal(collector.snapshot().missingUsageMessages,0);
+});
