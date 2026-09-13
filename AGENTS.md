@@ -5,6 +5,21 @@ receipts are evidence at their recorded revision, not current completion claims.
 
 ## Model-backed testing default
 
+Dom's September 13 direction supersedes the tool-free restriction **for native
+coding-host integration work**. Reuse a mature host's normal file, edit, shell,
+test and context loop. Start with `docs/native-coding-host-direction.md`. The
+installed native Grok CLI subscription is the immediate feasibility route;
+Codex App Server/SDK and Pi are integration candidates. Keep personal Grok keel
+and unrelated histories out. Do not replace the host's core prompt with the
+stateless-worker prompt or pack repository files into the mission objective.
+
+Native host permissions come from the operator, not actor prose. A host-owned
+experiment is not a certified Godagent tool binding. Preserve the strict
+structured-worker path below for matched inference/proposal comparisons and old
+receipts; do not relax it globally or silently recertify native effects.
+
+### Structured inference and proposal comparisons
+
 Dom's 2026-09-12 instruction: use the native Grok 4.6 CLI subscription for
 model-backed tests and delegated review in this project unless explicitly changed.
 Use the pinned `createGrokCliPhaseProcess` transport and the existing

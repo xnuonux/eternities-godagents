@@ -1,5 +1,16 @@
 # Godagents current state and bounded completion path
 
+September 13 direction: [reuse native coding hosts](native-coding-host-direction.md)
+for real repository work. The old one-turn, tool-free source-replacement path
+remains useful for controlled comparisons, but is not the desired coding-agent
+architecture. Use native retrieval/context, tools and sessions rather than
+serializing the project into a mission objective. Native host feasibility and
+full Godagent authority/lifecycle integration are separate qualification gates.
+The [native Grok feasibility run](audits/2026-09-13-native-grok-host-feasibility.md)
+used real tools on 14KB of source and produced a filter that passed independent
+browser checks and seven Node tests. It timed out before a clean final handoff;
+its generated full suite was not clean. The candidate remains outside main.
+
 Latest product delivery, September12: `73212bb` adds a
 [read-only export inspector](../examples/workspace-export-inspector/README.md).
 The model supplied a three-file candidate; host corrections fixed syntax,
@@ -7,7 +18,7 @@ malformed-path Unicode and layout.27 targeted checks passed, including8 browser
 scenarios, actual-export compatibility, and delayed-hash UI races. External model
 review did not yield a usable verdict. This is host-assisted delivery, not an
 unassisted Godagent qualification. See the [audit](audits/2026-09-12-workspace-export-inspector.md).
-The next critical coding-host improvement is explicit bounded source context:
+The September 12 diagnosis identified a source-context problem:
 the current owner serializes the entire selected source into a4096-character
 mission objective. Do not keep shrinking toy tasks or silently lift that cap.
 
