@@ -2,6 +2,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 import { sha256Value } from '../core/digest.mjs';
 import { nativeToolEffects } from './native-host-binding.mjs';
+import { validateNativeGodskillsOptions } from '../skills/native-godskills-binding.mjs';
 
 const PROTOCOL = 'eternities-native-pi-operator-v1';
 const DIGEST = /^[a-f0-9]{64}$/u;
@@ -48,7 +49,7 @@ export function parseNativeOperatorArgs(argv = []) {
 }
 
 export function validateNativeOperatorConfig(config) {
-  noCredentials(config); exact(config, TOP);
+  noCredentials(config); exact(config, Object.hasOwn(config, 'godskills') ? [...TOP, 'godskills'] : TOP);
   if (config.schemaVersion !== 1 || config.protocolId !== PROTOCOL) fail('protocol');
   exact(config.admission, ADMISSION); exact(config.model, MODEL); exact(config.grant, GRANT); exact(config.limits, LIMITS);
   for (const key of ['piPackageRoot','authPath','cwd','sessionRoot']) if (!path(config[key])) fail('path');
@@ -60,6 +61,10 @@ export function validateNativeOperatorConfig(config) {
   if (!boundedInt(config.grant.maxToolCalls, 1, 10000) || !ISO.test(config.grant.expiresAt) || new Date(config.grant.expiresAt).toISOString() !== config.grant.expiresAt) fail('grant');
   if (!boundedInt(config.limits.maxRunMs, 1000, 86400000)) fail('limits');
   if (!object(config.mission)) fail('mission');
+  if (Object.hasOwn(config, 'godskills')) {
+    if (!object(config.godskills)) fail('godskills');
+    validateNativeGodskillsOptions(config.godskills);
+  }
   return config;
 }
 

@@ -141,6 +141,9 @@ does not claim production Realm, portable billing, soul, inspiration, automatic
 Godskills or arbitrary shell rollback qualification.
 
 There is no personal Grok keel discovery or global model/settings change.
+An explicit host-pinned [Godskills option](native-godskills-consumer.md) now binds
+one selected stack to a native mission; omission remains the default. It cannot
+be enabled, removed or repinned silently on an existing association.
 Compatible model/provider support depends on the installed native host, an
 explicit OAuth subscription and independent qualification; only the recorded
 Grok trial is live evidence. Do not infer all-provider quality from Node tests.

@@ -7,6 +7,7 @@ import { assertNoCredentialFields } from '../cortex/receipt-safety.mjs';
 import { acquireFileLock } from '../state/file-lock.mjs';
 import { replaceFileAtomically } from '../state/atomic-publication.mjs';
 import { acquireCortexBinding } from './cortex-binding-registry.mjs';
+import { prepareNativeGodskills } from '../skills/native-godskills-binding.mjs';
 
 // These are native tool classes, not a parser for the effects of shell commands.
 export const nativeToolEffects = Object.freeze({
@@ -53,7 +54,7 @@ function checkGrant(grant, pin, candidate, request, clock) {
 }
 
 export async function openNativeHostBinding({admission,request:inputRequest,grant:inputGrant,expectedGrantDigest,
-  stateDirectory,registryRoot,instanceRegistryRoot,clock=Date.now,resume=false}={}) {
+  stateDirectory,registryRoot,instanceRegistryRoot,clock=Date.now,resume=false,godskills}={}) {
   const grant=structuredClone(inputGrant),request=structuredClone(inputRequest);
   const candidate=await compileCortexBindingCandidate({admission,request});
   checkGrant(grant,expectedGrantDigest,candidate,request,clock);
@@ -65,12 +66,12 @@ export async function openNativeHostBinding({admission,request:inputRequest,gran
   if(rel==='' || (rel!=='..'&&!rel.startsWith('..'+sep)&&!isAbsolute(rel))) fail('state-inside-workspace');
   const statePath=join(stateRoot,'session.json');
   const stateLock=await acquireFileLock({lockPath:join(stateRoot,'session.lock')});
-  let lease,closed=false,fault=false,state;
+  let lease,closed=false,fault=false,state,skillBinding;
   const association={grantDigest:expectedGrantDigest,instanceId:grant.instanceId,sessionId:grant.sessionId,cwd,
     identityDigest:grant.identityDigest,realmContractDigest:grant.realmContractDigest,
     keelId:candidate.fullEnvelope.binding.keelId,keelHeadDigest:candidate.fullEnvelope.binding.currentKeelHeadDigest,
     requestDigest:sha256Value(request)};
-  const associationDigest=sha256Value(association);
+  let associationDigest;
   const load=async()=>{
     let raw;try{if((await stat(statePath)).size>8*1024*1024)fail('state-integrity');raw=await readFile(statePath,'utf8');}
     catch(error){if(error.code==='ENOENT')return null;throw error;}
@@ -89,6 +90,12 @@ export async function openNativeHostBinding({admission,request:inputRequest,gran
   let serial=Promise.resolve();
   const serialized=fn=>{const result=serial.then(fn);serial=result.catch(()=>undefined);return result;};
   try {
+    if(godskills!==undefined) {
+      skillBinding=await prepareNativeGodskills({options:godskills,candidate,request,grant,
+        effectCeiling:[...new Set(grant.allowedTools.map(tool=>nativeToolEffects[tool]))],stateDirectory:stateRoot,resume});
+      association.godskillsBindingDigest=skillBinding.recordDigest;
+    }
+    associationDigest=sha256Value(association);
     state=await load();
     if(resume&&!state)fail('missing-state');
     if(!resume&&state)fail('already-associated');
@@ -112,12 +119,13 @@ export async function openNativeHostBinding({admission,request:inputRequest,gran
     if(!host || host.sessionId!==grant.sessionId || !same(host.model,grant.model)
       || await realpath(host.cwd)!==cwd)fail('host-mismatch');
     const current=await lease.inspect();if(current.status!=='active')fail(current.status==='revoked'?'revoked':'lease-inactive');
+    await skillBinding?.validate();
   };
   const context='[Eternities native Godagent binding]\n'+canonicalJson({
     protocolId:'eternities-native-host-context-v1',associationDigest,instanceId:grant.instanceId,
     identity:candidate.fullEnvelope.identity,continuity:candidate.fullEnvelope.continuity,mission:request.mission,
     host:{sessionId:grant.sessionId,model:grant.model,cwd,allowedTools:grant.allowedTools,permissionSource:'host-pinned grant',shellBoundary:'process-exec is broad OS-user process authority, not command-level confinement'},
-    godskills:{status:'not-activated-by-this-adapter'},
+    godskills:skillBinding?.disclosure??{status:'not-activated-by-this-adapter'},
     rules:['Native host instructions and user authority remain controlling.','Use native retrieval, tools and context management; source is not inside the mission.','Do not load another mind\'s personal keel or treat identity prose as authority.','Native completion is not independent verification.'],
   });
   return Object.freeze({

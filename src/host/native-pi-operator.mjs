@@ -11,11 +11,12 @@ import { nativeToolEffects } from './native-host-binding.mjs';
 import { validateNativeOperatorConfig } from './native-pi-operator-config.mjs';
 import { summarizeNativeState, createNativeUsageCollector } from './native-session-report.mjs';
 import { readNativeRunHistory } from './native-run-history.mjs';
+import { preflightNativeGodskills } from '../skills/native-godskills-binding.mjs';
 
 const fail=code=>{throw new Error(`native-operator:${code}`);};
 const json=value=>JSON.stringify(value,null,2)+'\n';
 export function nativeOperatorError(error) {
-  return /^(native-operator|native-pi|native-host|native-session-report|native-run-history):[a-z0-9-]{1,80}$/.test(error?.message??'')
+  return /^(native-operator|native-pi|native-host|native-session-report|native-run-history|native-godskills):[a-z0-9-]{1,80}$/.test(error?.message??'')
     ?error.message:'native-operator:operation-failed';
 }
 async function readJson(path,limit=1024*1024) {
@@ -109,6 +110,9 @@ export async function runNativeOperator({command,config:inputConfig,expectedConf
     try{await access(config.sessionRoot);fail('session-exists');}catch(error){if(error.code!=='ENOENT')throw error;}
   }
   const compiled=await compileHost(config,metadata?.sessionId??'native-operator-preflight');
+  const skillPreflight=config.godskills?await preflightNativeGodskills({options:config.godskills,
+    candidate:compiled.candidate,request:compiled.request,grant:{...config.grant,cwd:config.cwd},
+    effectCeiling:[...new Set(config.grant.allowedTools.map(tool=>nativeToolEffects[tool]))]}):null;
   runtime??=await loadPiSdk(config.piPackageRoot);
   modelRuntime??=await runtime.sdk.ModelRuntime.create({authPath:config.authPath,modelsPath:null,
     allowModelNetwork:false,refreshOnCreate:true});
@@ -119,6 +123,8 @@ export async function runNativeOperator({command,config:inputConfig,expectedConf
   if(config.model.maxTokens>catalogModel.maxTokens)fail('model-output-limit');
   const model={...catalogModel,maxTokens:config.model.maxTokens};
   if(command==='preflight')return {status:'preflight-ready',sdkVersion:runtime.version,
+    ...(skillPreflight?{godskills:{status:'verified-not-selected',releaseDigest:skillPreflight.verification.release.releaseDigest,
+      policyDigest:config.godskills.expectedPolicyDigest}}:{}),
     model:{provider:model.provider,id:model.id,contextWindow:model.contextWindow,maxTokens:model.maxTokens},
     authentication:'oauth-subscription',instanceId:config.admission.instanceId,
     allowedTools:config.grant.allowedTools,expiresAt:config.grant.expiresAt,
@@ -165,7 +171,7 @@ export async function runNativeOperator({command,config:inputConfig,expectedConf
       bindingOptions:{admission:compiled.admission,request:metadata.request,grant:metadata.grant,
         expectedGrantDigest:sha256Value(metadata.grant),stateDirectory:join(config.sessionRoot,'native-state'),
         registryRoot:join(admissionRoot,'native-bindings'),instanceRegistryRoot:join(admissionRoot,'native-instances'),
-        resume:command==='resume'}});
+        resume:command==='resume',...(config.godskills?{godskills:config.godskills}:{})}});
     unsubscribe=host.subscribe(event=>{
       usage.record(event);
       if(event.type==='message_end'&&event.message?.role==='assistant') {

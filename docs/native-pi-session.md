@@ -16,6 +16,8 @@ explicitly. No dependency is installed or imported until the host requests it.
   spending, and decisions about which project the actor may work on.
 - Godskills is not automatically activated. Personal-keel content, Soul,
   Inspiration, identity evolution and Lunari remain outside this adapter.
+  An optional [host-pinned native consumer](native-godskills-consumer.md) can
+  supply a selected mission stack through `bindingOptions.godskills`.
 
 Native read/write/edit and optional shell tools are not restricted to a source
 string or replacement-file JSON schema. `process-exec` is broad OS-user shell

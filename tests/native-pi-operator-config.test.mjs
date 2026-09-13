@@ -4,6 +4,8 @@ import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { sha256Value } from '../src/core/digest.mjs';
+import { pinnedGodskillsReviewRelease } from '../scripts/lib/pinned-godskills-review-release.mjs';
+import { pinnedGodskillsRoutingExecutable } from '../scripts/lib/pinned-godskills-routing-executable.mjs';
 import { loadNativeOperatorConfig, parseNativeOperatorArgs, validateNativeOperatorConfig } from '../src/host/native-pi-operator-config.mjs';
 
 const local=part=>join(tmpdir(),'native-op-config-fixture',part);
@@ -15,7 +17,18 @@ const base = () => ({
   mission: { taskId:'task-1', missionId:'mission-1' }, model: { provider:'xai', id:'grok-4.6', maxTokens:4096 },
   grant: { allowedTools:['read','write'], maxToolCalls:20, expiresAt:'2099-01-01T00:00:00.000Z' }, limits: { maxRunMs:60000 },
 });
-const errorCode = fn => assert.throws(fn, /native-operator:/);
+const errorCode = fn => assert.throws(fn, /native-(?:operator|godskills):/);
+const godskillsPolicy = () => ({
+  schemaVersion: 1, protocolId: 'eternities-native-godskills-policy-v1',
+  releasePin: pinnedGodskillsReviewRelease('C:/dev/eternities-godskills'),
+  routingPin: pinnedGodskillsRoutingExecutable(), sourceStateEpoch: 0,
+  hostEnvelope: {
+    availableAuthority: ['local-read','local-write'], permittedEffects: ['local-read','local-write'],
+    availablePreconditions: ['repository-present','settled-outcome'], forbiddenCapabilities: [],
+    maximumRisk: 'moderate', minimumEvidenceConfidence: 'verified', contextBudget: 16000, maxCompositionSize: 3,
+  }, explicitMethodRequests: [], reviewAvailable: false, maximumDisclosureBytes: 32768,
+});
+const withGodskills = config => ({ ...config, godskills: { policy: godskillsPolicy(), expectedPolicyDigest: sha256Value(godskillsPolicy()) } });
 
 test('parses the exact bounded operator CLI', () => {
   assert.deepEqual(parseNativeOperatorArgs(['launch','--config',local('c.json'),'--pin','a'.repeat(64),'--prompt-file',local('p.txt')]), { command:'launch', configPath:local('c.json'), expectedConfigDigest:'a'.repeat(64), promptPath:local('p.txt') });
@@ -30,6 +43,28 @@ test('validates and round-trips an explicit configuration', async t => {
   t.after(()=>rm(dir,{recursive:true,force:true}));
   const path = join(dir, 'config.json'); await writeFile(path, JSON.stringify(config));
   assert.deepEqual(await loadNativeOperatorConfig({ configPath:path, expectedConfigDigest:sha256Value(config) }), config);
+});
+
+test('accepts an opt-in pinned Godskills policy', () => {
+  const config = withGodskills(base());
+  assert.deepEqual(validateNativeOperatorConfig(config), config);
+});
+
+test('rejects tampered Godskills pins and unknown wrapper fields', () => {
+  const config = withGodskills(base());
+  errorCode(() => validateNativeOperatorConfig({ ...config, godskills: { ...config.godskills, expectedPolicyDigest: 'c'.repeat(64) } }));
+  errorCode(() => validateNativeOperatorConfig({ ...config, godskills: { ...config.godskills, injectedUnknownWrapper: true } }));
+});
+
+test('rejects null or undefined Godskills options when the property is present', () => {
+  errorCode(() => validateNativeOperatorConfig({ ...base(), godskills: null }));
+  errorCode(() => validateNativeOperatorConfig({ ...base(), godskills: undefined }));
+});
+
+test('preserves the old plain configuration exactly', () => {
+  const config = base();
+  assert.deepEqual(validateNativeOperatorConfig(config), config);
+  assert.deepEqual(Object.keys(validateNativeOperatorConfig(config)).sort(), Object.keys(config).sort());
 });
 
 test('rejects unsafe shape, authority, paths, limits, and stale pin before use', async t => {

@@ -7,6 +7,8 @@ import { nativeAdmission } from './helpers/native-host-admission.mjs';
 import { sha256Value } from '../src/core/digest.mjs';
 import { loadPiSdk } from '../src/host/pi-native-session.mjs';
 import { runNativeOperator } from '../src/host/native-pi-operator.mjs';
+import { nativeSkillOptions, forgeObjective } from './helpers/native-godskills-policy.mjs';
+import { disclosedSkill } from './helpers/native-godskills-session.mjs';
 
 const packageRoot=process.env.GODAGENTS_PI_PACKAGE_ROOT;
 const nativeTest=(name,fn)=>test(name,{skip:!packageRoot&&'qualified optional Pi SDK required'},fn);
@@ -67,6 +69,25 @@ nativeTest('operator launch and fresh owner resume continue one actor with real 
   assert.equal(await readFile(join(x.f.cwd,'second.txt'),'utf8'),'stage two');
   assert.match(JSON.stringify(x.contexts[2].messages),/stage one/,'native prior history survives');
   assert.equal((await readdir(join(x.config.sessionRoot,'runs'))).length,2);
+});
+
+nativeTest('operator preflight validates optional skill roots without selecting or writing session state',async t=>{
+  const x=await setup(t,[]);x.config.godskills=nativeSkillOptions();x.config.mission.objective=forgeObjective;
+  const preflight=await x.run('preflight');assert.equal(preflight.godskills.status,'verified-not-selected');
+  await assert.rejects(access(x.config.sessionRoot),e=>e.code==='ENOENT');assert.equal(x.contexts.length,0);
+  x.config.godskills.policy.releasePin.systemReceipt.sha256='a'.repeat(64);
+  x.config.godskills.expectedPolicyDigest=sha256Value(x.config.godskills.policy);
+  await assert.rejects(x.run('preflight'),/native-godskills:/);assert.equal(x.contexts.length,0);
+});
+
+nativeTest('operator carries selected skill binding through launch and resume while offline status stays model-free',async t=>{
+  const x=await setup(t,[done,done]);x.config.godskills=nativeSkillOptions();x.config.mission.objective=forgeObjective;
+  const launched=await x.run('launch','first');assert.equal(launched.status,'native-turn-settled');
+  assert.equal(disclosedSkill(x.contexts[0]).status,'bound');
+  const resumed=await x.run('resume','continue');assert.equal(resumed.state.associationDigest,launched.state.associationDigest);
+  assert.deepEqual(disclosedSkill(x.contexts[1]),disclosedSkill(x.contexts[0]));
+  x.modelRuntime.checkAuth=async()=>{throw new Error('offline should not load auth');};
+  assert.equal((await x.run('status')).status,'recorded-state');assert.equal(x.contexts.length,2);
 });
 
 nativeTest('operator rejects wrong pins and duplicate launch before extra provider work',async t=>{
