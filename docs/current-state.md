@@ -1,5 +1,20 @@
 # Godagents current state and bounded completion path
 
+September 13 native response recovery is merged and pushed at `2107b99`.
+New ordinary coding configs explicitly enable one bounded Pi recovery attempt;
+old frozen single-attempt configs remain unchanged. A deliberate live connection
+interruption recovered once and the native agent finished its coding repair.
+Full regression: **1,604 passed, zero failed, nine existing optional skips**.
+Merged native checks passed91/91 and post-push cross-repository checks8/8.
+See the [diagnosis and live evidence](audits/2026-09-13-native-response-recovery.md).
+No context reduction, model change, paid fallback or custom agent loop was added.
+
+The separate fresh history-query coding run completed36 native tools and passed
+20 independent acceptance checks plus35 candidate regressions. Its code remains
+in the private diagnostic workspace, not canonical main. Next: review/adopt that
+candidate while preserving the newer recovery edits in overlapping files.
+The old failed pair below remains historical, not a Godskills quality verdict.
+
 September13 native live pair: the same Godagent/Pi/Grok setup was tested with
 versus without automatic Godskills. Both provider streams failed before edits,
 so this is **inconclusive**, not a skill quality result. Forge/Mnemosyne guardrail
@@ -11,9 +26,8 @@ screened Godskills failure categories.83native checks and independent Grok sourc
 review pass. Full regression: **1,596passes, zero failures, nine existing optional
 skips**, including69 unchanged historical receipts. Merged/pushed at `41f037a`,
 with83/83 merged native checks and8/8 post-push cross-repository checks.
-Next: bounded native
-provider-generation diagnostics before another registered coding comparison;
-do not change skill policy or claim a quality win from these failed calls.
+The later diagnosis and recovery repair above supersede that diagnostic hold.
+Do not change skill policy or claim a quality win from these failed calls.
 
 September 13 native Godskills consumer: implementation `12470b1` connects the
 existing verified selector/binder to the native Pi operator. The opt-in stack is
