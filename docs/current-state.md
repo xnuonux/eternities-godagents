@@ -9,6 +9,9 @@ usage before proposal parsing/staging and preserves trusted failure categories.
 Use the project [Grok testing default](../AGENTS.md): native subscription, sterile
 one-turn worker, no Grok personal keel, no paid fallback. Historical milestones
 below remain evidence at their recorded revision, not current limitations.
+The [September 12 closeout](audits/2026-09-12-grok-testing-default-and-baseline.md)
+records the full1505-pass gate and a fresh plain-arm staging failure with retained
+usage. That comparison remains inconclusive and must not be retried in place.
 
 Review date: 2026-09-06. Baseline: `07b1d53ff2ef6440ceaa3ad540c10cb7f48062cb`
 on `main`, reconciled with `origin/main`. Remote:
