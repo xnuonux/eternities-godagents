@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/sdk/index.mjs",
-    "./economics": "./src/sdk/economics.mjs"
+    "./economics": "./src/sdk/economics.mjs",
+    "./native-pi": "./src/sdk/native-pi.mjs"
   },
   "engines": {
     "node": ">=24"

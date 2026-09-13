@@ -44,6 +44,12 @@ is to reuse mature coding hosts for native file retrieval, tools, context and
 sessions. This does not retroactively certify native tool effects through the
 older zero-effect Codex transport.
 
+The experimental [native Pi SDK adapter](docs/native-pi-session.md) now binds an
+admitted actor to Pi's real tools and saved session, with host-pinned grants,
+pre-inference checks, action attribution and fail-closed recovery. It is a
+separate optional entrypoint, not a replacement tool loop or a live model-quality
+certificate. A polished launcher and live subscription qualification remain next.
+
 The experimental [Grok subscription adapter](docs/audits/2026-09-08-grok-subscription-phase-transport.md)
 adds a pinned native CLI path to the same portable phase host. Its local process,
 accounting and replay tests are separate from live subscription qualification

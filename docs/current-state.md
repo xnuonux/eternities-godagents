@@ -1,5 +1,13 @@
 # Godagents current state and bounded completion path
 
+September 13 implementation: [native Pi session binding v1](native-pi-session.md)
+is the next bounded adapter. It uses Pi 0.85.1's real SDK/tools and persisted
+sessions with an admitted actor, fresh host grant, pre-inference/tool checks,
+hashed action records and transcript-bound resume. Deterministic provider tests
+exercise native effects, not live model quality. Godskills activation, a product
+launcher and live subscription qualification are separate next gates. Historical
+zero-effect and proposal-worker receipts are unchanged.
+
 September 13 direction: [reuse native coding hosts](native-coding-host-direction.md)
 for real repository work. The old one-turn, tool-free source-replacement path
 remains useful for controlled comparisons, but is not the desired coding-agent
