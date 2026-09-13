@@ -1,5 +1,20 @@
 # Godagents current state and bounded completion path
 
+September 13 live follow-through: the native Pi/xAI **subscription** path has now
+completed one real coding mission in a separate workspace. After a reproduced
+and corrected opaque-tool-ID compatibility defect, Grok implemented the path
+filter without host code repair. Seven untouched tests and independent Chromium
+checks passed; the saved live actor/session reopened in a fresh process with
+zero inference. See the [exact live qualification and remaining limits](audits/2026-09-13-native-pi-live-qualification.md).
+The corrected adapter has 26 passing targeted checks and independent Grok review
+approval. The related source-era SDK-map correction passed all 11 cross-repository
+checks and separate Grok review. The final full regression passed **1,539 tests,
+zero failures, nine existing optional browser skips**.
+Next: a thin operator launch/resume command around this same native SDK path.
+Production Realm semantics, automatic Godskills activation and general product
+qualification remain separate work. The verified filter candidate stays in the
+private trial workspace until deliberately promoted.
+
 September 13 implementation: [native Pi session binding v1](native-pi-session.md)
 is the next bounded adapter. It uses Pi 0.85.1's real SDK/tools and persisted
 sessions with an admitted actor, fresh host grant, pre-inference/tool checks,

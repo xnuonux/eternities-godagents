@@ -97,3 +97,28 @@ test('host call budget denies the next action and mismatched results remain unre
   await assert.rejects(b.beforeTool({...call,callId:'two'},f.host),/tool-budget/);
   await assert.rejects(b.settle(),/unresolved/);assert.equal((await b.inspect()).phase,'uncertain');
 });
+
+test('opaque provider call IDs preserve distinct native actions, duplicate checks and resume',async t=>{
+  const f=await nativeAdmission(t);let b=await openNativeHostBinding(f.options);
+  f.dispose(()=>b.close());await b.beforeInference(f.host);
+  const ids=['call-1bc2c1b3-b46f-4e8a-a8a3-85c094687803-0|fc_806f999a-72a5-9b05-9325-ac25110d165f_0',
+    'call-1bc2c1b3-b46f-4e8a-a8a3-85c094687803-0|fc_distinct', 'x'.repeat(1024)];
+  for(const callId of ids) {
+    const call={callId,toolName:'read',input:{path:'viewer.js'}};
+    await b.beforeTool(call,f.host);
+    await assert.rejects(b.beforeTool(call,f.host),/duplicate-call/);
+    await b.afterTool({...call,isError:false,result:{content:'native source'}});
+  }
+  await b.settle();await b.close();
+  b=await openNativeHostBinding({...f.options,resume:true});
+  assert.deepEqual((await b.inspect()).actions.map(a=>[a.callId,a.status]),ids.map(id=>[id,'completed']));
+});
+
+test('malformed or oversized tool IDs never become pending native actions',async t=>{
+  const f=await nativeAdmission(t),b=await openNativeHostBinding(f.options);f.dispose(()=>b.close());
+  await b.beforeInference(f.host);
+  for(const callId of ['',null,7,{},'bad\ncall','bad\u0000call','bad call','x'.repeat(1025),'é'.repeat(513)]) {
+    await assert.rejects(b.beforeTool({callId,toolName:'read',input:{}},f.host),/tool-denied/);
+  }
+  assert.equal((await b.inspect()).actions.length,0);await b.settle();
+});

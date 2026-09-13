@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, realpath, rm } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { promisify } from 'node:util';
@@ -70,7 +72,7 @@ async function hasCommittedPath(commit, path) {
   }
 }
 
-async function build() {
+async function build(overrides = {}) {
   return buildCrossRepositoryCurrentHeadCertificateV2({
     godagentsRoot: repositoryRoot,
     godskillsRoot,
@@ -83,6 +85,7 @@ async function build() {
       sourceCommit: pinnedGodskillsReviewSourceCommit,
     },
     testRuns,
+    ...overrides,
   });
 }
 
@@ -108,6 +111,8 @@ test('v2 names the current-head protocol and binds the merged portable surface',
   assert.deepEqual(receipt.godagents.sdk.packageExports, {
     '.': './src/sdk/index.mjs',
     './economics': './src/sdk/economics.mjs',
+    ...(await hasCommittedPath(godagentsCommit, 'src/sdk/native-pi.mjs')
+      ? { './native-pi': './src/sdk/native-pi.mjs' } : {}),
   });
   const effectOnlySdkPresent = await hasCommittedPath(godagentsCommit, 'src/host/admitted-effect-only-identity-launcher.mjs');
   assert.deepEqual(receipt.godagents.sdk.rootExports, [
@@ -137,6 +142,13 @@ test('v2 names the current-head protocol and binds the merged portable surface',
   if (effectOnlySdkPresent) {
     for (const path of ['src/host/admitted-effect-only-identity-launcher.mjs', 'tests/provider-phase-host-sdk.test.mjs']) {
       assert.ok(receipt.godagents.evidence.boundaryFiles.some(entry => entry.path === path), 'effect-only SDK profile must bind its source and tests');
+    }
+  }
+  if (await hasCommittedPath(godagentsCommit, 'src/sdk/native-pi.mjs')) {
+    for (const path of ['src/sdk/native-pi.mjs', 'src/host/native-host-binding.mjs',
+      'src/host/pi-native-session.mjs', 'tests/native-host-binding.test.mjs', 'tests/pi-native-session.test.mjs']) {
+      assert.ok(receipt.godagents.evidence.boundaryFiles.some(entry => entry.path === path),
+        'the optional native SDK surface must be pinned without adding a certified adapter protocol');
     }
   }
   assert.deepEqual(receipt.godagents.sdk.supportedAdapterProtocols, [
@@ -570,6 +582,30 @@ test('v2 names the current-head protocol and binds the merged portable surface',
       /^[a-f0-9]{40}$/,
     );
   }
+});
+
+test('pre-Pi v2 sources retain their exact closed map and verify as historical snapshots', async t => {
+  const beforePi = 'e83c76ff8a7399b72c19d73d522a576a9d1cf70c';
+  const parent = await realpath(tmpdir());
+  const root = await mkdtemp(join(parent, 'godagents-pre-pi-'));
+  t.after(async () => {
+    assert.equal(dirname(await realpath(root)), parent);
+    await rm(root, {recursive: true, force: true});
+  });
+  // Change only this throwaway clone's refs, never the operator's checkout.
+  await execFileAsync('git', ['clone', '--shared', '--no-checkout', repositoryRoot, root], {windowsHide: true});
+  for (const ref of ['refs/heads/main', 'refs/remotes/origin/main']) {
+    await execFileAsync('git', ['-C', root, 'update-ref', ref, beforePi], {windowsHide: true});
+  }
+  const receipt = await build({godagentsRoot: root, godagentsCommit: beforePi,
+    refs: {...refs, godagents: {main: beforePi, originMain: beforePi}}});
+  assert.deepEqual(receipt.godagents.sdk.packageExports, {
+    '.': './src/sdk/index.mjs', './economics': './src/sdk/economics.mjs',
+  });
+  assert.equal(receipt.godagents.evidence.boundaryFiles.some(row => row.path === 'src/sdk/native-pi.mjs'), false);
+  assert.deepEqual(await verifyCrossRepositoryCurrentHeadCertificateV2(receipt, {
+    godagentsRoot: root, godskillsRoot, requireExactRefs: false,
+  }), {status: 'verified', receiptDigest: receipt.receiptDigest});
 });
 
 test('v2 verification fails closed on old heads, SDK drift, portable receipt drift, and ref movement', async () => {

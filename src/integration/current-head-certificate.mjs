@@ -350,6 +350,17 @@ const EFFECT_ONLY_SDK_CURRENT_HEAD_V2_PROFILE = Object.freeze({
   boundaryPaths: Object.freeze([...V2_BOUNDARY_PATHS,
     EFFECT_ONLY_SDK_LAUNCHER_PATH, 'tests/provider-phase-host-sdk.test.mjs']),
 });
+const NATIVE_PI_SDK_ENTRYPOINT_PATH = 'src/sdk/native-pi.mjs';
+const NATIVE_PI_SDK_INTRODUCTION_COMMIT = '671abab12d14e12565a466844c6693b36d4373b5';
+// Recognize and bind the optional SDK surface, not a newly certified adapter.
+// Historical profiles and their supportedAdapterProtocols remain unchanged.
+const NATIVE_PI_SDK_CURRENT_HEAD_V2_PROFILE = Object.freeze({
+  ...EFFECT_ONLY_SDK_CURRENT_HEAD_V2_PROFILE,
+  packageExports: Object.freeze({...V2_PACKAGE_EXPORTS, './native-pi': './src/sdk/native-pi.mjs'}),
+  boundaryPaths: Object.freeze([...EFFECT_ONLY_SDK_CURRENT_HEAD_V2_PROFILE.boundaryPaths,
+    NATIVE_PI_SDK_ENTRYPOINT_PATH, 'src/host/native-host-binding.mjs', 'src/host/pi-native-session.mjs',
+    'tests/native-host-binding.test.mjs', 'tests/pi-native-session.test.mjs']),
+});
 const PRE_EXTERNAL_HOST_QUALIFICATION_V2_BOUNDARY_PATHS = Object.freeze(V2_BOUNDARY_PATHS.filter((path) => ![
   'fixtures/external-host-qualification-v1.json',
   'schemas/external-host-qualification-dossier.schema.json',
@@ -2569,7 +2580,13 @@ async function currentHeadV2Profile(repositoryRoot, commit) {
   if (effectOnlySdkPresent) {
     await isAncestor(repositoryRoot, EFFECT_ONLY_SDK_INTRODUCTION_COMMIT, commit, 'effect-only SDK introduction');
   }
-  const profile = effectOnlySdkPresent ? EFFECT_ONLY_SDK_CURRENT_HEAD_V2_PROFILE : historicalProfile;
+  const nativePiSdkPresent = await hasCommittedPath(repositoryRoot, commit, NATIVE_PI_SDK_ENTRYPOINT_PATH);
+  if (nativePiSdkPresent) {
+    if (!effectOnlySdkPresent) throw new Error('native Pi SDK source requires the effect-only SDK base profile');
+    await isAncestor(repositoryRoot, NATIVE_PI_SDK_INTRODUCTION_COMMIT, commit, 'native Pi SDK introduction');
+  }
+  const profile = nativePiSdkPresent ? NATIVE_PI_SDK_CURRENT_HEAD_V2_PROFILE
+    : effectOnlySdkPresent ? EFFECT_ONLY_SDK_CURRENT_HEAD_V2_PROFILE : historicalProfile;
   return {
     forensicsPresent,
     agentProfilePresent,

@@ -91,6 +91,21 @@ Pi, and do not advertise these mission fields as hard billing caps.
 
 ## Execution and recovery
 
+Native provider tool-call IDs are opaque correlation strings, not actor IDs.
+The binding preserves them byte-for-byte, including Responses composite IDs
+containing `|`, for duplicate detection, result matching and saved history.
+They must be non-empty strings, at most 1,024 UTF-8 bytes, without whitespace
+or control characters. Actor/session identifier rules and authority checks are
+unchanged. The existing 8MB state-record ceiling remains a practical upper bound
+for long sessions; a 10,000-call grant is not a guarantee that all such calls fit.
+
+For xAI subscription use, select Pi's native OAuth login rather than an API key.
+After loading `ModelRuntime`, perform its normal availability refresh before
+using `isUsingSubscription`: `refreshOnCreate: false` leaves that snapshot cold
+even when `checkAuth` can find stored OAuth credentials. The host still must
+verify the actual auth type and selected provider; never silently fall back to
+a paid credential. See the [live qualification record](audits/2026-09-13-native-pi-live-qualification.md).
+
 The SDK owner uses Pi's public Agent stream and before/after-tool hooks. It does
 not rely on `before_agent_start` or `before_provider_request` throwing, because
 Pi logs some extension exceptions and continues. A failed pre-inference check

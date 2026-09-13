@@ -74,6 +74,23 @@ nativeTest('real Pi writes with native tools and resumes the same admitted actor
   assert.equal(later.actions.length,2);assert.equal(later.turns,2);
 });
 
+nativeTest('real Pi preserves Responses composite call IDs through native write and resume',async t=>{
+  const id='call-1bc2c1b3-b46f-4e8a-a8a3-85c094687803-0|fc_806f999a-72a5-9b05-9325-ac25110d165f_0';
+  const x=await setup(t,[[write(id,'composite-id.txt','provider ID survived')],done]);
+  const host=await openPiGodagentSession(x.options);x.f.dispose(()=>host.close());
+  await host.prompt('write using the native tool');
+  assert.equal(await readFile(join(x.f.cwd,'composite-id.txt'),'utf8'),'provider ID survived');
+  assert.equal((await host.inspect()).actions[0].callId,id);
+  const file=host.sessionFile;await host.close();
+  x.responses.push(done);
+  const resumed=await openPiGodagentSession({...x.options,sessionManager:x.runtime.sdk.SessionManager.open(file),
+    bindingOptions:{...x.f.options,resume:true}});x.f.dispose(()=>resumed.close());
+  await resumed.prompt('confirm the existing result');
+  const state=await resumed.inspect();
+  assert.equal(state.actions[0].callId,id);assert.equal(state.actions[0].status,'completed');
+  assert.equal(state.turns,2);assert.equal(state.phase,'idle');
+});
+
 nativeTest('revoked binding rejects a prompt before any provider invocation', async t=>{
   const x=await setup(t,[]);const host=await openPiGodagentSession(x.options);x.f.dispose(()=>host.close());
   await host.revoke();await assert.rejects(host.prompt('do something'),/revoked/);assert.equal(x.contexts.length,0);

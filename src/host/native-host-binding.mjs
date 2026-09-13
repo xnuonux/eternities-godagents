@@ -15,6 +15,11 @@ export const nativeToolEffects = Object.freeze({
 });
 const capabilityFor = {'local-read':'filesystem.read','local-write':'filesystem.write','process-exec':'process.exec'};
 const identifier = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+// Provider tool IDs are opaque correlation values, never filesystem/actor IDs.
+// Responses transports can join call and item IDs with "|". Preserve the exact
+// value for duplicate/result matching while bounding storage and excluding controls.
+const validCallId = value => typeof value === 'string' && value.length > 0
+  && Buffer.byteLength(value,'utf8') <= 1024 && !/[\s\u0000-\u001f\u007f-\u009f]/u.test(value);
 const digest = /^[a-f0-9]{64}$/;
 const same = (a,b) => canonicalJson(a) === canonicalJson(b);
 function fail(code) { const error=new Error(`native-host:${code}`);error.code=code;throw error; }
@@ -136,7 +141,7 @@ export async function openNativeHostBinding({admission,request:inputRequest,gran
     beforeTool(call,host){return serialized(async()=>{
       await ensure(host);
       if(state.phase!=='running')fail('mission-not-running');
-      if(!identifier.test(call?.callId??'') || !grant.allowedTools.includes(call.toolName))fail('tool-denied');
+      if(!validCallId(call?.callId) || !grant.allowedTools.includes(call.toolName))fail('tool-denied');
       if(state.actions.some(a=>a.callId===call.callId))fail('duplicate-call');
       if(state.actions.length>=grant.maxToolCalls)fail('tool-budget');
       state.actions.push({callId:call.callId,toolName:call.toolName,effect:nativeToolEffects[call.toolName],
