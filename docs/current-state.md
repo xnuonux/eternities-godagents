@@ -1,5 +1,15 @@
 # Godagents current state and bounded completion path
 
+Latest continuation, 2026-09-12: the [September 10 live workspace qualification](audits/2026-09-10-grok-structured-workspace-qualification.md)
+supersedes the older fixture-only workspace status below. One live Grok coding
+task passed independent review, five browser cases and guarded fresh-process
+replay. The matched baseline stopped without enough diagnostics, so no quality
+win is claimed. The new operational Grok baseline collector records verified
+usage before proposal parsing/staging and preserves trusted failure categories.
+Use the project [Grok testing default](../AGENTS.md): native subscription, sterile
+one-turn worker, no Grok personal keel, no paid fallback. Historical milestones
+below remain evidence at their recorded revision, not current limitations.
+
 Review date: 2026-09-06. Baseline: `07b1d53ff2ef6440ceaa3ad540c10cb7f48062cb`
 on `main`, reconciled with `origin/main`. Remote:
 `https://github.com/xnuonux/eternities-godagents.git`.

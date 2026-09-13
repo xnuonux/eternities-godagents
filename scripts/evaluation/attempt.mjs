@@ -6,13 +6,20 @@ import { join } from 'node:path';
 const failures = new WeakMap();
 const categories = new Set(['response-json', 'response-envelope', 'answer-envelope',
   'usage-invalid', 'response-ceiling', 'credential-reflection', 'dispatch-ceiling',
-  'transport-failure', 'response-read', 'completion-not-recorded', 'http-status-invalid', 'workflow-result-invalid', 'response-safety-check-failed']);
+  'transport-failure', 'response-read', 'completion-not-recorded', 'http-status-invalid', 'workflow-result-invalid', 'response-safety-check-failed',
+  'workspace-proposal-invalid', 'workspace-stage-failed']);
 
 export function diagnosticFailure(category) {
   if (!categories.has(category)) throw new Error('unsupported diagnostic category');
   const error = new Error('evaluation stopped');
   failures.set(error, category);
   return error;
+}
+
+// Only errors issued by this journal retain their category. Caller-supplied
+// message/code/category properties never become persisted diagnostics.
+export function diagnosticFallback(error, category) {
+  return failures.has(error) ? error : diagnosticFailure(category);
 }
 
 // dispatch owns the pre-existing endpoint, timeout and spending limits.

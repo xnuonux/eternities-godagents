@@ -28,9 +28,11 @@ tests and the bounded live qualification below have different evidence scopes.
 The candidate [local workspace owner](docs/workspace-owner.md) adds an actual
 operator CLI/SDK path from fresh workspace admission through proposed code,
 separately pinned exact-code review, browser feedback, bounded repair and checked
-export. Its native responses are currently controlled fixtures; the real browser
-and recovery checks do not establish live-model coding quality. Original app
-files are not automatically changed.
+export. A [bounded live Grok coding qualification](docs/audits/2026-09-10-grok-structured-workspace-qualification.md)
+passed one task, independent review, five browser cases and fresh-process replay.
+That is integration evidence, not general coding superiority. Original app files
+are not automatically changed. The project [testing default](AGENTS.md) uses
+stateless Grok 4.6 CLI subscription workers without Grok personal-keel inheritance.
 
 The experimental [Grok subscription adapter](docs/audits/2026-09-08-grok-subscription-phase-transport.md)
 adds a pinned native CLI path to the same portable phase host. Its local process,
