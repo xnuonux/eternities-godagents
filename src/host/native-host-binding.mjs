@@ -1,5 +1,5 @@
 import { mkdir, readFile, realpath, stat } from 'node:fs/promises';
-import { join, resolve, relative, isAbsolute, parse } from 'node:path';
+import { join, resolve, relative, isAbsolute, parse, sep } from 'node:path';
 import { canonicalJson } from '../core/canonical-json.mjs';
 import { sha256Value } from '../core/digest.mjs';
 import { compileCortexBindingCandidate } from '../cortex/binding-compiler.mjs';
@@ -62,7 +62,7 @@ export async function openNativeHostBinding({admission,request:inputRequest,gran
   if(typeof stateDirectory!=='string'||!isAbsolute(stateDirectory)||resolve(stateDirectory)===parse(stateDirectory).root) fail('state-directory');
   await mkdir(stateDirectory,{recursive:true});
   const stateRoot=await realpath(stateDirectory),rel=relative(cwd,stateRoot);
-  if(rel==='' || (!rel.startsWith('..')&&!isAbsolute(rel))) fail('state-inside-workspace');
+  if(rel==='' || (rel!=='..'&&!rel.startsWith('..'+sep)&&!isAbsolute(rel))) fail('state-inside-workspace');
   const statePath=join(stateRoot,'session.json');
   const stateLock=await acquireFileLock({lockPath:join(stateRoot,'session.lock')});
   let lease,closed=false,fault=false,state;

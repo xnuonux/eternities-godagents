@@ -6,6 +6,12 @@ import { nativeAdmission } from './helpers/native-host-admission.mjs';
 import { sha256Value } from '../src/core/digest.mjs';
 import { openNativeHostBinding } from '../src/host/native-host-binding.mjs';
 
+test('native binding rejects dot-prefixed state directories under its coding project',async t=>{
+  const f=await nativeAdmission(t);let opened;
+  try {await assert.rejects(async()=>{opened=await openNativeHostBinding({...f.options,stateDirectory:join(f.cwd,'...private-state')});},/state-inside-workspace/);}
+  finally{await opened?.close();}
+});
+
 test('a native grant cannot turn a read/write actor into a shell actor',async t=>{
   const f=await nativeAdmission(t);
   f.options.grant.allowedTools.push('powershell');

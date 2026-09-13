@@ -48,7 +48,12 @@ The experimental [native Pi SDK adapter](docs/native-pi-session.md) now binds an
 admitted actor to Pi's real tools and saved session, with host-pinned grants,
 pre-inference checks, action attribution and fail-closed recovery. It is a
 separate optional entrypoint, not a replacement tool loop or a live model-quality
-certificate. A polished launcher and live subscription qualification remain next.
+certificate. The [live subscription qualification](docs/audits/2026-09-13-native-pi-live-qualification.md)
+completed a real coding mission and fresh-process resume. The
+[native operator](docs/native-pi-operator.md) now adds reusable preflight,
+launch/resume and offline status, with larger-batch integration verification in
+progress. Its creation/admission inputs are still explicit, not a finished
+consumer onboarding flow.
 
 The experimental [Grok subscription adapter](docs/audits/2026-09-08-grok-subscription-phase-transport.md)
 adds a pinned native CLI path to the same portable phase host. Its local process,

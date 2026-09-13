@@ -27,6 +27,7 @@
     "admit:local": "node src/genesis/local-cli.mjs",
     "launch:local": "node src/host/admitted-cli.mjs",
     "launch:provider-backed": "node src/host/provider-backed-cli.mjs",
+    "native:pi": "node src/host/native-pi-cli.mjs",
     "host:local": "node src/host/local-cli.mjs",
     "policy:digest": "node scripts/hash-host-policy.mjs",
     "verify:certifications": "node src/certification/verify-ledger.mjs",
