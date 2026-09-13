@@ -30,6 +30,21 @@ the dispatch/screen gates retain their classification; arbitrary provider error
 properties and raw error messages do not. Failed evidence persistence blocks
 acceptance. Existing attempt slots, including torn slots, are never reused.
 
+For a known credential-reflection rejection, the callback should throw the
+journal-owned token, not a generic `Error('credential-reflection')`:
+
+```js
+import { diagnosticFailure } from './attempt.mjs';
+const assertResponseSafe = text => {
+  if (!processHost.process.assertCredentialAbsent({ text, credential })) {
+    throw diagnosticFailure('credential-reflection');
+  }
+};
+```
+
+A generic thrown error still blocks acceptance but is conservatively classified
+as `response-safety-check-failed`. Never classify it by trusting error text.
+
 Use a new frozen registration for each live comparison. The September 10 failed
 baseline remains inconclusive; this collector does not reconstruct its answer.
 Local tests exercise actual revision preimage rejection, successful revision with

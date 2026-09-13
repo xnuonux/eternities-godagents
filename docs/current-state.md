@@ -1,5 +1,14 @@
 # Godagents current state and bounded completion path
 
+Latest verified continuation, September 12 follow-through: runtime `06a3b94`
+adds prepared-evidence and result-publication hooks to the operational collector.
+The fresh two-arm Grok comparison reached terminal results for both arms. The
+Godagent passed independent code review, all five browser cases, checked export,
+and a fresh-process replay with provider launches blocked. The plain response
+contained identical application code but an incorrect source-preimage hash and
+was correctly rejected. This is a bounded workflow result, not a coding-quality
+win or general product certification. See the [complete trial and diagnosis](audits/2026-09-12-grok-workspace-forensics.md).
+
 Latest continuation, 2026-09-12: the [September 10 live workspace qualification](audits/2026-09-10-grok-structured-workspace-qualification.md)
 supersedes the older fixture-only workspace status below. One live Grok coding
 task passed independent review, five browser cases and guarded fresh-process
