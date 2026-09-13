@@ -7,7 +7,7 @@ const failures = new WeakMap();
 const categories = new Set(['response-json', 'response-envelope', 'answer-envelope',
   'usage-invalid', 'response-ceiling', 'credential-reflection', 'dispatch-ceiling',
   'transport-failure', 'response-read', 'completion-not-recorded', 'http-status-invalid', 'workflow-result-invalid', 'response-safety-check-failed',
-  'workspace-proposal-invalid', 'workspace-stage-failed']);
+  'workspace-proposal-invalid', 'workspace-stage-failed', 'workspace-evidence-failed', 'workspace-publication-failed']);
 
 export function diagnosticFailure(category) {
   if (!categories.has(category)) throw new Error('unsupported diagnostic category');

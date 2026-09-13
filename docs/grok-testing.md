@@ -14,8 +14,14 @@ verifier and exclusive evaluation journal. It has no credentials, network client
 or retries of its own. Supply the pinned process invocation as `dispatch`, its
 credential-reflection check as `assertResponseSafe` (throw on rejection), strict
 workspace proposal validation/conversion as `prepareAnswer`, and actual store
-revision/publication as `stageAnswer`. A completed collector means that callback
-completed, not that browser tests passed or the Godagent defeated its baseline.
+revision as `stageAnswer`. Use `persistPrepared` to save the screened, bounded
+proposal before revision, and `publishResult` to save the returned revision and
+accounting afterward. These optional hooks preserve existing callers; new live
+comparisons must supply both. Their errors are classified separately as
+`workspace-evidence-failed` and `workspace-publication-failed`. Neither raw provider
+envelopes nor arbitrary errors belong in those files. A completed collector means
+these callbacks completed, not that browser tests passed or the Godagent defeated
+its baseline.
 
 Verified numeric usage is persisted before decoding the answer, parsing the inner
 proposal, validating it or staging files. Malformed outer answer, rejected proposal

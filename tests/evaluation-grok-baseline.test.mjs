@@ -101,6 +101,22 @@ test('a usage persistence collision stops workspace acceptance without overwriti
   assert.equal(await readFile(join(f.directory,'002-usage.json'),'utf8'),'preserved evidence');
 });
 
+test('prepared evidence is durable before staging and publication failures remain distinct',async t=>{
+  for(const failure of ['evidence','stage','publication',null]) {
+    const f=await setup(t);let staged=0,published=0;
+    const result=await runGrokBaseline({directory:f.directory,policy,dispatch:async()=>response(),
+      assertResponseSafe:async()=>{},prepareAnswer:async p=>p,
+      persistPrepared:async p=>{if(failure==='evidence')throw Error('private');await writeFile(join(f.directory,'prepared.json'),JSON.stringify(p),{flag:'wx'});},
+      stageAnswer:async()=>{staged++;assert.deepEqual(JSON.parse(await readFile(join(f.directory,'prepared.json'),'utf8')),{changes:[]});if(failure==='stage')throw Error('private');return {revisionDigest:'verified-revision'};},
+      publishResult:async revision=>{published++;assert.equal(revision.revisionDigest,'verified-revision');if(failure==='publication')throw Error('private');},
+    });
+    assert.equal(result.status,failure?'stopped':'completed');
+    if(failure)assert.equal(result.category,({evidence:'workspace-evidence-failed',stage:'workspace-stage-failed',publication:'workspace-publication-failed'})[failure]);
+    assert.equal(staged,failure==='evidence'?0:1);assert.equal(published,['evidence','stage'].includes(failure)?0:1);
+    assert.equal(result.usageKnown,true);assert.equal(JSON.stringify(await f.journal()).includes('private'),false);
+  }
+});
+
 test('real revision staging retains usage on preimage rejection and preserves the original on success',async t=>{
   for(const badPreimage of [true,false]) {
     const f=await setup(t), sourceRoot=join(f.directory,'source'), root=join(f.directory,'store'), trial=join(f.directory,'trial');

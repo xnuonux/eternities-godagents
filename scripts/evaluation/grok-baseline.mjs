@@ -6,8 +6,9 @@ import { verifyGrokCliProviderEvidence } from '../../src/transports/grok-cli-pha
 // Operational comparison collector, not an agent completion or new verifier.
 // dispatch owns the pinned, sterile subscription process and all launch ceilings.
 // No raw answer, error message, credentials or hidden reasoning enters the journal.
-export async function runGrokBaseline({directory,policy,dispatch,assertResponseSafe,prepareAnswer,stageAnswer}) {
-  if([dispatch,assertResponseSafe,prepareAnswer,stageAnswer].some(fn=>typeof fn!=='function')
+export async function runGrokBaseline({directory,policy,dispatch,assertResponseSafe,prepareAnswer,stageAnswer,
+  persistPrepared=async()=>{},publishResult=async()=>{}}) {
+  if([dispatch,assertResponseSafe,prepareAnswer,stageAnswer,persistPrepared,publishResult].some(fn=>typeof fn!=='function')
       || !Number.isSafeInteger(policy?.provider?.maximumResponseBytes) || policy.provider.maximumResponseBytes<1
       || !Number.isSafeInteger(policy?.phases?.native?.maximumCompletionBytes) || policy.phases.native.maximumCompletionBytes<1
       || !Number.isSafeInteger(policy?.phases?.native?.maximumCompletionTokens) || policy.phases.native.maximumCompletionTokens<1) {
@@ -59,8 +60,16 @@ export async function runGrokBaseline({directory,policy,dispatch,assertResponseS
     let prepared;
     try { prepared=await prepareAnswer(JSON.parse(answer.content)); }
     catch { throw diagnosticFailure('workspace-proposal-invalid'); }
-    try { await stageAnswer(prepared,{providerUsage,usage:providerUsage.normalized}); }
+    // The caller persists only a bounded, screened proposal, never the raw
+    // provider envelope. Evidence failure must prevent workspace mutation.
+    try { await persistPrepared(prepared); }
+    catch { throw diagnosticFailure('workspace-evidence-failed'); }
+    const accounting={providerUsage,usage:providerUsage.normalized};
+    let staged;
+    try { staged=await stageAnswer(prepared,accounting); }
     catch { throw diagnosticFailure('workspace-stage-failed'); }
+    try { await publishResult(staged,accounting); }
+    catch { throw diagnosticFailure('workspace-publication-failed'); }
     await journal.completed();
   });
 }
