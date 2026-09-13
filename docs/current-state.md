@@ -8,6 +8,10 @@ exercise native effects, not live model quality. Godskills activation, a product
 launcher and live subscription qualification are separate next gates. Historical
 zero-effect and proposal-worker receipts are unchanged.
 
+Source `671abab` is integrated. The [verification audit](audits/2026-09-13-native-pi-session-binding.md)
+records 23 passing merged-source native checks, independent review approval,
+the broad regression run and unchanged certification-ledger verification.
+
 September 13 direction: [reuse native coding hosts](native-coding-host-direction.md)
 for real repository work. The old one-turn, tool-free source-replacement path
 remains useful for controlled comparisons, but is not the desired coding-agent

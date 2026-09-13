@@ -81,6 +81,13 @@ without inference counters is not a supported migration source. No deployed
 native session is being migrated or reset. No provider-model quality conclusion
 follows from these tests.
 
+Integrated source: `671abab` (fast-forwarded to `main`). The merged-source native
+suite passed **23/23, zero failures/skips**, 6,157ms. Existing certification-ledger
+verification returned `status: verified`, ledger digest
+`3d86253cb5947ca2f4c3a578de178642053487b6a8da6a67cdf037b210f0bdb4`.
+No historical receipt was changed. Final records are in `merged-native-tests.log`
+and `final-full-suite.log` under the operation directory above.
+
 ## Remaining product gates
 
 This is a usable programmatic host integration, not a polished launcher or a
