@@ -154,8 +154,15 @@ The final full run on the corrected source passed: **1,539 passed, zero failed,
 nine skipped**, 1,548 total, in **543,871ms**. See `final-regression.log`.
 The nine skips are the existing optional browser checks; the separate live
 candidate browser verification above ran successfully. No historical receipt
-was regenerated. Integration checks rerun the changed native surface and the
-ref-aware cross-repository tests at the appropriate merged/ref-reconciled state.
+was regenerated.
+
+Implementation `c7385d6f9998a3ceb5f311bbac387c1cd5d45495` was fast-forwarded to
+`main` and pushed. The merged native suite passed **26/26**, zero skips, in
+6,391ms before push. After `main` and `origin/main` reconciled, the ref-aware
+cross-repository suite passed **11/11**, zero skips, in 55,184ms. Its log is
+`merged-profile-regression.log`. The user's untracked `package-lock.json` was
+preserved; the development branch and both live-attempt directories remain.
+No model/test process from this batch remains active.
 
 ## Next bounded product step
 

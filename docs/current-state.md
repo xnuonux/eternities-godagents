@@ -10,6 +10,8 @@ The corrected adapter has 26 passing targeted checks and independent Grok review
 approval. The related source-era SDK-map correction passed all 11 cross-repository
 checks and separate Grok review. The final full regression passed **1,539 tests,
 zero failures, nine existing optional browser skips**.
+Source `c7385d6` is merged and pushed. Merged-source native checks passed 26/26;
+the post-push, ref-reconciled cross-repository gate passed 11/11.
 Next: a thin operator launch/resume command around this same native SDK path.
 Production Realm semantics, automatic Godskills activation and general product
 qualification remain separate work. The verified filter candidate stays in the
