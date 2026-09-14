@@ -12,6 +12,8 @@ import { validateNativeOperatorConfig } from './native-pi-operator-config.mjs';
 import { summarizeNativeState, createNativeUsageCollector } from './native-session-report.mjs';
 import { readNativeRunHistory } from './native-run-history.mjs';
 import { preflightNativeGodskills } from '../skills/native-godskills-binding.mjs';
+import { runNativeReviewDispatch } from './native-review-dispatch.mjs';
+import { loadNativeReviewSnapshot } from './native-review-snapshot.mjs';
 
 const fail=code=>{throw new Error(`native-operator:${code}`);};
 const json=value=>JSON.stringify(value,null,2)+'\n';
@@ -35,7 +37,7 @@ async function assertHostPaths(config,configPath) {
   if(!(await stat(cwd)).isDirectory())fail('workspace');
   const paths=[config.sessionRoot,config.authPath,config.piPackageRoot,
     ...Object.entries(config.admission).filter(([key])=>key.endsWith('Path')||key.endsWith('Dir')||key==='keelRoot').map(([,value])=>value),
-    ...(configPath?[configPath]:[])];
+    ...(configPath?[configPath]:[]),...(config.review?[config.review.snapshotPath,config.sessionRoot+'.review.json']:[])];
   for(const path of paths) {
     const target=await resolvedTarget(path),rel=relative(cwd,target);
     if(rel===''||(rel!=='..'&&!rel.startsWith('..'+sep)&&!isAbsolute(rel)))fail('host-path-inside-workspace');
@@ -86,8 +88,24 @@ async function setupFailure(config,configDigest) {
 }
 
 // Runtime injection is for a trusted embedding host, not a model-facing CLI option.
-export async function runNativeOperator({command,config:inputConfig,expectedConfigDigest,prompt,
-  configPath,runtime,modelRuntime,signal,onProgress,historyQuery}={}) {
+export async function runNativeOperator(options={}) {
+  const {config:inputConfig,expectedConfigDigest,command,prompt,configPath}=options;
+  if(!/^[a-f0-9]{64}$/.test(expectedConfigDigest??'')||sha256Value(inputConfig)!==expectedConfigDigest)fail('config-pin');
+  const config=validateNativeOperatorConfig(structuredClone(inputConfig));
+  if(config.review&&['launch','resume'].includes(command))fail('review-command');
+  if(config.review&&command==='preflight')await loadNativeReviewSnapshot(config.review);
+  if(command==='review') {
+    if(!config.review)fail('review-profile');
+    if(typeof prompt!=='string'||!prompt.trim()||Buffer.byteLength(prompt)>128*1024)fail('prompt');
+    await assertHostPaths(config,configPath);
+    return runNativeReviewDispatch({config,expectedConfigDigest,prompt,signal:options.signal,
+      execute:({reviewContext,signal,prompt:reviewPrompt})=>executeNativeOperator({...options,config,command:'launch',prompt:reviewPrompt,signal,reviewContext})});
+  }
+  return executeNativeOperator({...options,config});
+}
+
+async function executeNativeOperator({command,config:inputConfig,expectedConfigDigest,prompt,
+  configPath,runtime,modelRuntime,signal,onProgress,historyQuery,reviewContext}={}) {
   if(!/^[a-f0-9]{64}$/.test(expectedConfigDigest??'')||sha256Value(inputConfig)!==expectedConfigDigest)fail('config-pin');
   const config=validateNativeOperatorConfig(structuredClone(inputConfig));
   if(!['preflight','launch','resume','status','history'].includes(command))fail('command');
@@ -166,6 +184,7 @@ export async function runNativeOperator({command,config:inputConfig,expectedConf
       sessionId:metadata.sessionId,promptDigest:sha256Text(prompt)});
     const admissionRoot=dirname(config.admission.transactionDir);
     host=await openPiGodagentSession({runtime,modelRuntime,model,sessionManager,
+      reviewContext,
       agentDir:join(config.sessionRoot,'pi-agent'),
       settingsManager:runtime.sdk.SettingsManager.inMemory({retry:{enabled:(config.limits.maxProviderRetries??0)>0,
         maxRetries:config.limits.maxProviderRetries??0,baseDelayMs:1000,

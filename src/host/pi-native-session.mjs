@@ -33,7 +33,7 @@ export async function loadPiSdk(packageRoot) {
 }
 
 export async function openPiGodagentSession({runtime,bindingOptions,agentDir,modelRuntime,model,
-  sessionManager,settingsManager}={}) {
+  sessionManager,settingsManager,reviewContext}={}) {
   if(runtime?.version!=='0.85.1'||!modelRuntime||!model||!sessionManager||!agentDir) {
     throw new Error('native-pi:explicit-host-configuration-required');
   }
@@ -78,13 +78,15 @@ export async function openPiGodagentSession({runtime,bindingOptions,agentDir,mod
       noExtensions:true,noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true});
     await resourceLoader.reload();
     ({session}=await sdk.createAgentSession({cwd:facts().cwd,agentDir,modelRuntime,model,sessionManager,
-      settingsManager,resourceLoader,tools:[...bindingOptions.grant.allowedTools]}));
+      settingsManager,resourceLoader,tools:[...bindingOptions.grant.allowedTools],
+      ...(reviewContext?{customTools:[sdk.createReadTool(facts().cwd,{operations:reviewContext.readOperations(facts().cwd)})]}:{})}));
     const previousStream=session.agent.streamFunction;
     const previousBefore=session.agent.beforeToolCall;
     const previousAfter=session.agent.afterToolCall;
     streamGuard=async(requestModel,context,options)=>{
       let actor;
       try {
+        await reviewContext?.beforeInference();
         actor=await check();
         if(requestModel.provider!==facts().model.provider||requestModel.id!==facts().model.id) {
           throw new Error('native-pi:model-mismatch');
