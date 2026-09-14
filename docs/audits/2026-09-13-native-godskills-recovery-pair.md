@@ -133,6 +133,13 @@ historical receipt changed in this documentation-only study batch. The earlier
 1,623-pass full-regression result remains evidence for that unchanged runtime,
 not a newly rerun suite or a new quality certificate.
 
+Reviewed results were fast-forward merged and pushed on main at
+`472d6a01b8a24058b7054ee7571b053e8ae4d91a`. Main/origin matched. Post-merge
+preservation verification passed, and all147 relative links in the four changed
+documents resolved. The only untracked file remained the unchanged user-owned
+`package-lock.json`; the study branch and private evidence were retained. The
+independent review summary is `codex-review.md` in the private root.
+
 ## Next bounded product milestone
 
 Keep automatic skills optional and retain these results, including the failures.

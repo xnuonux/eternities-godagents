@@ -30,7 +30,7 @@
 - [x] Validate the23 frozen checks against the current independently reviewed reference and both untouched baselines. Reference must pass23; baseline failures must correspond to the absent query behavior. Review test cases and script differences, then run the new `freeze.mjs` once and record hashes/order before inference.
 - [x] Invoke the existing `runNativeOperator` via the new `run.mjs` once per arm in frozen order. Allow only the registered native retry behavior. Wait for complete terminal evidence; never duplicate in-flight inference.
 - [x] Run `score.mjs` once on each untouched output. Inspect actual selected binding, native transcript event summaries and scope. Publish exact paired outcomes, remaining defects, limits and the smallest evidence-backed next action.
-- [ ] Reconcile upstream; independently review the evidence interpretation, merge and push study documentation under standing approval. No full product suite is needed unless runtime/source changes. Any later repair is a separately verified milestone, not a rewrite of these trials.
+- [x] Reconcile upstream; independently review the evidence interpretation, merge and push study documentation under standing approval. No full product suite is needed unless runtime/source changes. Any later repair is a separately verified milestone, not a rewrite of these trials.
 
 ## Frozen preparation, before inference
 
@@ -63,3 +63,6 @@ violations. The treatment missed impossible-date error screening at two public
 interfaces. Its lower reported time/tokens is not a qualified efficiency win.
 See the [paired audit](../../audits/2026-09-13-native-godskills-recovery-pair.md).
 The preregistered conditions above and private frozen files were not revised.
+Reviewed results merged and pushed at `472d6a01b8a24058b7054ee7571b053e8ae4d91a`.
+Post-merge preservation checks passed; runtime/source/tests and both candidates
+remain unchanged. No full suite was repeated for this documentation-only batch.
