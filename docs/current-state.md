@@ -1,8 +1,9 @@
 # Godagents current state and bounded completion path
 
-September14 native post-attempt host review is implemented at `4bc1139`, corrected
-at `25b952f`, and ready for integration after **1,646 passing tests, zero failures,
-nine existing optional skips**. It adds pinned immutable snapshot reads, exact
+September14 native post-attempt host review is merged and pushed at `f666d78`
+(implementation `4bc1139`, correction `25b952f`), with **1,646 passing tests,
+zero failures, nine existing optional skips** and **89/89 merged native checks**.
+It adds pinned immutable snapshot reads, exact
 offline review recovery without duplicate inference, and observed token-overrun
 checks. The real Grok review ran and reopened offline, but **missed the known
 invalid-date defects**, so it is not a quality success or automatic code approval.

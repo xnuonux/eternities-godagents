@@ -176,9 +176,23 @@ documentation reviews accepted this bounded scope.
 Premerge preservation verified eleven historical host-file pins against exact
 `4bc1139` git blobs, eleven current host pins, seven SDK pins, seven frozen inputs,
 eight subject files and two offline saved results with zero provider accesses.
-All 148 checked documentation links resolved, and the user-owned untracked
-`package-lock.json` retained its original digest. Merge/push and merged-source
-verification are the remaining integration steps at this checkpoint.
+All 148 initial documentation links resolved, and the user-owned untracked
+`package-lock.json` retained its original digest.
+
+Merged and pushed at `f666d7835188188285c309ef32890df03c7de9fc`. Merged native
+checks passed **89/89**, zero failures or skips, in 15,545.5268ms. The merged
+runtime/tests/schemas/fixtures/scripts/package match the fully verified corrected
+source. A fresh preservation pass also verified both historical and current pins,
+both offline saved results with zero provider access, eight subject files, all
+149 final documentation links and the unchanged user package-lock. The feature
+branch is preserved. No full suite was repeated at identical source bytes.
+
+Final full-suite log SHA-256:
+`6d856b2c125d02428dd7434f424084c9b7081ed8e29802f979eb7bb4e2c6feb0`.
+Original live freeze:
+`02379018ed862c5249a1707fc4eb60d044a44b5b087a7a3baf52a06fd881b2ec`.
+Corrected cap freeze:
+`73899fff17f9b5a25ae0651f8bd9da1782034afa2d5ea76c3c6d9095d62b0eaa`.
 
 ## Evidence location and remaining boundary
 
