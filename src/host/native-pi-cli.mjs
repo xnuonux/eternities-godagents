@@ -12,6 +12,8 @@ Commands:
   preflight  Check admitted source, SDK, model and subscription without inference.
   launch     Create a fresh native session and run one prompt. Requires --prompt-file.
   resume     Continue the same actor/session and mission. Requires --prompt-file.
+  review     Run/reconcile a pinned read-only host review. Requires a review
+             config and --prompt-file. Repetition never starts a second review.
   status     Offline snapshot of recorded native state or failed setup.
   history    Offline recorded run history, including failed and incomplete attempts.
              Does not load credentials or create a model runtime.
@@ -21,7 +23,7 @@ Flags:
   --config       Absolute operator config JSON path. Required except --help.
   --pin          Independent SHA-256 of the parsed config's canonical JSON value,
                  computed with sha256Value, NOT the raw file-byte hash.
-  --prompt-file  Absolute prompt path. Required for launch and resume only.
+  --prompt-file  Absolute prompt path. Required for launch, resume and review.
                  Not accepted for preflight, status, or history.
   --only         History only. Exactly settled, failed, or incomplete.
                  settled selects stored native-turn-settled runs.
@@ -60,7 +62,7 @@ export async function nativePiCli(argv,{stdout=process.stdout,stderr=process.std
     }
     const result=await runNativeOperator({...args,config,prompt,signal,
       onProgress:event=>stderr.write(JSON.stringify(event)+'\n')});
-    stdout.write(JSON.stringify(result,null,2)+'\n');return result.status==='failed'?1:0;
+    stdout.write(JSON.stringify(result,null,2)+'\n');return result.status==='failed'?1:result.status==='review-uncertain'?2:0;
   } catch(error) {
     stderr.write(JSON.stringify({status:'failed',category:screened(error)})+'\n');return 1;
   }

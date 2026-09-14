@@ -33,7 +33,7 @@ export async function loadPiSdk(packageRoot) {
 }
 
 export async function openPiGodagentSession({runtime,bindingOptions,agentDir,modelRuntime,model,
-  sessionManager,settingsManager}={}) {
+  sessionManager,settingsManager,reviewContext}={}) {
   if(runtime?.version!=='0.85.1'||!modelRuntime||!model||!sessionManager||!agentDir) {
     throw new Error('native-pi:explicit-host-configuration-required');
   }
@@ -78,13 +78,15 @@ export async function openPiGodagentSession({runtime,bindingOptions,agentDir,mod
       noExtensions:true,noSkills:true,noPromptTemplates:true,noThemes:true,noContextFiles:true});
     await resourceLoader.reload();
     ({session}=await sdk.createAgentSession({cwd:facts().cwd,agentDir,modelRuntime,model,sessionManager,
-      settingsManager,resourceLoader,tools:[...bindingOptions.grant.allowedTools]}));
+      settingsManager,resourceLoader,tools:[...bindingOptions.grant.allowedTools],
+      ...(reviewContext?{customTools:[sdk.createReadTool(facts().cwd,{operations:reviewContext.readOperations(facts().cwd)})]}:{})}));
     const previousStream=session.agent.streamFunction;
     const previousBefore=session.agent.beforeToolCall;
     const previousAfter=session.agent.afterToolCall;
     streamGuard=async(requestModel,context,options)=>{
       let actor;
       try {
+        await reviewContext?.beforeInference();
         actor=await check();
         if(requestModel.provider!==facts().model.provider||requestModel.id!==facts().model.id) {
           throw new Error('native-pi:model-mismatch');
@@ -92,7 +94,27 @@ export async function openPiGodagentSession({runtime,bindingOptions,agentDir,mod
       } catch(error) {reject(error);return errorStream(requestModel);}
       // Provider/runtime faults are not authority failures and must not revoke
       // the binding. Preserve normal Pi error streams; normalize only throws.
-      try {return await previousStream(requestModel,{...context,systemPrompt:(context.systemPrompt??'')+'\n\n'+actor},options);}
+      try {
+        const stream=await previousStream(requestModel,{...context,systemPrompt:(context.systemPrompt??'')+'\n\n'+actor},
+          reviewContext?{...options,maxTokens:model.maxTokens}:options);
+        if(!reviewContext)return stream;
+        // A requested provider cap is not a consumption guarantee. Preserve the
+        // native terminal message, but deny subsequent tools/inference and final
+        // success when reported output exceeds the reservation or is unknown.
+        const observe=message=>{
+          const output=message?.usage?.outputTokens??message?.usage?.output;
+          const known=Number.isSafeInteger(output)&&output>=0;
+          if(known&&output>model.maxTokens)reject(new Error('native-operator:review-completion-overrun'));
+          else if(!known&&!['error','aborted'].includes(message?.stopReason))reject(new Error('native-operator:review-usage-unknown'));
+        };
+        return {
+          async *[Symbol.asyncIterator](){for await(const event of stream){
+            if(event.type==='done'||event.type==='error')observe(event.message??event.error);
+            yield event;
+          }},
+          async result(){const message=await stream.result();observe(message);return message;},
+        };
+      }
       catch {return errorStream(requestModel,'native-pi:provider-stream-failed');}
     };
     beforeGuard=async(context,signal)=>{

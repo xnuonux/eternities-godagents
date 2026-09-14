@@ -1,5 +1,15 @@
 # Godagents current state and bounded completion path
 
+September14 native post-attempt host review is implemented at `4bc1139`, corrected
+at `25b952f`, and ready for integration after **1,646 passing tests, zero failures,
+nine existing optional skips**. It adds pinned immutable snapshot reads, exact
+offline review recovery without duplicate inference, and observed token-overrun
+checks. The real Grok review ran and reopened offline, but **missed the known
+invalid-date defects**, so it is not a quality success or automatic code approval.
+A separate short test captured an outgoing128-token cap and returned80 output
+tokens, including79 reasoning tokens, with zero tools. Godskills deferred review
+was not activated. See the [qualification, correction and limitations](audits/2026-09-14-native-post-attempt-review.md).
+
 September13 fresh recovery-enabled native coding comparison is complete.
 Both attempts settled: control passed23/23 acceptance and20/20 regressions;
 automatic Forge/Mnemosyne guardrails passed21/23 acceptance and20/20 regressions.
@@ -8,8 +18,9 @@ so it does not qualify as a positive quality/efficiency result. Neither needed
 provider recovery, neither received owner repair, and neither candidate was
 adopted over the already fixed canonical history implementation. See the
 [frozen pair and diagnosis](audits/2026-09-13-native-godskills-recovery-pair.md).
-The next bounded gap is actual read-only post-attempt review in the native host,
-not more injected skill text. The existing default selection remains optional.
+The next bounded gap identified by that study was actual read-only post-attempt
+review, delivered above. Its findings remain advisory and require independent
+evidence; the existing Godskills default selection remains optional.
 
 September 13 native history-query adoption is merged and pushed at `5e43a7d`.
 Full verification: **1,623 passed, zero failed, nine existing optional skips**.

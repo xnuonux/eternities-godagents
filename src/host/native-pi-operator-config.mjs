@@ -32,7 +32,7 @@ const HISTORY_FLAGS = new Set(['--only','--after','--limit']);
 
 export function parseNativeOperatorArgs(argv = []) {
   if (!Array.isArray(argv)) fail('args');
-  const commands = new Set(['preflight','launch','resume','status','history']);
+  const commands = new Set(['preflight','launch','resume','status','history','review']);
   if (argv.length < 1 || !commands.has(argv[0])) fail('command');
   const result = { command: argv[0] }; const seen = new Set(); const historyQuery = {};
   const names = new Set(['--config','--pin','--prompt-file', ...HISTORY_FLAGS]);
@@ -60,14 +60,14 @@ export function parseNativeOperatorArgs(argv = []) {
   }
   if (!path(result.configPath)) fail('config-path');
   if (!DIGEST.test(result.expectedConfigDigest ?? '')) fail('config-pin');
-  if ((result.command === 'launch' || result.command === 'resume') && !path(result.promptPath)) fail('prompt-path');
-  if (result.command !== 'launch' && result.command !== 'resume' && result.promptPath) fail('unexpected-prompt');
+  if (['launch','resume','review'].includes(result.command) && !path(result.promptPath)) fail('prompt-path');
+  if (!['launch','resume','review'].includes(result.command) && result.promptPath) fail('unexpected-prompt');
   if (Object.keys(historyQuery).length) result.historyQuery = historyQuery;
   return result;
 }
 
 export function validateNativeOperatorConfig(config) {
-  noCredentials(config); exact(config, Object.hasOwn(config, 'godskills') ? [...TOP, 'godskills'] : TOP);
+  noCredentials(config); exact(config,[...TOP,...['godskills','review'].filter(key=>Object.hasOwn(config,key))]);
   if (config.schemaVersion !== 1 || config.protocolId !== PROTOCOL) fail('protocol');
   exact(config.admission, ADMISSION); exact(config.model, MODEL); exact(config.grant, GRANT);
   exact(config.limits, object(config.limits)&&Object.hasOwn(config.limits,'maxProviderRetries')?[...LIMITS,'maxProviderRetries']:LIMITS);
@@ -84,6 +84,14 @@ export function validateNativeOperatorConfig(config) {
   if (Object.hasOwn(config, 'godskills')) {
     if (!object(config.godskills)) fail('godskills');
     validateNativeGodskillsOptions(config.godskills);
+  }
+  if(Object.hasOwn(config,'review')) {
+    exact(config.review,['snapshotPath','snapshotDigest','maxCompletionTokens'],'review-profile');
+    if(!path(config.review.snapshotPath)||!DIGEST.test(config.review.snapshotDigest??'')
+      ||!boundedInt(config.review.maxCompletionTokens,config.model.maxTokens,1000000)
+      ||config.review.maxCompletionTokens>config.mission.budget?.maxCompletionTokens)fail('review-profile');
+    if(config.grant.allowedTools.length!==1||config.grant.allowedTools[0]!=='read')fail('review-tools');
+    if(Object.hasOwn(config,'godskills'))fail('review-selection-unsupported');
   }
   return config;
 }

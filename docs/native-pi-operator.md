@@ -176,6 +176,83 @@ billing. Historical run records are not rewritten by this correction.
 Mission token fields are **not certified spending caps**; the configured
 per-response ceiling, tool-call ceiling, expiry and run deadline are distinct.
 
+## Native post-attempt host review
+
+`review` is a separate, opt-in host review, not a deferred Godskills selection.
+Create a fresh admitted review actor/config with a read-only constitution and
+`grant.allowedTools: ["read"]`. Do not alter the original coding session's pin,
+mission, identity or grant. This first version records findings; it does not
+approve changes, execute tests, repair code or launch a second review round.
+
+Capture an explicit set of text files after a completed native run:
+
+```js
+import { captureNativeReviewSnapshot } from '@eternities/godagents/native-pi';
+const snapshot = await captureNativeReviewSnapshot({
+  sourceRoot: sourceWorkspace,
+  files: ['src/example.mjs', 'tests/example.test.mjs', 'TASK.md'],
+  sourceRun: { sessionRoot: sourceSessionRoot, sessionId, configDigest, runId },
+  destinationPath: snapshotPath,
+});
+```
+
+Paths are absolute except `files`, which contains unique portable relative paths.
+Capture accepts at most100 files and2MiB of UTF-8 text, rejects links and unsafe
+paths, and never overwrites an existing snapshot. It validates the completed run
+reference and hashes the captured content/result. This is an owner-selected
+post-attempt snapshot, not proof the source model authored every captured byte.
+Keep snapshot/config/session files private and outside the model workspace.
+
+The new review configuration adds:
+
+```json
+"review": {
+  "snapshotPath": "D:/reviews/example/snapshot.json",
+  "snapshotDigest": "the returned snapshotDigest",
+  "maxCompletionTokens": 262144
+}
+```
+
+`snapshotDigest` must be the actual64-hex digest, not the explanatory string
+above. The reservation ceiling must cover at least one configured
+`model.maxTokens` response and cannot exceed the admitted mission's completion
+budget. Pin the complete review config using `sha256Value` as for other commands.
+Do not combine `review` and `godskills` in this v1 host profile.
+
+```powershell
+node src/host/native-pi-cli.mjs preflight --config D:/reviews/example/config.json --pin <config-value-digest>
+node src/host/native-pi-cli.mjs review --config D:/reviews/example/config.json --pin <config-value-digest> --prompt-file D:/reviews/example/request.md
+```
+
+The real Pi `read` tool retrieves paginated text from verified in-memory snapshot
+bytes. There is no write/edit/shell tool or arbitrary filesystem read backend.
+Changes to live project files after capture cannot change the bytes reviewed.
+This narrows the model's tool capability, not the Windows process's OS privileges.
+
+The dispatcher stores `<sessionRoot>.review.json` before launch and locks that
+identity. Repeating the exact command returns its verified recorded result
+without authentication or inference. A different prompt/config cannot reuse the
+dispatch. A pending record reconciles an exact completed native run; otherwise
+`review-uncertain` (CLI exit2) requires operator investigation, never automatic redispatch.
+Public `launch`/`resume` are forbidden for review configs. Preserve all records.
+
+The deadline begins before review setup and never resets after authentication or
+retries. Non-cancellable SDK setup may delay return, but the expired/aborted
+signal and pre-inference guard prevent a later model dispatch. Reserve the full
+configured response maximum before each inference, including retry/compaction,
+and pass it explicitly in the native request options. Check terminal SDK-reported
+output: an overrun or successful response with unknown output usage fails the
+review before later tools/inference or successful settlement. Original response
+and usage evidence remain available. A provider can exceed a requested cap before
+the host learns of it, so this is reservation plus observed-usage enforcement,
+not a provider billing or latency guarantee. Never release reservations based on
+guessed splits. The aggregate retains Pi input/output/cache/total and unknowns;
+additional raw counters such as reasoning remain in the private native transcript.
+Reasoning may be a subset of output and must not be added a second time.
+
+Successful native settlement means a review was returned, not that its findings
+are correct. Review quality and any subsequent repair need independent checks.
+
 ## Deliberate boundaries
 
 Native tools have the Windows user's filesystem/process authority. `cwd` is a

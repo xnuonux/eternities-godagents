@@ -75,7 +75,11 @@ these mechanics from live benefit. A fresh
 completed both attempts: control passed23/23 acceptance, default guardrails21/23.
 Both passed20 regressions. Lower treatment time/token totals do not establish
 an efficiency improvement when two explicit validation checks failed. Skills
-remain optional; the next bounded gap is real post-attempt review execution.
+remain optional. A separate [native post-attempt host review](docs/audits/2026-09-14-native-post-attempt-review.md)
+now adds immutable snapshot reads, recorded-result recovery without redispatch,
+and observed token-overrun checks. Its first real review missed the known date
+defect, so returned review text is advisory, not automatic approval or evidence
+of a quality gain. This is not a deferred Godskills review activation.
 
 The experimental [Grok subscription adapter](docs/audits/2026-09-08-grok-subscription-phase-transport.md)
 adds a pinned native CLI path to the same portable phase host. Its local process,
