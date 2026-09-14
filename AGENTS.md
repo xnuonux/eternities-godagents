@@ -3,6 +3,16 @@
 Start with `docs/current-state.md` and the latest linked checkpoint. Historical
 receipts are evidence at their recorded revision, not current completion claims.
 
+## Local release verification
+
+For a full release gate on this Windows workstation, configure the installed
+Pi SDK as documented and use `node --test --test-concurrency=4`. Default parallel
+execution on24 logical processors caused an existing artifact-program timing
+case to exceed its limit; the unchanged case and complete four-worker suite
+passed without relaxing any assertion or timeout. See
+`docs/audits/2026-09-14-native-completion-breakdown.md`. This is test scheduling,
+not a change to agent permissions, runtime concurrency or model budgets.
+
 ## Model-backed testing default
 
 Dom's September 13 direction supersedes the tool-free restriction **for native

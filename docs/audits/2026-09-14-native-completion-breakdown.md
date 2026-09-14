@@ -5,6 +5,8 @@ conservative completion accounting to the existing Pi operator. It does not add
 another agent loop, activate Godskills review, change authority or rewrite
 historical records.
 
+Implementation and owner clarification: `5a1caecde80338688a80fe4605d893da2cf22461`.
+
 ## What is implemented
 
 - [The collector](../../src/host/native-session-report.mjs) keeps its legacy
@@ -97,7 +99,31 @@ cross-model comparison or general performance advantage.
 
 After owner clarification, the unchanged frozen acceptance passes23/23 and the
 integrated focused regressions pass43/43, including the two added boundary
-checks. Full release verification and merge are pending at this source checkpoint.
+checks. Full release verification at `5a1caec` passed **1,662 tests, zero failures,
+zero cancellations and nine existing optional skips** using
+`node --test --test-concurrency=4` with the installed Pi SDK configured. The source
+commit was unchanged throughout the758387ms run. All69 historical receipts and
+release-lineage checks passed. Full log SHA256:
+`42855ca11bee5cf3ba6ab09bdf718b458bc5f9585a38589aa03f4e87997a9654`.
+
+The earlier default-concurrency run is preserved, not labelled green:1,661 passes,
+zero assertion failures, one timeout cancellation and nine skips in602039ms.
+`artifact-program-economics.test.mjs` exceeded its unchanged180000ms limit while
+the full suite ran on a24-logical-processor host. Log SHA256:
+`a88031b7ac6937fc924f9494ff29f86f159480dca5fdb1bedeaa9cbebe52de58`.
+The unchanged case then passed alone in42103ms, with8 calls and108 authenticated
+host constructions, within the existing128 bound. It passed inside the complete
+four-worker rerun in65892ms. This supports parallel-run contention as the timeout
+explanation; it is not evidence that native accounting changed that older path.
+No source, timeout or reconstruction limit was relaxed to obtain the pass.
+
+A fresh-process preservation check under the integrated code verified all514
+first-attempt files, four frozen inputs, eleven recorded historical host pins,
+seven SDK pins and the unrelated user lockfile. Exact review replay returned the
+old saved result with zero provider/authentication/runtime access and one saved
+review run. It did not add the new field to the historical result. The checker
+also supports replaying the two preserved live transcripts through the final
+collector, without another inference.
 
 Historical receipt bytes, Godskills release/roots, model routing, personal keels,
 Soul/Inspiration and Lunari integration remain outside this change. Offline
