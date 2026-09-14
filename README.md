@@ -58,6 +58,14 @@ records independent acceptance, the stage2 environment repair, review approval
 and 1,572 passing regression tests. Creation/admission inputs are still explicit,
 not a finished consumer onboarding flow.
 
+The [offline preparation handoff](docs/audits/2026-09-14-native-operator-preparation.md)
+now builds that ordinary native configuration from a pinned local admission and
+explicit host settings, without loading credentials or a model. The public
+creator-to-preflight walkthrough and real Pi launch/resume integration both pass;
+the corrected source has1,686 passing tests and independent advisory review.
+This removes manual admission-path assembly, not the remaining production-catalog,
+native Realm, recovery and broader host-qualification work.
+
 The subsequent [history-query adoption](docs/audits/2026-09-13-native-history-query-adoption.md)
 adds offline status/time filters and latest-run limits, with usage totals for
 the selected runs only. It preserves the [bounded native response recovery](docs/audits/2026-09-13-native-response-recovery.md)

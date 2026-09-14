@@ -1,5 +1,18 @@
 # Godagents current state and bounded completion path
 
+September14 native operator preparation is implemented at `a54967a`, corrected
+at `a2bd5a3`, and passes **1,686 tests with zero failures/cancellations and nine
+existing optional skips**. `prepare` now connects a pinned local admission to
+an ordinary launch/resume configuration offline, without hand-assembling actor
+paths or loading a model. A fresh six-stage public creation/preflight walkthrough
+passed; the real Pi controlled test preserves identity and conversation through
+launch/resume. Independent complete-source Grok review approved the correction.
+The sparse-review timeout and revoked-actor setup refusal remain recorded, not
+successes. See [the acceptance audit and next recovery gap](audits/2026-09-14-native-operator-preparation.md).
+This is a usable local handoff, not a finished consumer creation flow or a
+universal-runtime qualification. Revoked-actor reauthorization remains explicit
+future work; no authority or historical identity was rewritten.
+
 September14 native completion accounting is merged at `c532f92`
 (implementation `5a1caec`) and passes
 the full release gate: **1,662 tests, zero failures/cancellations, nine existing
