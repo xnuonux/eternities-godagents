@@ -13,9 +13,10 @@ function assistantStream(ai, model, content) {
   const stream = ai.createAssistantMessageEventStream();
   const errorMessage=Array.isArray(content)?undefined:content.errorMessage;
   const inputTokens=Array.isArray(content)?1:(content.usageInput??0);
+  const outputTokens=Array.isArray(content)?1:(content.usageOutput??1);
   if(!Array.isArray(content))content=content.content??[];
   const message = {role:'assistant',content,api:model.api,provider:model.provider,model:model.id,
-    usage:{input:inputTokens,output:1,cacheRead:0,cacheWrite:0,totalTokens:inputTokens+1,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},
+    usage:{input:inputTokens,output:outputTokens,cacheRead:0,cacheWrite:0,totalTokens:inputTokens+outputTokens,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},
     stopReason:errorMessage?'error':content.some(c=>c.type==='toolCall')?'toolUse':'stop',
     ...(errorMessage?{errorMessage}:{}),timestamp:Date.now()};
   stream.push(errorMessage?{type:'error',reason:'error',error:message}:{type:'done',reason:message.stopReason,message});
@@ -209,6 +210,18 @@ nativeTest('a failed automatic summary reports a warning and does not revoke the
   const recovered=await host.prompt('continue after the temporary provider failure');
   assert.deepEqual(recovered.warnings,[]);assert.equal(calls,5);
   assert.deepEqual(recovered.state.inferences,{native:3,compaction:2});
+});
+
+nativeTest('review compaction output overrun denies settlement and any later inference',async t=>{
+  const x=await setup(t,[done,{content:done,usageInput:1000},{content:[{type:'text',text:'# Goal\nRetain the task.'}],usageOutput:8001},done]);
+  x.options.settingsManager=x.runtime.sdk.SettingsManager.inMemory({retry:{enabled:false},compaction:{enabled:true,reserveTokens:127900,keepRecentTokens:16}});
+  x.options.reviewContext={beforeInference:async()=>{},readOperations:()=>({readFile:async()=>Buffer.from('captured'),access:async()=>{},detectImageMimeType:async()=>null})};
+  const host=await openPiGodagentSession(x.options);x.f.dispose(()=>host.close());
+  await host.prompt('first completed turn');
+  await assert.rejects(host.prompt('retain the purpose and completed task. '.repeat(80)),/review-completion-overrun/);
+  assert.equal(x.contexts.length,3);
+  await assert.rejects(host.prompt('must not dispatch after an overrun'),/review-completion-overrun/);
+  assert.equal(x.contexts.length,3);assert.equal((await host.inspect()).inferences.compaction,1);
 });
 
 nativeTest('native automatic retry success is not reported as a failed prompt',async t=>{

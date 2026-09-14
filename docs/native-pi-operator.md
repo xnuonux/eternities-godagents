@@ -239,10 +239,16 @@ Public `launch`/`resume` are forbidden for review configs. Preserve all records.
 The deadline begins before review setup and never resets after authentication or
 retries. Non-cancellable SDK setup may delay return, but the expired/aborted
 signal and pre-inference guard prevent a later model dispatch. Reserve the full
-configured response maximum before each inference, including retry/compaction;
-never release this reservation based on guessed token splits. Record actual Pi
-input/output/cache/total and unknown values unchanged. Reservations are a
-conservative dispatch ceiling, not a provider billing or latency guarantee.
+configured response maximum before each inference, including retry/compaction,
+and pass it explicitly in the native request options. Check terminal SDK-reported
+output: an overrun or successful response with unknown output usage fails the
+review before later tools/inference or successful settlement. Original response
+and usage evidence remain available. A provider can exceed a requested cap before
+the host learns of it, so this is reservation plus observed-usage enforcement,
+not a provider billing or latency guarantee. Never release reservations based on
+guessed splits. The aggregate retains Pi input/output/cache/total and unknowns;
+additional raw counters such as reasoning remain in the private native transcript.
+Reasoning may be a subset of output and must not be added a second time.
 
 Successful native settlement means a review was returned, not that its findings
 are correct. Review quality and any subsequent repair need independent checks.

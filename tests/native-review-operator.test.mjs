@@ -13,16 +13,17 @@ const nativeTest=(name,fn)=>test(name,{skip:!packageRoot&&'qualified optional Pi
 const done=[{type:'text',text:'Review findings: check calendar validation.'}];
 const read=path=>[{type:'toolCall',id:'read-1',name:'read',arguments:{path}}];
 
-async function setup(t,responses) {
-  const f=await nativeAdmission(t),runtime=await loadPiSdk(packageRoot),queue=[done,...responses],contexts=[];
+async function setup(t,responses,{catalogMaxTokens=128}={}) {
+  const f=await nativeAdmission(t),runtime=await loadPiSdk(packageRoot),queue=[done,...responses],contexts=[],dispatches=[];
   const modelRuntime=await runtime.sdk.ModelRuntime.create({authPath:join(f.root,'auth.json'),modelsPath:null,allowModelNetwork:false,refreshOnCreate:false});
   modelRuntime.registerProvider('fixture',{api:'openai-completions',baseUrl:'http://127.0.0.1:1',apiKey:'fixture-only',
-    models:[{id:'native-model',name:'review fixture',reasoning:false,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:128000,maxTokens:128}],
-    async streamSimple(model,context){
+    models:[{id:'native-model',name:'review fixture',reasoning:false,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:128000,maxTokens:catalogMaxTokens}],
+    async streamSimple(model,context,options){
+      dispatches.push({modelMaxTokens:model.maxTokens,requestMaxTokens:options?.maxTokens??null});
       contexts.push(JSON.parse(JSON.stringify(context)));
       let next=queue.shift();if(typeof next==='function')next=await next();assert.ok(next,'unexpected inference');
-      const error=next.errorMessage,content=error?[]:next,stream=runtime.ai.createAssistantMessageEventStream();
-      const usage=error?{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0}:{input:3,output:2,cacheRead:9,cacheWrite:0,totalTokens:14};
+      const error=next.errorMessage,content=error?[]:(next.content??next),stream=runtime.ai.createAssistantMessageEventStream();
+      const usage=next.usage??(error?{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0}:{input:3,output:2,cacheRead:9,cacheWrite:0,totalTokens:14});
       const message={role:'assistant',content,api:model.api,provider:model.provider,model:model.id,usage:{...usage,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},stopReason:error?'error':content.some(x=>x.type==='toolCall')?'toolUse':'stop',...(error?{errorMessage:error}:{}),timestamp:Date.now()};
       stream.push(error?{type:'error',reason:'error',error:message}:{type:'done',reason:message.stopReason,message});stream.end(message);return stream;
     }});
@@ -39,8 +40,39 @@ async function setup(t,responses) {
   config.sessionRoot=join(f.root,'review-session');config.grant.allowedTools=['read'];
   config.review={snapshotPath,snapshotDigest:snapshot.snapshotDigest,maxCompletionTokens:1024};
   const run=(overrides={})=>runNativeOperator({command:'review',config,expectedConfigDigest:sha256Value(config),runtime,modelRuntime,prompt:'review this exact subject',...overrides});
-  return {f,runtime,modelRuntime,config,contexts,queue,run};
+  return {f,runtime,modelRuntime,config,contexts,dispatches,queue,run};
 }
+
+nativeTest('review response maximum survives a larger provider catalog limit',async t=>{
+  const x=await setup(t,[done],{catalogMaxTokens:4096});
+  const result=await x.run();assert.equal(result.status,'native-turn-settled');
+  assert.equal(x.dispatches[1].modelMaxTokens,128,JSON.stringify(x.dispatches));
+  assert.equal(x.dispatches[1].requestMaxTokens,128);
+});
+
+nativeTest('review output overrun stops tools and further inference while retaining the reported usage',async t=>{
+  const x=await setup(t,[{content:read('subject.mjs'),usage:{input:3,output:129,reasoning:100,cacheRead:0,cacheWrite:0,totalTokens:132}},done]);
+  const result=await x.run();assert.equal(result.status,'failed');
+  assert.equal(result.category,'native-operator:review-completion-overrun');
+  assert.equal(x.contexts.length,2);assert.equal(result.state.actions.total,0);
+  assert.equal(result.usage.outputTokens,129);assert.equal(result.review.reservedCompletionTokens,128);
+  x.modelRuntime.checkAuth=async()=>{throw new Error('no auth on failed review replay');};
+  assert.deepEqual(await x.run(),result);
+});
+
+nativeTest('review final output overrun is not returned as a successful review',async t=>{
+  const x=await setup(t,[{content:done,usage:{input:3,output:129,cacheRead:0,cacheWrite:0,totalTokens:132}}]);
+  const result=await x.run();assert.equal(result.status,'failed');
+  assert.equal(result.category,'native-operator:review-completion-overrun');
+  assert.equal(result.usage.outputTokens,129);assert.match(await readFile(join(result.runPath,'response.md'),'utf8'),/Review findings/);
+});
+
+nativeTest('successful review response with unknown output usage cannot continue',async t=>{
+  const x=await setup(t,[{content:read('subject.mjs'),usage:{input:3,output:null,cacheRead:0,cacheWrite:0,totalTokens:3}},done]);
+  const result=await x.run();assert.equal(result.status,'failed');
+  assert.equal(result.category,'native-operator:review-usage-unknown');
+  assert.equal(result.usage.outputTokens,null);assert.equal(result.state.actions.total,0);assert.equal(x.contexts.length,2);
+});
 
 nativeTest('actual native review uses snapshot read capability and preserves unsplit usage',async t=>{
   const x=await setup(t,[read('subject.mjs'),done]);
