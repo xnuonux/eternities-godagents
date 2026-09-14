@@ -3,6 +3,8 @@
 ## Scope and provenance
 
 Adoption base: `2940c07ef768e673a6ca0c56d450f3e2092d97c8`.
+Implementation merged and pushed on main:
+`5e43a7dcdd38f0378c60e8c9f377152d51d479f1`.
 This integrates the completed native Pi/Grok coding candidate from
 `D:/00-INDEX/operations/2026-09-13-native-generation-diagnostic/workspace`.
 The original candidate was based on `ee0f942`, before the response-recovery
@@ -82,7 +84,15 @@ Full log SHA-256:
 All seven reviewed source/test/operator-documentation hashes still matched after
 review and full verification. Subsequent owner edits were checkpoint/README
 documentation only. The user-owned untracked `package-lock.json` was not changed
-or staged. Merge and post-push reference verification follow this source gate.
+or staged.
+
+Post-merge targeted checks passed **67/67** at `5e43a7d`, including the 20 frozen
+acceptance cases, query regressions, current configuration validation and the
+real-SDK operator recovery tests. Main was pushed successfully. The post-push
+cross-repository current-head checks passed **8/8** in 72,543.0436 ms with
+Godagents main/origin at `5e43a7d` and Godskills main/origin unchanged at
+`d0781a91a82898cc808e7fc681f145fdd972dade`. No new cross-repository certificate
+was issued and no historical receipt was rewritten.
 
 ## Evidence and next boundary
 
@@ -90,7 +100,8 @@ Private adoption evidence:
 `D:/00-INDEX/operations/2026-09-13-native-history-query-adoption`.
 Relevant records: `validation-red.log`, `acceptance-green.log`,
 `native-regression.log`, `real-recorded-history.json`, `review/`, `codex-review.md`, and
-`full-regression.log`. Raw transcripts and credentials are not published.
+`full-regression.log`, `merged-targeted.log`, and `post-push-current-head.log`.
+Raw transcripts and credentials are not published.
 
 This closes adoption of the previously completed coding task. A subsequent
 Godskills quality comparison needs a new registered task or untouched baseline,

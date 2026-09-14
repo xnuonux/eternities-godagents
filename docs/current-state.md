@@ -1,11 +1,12 @@
 # Godagents current state and bounded completion path
 
-September 13 native history-query adoption has passed source review and full
-verification: **1,623 passed, zero failed, nine existing optional skips**.
+September 13 native history-query adoption is merged and pushed at `5e43a7d`.
+Full verification: **1,623 passed, zero failed, nine existing optional skips**.
 The actual offline CLI now filters saved runs by status/time and selects the
 latest matches, with returned-row usage totals. All20 frozen acceptance checks,
 110 native-host checks and the independent Codex review passed. Owner refinement
 fixed status coercion and invalid-date errors without reverting response recovery.
+Merged targeted checks passed67/67; post-push cross-repository checks passed8/8.
 See the [adoption audit](audits/2026-09-13-native-history-query-adoption.md) for
 the exact evidence and final integration checkpoint.
 
