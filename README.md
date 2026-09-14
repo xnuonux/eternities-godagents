@@ -81,6 +81,14 @@ and observed token-overrun checks. Its first real review missed the known date
 defect, so returned review text is advisory, not automatic approval or evidence
 of a quality gain. This is not a deferred Godskills review activation.
 
+A fresh [native completion-accounting task](docs/audits/2026-09-14-native-completion-breakdown.md)
+now adds a separate reasoning/non-reasoning output breakdown without changing
+legacy totals or historical results. The first Grok candidate passed23/23 fixed
+acceptance checks; independent review surfaced a failure-case ambiguity resolved
+with owner regressions. The integrated source passed1,662 full-suite checks and
+105 merged native checks. This is useful observability, not a general review or
+Godskills performance claim.
+
 The experimental [Grok subscription adapter](docs/audits/2026-09-08-grok-subscription-phase-transport.md)
 adds a pinned native CLI path to the same portable phase host. Its local process,
 accounting and replay tests are separate from live subscription qualification

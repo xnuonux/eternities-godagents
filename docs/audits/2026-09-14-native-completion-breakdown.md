@@ -6,6 +6,7 @@ another agent loop, activate Godskills review, change authority or rewrite
 historical records.
 
 Implementation and owner clarification: `5a1caecde80338688a80fe4605d893da2cf22461`.
+Merged into main at `c532f92aa03740e34cb5bd11f4cf26e7b68c81bf`.
 
 ## What is implemented
 
@@ -124,6 +125,12 @@ old saved result with zero provider/authentication/runtime access and one saved
 review run. It did not add the new field to the historical result. The checker
 also supports replaying the two preserved live transcripts through the final
 collector, without another inference.
+
+The merged native-host gate passed105/105 with zero failures, cancellations or
+skips in16362ms. Its runtime, tests, schemas, fixtures, scripts, package metadata
+and historical artifacts are byte-identical to the full-suite source at `5a1caec`;
+only documentation and project test guidance changed afterward. Merged log SHA256:
+`3a84e18bcc73e2edf0d7d0db6ff21bc4fe001c65e2f850788a63b6091b24dc75`.
 
 Historical receipt bytes, Godskills release/roots, model routing, personal keels,
 Soul/Inspiration and Lunari integration remain outside this change. Offline

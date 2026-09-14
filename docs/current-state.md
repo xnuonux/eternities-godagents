@@ -1,6 +1,7 @@
 # Godagents current state and bounded completion path
 
-September14 native completion accounting is implemented at `5a1caec` and passes
+September14 native completion accounting is merged at `c532f92`
+(implementation `5a1caec`) and passes
 the full release gate: **1,662 tests, zero failures/cancellations, nine existing
 optional skips**. New run results separate observed reasoning from other output
 without altering legacy totals or old records. A fresh Grok coding attempt passed
@@ -8,6 +9,7 @@ without altering legacy totals or old records. A fresh Grok coding attempt passe
 the owner clarified with two additional regressions. The earlier full-run timeout
 and the clean four-worker rerun are both preserved. See the
 [implementation, review and verification evidence](audits/2026-09-14-native-completion-breakdown.md).
+The merged native-host gate passed105/105 with no skips.
 This is accounting and native-workflow evidence, not a general Godskills quality
 win, automatic review activation or a complete universal-runtime release.
 
