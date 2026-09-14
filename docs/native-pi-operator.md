@@ -7,6 +7,9 @@ new script for each mission. The current optional host is Pi **0.85.1**.
 
 ## What is available
 
+- `prepare`: verify a pinned local admission and explicit host settings offline,
+  then publish a new ordinary operator config and return its canonical digest.
+  No credential read, SDK load, inference, identity creation or session creation.
 - `preflight`: check the admitted source, tool/effect ceiling, installed SDK,
   selected model and OAuth subscription without a model inference.
 - `launch`: reserve a fresh session directory and execute the first user prompt.
@@ -25,6 +28,92 @@ automatic compaction. Its core prompt remains intact. Godagents supplies the
 admitted actor/mission context and validates its native action association.
 
 ## Configure once
+
+### Prepare from an admitted agent
+
+`prepare` removes the manual path assembly between the creator/admission workflow
+and the native operator. First use the existing
+[creator and local admission workflow](superpowers/specs/2026-08-29-local-creation-admission-shell.md).
+Keep the admitted agent's `admission/binding.json` fingerprint as a reviewed host
+input. Its `bindingDigest` commits to the chosen instance, creator, creation,
+policy and distribution. Do not let a model replace that trusted value after
+changing the files. Preparation rechecks the actual genesis, source, keel,
+mission and tool/effect ceiling, not just a self-reported fingerprint.
+
+Save a request outside the coding project. It uses the host settings shown below
+but replaces the ten-field `admission` block with two fields:
+
+```json
+{
+  "schemaVersion": 1,
+  "protocolId": "eternities-native-pi-preparation-v1",
+  "admissionRoot": "D:/actors/example/admission",
+  "expectedBindingDigest": "the independently reviewed bindingDigest",
+  "piPackageRoot": "C:/operator/pi-coding-agent",
+  "authPath": "C:/operator/private/pi-auth.json",
+  "cwd": "C:/projects/example",
+  "sessionRoot": "D:/agent-sessions/example-mission",
+  "mission": {
+    "missionId": "example-mission",
+    "objective": "Implement the approved change in the project, using its source and tests.",
+    "successEvidence": ["independently verified changed behavior"],
+    "stopConditions": ["revoked authority", "unresolved native action"],
+    "budget": {"maxCycles": 100, "maxCompletionTokens": 65536},
+    "observation": {
+      "observationId": "project-baseline",
+      "summary": "Source and tests are available on disk.",
+      "evidenceDigests": []
+    }
+  },
+  "model": {"provider": "xai", "id": "grok-4.6", "maxTokens": 16384},
+  "grant": {
+    "allowedTools": ["read", "write", "edit", "grep", "find", "ls", "powershell"],
+    "maxToolCalls": 160,
+    "expiresAt": "replace with an actual future UTC timestamp"
+  },
+  "limits": {"maxRunMs": 900000, "maxProviderRetries": 1}
+}
+```
+
+Replace the explanatory values. Choose only effects the existing actor is already
+admitted to use; preparation does not add shell authority. Review the entire
+request and compute its canonical value digest with `sha256Value`, using the same
+command documented below for configuration pins. Then:
+
+```powershell
+npm run native:pi -- prepare --request 'D:/operator/request.json' --pin <reviewed-request-digest> --output 'D:/operator/config.json'
+npm run native:pi -- preflight --config 'D:/operator/config.json' --pin <returned-configDigest>
+npm run native:pi -- launch --config 'D:/operator/config.json' --pin <returned-configDigest> --prompt-file 'D:/operator/first-task.md'
+npm run native:pi -- resume --config 'D:/operator/config.json' --pin <returned-configDigest> --prompt-file 'D:/operator/continue-task.md'
+```
+
+The **request pin** authorizes the preparation input; the returned **config pin**
+binds the assembled runtime configuration. Do not interchange them. Inspect the
+generated config and retain its pin as a host input. The SDK equivalent is
+`prepareNativeOperator({ request, expectedRequestDigest, outputPath })` from
+`@eternities/godagents/native-pi`.
+
+Preparation never overwrites output or reuses an existing `sessionRoot`; their
+parents must already exist. Output must stay outside the coding project,
+admission tree, native session and SDK tree, and cannot replace the credential
+path. Resolved directory aliases receive the same checks. A partial write after
+an I/O failure is preserved for inspection, never deleted and retried silently.
+Output names reject device aliases such as `NUL`, alternate data streams, reserved
+characters, dot segments, and trailing dots/spaces that Windows normalizes away.
+This is not protection against a malicious process running as the same OS user.
+
+An explicit optional `godskills` block is preserved and its pinned source is
+checked without selecting a skill. Omission stays ordinary unbound operation.
+Review configurations retain their separate opt-in workflow below; `prepare`
+does not create or migrate them.
+
+`configuration-prepared` is **offline source/configuration evidence**, not SDK,
+subscription, model availability, live lease or product-quality qualification.
+The SDK and auth paths may not exist yet. `preflight` checks the installed host
+and subscription; `launch` rechecks sources and state before running. Existing
+native admission Realm limitations still apply. No personal Grok keel is loaded.
+
+### Assemble an explicit configuration manually
 
 Use the existing creation and local admission workflow to create a verified
 actor. This command does **not** invent an actor, forge a receipt or upgrade an
