@@ -28,8 +28,8 @@
 
 - [x] Prepare the two new source exports and admissions with adapted existing `prepare.mjs`. Check identical manifests,20 original baseline regressions, real OAuth preflight and no-inference treatment route. Do not rerun any old study script.
 - [x] Validate the23 frozen checks against the current independently reviewed reference and both untouched baselines. Reference must pass23; baseline failures must correspond to the absent query behavior. Review test cases and script differences, then run the new `freeze.mjs` once and record hashes/order before inference.
-- [ ] Invoke the existing `runNativeOperator` via the new `run.mjs` once per arm in frozen order. Allow only the registered native retry behavior. Wait for complete terminal evidence; never duplicate in-flight inference.
-- [ ] Run `score.mjs` once on each untouched output. Inspect actual selected binding, native transcript event summaries and scope. Publish exact paired outcomes, remaining defects, limits and the smallest evidence-backed next action.
+- [x] Invoke the existing `runNativeOperator` via the new `run.mjs` once per arm in frozen order. Allow only the registered native retry behavior. Wait for complete terminal evidence; never duplicate in-flight inference.
+- [x] Run `score.mjs` once on each untouched output. Inspect actual selected binding, native transcript event summaries and scope. Publish exact paired outcomes, remaining defects, limits and the smallest evidence-backed next action.
 - [ ] Reconcile upstream; independently review the evidence interpretation, merge and push study documentation under standing approval. No full product suite is needed unless runtime/source changes. Any later repair is a separately verified milestone, not a rewrite of these trials.
 
 ## Frozen preparation, before inference
@@ -54,3 +54,12 @@ no method body and no scheduled review. Release digest:
 `c72a0ce54f6c42f1542068e8fe61e046500587973b716f4c15effaac8c862f5f`.
 Actual delivered selection must still be verified from the native session.
 Godskills main/origin remains `d0781a91a82898cc808e7fc681f145fdd972dade`.
+
+## Scored result, after both attempts
+
+Control passed23/23 acceptance and20/20 regressions; treatment passed21/23 and
+20/20. Both settled, with no provider retries, owner intervention or scope
+violations. The treatment missed impossible-date error screening at two public
+interfaces. Its lower reported time/tokens is not a qualified efficiency win.
+See the [paired audit](../../audits/2026-09-13-native-godskills-recovery-pair.md).
+The preregistered conditions above and private frozen files were not revised.

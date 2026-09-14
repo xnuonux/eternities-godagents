@@ -1,5 +1,16 @@
 # Godagents current state and bounded completion path
 
+September13 fresh recovery-enabled native coding comparison is complete.
+Both attempts settled: control passed23/23 acceptance and20/20 regressions;
+automatic Forge/Mnemosyne guardrails passed21/23 acceptance and20/20 regressions.
+The treatment used less reported time/tokens but missed two invalid-date checks,
+so it does not qualify as a positive quality/efficiency result. Neither needed
+provider recovery, neither received owner repair, and neither candidate was
+adopted over the already fixed canonical history implementation. See the
+[frozen pair and diagnosis](audits/2026-09-13-native-godskills-recovery-pair.md).
+The next bounded gap is actual read-only post-attempt review in the native host,
+not more injected skill text. The existing default selection remains optional.
+
 September 13 native history-query adoption is merged and pushed at `5e43a7d`.
 Full verification: **1,623 passed, zero failed, nine existing optional skips**.
 The actual offline CLI now filters saved runs by status/time and selects the
@@ -10,9 +21,9 @@ Merged targeted checks passed67/67; post-push cross-repository checks passed8/8.
 See the [adoption audit](audits/2026-09-13-native-history-query-adoption.md) for
 the exact evidence and final integration checkpoint.
 
-The next live quality study requires a fresh task or untouched baseline and
-matched recovery allowances. This implementation is not itself a Godskills
-quality win, and the historical failed pair remains inconclusive.
+The fresh untouched-baseline study above supplies a completed paired observation,
+not a general Godskills quality win. The earlier provider-failed pair remains
+historically inconclusive; its trial slots and evidence were not rewritten.
 
 September 13 native response recovery is merged and pushed at `2107b99`.
 New ordinary coding configs explicitly enable one bounded Pi recovery attempt;

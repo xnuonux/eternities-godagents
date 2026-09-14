@@ -70,7 +70,12 @@ receives the certified native/guardrail/method/review disclosure, validates it
 before inference, and preserves it across compaction and resume. Skills do not
 grant tools, and review scheduling is not review execution. The
 [qualification audit](docs/audits/2026-09-13-native-godskills-consumer.md) separates
-these mechanics from the still-required matched live benefit study.
+these mechanics from live benefit. A fresh
+[matched native coding pair](docs/audits/2026-09-13-native-godskills-recovery-pair.md)
+completed both attempts: control passed23/23 acceptance, default guardrails21/23.
+Both passed20 regressions. Lower treatment time/token totals do not establish
+an efficiency improvement when two explicit validation checks failed. Skills
+remain optional; the next bounded gap is real post-attempt review execution.
 
 The experimental [Grok subscription adapter](docs/audits/2026-09-08-grok-subscription-phase-transport.md)
 adds a pinned native CLI path to the same portable phase host. Its local process,
