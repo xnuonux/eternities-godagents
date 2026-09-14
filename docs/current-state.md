@@ -1,7 +1,7 @@
 # Godagents current state and bounded completion path
 
-September14 native operator preparation is implemented at `a54967a`, corrected
-at `a2bd5a3`, and passes **1,686 tests with zero failures/cancellations and nine
+September14 native operator preparation is merged at `d3f01f1` (implementation
+`a54967a`, correction `a2bd5a3`) and passes **1,686 tests with zero failures/cancellations and nine
 existing optional skips**. `prepare` now connects a pinned local admission to
 an ordinary launch/resume configuration offline, without hand-assembling actor
 paths or loading a model. A fresh six-stage public creation/preflight walkthrough
@@ -12,6 +12,8 @@ successes. See [the acceptance audit and next recovery gap](audits/2026-09-14-na
 This is a usable local handoff, not a finished consumer creation flow or a
 universal-runtime qualification. Revoked-actor reauthorization remains explicit
 future work; no authority or historical identity was rewritten.
+The merged native integration gate passed173/173 with no skips; runtime/test
+bytes are identical to the fully verified source. Branch/evidence are preserved.
 
 September14 native completion accounting is merged at `c532f92`
 (implementation `5a1caec`) and passes

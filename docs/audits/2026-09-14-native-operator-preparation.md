@@ -4,6 +4,7 @@ Implementation: `a54967a7a8a4b8dd0f4bda42f9ac33ba93b9dc98`.
 Windows output correction and fully verified runtime:
 `a2bd5a377d18a9278f73249d6613921aded6eaf4`.
 Base: `fe3e103e560ae943e90912b32feb9075c80b606b`.
+Merged: `d3f01f1e8f45dcd7e95b66770af7ed3fbac9b9da`.
 
 ## Delivered boundary
 
@@ -43,6 +44,11 @@ This is not a hostile-same-OS-user sandbox.
   Four-worker elapsed time: 688,994ms. All69 canonical receipts and their historical
   source lineage verified. Log SHA256:
   `1343b28d4a1ab77657281af92e054b88cbe2d594c5f23833a240eff81fa59351`.
+- Merged native gate: **173/173**, no failures/cancellations/skips, 19,891ms at
+  `d3f01f1`. Runtime/tests/schemas/package metadata are byte-identical to the full
+  gate's source. Log SHA256:
+  `95ba361a64f62cfeeb34fbb2b5eacea955cb5cedde6ebc0646285bc35b5dbd06`.
+  All158 local links across the four changed documents resolved.
 
 The earlier full run at `a54967a` was intentionally stopped after295,659ms when
 the separate NUL probe established a necessary correction. Its partial exit1 log
