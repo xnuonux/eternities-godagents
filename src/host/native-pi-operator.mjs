@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, realpath, stat, access } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, realpath, stat, access, lstat } from 'node:fs/promises';
 import { join, dirname, resolve, relative, isAbsolute, parse, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { sha256Value, sha256Text } from '../core/digest.mjs';
@@ -8,7 +8,9 @@ import { acquireFileLock } from '../state/file-lock.mjs';
 import { replaceFileAtomically } from '../state/atomic-publication.mjs';
 import { loadPiSdk, openPiGodagentSession } from './pi-native-session.mjs';
 import { nativeToolEffects } from './native-host-binding.mjs';
-import { validateNativeOperatorConfig } from './native-pi-operator-config.mjs';
+import { validateNativeOperatorConfig, validateNativePreparationRequest } from './native-pi-operator-config.mjs';
+import { readAdmissionBinding } from './admitted-identity-boundary.mjs';
+import { localGenesisAdmission } from './local-genesis-admission.mjs';
 import { summarizeNativeState, createNativeUsageCollector } from './native-session-report.mjs';
 import { readNativeRunHistory } from './native-run-history.mjs';
 import { preflightNativeGodskills } from '../skills/native-godskills-binding.mjs';
@@ -62,6 +64,49 @@ async function compileHost(config,sessionId) {
   }
   if(Date.parse(config.grant.expiresAt)<=Date.now())fail('grant-expired');
   return {admission,request,candidate};
+}
+async function compileSkillPreflight(config, compiled) {
+  return config.godskills ? preflightNativeGodskills({ options: config.godskills,
+    candidate: compiled.candidate, request: compiled.request, grant: { ...config.grant, cwd: config.cwd },
+    effectCeiling: [...new Set(config.grant.allowedTools.map(tool => nativeToolEffects[tool]))] }) : null;
+}
+
+// Offline host preparation. It publishes configuration, never an admission or a
+// live association. The launch path independently revalidates the resulting pin.
+export async function prepareNativeOperator({ request: input, expectedRequestDigest, outputPath } = {}) {
+  try {
+    if (!/^[a-f0-9]{64}$/.test(expectedRequestDigest ?? '') || sha256Value(input) !== expectedRequestDigest) fail('request-pin');
+    const request = validateNativePreparationRequest(structuredClone(input));
+    if (typeof outputPath !== 'string' || !isAbsolute(outputPath) || /[\0\r\n]/.test(outputPath)) fail('preparation-path');
+    const root = await realpath(request.admissionRoot), binding = await readAdmissionBinding(root);
+    if (binding.bindingDigest !== request.expectedBindingDigest) fail('admission-pin');
+    const { admissionRoot, expectedBindingDigest, ...host } = request;
+    const { keelAdapter, snapshotPath, ...admission } = localGenesisAdmission(root, binding);
+    const config = validateNativeOperatorConfig({ ...host, protocolId: 'eternities-native-pi-operator-v1',
+      admission: { ...admission, keelRoot: join(root, 'keels') } });
+    await assertHostPaths(config, outputPath);
+    const target = await resolvedTarget(outputPath);
+    for (const protectedRoot of [root, config.sessionRoot, config.piPackageRoot, config.authPath]) {
+      const rel = relative(await resolvedTarget(protectedRoot), target);
+      if (rel === '' || (rel !== '..' && !rel.startsWith('..' + sep) && !isAbsolute(rel))) fail('output-boundary');
+    }
+    for (const [path, code] of [[config.sessionRoot, 'session-exists'], [outputPath, 'output-exists']]) {
+      try { await lstat(path); fail(code); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    }
+    if (!(await stat(dirname(config.sessionRoot))).isDirectory() || !(await stat(dirname(outputPath))).isDirectory()) fail('preparation-parent');
+    const compiled = await compileHost(config, 'native-operator-preflight');
+    for (const key of ['instanceId', 'genesisId', 'keelId', 'creationBuildId', 'distributionBuildId', 'policyDigest']) {
+      if (compiled.candidate.fullEnvelope.binding[key] !== binding[key]) fail('admission-binding');
+    }
+    await compileSkillPreflight(config, compiled);
+    // wx also arbitrates concurrent preparers. A failed partial publication stays
+    // visible for operator inspection; preparation never deletes or overwrites it.
+    try { await writeFile(outputPath, json(config), { flag: 'wx', mode: 0o600 }); }
+    catch (error) { if (error.code === 'EEXIST') fail('output-exists'); throw error; }
+    return { status: 'configuration-prepared', configPath: outputPath, configDigest: sha256Value(config),
+      instanceId: binding.instanceId, admissionBindingDigest: binding.bindingDigest,
+      boundary: 'offline preparation only; SDK, subscription and launch readiness are not verified' };
+  } catch (error) { throw new Error(nativeOperatorError(error)); }
 }
 async function metadataFor(config,configDigest) {
   const metadata=await readJson(join(config.sessionRoot,'operator.json'));
@@ -129,9 +174,7 @@ async function executeNativeOperator({command,config:inputConfig,expectedConfigD
     try{await access(config.sessionRoot);fail('session-exists');}catch(error){if(error.code!=='ENOENT')throw error;}
   }
   const compiled=await compileHost(config,metadata?.sessionId??'native-operator-preflight');
-  const skillPreflight=config.godskills?await preflightNativeGodskills({options:config.godskills,
-    candidate:compiled.candidate,request:compiled.request,grant:{...config.grant,cwd:config.cwd},
-    effectCeiling:[...new Set(config.grant.allowedTools.map(tool=>nativeToolEffects[tool]))]}):null;
+  const skillPreflight=await compileSkillPreflight(config,compiled);
   runtime??=await loadPiSdk(config.piPackageRoot);
   modelRuntime??=await runtime.sdk.ModelRuntime.create({authPath:config.authPath,modelsPath:null,
     allowModelNetwork:false,refreshOnCreate:true});

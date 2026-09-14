@@ -15,6 +15,29 @@ const nativeTest=(name,fn)=>test(name,{skip:!packageRoot&&'qualified optional Pi
 const done=[{type:'text',text:'private assistant handoff'}];
 const write=(id,path,content)=>[{type:'toolCall',id,name:'write',arguments:{path,content}}];
 
+nativeTest('prepared configuration launches and resumes the same admitted actor through real Pi tools',async t=>{
+  const x=await setup(t,[write('prepared-first','prepared-first.txt','first stage'),done]);
+  const api=await import('../src/sdk/native-pi.mjs');
+  assert.equal(typeof api.prepareNativeOperator,'function','public offline preparation is missing');
+  const {admission,...host}=x.config,admissionRoot=dirname(admission.transactionDir);
+  const binding=JSON.parse(await readFile(join(admissionRoot,'binding.json'),'utf8'));
+  const request={...host,protocolId:'eternities-native-pi-preparation-v1',admissionRoot,expectedBindingDigest:binding.bindingDigest};
+  const configPath=join(x.f.root,'prepared-config.json');
+  const prepared=await api.prepareNativeOperator({request,expectedRequestDigest:sha256Value(request),outputPath:configPath});
+  const config=JSON.parse(await readFile(configPath,'utf8'));
+  const overrides={config,expectedConfigDigest:prepared.configDigest,configPath};
+  const first=await x.run('launch','first stage',overrides);
+  assert.equal(first.status,'native-turn-settled');
+  assert.equal(await readFile(join(x.f.cwd,'prepared-first.txt'),'utf8'),'first stage');
+  x.responses.push(write('prepared-second','prepared-second.txt','second stage'),done);
+  const second=await x.run('resume','second stage',overrides);
+  assert.equal(second.status,'native-turn-settled');
+  assert.equal(second.state.associationDigest,first.state.associationDigest);
+  assert.equal(second.state.turns,2);
+  assert.equal(await readFile(join(x.f.cwd,'prepared-second.txt'),'utf8'),'second stage');
+  assert.match(JSON.stringify(x.contexts[2].messages),/first stage/);
+});
+
 async function setup(t,responses) {
   const f=await nativeAdmission(t), runtime=await loadPiSdk(packageRoot);
   const modelRuntime=await runtime.sdk.ModelRuntime.create({authPath:join(f.root,'test-auth.json'),modelsPath:null,

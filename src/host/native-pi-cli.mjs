@@ -4,11 +4,14 @@ import { pathToFileURL } from 'node:url';
 const HELP = `Godagents native Pi operator
 
 Usage:
+  node src/host/native-pi-cli.mjs prepare --request <absolute-json> --pin <request-value-sha256> --output <new-config-json>
   node src/host/native-pi-cli.mjs <command> --config <absolute-file> --pin <sha256-hex> [--prompt-file <absolute-file>]
   node src/host/native-pi-cli.mjs history --config <absolute-file> --pin <sha256-hex> [--only settled|failed|incomplete] [--after <utc>] [--limit <n>]
   node src/host/native-pi-cli.mjs --help
 
 Commands:
+  prepare    Offline admission-to-config handoff. Does not read auth, load Pi,
+             infer, create identity/session, or grant new effects. Never overwrites.
   preflight  Check admitted source, SDK, model and subscription without inference.
   launch     Create a fresh native session and run one prompt. Requires --prompt-file.
   resume     Continue the same actor/session and mission. Requires --prompt-file.
@@ -20,8 +23,10 @@ Commands:
              Optional filters: --only, --after, --limit. Not accepted on other commands.
 
 Flags:
-  --config       Absolute operator config JSON path. Required except --help.
-  --pin          Independent SHA-256 of the parsed config's canonical JSON value,
+  --request      Prepare only. Reviewed preparation request, pinned by --pin.
+  --output       Prepare only. Fresh absolute config file outside protected roots.
+  --config       Absolute operator config JSON path. Required except prepare/--help.
+  --pin          Independent SHA-256 of the parsed request (prepare) or config value,
                  computed with sha256Value, NOT the raw file-byte hash.
   --prompt-file  Absolute prompt path. Required for launch, resume and review.
                  Not accepted for preflight, status, or history.
@@ -51,8 +56,14 @@ export async function nativePiCli(argv,{stdout=process.stdout,stderr=process.std
     if(Array.isArray(argv)&&argv.length===1&&argv[0]==='--help') {
       stdout.write(HELP);return 0;
     }
-    const {parseNativeOperatorArgs,loadNativeOperatorConfig}=await import('./native-pi-operator-config.mjs');
+    const {parseNativeOperatorArgs,loadNativeOperatorConfig,loadNativePreparationRequest}=await import('./native-pi-operator-config.mjs');
     const args=parseNativeOperatorArgs(argv);
+    if(args.command==='prepare') {
+      const request=await loadNativePreparationRequest(args);
+      const {prepareNativeOperator}=await import('./native-pi-operator.mjs');
+      const result=await prepareNativeOperator({...args,request});
+      stdout.write(JSON.stringify(result,null,2)+'\n');return 0;
+    }
     const config=await loadNativeOperatorConfig(args);
     const {runNativeOperator}=await import('./native-pi-operator.mjs');
     let prompt;

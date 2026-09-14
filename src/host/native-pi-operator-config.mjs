@@ -32,6 +32,21 @@ const HISTORY_FLAGS = new Set(['--only','--after','--limit']);
 
 export function parseNativeOperatorArgs(argv = []) {
   if (!Array.isArray(argv)) fail('args');
+  if (argv[0] === 'prepare') {
+    const result = { command: 'prepare' }, seen = new Set();
+    const flags = { '--request': 'requestPath', '--pin': 'expectedRequestDigest', '--output': 'outputPath' };
+    for (let i = 1; i < argv.length; i += 2) {
+      const flag = argv[i], value = argv[i + 1];
+      if (!Object.hasOwn(flags, flag)) fail('unknown-flag');
+      if (seen.has(flag)) fail('duplicate-flag');
+      seen.add(flag);
+      if (!text(value) || value.startsWith('--')) fail('flag-value');
+      result[flags[flag]] = value;
+    }
+    if (!path(result.requestPath) || !path(result.outputPath)) fail('preparation-path');
+    if (!DIGEST.test(result.expectedRequestDigest ?? '')) fail('request-pin');
+    return result;
+  }
   const commands = new Set(['preflight','launch','resume','status','history','review']);
   if (argv.length < 1 || !commands.has(argv[0])) fail('command');
   const result = { command: argv[0] }; const seen = new Set(); const historyQuery = {};
@@ -64,6 +79,24 @@ export function parseNativeOperatorArgs(argv = []) {
   if (!['launch','resume','review'].includes(result.command) && result.promptPath) fail('unexpected-prompt');
   if (Object.keys(historyQuery).length) result.historyQuery = historyQuery;
   return result;
+}
+
+export function validateNativePreparationRequest(request) {
+  exact(request, [...TOP.filter(key => key !== 'admission'), 'admissionRoot', 'expectedBindingDigest',
+    ...(object(request) && Object.hasOwn(request, 'godskills') ? ['godskills'] : [])], 'preparation-shape');
+  if (request.schemaVersion !== 1 || request.protocolId !== 'eternities-native-pi-preparation-v1') fail('preparation-protocol');
+  if (!path(request.admissionRoot)) fail('preparation-path');
+  if (!DIGEST.test(request.expectedBindingDigest ?? '')) fail('admission-pin');
+  return request;
+}
+
+export async function loadNativePreparationRequest({ requestPath, expectedRequestDigest } = {}) {
+  if (!path(requestPath) || !DIGEST.test(expectedRequestDigest ?? '')) fail('request-pin');
+  let information; try { information = await stat(requestPath); } catch { fail('request-read'); }
+  if (!information.isFile() || information.size > 1024 * 1024) fail('request-size');
+  let value; try { value = JSON.parse(await readFile(requestPath, 'utf8')); } catch { fail('request-json'); }
+  if (sha256Value(value) !== expectedRequestDigest) fail('request-pin');
+  return validateNativePreparationRequest(value);
 }
 
 export function validateNativeOperatorConfig(config) {
