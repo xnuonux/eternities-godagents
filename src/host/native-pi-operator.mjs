@@ -211,7 +211,7 @@ async function executeNativeOperator({command,config:inputConfig,expectedConfigD
     try{settled=await host.prompt(prompt);}finally{disarm();}
     if(interrupted)fail('interrupted');
     const result={status:settled.status,startedAt,finishedAt:new Date().toISOString(),runPath,
-      usage:usage.snapshot(),state:summarizeNativeState(settled.state),warnings:settled.warnings};
+      usage:usage.snapshot(),completionBreakdown:usage.breakdown(),state:summarizeNativeState(settled.state),warnings:settled.warnings};
     await save('result.json',result);return result;
   } catch(error) {
     if(!runPath) {
@@ -226,7 +226,8 @@ async function executeNativeOperator({command,config:inputConfig,expectedConfigD
     let state=null;
     try{if(host)state=summarizeNativeState(await host.inspect());}catch{/* uncertain state is not fabricated */}
     const result={status:'failed',category:interrupted?'native-operator:interrupted':nativeOperatorError(error),
-      errorDigest:sha256Text(String(error)),startedAt,finishedAt:new Date().toISOString(),runPath,state,usage:usage.snapshot()};
+      errorDigest:sha256Text(String(error)),startedAt,finishedAt:new Date().toISOString(),runPath,state,usage:usage.snapshot(),
+      completionBreakdown:usage.breakdown()};
     await save('result.json',result);return result;
   } finally {
     disarm();unsubscribe?.();

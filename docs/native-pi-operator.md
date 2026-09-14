@@ -176,6 +176,29 @@ billing. Historical run records are not rewritten by this correction.
 Mission token fields are **not certified spending caps**; the configured
 per-response ceiling, tool-call ceiling, expiry and run deadline are distinct.
 
+Each new settled or failed run also records `completionBreakdown` beside `usage`,
+not inside it. Its version1 fields are `schemaVersion`, `messageCount`,
+`knownMessages`, `unknownMessages`, `reasoningTokens` and
+`nonReasoningOutputTokens`. Launch and resume each report only that invocation's
+assistant `message_end` events. Positive SDK-reported reasoning is treated as a
+subset of output and is never added again to output, total or cache. The remainder
+can include tool arguments; it is not a measure of visible prose alone.
+
+A zero or omitted reasoning counter with positive output stays unknown because
+the SDK can default missing reasoning to zero. Empty successful output with
+absent/null/zero reasoning is a known `(0, 0)` split. Failed or aborted zero output
+does not establish an empty split, even when input/cache usage was reported.
+Positive reported reasoning on a failed response is retained as an observation,
+not complete billing. Invalid or missing splits null both aggregate split totals;
+known/unknown message counts continue. Unsafe integer sum overflow also nulls
+both totals without reclassifying individually valid messages.
+
+The collector keeps counters, not message bodies. Setup failures with no run
+omit this field. Offline `history` keeps its existing `usage` aggregate and does
+not aggregate the additive breakdown. Old saved records, configuration pins,
+review protocols and SDK exports are unchanged. This measurement is not an
+automatic conversion into a Godskills review contract or a billing guarantee.
+
 ## Native post-attempt host review
 
 `review` is a separate, opt-in host review, not a deferred Godskills selection.
