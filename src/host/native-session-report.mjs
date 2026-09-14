@@ -35,12 +35,26 @@ export function summarizeNativeState(state) {
     stateDigest: value.stateDigest, associationDigest: value.associationDigest };
 }
 
+function completionSplit(stopReason, usage, values, fields) {
+  if (['error', 'aborted'].includes(stopReason)
+    && fields.every(field => values[field] === 0 || values[field] == null)) return null;
+  const output = usage.outputTokens ?? usage.output;
+  const reasoning = usage.reasoningTokens ?? usage.reasoning;
+  if (!integer(output)) return null;
+  // Input/cache usage cannot establish that a failed zero output was measured.
+  if (output === 0 && ['error', 'aborted'].includes(stopReason)) return null;
+  if (reasoning == null || reasoning === 0) return output === 0 ? { reasoning: 0, nonReasoning: 0 } : null;
+  if (!integer(reasoning) || reasoning > output) return null;
+  return { reasoning, nonReasoning: output - reasoning };
+}
+
 export function createNativeUsageCollector() {
   const seen = new Set();
   const fields = ['inputTokens', 'outputTokens', 'cacheReadTokens', 'cacheWriteTokens', 'totalTokens'];
   const sums = Object.fromEntries(fields.map(field => [field, 0]));
   const stopReasons = {};
   let messageCount=0,missingUsageMessages=0;
+  let knownMessages=0,unknownMessages=0,reasoningTokens=0,nonReasoningOutputTokens=0;
   return Object.freeze({
     record(event) {
       const message = event?.type === 'message_end' ? event.message : null;
@@ -52,6 +66,25 @@ export function createNativeUsageCollector() {
       const values = { inputTokens: usage.inputTokens ?? usage.input, outputTokens: usage.outputTokens ?? usage.output,
         cacheReadTokens: usage.cacheReadTokens ?? usage.cacheRead, cacheWriteTokens: usage.cacheWriteTokens ?? usage.cacheWrite,
         totalTokens: usage.totalTokens ?? usage.total };
+      const split = completionSplit(message.stopReason, usage, values, fields);
+      if (split) {
+        knownMessages++;
+        if (reasoningTokens !== null) {
+          const nextReasoning = reasoningTokens + split.reasoning;
+          const nextNonReasoning = nonReasoningOutputTokens + split.nonReasoning;
+          if (integer(nextReasoning) && integer(nextNonReasoning)) {
+            reasoningTokens = nextReasoning;
+            nonReasoningOutputTokens = nextNonReasoning;
+          } else {
+            reasoningTokens = null;
+            nonReasoningOutputTokens = null;
+          }
+        }
+      } else {
+        unknownMessages++;
+        reasoningTokens = null;
+        nonReasoningOutputTokens = null;
+      }
       // The SDK initializes zero counters before streaming. On failure those
       // placeholders cannot establish that the interrupted call consumed zero.
       if(['error','aborted'].includes(message.stopReason)
@@ -67,5 +100,6 @@ export function createNativeUsageCollector() {
       stopReasons[reason] = (stopReasons[reason] ?? 0) + 1;
     },
     snapshot:()=>({messageCount,...sums,missingUsageMessages,stopReasons:{...stopReasons}}),
+    breakdown:()=>({schemaVersion:1,messageCount,knownMessages,unknownMessages,reasoningTokens,nonReasoningOutputTokens}),
   });
 }
