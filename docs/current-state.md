@@ -1,5 +1,18 @@
 # Godagents current state and bounded completion path
 
+September 13 native history-query adoption has passed source review and full
+verification: **1,623 passed, zero failed, nine existing optional skips**.
+The actual offline CLI now filters saved runs by status/time and selects the
+latest matches, with returned-row usage totals. All20 frozen acceptance checks,
+110 native-host checks and the independent Codex review passed. Owner refinement
+fixed status coercion and invalid-date errors without reverting response recovery.
+See the [adoption audit](audits/2026-09-13-native-history-query-adoption.md) for
+the exact evidence and final integration checkpoint.
+
+The next live quality study requires a fresh task or untouched baseline and
+matched recovery allowances. This implementation is not itself a Godskills
+quality win, and the historical failed pair remains inconclusive.
+
 September 13 native response recovery is merged and pushed at `2107b99`.
 New ordinary coding configs explicitly enable one bounded Pi recovery attempt;
 old frozen single-attempt configs remain unchanged. A deliberate live connection
@@ -10,15 +23,15 @@ See the [diagnosis and live evidence](audits/2026-09-13-native-response-recovery
 No context reduction, model change, paid fallback or custom agent loop was added.
 
 The separate fresh history-query coding run completed36 native tools and passed
-20 independent acceptance checks plus35 candidate regressions. Its code remains
-in the private diagnostic workspace, not canonical main. Next: review/adopt that
-candidate while preserving the newer recovery edits in overlapping files.
+20 independent acceptance checks plus35 candidate regressions. That candidate
+was subsequently adopted and owner-refined by the history-query batch above,
+preserving the newer recovery edits in overlapping files.
 The old failed pair below remains historical, not a Godskills quality verdict.
 
 September13 native live pair: the same Godagent/Pi/Grok setup was tested with
 versus without automatic Godskills. Both provider streams failed before edits,
 so this is **inconclusive**, not a skill quality result. Forge/Mnemosyne guardrail
-delivery was confirmed, but the history-query task remains unimplemented. See
+delivery was confirmed, but neither arm implemented the task in that pair. See
 the [frozen design, outcomes and diagnosis](audits/2026-09-13-native-godskills-live-pair.md).
 Owner correction `a8bc116` fixes two actual reporting defects found afterward:
 SDK placeholder-zero failure usage becomes unknown, and history accepts valid

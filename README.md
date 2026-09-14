@@ -58,6 +58,12 @@ records independent acceptance, the stage2 environment repair, review approval
 and 1,572 passing regression tests. Creation/admission inputs are still explicit,
 not a finished consumer onboarding flow.
 
+The subsequent [history-query adoption](docs/audits/2026-09-13-native-history-query-adoption.md)
+adds offline status/time filters and latest-run limits, with usage totals for
+the selected runs only. It preserves the [bounded native response recovery](docs/audits/2026-09-13-native-response-recovery.md)
+and original configuration pins. These are operational capabilities, not a
+matched Godskills quality result.
+
 The optional [native Godskills consumer](docs/native-godskills-consumer.md) now
 binds a host-pinned selected stack to that native mission. The actual Pi SDK
 receives the certified native/guardrail/method/review disclosure, validates it

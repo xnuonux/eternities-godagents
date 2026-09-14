@@ -26,25 +26,43 @@ const noCredentials = value => {
   }
 };
 
+const HISTORY_ONLY = new Set(['settled','failed','incomplete']);
+const HISTORY_LIMIT = /^(?:[1-9]\d{0,2}|1000)$/u;
+const HISTORY_FLAGS = new Set(['--only','--after','--limit']);
+
 export function parseNativeOperatorArgs(argv = []) {
   if (!Array.isArray(argv)) fail('args');
   const commands = new Set(['preflight','launch','resume','status','history']);
   if (argv.length < 1 || !commands.has(argv[0])) fail('command');
-  const result = { command: argv[0] }; const seen = new Set();
+  const result = { command: argv[0] }; const seen = new Set(); const historyQuery = {};
+  const names = new Set(['--config','--pin','--prompt-file', ...HISTORY_FLAGS]);
   for (let i = 1; i < argv.length; i += 2) {
     const flag = argv[i];
-    const names = new Set(['--config','--pin','--prompt-file']);
     if (!names.has(flag)) fail('unknown-flag');
+    if (HISTORY_FLAGS.has(flag) && result.command !== 'history') fail('unknown-flag');
     if (seen.has(flag)) fail('duplicate-flag'); seen.add(flag);
     const value = argv[i + 1]; if (!text(value) || value.startsWith('--')) fail('flag-value');
     if (flag === '--config') result.configPath = value;
     if (flag === '--pin') result.expectedConfigDigest = value;
     if (flag === '--prompt-file') result.promptPath = value;
+    if (flag === '--only') {
+      if (!HISTORY_ONLY.has(value)) fail('flag-value');
+      historyQuery.only = value;
+    }
+    if (flag === '--after') {
+      if (!ISO.test(value) || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString() !== value) fail('flag-value');
+      historyQuery.after = value;
+    }
+    if (flag === '--limit') {
+      if (!HISTORY_LIMIT.test(value)) fail('flag-value');
+      historyQuery.limit = Number(value);
+    }
   }
   if (!path(result.configPath)) fail('config-path');
   if (!DIGEST.test(result.expectedConfigDigest ?? '')) fail('config-pin');
   if ((result.command === 'launch' || result.command === 'resume') && !path(result.promptPath)) fail('prompt-path');
   if (result.command !== 'launch' && result.command !== 'resume' && result.promptPath) fail('unexpected-prompt');
+  if (Object.keys(historyQuery).length) result.historyQuery = historyQuery;
   return result;
 }
 

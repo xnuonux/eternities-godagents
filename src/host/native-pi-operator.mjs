@@ -87,10 +87,11 @@ async function setupFailure(config,configDigest) {
 
 // Runtime injection is for a trusted embedding host, not a model-facing CLI option.
 export async function runNativeOperator({command,config:inputConfig,expectedConfigDigest,prompt,
-  configPath,runtime,modelRuntime,signal,onProgress}={}) {
+  configPath,runtime,modelRuntime,signal,onProgress,historyQuery}={}) {
   if(!/^[a-f0-9]{64}$/.test(expectedConfigDigest??'')||sha256Value(inputConfig)!==expectedConfigDigest)fail('config-pin');
   const config=validateNativeOperatorConfig(structuredClone(inputConfig));
   if(!['preflight','launch','resume','status','history'].includes(command))fail('command');
+  if(historyQuery!==undefined&&command!=='history')fail('unexpected-query');
   await assertHostPaths(config,configPath);
   if(command==='status'||command==='history') {
     const failedSetup=await setupFailure(config,expectedConfigDigest);if(failedSetup)return failedSetup;
@@ -101,7 +102,7 @@ export async function runNativeOperator({command,config:inputConfig,expectedConf
       authority:'offline snapshot only; resume revalidates actor, lease, expiry and native history'};
     summarizeNativeState(state);
     return readNativeRunHistory({sessionRoot:config.sessionRoot,expectedSessionId:metadata.sessionId,
-      expectedConfigDigest});
+      expectedConfigDigest, ...(historyQuery!==undefined?{query:historyQuery}:{})});
   }
   if(command!=='preflight'&&(typeof prompt!=='string'||!prompt.trim()||Buffer.byteLength(prompt,'utf8')>128*1024))fail('prompt');
   let metadata;

@@ -5,6 +5,7 @@ const HELP = `Godagents native Pi operator
 
 Usage:
   node src/host/native-pi-cli.mjs <command> --config <absolute-file> --pin <sha256-hex> [--prompt-file <absolute-file>]
+  node src/host/native-pi-cli.mjs history --config <absolute-file> --pin <sha256-hex> [--only settled|failed|incomplete] [--after <utc>] [--limit <n>]
   node src/host/native-pi-cli.mjs --help
 
 Commands:
@@ -14,6 +15,7 @@ Commands:
   status     Offline snapshot of recorded native state or failed setup.
   history    Offline recorded run history, including failed and incomplete attempts.
              Does not load credentials or create a model runtime.
+             Optional filters: --only, --after, --limit. Not accepted on other commands.
 
 Flags:
   --config       Absolute operator config JSON path. Required except --help.
@@ -21,6 +23,12 @@ Flags:
                  computed with sha256Value, NOT the raw file-byte hash.
   --prompt-file  Absolute prompt path. Required for launch and resume only.
                  Not accepted for preflight, status, or history.
+  --only         History only. Exactly settled, failed, or incomplete.
+                 settled selects stored native-turn-settled runs.
+  --after        History only. Exact UTC timestamp YYYY-MM-DDTHH:mm:ss.sssZ.
+                 Keeps runs whose startedAt is strictly later.
+  --limit        History only. Canonical decimal integer 1..1000. Keeps the latest
+                 matching runs after --only/--after. Not +1, 01, fractions, or exponents.
 
 Authority:
   Native tools run as the OS user. This is not a sandbox or a guaranteed billing cap.

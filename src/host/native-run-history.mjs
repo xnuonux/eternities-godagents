@@ -6,6 +6,8 @@ const DIGEST = /^[a-f0-9]{64}$/u;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u;
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 const COMMANDS = new Set(['launch', 'resume']);
+const ONLY = { settled: 'native-turn-settled', failed: 'failed', incomplete: 'incomplete' };
+const QUERY_KEYS = new Set(['only', 'after', 'limit']);
 const CATEGORY = /^(native-operator|native-pi|native-host|native-session-report|native-godskills):[a-z0-9-]{1,80}$/u;
 const USAGE_FIELDS = ['inputTokens', 'outputTokens', 'cacheReadTokens', 'cacheWriteTokens', 'totalTokens'];
 const MAX_RUNS = 1000;
@@ -13,7 +15,7 @@ const MAX_BYTES = 1024 * 1024;
 
 const object = value => !!value && typeof value === 'object' && !Array.isArray(value);
 const text = value => typeof value === 'string' && value.length > 0;
-const iso = value => typeof value === 'string' && ISO.test(value) && new Date(value).toISOString() === value;
+const iso = value => typeof value === 'string' && ISO.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
 const finite = value => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 const samePath = (left, right) => {
   const a = resolve(left), b = resolve(right);
@@ -73,10 +75,78 @@ function recorded(status, runId, startedAt, finishedAt, category) {
   return entry;
 }
 
-export async function readNativeRunHistory({ sessionRoot, expectedSessionId, expectedConfigDigest } = {}) {
+function parseQuery(query) {
+  if (query === undefined) return {};
+  if (!object(query)) fail('query');
+  const parsed = {};
+  for (const key of Object.keys(query)) {
+    if (!QUERY_KEYS.has(key) || query[key] === undefined) fail('query');
+    if (key === 'only') {
+      if (typeof query.only !== 'string' || !Object.hasOwn(ONLY, query.only)) fail('query');
+      parsed.only = query.only;
+    } else if (key === 'after') {
+      if (!iso(query.after)) fail('query');
+      parsed.after = query.after;
+    } else if (key === 'limit') {
+      if (!Number.isSafeInteger(query.limit) || query.limit < 1 || query.limit > MAX_RUNS) fail('query');
+      parsed.limit = query.limit;
+    }
+  }
+  return parsed;
+}
+
+function summarize(records) {
+  const counts = { settled: 0, failed: 0, incomplete: 0 };
+  const usage = emptyUsage();
+  let incomplete = false;
+  for (const record of records) {
+    if (record.entry.status === 'native-turn-settled') counts.settled++;
+    else if (record.entry.status === 'failed') counts.failed++;
+    else { counts.incomplete++; incomplete = true; }
+  }
+  if (incomplete) {
+    for (const field of USAGE_FIELDS) usage[field] = null;
+  } else {
+    for (const record of records) {
+      for (const field of USAGE_FIELDS) {
+        if (usage[field] === null) continue;
+        const value = record.usage[field];
+        if (value == null || !finite(value) || !finite(usage[field] + value)) usage[field] = null;
+        else usage[field] += value;
+      }
+    }
+  }
+  return {
+    status: 'recorded-history',
+    entries: records.map(record => record.entry),
+    counts,
+    usage,
+  };
+}
+
+function applyQuery(records, parsed) {
+  const report = summarize(records);
+  if (Object.keys(parsed).length === 0) return report;
+  let matched = records;
+  if (parsed.only) matched = matched.filter(record => record.entry.status === ONLY[parsed.only]);
+  if (parsed.after) matched = matched.filter(record => record.entry.startedAt > parsed.after);
+  const returned = parsed.limit == null || matched.length <= parsed.limit ? matched : matched.slice(-parsed.limit);
+  return {
+    ...summarize(returned),
+    selection: {
+      totalRuns: records.length,
+      matchedRuns: matched.length,
+      returnedRuns: returned.length,
+      hasMore: matched.length > returned.length,
+    },
+  };
+}
+
+export async function readNativeRunHistory({ sessionRoot, expectedSessionId, expectedConfigDigest, query } = {}) {
   if (!text(sessionRoot) || !isAbsolute(sessionRoot)) fail('session-root');
   if (!text(expectedSessionId)) fail('session-id');
   if (!DIGEST.test(expectedConfigDigest ?? '')) fail('config-pin');
+  const parsed = parseQuery(query);
 
   const root = await assertDirectory(resolve(sessionRoot));
   const runsPath = join(root, 'runs');
@@ -89,9 +159,7 @@ export async function readNativeRunHistory({ sessionRoot, expectedSessionId, exp
     runEntries = await readdir(runsPath, { withFileTypes: true });
   } catch (error) {
     if (error?.message?.startsWith('native-run-history:')) throw error;
-    if (error?.code === 'ENOENT') {
-      return { status: 'recorded-history', entries: [], counts: { settled: 0, failed: 0, incomplete: 0 }, usage: emptyUsage() };
-    }
+    if (error?.code === 'ENOENT') return applyQuery([], parsed);
     fail('session-root');
   }
   if (runEntries.length > MAX_RUNS) fail('too-many-runs');
@@ -145,31 +213,5 @@ export async function readNativeRunHistory({ sessionRoot, expectedSessionId, exp
     return 0;
   });
 
-  const counts = { settled: 0, failed: 0, incomplete: 0 };
-  const usage = emptyUsage();
-  let incomplete = false;
-  for (const record of records) {
-    if (record.entry.status === 'native-turn-settled') counts.settled++;
-    else if (record.entry.status === 'failed') counts.failed++;
-    else { counts.incomplete++; incomplete = true; }
-  }
-  if (incomplete) {
-    for (const field of USAGE_FIELDS) usage[field] = null;
-  } else {
-    for (const record of records) {
-      for (const field of USAGE_FIELDS) {
-        if (usage[field] === null) continue;
-        const value = record.usage[field];
-        if (value == null || !finite(value) || !finite(usage[field] + value)) usage[field] = null;
-        else usage[field] += value;
-      }
-    }
-  }
-
-  return {
-    status: 'recorded-history',
-    entries: records.map(record => record.entry),
-    counts,
-    usage,
-  };
+  return applyQuery(records, parsed);
 }

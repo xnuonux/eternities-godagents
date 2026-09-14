@@ -16,6 +16,8 @@ new script for each mission. The current optional host is Pi **0.85.1**.
   snapshot, not permission to resume or independent product acceptance.
 - `history`: list the mission's saved runs, including failures and incomplete
   attempts, with aggregate provider-reported usage. No model or credential load.
+  Optional `--only`, `--after` and `--limit` filter the report without changing
+  the pinned configuration or loading credentials.
 - `--help`: show the command interface without configuration or credentials.
 
 Native Pi owns source retrieval, file/edit/shell tools, context, inference and
@@ -93,8 +95,36 @@ npm run native:pi -- preflight --config 'D:/operator/config.json' --pin <reviewe
 npm run native:pi -- launch --config 'D:/operator/config.json' --pin <reviewed-digest> --prompt-file 'D:/operator/first-task.md'
 npm run native:pi -- status --config 'D:/operator/config.json' --pin <reviewed-digest>
 npm run native:pi -- history --config 'D:/operator/config.json' --pin <reviewed-digest>
+npm run native:pi -- history --config 'D:/operator/config.json' --pin <reviewed-digest> --only failed
+npm run native:pi -- history --config 'D:/operator/config.json' --pin <reviewed-digest> --only settled --after 2026-09-13T18:00:00.000Z --limit 20
 npm run native:pi -- resume --config 'D:/operator/config.json' --pin <reviewed-digest> --prompt-file 'D:/operator/continue-task.md'
 ```
+
+### History query and aggregates
+
+`history` remains an offline observation. Query flags do not load credentials,
+create a model runtime, mutate the session, or change existing configuration pins.
+`--only`, `--after` and `--limit` are history-only; other commands reject them.
+`--only` is exactly `settled`, `failed` or `incomplete`. `settled` selects stored
+`native-turn-settled` records. `--after` is a real UTC timestamp in
+`YYYY-MM-DDTHH:mm:ss.sssZ` and keeps runs whose `startedAt` is strictly later.
+`--limit` is a canonical decimal integer `1` through `1000` (not `+1`, `01`,
+fractions, exponents or surrounding whitespace) and keeps the latest matching
+runs after the `only`/`after` filters. Returned rows stay in ascending
+`startedAt`/`runId` order.
+
+Every stored run is validated before filtering. A wrong binding, malformed result,
+unsafe path or invalid usage still fails even when that run would be excluded.
+Omitted query flags preserve the unfiltered report shape: `entries`, `counts` and
+`usage` over every valid run, with no `selection` object.
+
+A nonempty query adds `selection: { totalRuns, matchedRuns, returnedRuns, hasMore }`.
+`totalRuns` is all valid runs, `matchedRuns` is the `only`/`after` set before
+`limit`, `returnedRuns` is the page actually listed, and `hasMore` is
+`matchedRuns > returnedRuns`. `counts` and `usage` describe **returned rows only**.
+Unknown usage stays `null` per field. Any incomplete returned row nulls all usage
+totals. An empty match has zero counts and zero totals, not unknown. The report
+never echoes raw result fields, transcripts or filesystem paths.
 
 `sessionRoot` must not exist before launch; its parent must exist. Repeating
 launch cannot overwrite it. A failed setup leaves evidence in place rather than
@@ -168,7 +198,7 @@ Grok trial is live evidence. Do not infer all-provider quality from Node tests.
 
 ```powershell
 $env:GODAGENTS_PI_PACKAGE_ROOT = 'absolute installed pi-coding-agent package root'
-node --test tests/native-pi-operator-config.test.mjs tests/native-session-report.test.mjs tests/native-pi-operator.test.mjs tests/native-run-history.test.mjs tests/native-pi-operator-history.test.mjs tests/native-host-binding.test.mjs tests/pi-native-session.test.mjs
+node --test tests/native-pi-operator-config.test.mjs tests/native-session-report.test.mjs tests/native-pi-operator.test.mjs tests/native-run-history.test.mjs tests/native-run-history-query.test.mjs tests/native-pi-operator-history.test.mjs tests/native-pi-operator-history-query.test.mjs tests/native-host-binding.test.mjs tests/pi-native-session.test.mjs
 ```
 
 The real-SDK mechanics tests use a scripted provider and no paid inference.
