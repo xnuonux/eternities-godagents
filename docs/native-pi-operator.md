@@ -98,6 +98,8 @@ parents must already exist. Output must stay outside the coding project,
 admission tree, native session and SDK tree, and cannot replace the credential
 path. Resolved directory aliases receive the same checks. A partial write after
 an I/O failure is preserved for inspection, never deleted and retried silently.
+Output names reject device aliases such as `NUL`, alternate data streams, reserved
+characters, dot segments, and trailing dots/spaces that Windows normalizes away.
 This is not protection against a malicious process running as the same OS user.
 
 An explicit optional `godskills` block is preserved and its pinned source is

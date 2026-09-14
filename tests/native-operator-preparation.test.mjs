@@ -152,6 +152,14 @@ test('preparation refuses output at credential path and resolves linked parents'
   await assert.rejects(access(join(x.f.cwd, 'config.json')), e => e.code === 'ENOENT');
 });
 
+test('preparation rejects device aliases, alternate streams and normalized-away output names', async t => {
+  const x = await setup(t);
+  for (const name of ['NUL', 'nul.json', 'CON .json', 'COM¹.json', 'config.json:stream', 'config.json.', 'config.json ']) {
+    await assert.rejects(x.run({ outputPath: join(x.f.root, name) }), /preparation-path/, name);
+  }
+  await assert.rejects(access(join(x.f.root, 'config.json')), e => e.code === 'ENOENT');
+});
+
 test('actual preparation CLI produces an ordinary pinned config without installed SDK or auth', async t => {
   const x = await setup(t), requestPath = join(x.f.root, 'request.json');
   await writeFile(requestPath, JSON.stringify(x.request));

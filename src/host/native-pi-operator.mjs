@@ -70,6 +70,13 @@ async function compileSkillPreflight(config, compiled) {
     candidate: compiled.candidate, request: compiled.request, grant: { ...config.grant, cwd: config.cwd },
     effectCeiling: [...new Set(config.grant.allowedTools.map(tool => nativeToolEffects[tool]))] }) : null;
 }
+function assertPreparationOutputPath(path) {
+  if (typeof path !== 'string' || !isAbsolute(path) || /^\\\\[?.]\\/.test(path)) fail('preparation-path');
+  for (const part of path.slice(parse(path).root.length).split(/[\\/]/)) {
+    if (!part || part === '.' || part === '..' || /[<>:"|?*\x00-\x1f\x7f]/.test(part) || /[. ]$/.test(part)
+      || /^(con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])$/i.test(part.split('.')[0].trimEnd())) fail('preparation-path');
+  }
+}
 
 // Offline host preparation. It publishes configuration, never an admission or a
 // live association. The launch path independently revalidates the resulting pin.
@@ -77,7 +84,7 @@ export async function prepareNativeOperator({ request: input, expectedRequestDig
   try {
     if (!/^[a-f0-9]{64}$/.test(expectedRequestDigest ?? '') || sha256Value(input) !== expectedRequestDigest) fail('request-pin');
     const request = validateNativePreparationRequest(structuredClone(input));
-    if (typeof outputPath !== 'string' || !isAbsolute(outputPath) || /[\0\r\n]/.test(outputPath)) fail('preparation-path');
+    assertPreparationOutputPath(outputPath);
     const root = await realpath(request.admissionRoot), binding = await readAdmissionBinding(root);
     if (binding.bindingDigest !== request.expectedBindingDigest) fail('admission-pin');
     const { admissionRoot, expectedBindingDigest, ...host } = request;
