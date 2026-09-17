@@ -1,3 +1,4 @@
+import { nativeOperatorTask, nativeOperatorError } from './native-operator-binding-policy.mjs';
 import { mkdir, readFile, writeFile, realpath, stat, access, lstat } from 'node:fs/promises';
 import { join, dirname, resolve, relative, isAbsolute, parse, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -19,10 +20,7 @@ import { loadNativeReviewSnapshot } from './native-review-snapshot.mjs';
 
 const fail=code=>{throw new Error(`native-operator:${code}`);};
 const json=value=>JSON.stringify(value,null,2)+'\n';
-export function nativeOperatorError(error) {
-  return /^(native-operator|native-pi|native-host|native-session-report|native-run-history|native-godskills):[a-z0-9-]{1,80}$/.test(error?.message??'')
-    ?error.message:'native-operator:operation-failed';
-}
+export { nativeOperatorError } from './native-operator-binding-policy.mjs';
 async function readJson(path,limit=1024*1024) {
   if((await stat(path)).size>limit)fail('record-too-large');
   try{return JSON.parse(await readFile(path,'utf8'));}catch{fail('record-invalid');}
@@ -51,7 +49,7 @@ const admissionFor=config=>{
   return {...admission,keelAdapter:createLocalKeelBackend({root:keelRoot})};
 };
 const requestFor=(config,sessionId)=>({schemaVersion:1,
-  task:{taskId:sessionId,hostAdapterId:'pi-sdk-v1',revocationEpoch:0},
+  task:nativeOperatorTask(config,sessionId),
   mission:config.mission,maxProjectionBytes:32768});
 async function compileHost(config,sessionId) {
   const admission=admissionFor(config),request=requestFor(config,sessionId);
