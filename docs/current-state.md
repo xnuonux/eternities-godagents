@@ -1,5 +1,15 @@
 # Godagents current state and bounded completion path
 
+September20 bounded Godskills termination candidate is implemented on the isolated
+`fix/bounded-godskills-termination-20260920` branch, not merged or deployed.
+A one-second observation grace and durable pre-launch guard keep unconfirmed
+termination pending across host restarts without duplicate launch. Sixteen focused
+checks and an independent real-child/separate-process restart probe pass.
+Full suite: 1,694 passed, one existing external Godskills checkout failure, nine
+skips and zero cancellations. The full release gate remains non-green.
+See [the implementation, evidence and migration limits](audits/2026-09-20-bounded-godskills-termination.md).
+This branch is separate from the native truncation fix and evidence experiment.
+
 September14 native operator preparation is merged at `d3f01f1` (implementation
 `a54967a`, correction `a2bd5a3`) and passes **1,686 tests with zero failures/cancellations and nine
 existing optional skips**. `prepare` now connects a pinned local admission to
