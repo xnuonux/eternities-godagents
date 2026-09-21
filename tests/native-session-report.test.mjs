@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import { sha256Value } from '../src/core/digest.mjs';
 import { summarizeNativeState, createNativeUsageCollector } from '../src/host/native-session-report.mjs';
 
+test('Pi length stops remain identifiable with their reported usage unchanged',()=>{
+  const collector=createNativeUsageCollector();
+  collector.record({type:'message_end',message:{role:'assistant',stopReason:'length',usage:{input:3,output:8,cacheRead:1,cacheWrite:0,totalTokens:12}}});
+  assert.deepEqual(collector.snapshot(),{messageCount:1,inputTokens:3,outputTokens:8,cacheReadTokens:1,cacheWriteTokens:0,totalTokens:12,missingUsageMessages:0,stopReasons:{length:1}});
+});
+
 const state = (changes = {}) => {
   const association = { sessionId: 's1', instanceId: 'i1', cwd: 'C:/work' };
   const body = { schemaVersion: 1, protocolId: 'eternities-native-host-state-v1', association,

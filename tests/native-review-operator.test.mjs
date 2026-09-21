@@ -24,7 +24,7 @@ async function setup(t,responses,{catalogMaxTokens=128}={}) {
       let next=queue.shift();if(typeof next==='function')next=await next();assert.ok(next,'unexpected inference');
       const error=next.errorMessage,content=error?[]:(next.content??next),stream=runtime.ai.createAssistantMessageEventStream();
       const usage=next.usage??(error?{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0}:{input:3,output:2,cacheRead:9,cacheWrite:0,totalTokens:14});
-      const message={role:'assistant',content,api:model.api,provider:model.provider,model:model.id,usage:{...usage,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},stopReason:error?'error':content.some(x=>x.type==='toolCall')?'toolUse':'stop',...(error?{errorMessage:error}:{}),timestamp:Date.now()};
+      const message={role:'assistant',content,api:model.api,provider:model.provider,model:model.id,usage:{...usage,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},stopReason:error?'error':next.stopReason??(content.some(x=>x.type==='toolCall')?'toolUse':'stop'),...(error?{errorMessage:error}:{}),timestamp:Date.now()};
       stream.push(error?{type:'error',reason:'error',error:message}:{type:'done',reason:message.stopReason,message});stream.end(message);return stream;
     }});
   modelRuntime.checkAuth=async()=>({type:'oauth'});modelRuntime.isUsingSubscription=()=>true;
@@ -42,6 +42,14 @@ async function setup(t,responses,{catalogMaxTokens=128}={}) {
   const run=(overrides={})=>runNativeOperator({command:'review',config,expectedConfigDigest:sha256Value(config),runtime,modelRuntime,prompt:'review this exact subject',...overrides});
   return {f,runtime,modelRuntime,config,contexts,dispatches,queue,run};
 }
+
+nativeTest('truncated review remains a failed recorded result on offline recovery without redispatch',async t=>{
+  const x=await setup(t,[{stopReason:'length',content:done}]);
+  const first=await x.run();assert.equal(first.status,'failed');assert.equal(first.category,'native-pi:response-truncated');
+  assert.deepEqual(first.usage.stopReasons,{length:1});assert.equal(first.review.reservedCompletionTokens,128);
+  x.modelRuntime.checkAuth=async()=>{throw Error('must not authenticate on recovery');};
+  assert.deepEqual(await x.run(),first);assert.equal(x.contexts.length,2);
+});
 
 nativeTest('review response maximum survives a larger provider catalog limit',async t=>{
   const x=await setup(t,[done],{catalogMaxTokens:4096});
