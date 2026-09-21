@@ -486,6 +486,18 @@ async function assertCommit(root, commit, label) {
   }
 }
 
+async function gitCommonDirectory(root, label) {
+  try {
+    const { stdout } = await execFileAsync('git', [
+      '-C', root, 'rev-parse', '--path-format=absolute', '--git-common-dir',
+    ], { encoding: 'utf8', windowsHide: true });
+    const path = resolve(stdout.trim());
+    return process.platform === 'win32' ? path.toLowerCase() : path;
+  } catch {
+    throw new Error(`${label} does not resolve to a Git repository`);
+  }
+}
+
 async function manifestAtCommit(root, commit, paths) {
   const rows = [];
   for (const path of paths) {
@@ -504,26 +516,35 @@ async function historicalAtCommit(root, commit) {
 export async function rebuildGodskillsSpecialistPreferenceIntegrationReceipt({
   repositoryRoot,
   godskillsRoot,
+  godskillsCurrentMainRoot = godskillsRoot,
   sourceCommit,
   godskillsCommit,
   testRuns,
 }) {
   const root = resolve(repositoryRoot);
   const skillsRoot = resolve(godskillsRoot);
+  const currentSkillsRoot = resolve(godskillsCurrentMainRoot);
   await Promise.all([
     assertCommit(root, sourceCommit, 'Godagents source'),
     assertCommit(skillsRoot, godskillsCommit, 'Godskills source'),
   ]);
+  const [skillsRepository, currentSkillsRepository] = await Promise.all([
+    gitCommonDirectory(skillsRoot, 'Godskills source root'),
+    gitCommonDirectory(currentSkillsRoot, 'Godskills currentness root'),
+  ]);
+  if (skillsRepository !== currentSkillsRepository) {
+    throw new Error('Godskills currentness root must belong to the same Git repository as the source root');
+  }
   const [skillsHead, skillsOrigin] = await Promise.all([
-    execFileAsync('git', ['-C', skillsRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8', windowsHide: true }),
-    execFileAsync('git', ['-C', skillsRoot, 'rev-parse', 'origin/main'], { encoding: 'utf8', windowsHide: true }),
+    execFileAsync('git', ['-C', currentSkillsRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8', windowsHide: true }),
+    execFileAsync('git', ['-C', currentSkillsRoot, 'rev-parse', 'origin/main'], { encoding: 'utf8', windowsHide: true }),
   ]);
   if (skillsHead.stdout.trim() !== skillsOrigin.stdout.trim()) {
     throw new Error('Godskills preference checkout is not current pushed main');
   }
   try {
     await execFileAsync('git', [
-      '-C', skillsRoot, 'merge-base', '--is-ancestor', godskillsCommit, skillsHead.stdout.trim(),
+      '-C', currentSkillsRoot, 'merge-base', '--is-ancestor', godskillsCommit, skillsHead.stdout.trim(),
     ], { windowsHide: true });
   } catch {
     throw new Error('Godskills preference source is not an ancestor of current pushed main');

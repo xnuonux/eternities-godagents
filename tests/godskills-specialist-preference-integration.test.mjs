@@ -176,9 +176,31 @@ test('checked specialist preference receipt rebuilds byte-for-byte from exact so
   const rebuilt = await rebuildGodskillsSpecialistPreferenceIntegrationReceipt({
     repositoryRoot,
     godskillsRoot: 'C:/dev/eternities-godskills',
+    godskillsCurrentMainRoot: process.env.ETERNITIES_GODSKILLS_CURRENT_MAIN_ROOT
+      ?? 'C:/dev/eternities-godskills',
     sourceCommit: checked.source.commit,
     godskillsCommit: checked.godskills.commit,
     testRuns: checked.testRuns,
   });
   assert.equal(`${canonicalJson(rebuilt)}\n`, text);
+});
+
+test('specialist receipt currentness root must belong to the same Godskills repository', {
+  skip: process.env.GODSKILLS_SPECIALIST_CERT_BUILD === '1' || !existsSync(checkedReceiptUrl)
+    ? 'receipt is being generated or has not been added yet'
+    : false,
+}, async () => {
+  const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
+  const checked = JSON.parse(await readFile(checkedReceiptUrl, 'utf8'));
+  await assert.rejects(
+    rebuildGodskillsSpecialistPreferenceIntegrationReceipt({
+      repositoryRoot,
+      godskillsRoot: 'C:/dev/eternities-godskills',
+      godskillsCurrentMainRoot: repositoryRoot,
+      sourceCommit: checked.source.commit,
+      godskillsCommit: checked.godskills.commit,
+      testRuns: checked.testRuns,
+    }),
+    /currentness root.*same Git repository/i,
+  );
 });

@@ -1,5 +1,18 @@
 # Godagents current state and bounded completion path
 
+September20 integration candidate combines native truncation classification and
+bounded Godskills termination on `integration/godagents-upgrades-20260920`.
+The combined focused gate passes 88/88. Full release verification passes
+**1,701 tests with zero failures/cancellations and nine existing optional
+skips**. The historical specialist receipt can
+now obtain current-main evidence from an explicitly supplied worktree in the
+same Godskills repository while retaining the canonical path-bound runtime
+identity. This preserves the active Godskills feature checkout and rejects
+unrelated or non-main currentness roots. The result uses local `origin/main`
+state and does not claim a live remote fetch. See
+[the combined implementation and verification audit](audits/2026-09-20-godagents-upgrades-integration.md).
+The integration branch has not been merged or deployed.
+
 September20 bounded Godskills termination candidate is implemented on the isolated
 `fix/bounded-godskills-termination-20260920` branch, not merged or deployed.
 A one-second observation grace and durable pre-launch guard keep unconfirmed
