@@ -69,6 +69,40 @@ must be read from the exact GitHub run; defining a workflow alone is not a pass.
 The filesystem restriction in the demo regression is a portability check for
 this script. It is not a production-host sandbox qualification.
 
+Documentation validation resolved the relative links in the new public guides
+and reconstructed the original README exactly after reversing link rebasing.
+The actual GitHub page was inspected in the browser, including the rendered
+Mermaid diagram; the diagram was changed to a vertical layout for readability.
+
+GitHub run [35953959169](https://github.com/xnuonux/eternities-godagents/actions/runs/35953959169)
+did not execute either smoke job. Both checks report that the account is locked
+due to a billing issue; no runner was assigned and no test step ran. Local
+Windows validation passed; hosted Windows/Linux validation remains unavailable.
+The workflow and acceptance checks are retained unchanged. No billing setting
+or check requirement was changed to bypass this limitation.
+
+## Independent review
+
+A single stateless Grok 4.6 subscription review used the pinned existing process
+transport, an empty tool allowlist, a disposable home, and no personal history.
+It returned a substantive assessment of the changed demo, regression, main
+guides, and workflow. The reviewer did not run tests or inspect the archived
+reference. Local content validation covers the archive separately.
+
+Two actionable findings were addressed: the smoke workflow now also executes
+the documented `npm run demo` command, and the regression uses a path-relative
+containment assertion instead of a raw string prefix. The reviewer correctly
+limited its assessment to the supplied sources. Strict JSON parsing of the
+demo output remains intentional; unexpected stdout should fail the contract.
+
+The operator's separate inspection found that the completed demo produces an
+event journal but no snapshot file; the quickstart's file listing was corrected
+to match the actual output. The fixture's in-memory Realm is clearly documented.
+
+The review observed one reported `grok-4.6-build` call, with 21,935 input tokens,
+128 cache-read tokens, and 3,288 output tokens including 2,447 reasoning tokens.
+This is review evidence, not a measured runtime quality gain or a paid-API charge.
+
 ## Remaining decisions
 
 The repository currently has no declared project-wide license. This change

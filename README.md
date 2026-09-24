@@ -59,14 +59,14 @@ inspect the journal and choose the next path.
 ## How the pieces fit
 
 ```mermaid
-flowchart LR
+flowchart TB
     Creation[Creation and admission] --> Actor[Persistent actor]
     Actor <--> Cortex[Replaceable model cortex]
     Skills[Selected Godskills] -. methods .-> Actor
     Actor --> Host[Execution host]
     Policy[Operator permissions] --> Host
     Host --> Realm[Workspace or Realm]
-    Realm --> Evidence[Observed results and action records]
+    Realm --> Evidence[Results and action records]
     Evidence --> Actor
 ```
 
@@ -98,6 +98,10 @@ used from a checkout; this is not an npm installation or a finished hosted produ
 Read the **[current state and dated evidence](docs/current-state.md)** before
 relying on a particular integration. Historical test counts describe their exact
 source revision; they are not a live build badge.
+
+The [portable smoke workflow](.github/workflows/portable-smoke.yml) checks the
+demo and local runtime separately from the full release gate. See its
+[actual run results](https://github.com/xnuonux/eternities-godagents/actions/workflows/portable-smoke.yml).
 
 ## Choose your next step
 

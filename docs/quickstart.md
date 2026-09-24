@@ -32,7 +32,6 @@ Each invocation creates a fresh `artifacts/demo-runtime/run-*/` directory:
 run-<unique suffix>/
   distribution/     compiled identity, prompt artifact, Realm contract, manifest
   events.jsonl      recorded lifecycle events
-  snapshot.json    saved runtime state
 ```
 
 Open the exact `journalPath` printed by your run. Each line is a JSON event. The

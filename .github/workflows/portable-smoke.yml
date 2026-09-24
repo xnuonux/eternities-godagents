@@ -29,3 +29,5 @@ jobs:
           node-version: '24'
       - name: Verify portable demo and local runtime
         run: node --test --test-concurrency=4 tests/demo.test.mjs tests/foundry.test.mjs tests/journal-recovery.test.mjs tests/scheduler-arbiter.test.mjs
+      - name: Run the documented first command
+        run: npm run demo

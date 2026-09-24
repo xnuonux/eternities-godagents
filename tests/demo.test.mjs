@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
@@ -37,7 +37,9 @@ test('demo works in a fresh isolated checkout and preserves previous runs', asyn
   const events = journal.trim().split('\n').map((line) => JSON.parse(line));
   assert.equal(events.filter((event) => event.eventType === 'action.receipt').length, 1);
   assert.equal(events.at(-1).eventType, 'cycle.completed');
-  assert.ok(resolve(first.journalPath).startsWith(resolve(previous)));
+  const relativeJournal = relative(previous, first.journalPath);
+  assert.ok(relativeJournal && !isAbsolute(relativeJournal)
+    && relativeJournal !== '..' && !relativeJournal.startsWith(`..${sep}`));
   assert.equal(await readFile(join(previous, 'keep.txt'), 'utf8'), 'previous operator evidence');
 
   const second = run();
