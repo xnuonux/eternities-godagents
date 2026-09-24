@@ -69,6 +69,13 @@ must be read from the exact GitHub run; defining a workflow alone is not a pass.
 The filesystem restriction in the demo regression is a portability check for
 this script. It is not a production-host sandbox qualification.
 
+The public command was also executed from a fresh shallow GitHub clone of
+`230ef796058c463c845d18c0c3a18564bd2e6a45`, outside the development worktree.
+With no installation step, `npm run demo` exited successfully, reported expected
+and observed counter 1, and left the checkout clean. Its new run contains the
+compiled distribution and completed event journal. This separately verifies the
+package-script entrypoint on Windows; it does not establish Linux execution.
+
 Documentation validation resolved the relative links in the new public guides
 and reconstructed the original README exactly after reversing link rebasing.
 The actual GitHub page was inspected in the browser, including the rendered
