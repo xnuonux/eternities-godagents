@@ -12,18 +12,38 @@ const nativeTest = (name, fn) => test(name, {skip: !packageRoot && 'set GODAGENT
 function assistantStream(ai, model, content) {
   const stream = ai.createAssistantMessageEventStream();
   const errorMessage=Array.isArray(content)?undefined:content.errorMessage;
+  const explicitStop=Array.isArray(content)?undefined:content.stopReason;
   const inputTokens=Array.isArray(content)?1:(content.usageInput??0);
   const outputTokens=Array.isArray(content)?1:(content.usageOutput??1);
   if(!Array.isArray(content))content=content.content??[];
   const message = {role:'assistant',content,api:model.api,provider:model.provider,model:model.id,
     usage:{input:inputTokens,output:outputTokens,cacheRead:0,cacheWrite:0,totalTokens:inputTokens+outputTokens,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},
-    stopReason:errorMessage?'error':content.some(c=>c.type==='toolCall')?'toolUse':'stop',
+    stopReason:errorMessage?'error':explicitStop??(content.some(c=>c.type==='toolCall')?'toolUse':'stop'),
     ...(errorMessage?{errorMessage}:{}),timestamp:Date.now()};
   stream.push(errorMessage?{type:'error',reason:'error',error:message}:{type:'done',reason:message.stopReason,message});
   stream.end(message);return stream;
 }
 const write = (id, path, content) => ({type:'toolCall',id,name:'write',arguments:{path,content}});
 const done = [{type:'text',text:'native task complete'}];
+
+nativeTest('terminal Pi length stop fails without revoking the actor or automatically continuing',async t=>{
+  const x=await setup(t,[{stopReason:'length',content:[{type:'text',text:'unfinished response'}],usageInput:3,usageOutput:8}]);
+  const host=await openPiGodagentSession(x.options);x.f.dispose(()=>host.close());
+  await assert.rejects(host.prompt('respond'),/native-pi:response-truncated/);
+  assert.equal(x.contexts.length,1);assert.equal((await host.inspect()).phase,'idle');
+  assert.match(await readFile(host.sessionFile,'utf8'),/unfinished response/);
+  x.responses.push(done);const resumed=await host.prompt('continue deliberately');
+  assert.equal(resumed.status,'native-turn-settled');assert.deepEqual(resumed.warnings,[]);
+});
+
+nativeTest('Pi recovers a truncated tool proposal itself, without executing it or losing the warning',async t=>{
+  const x=await setup(t,[{stopReason:'length',content:[write('truncated','must-not-exist.txt','partial')],usageInput:3,usageOutput:8},done]);
+  const host=await openPiGodagentSession(x.options);x.f.dispose(()=>host.close());
+  const result=await host.prompt('perform the task');
+  assert.equal(result.status,'native-turn-settled');assert.ok(result.warnings.includes('native-response-truncated'));
+  assert.equal(x.contexts.length,2);assert.equal((await host.inspect()).actions.length,0);
+  await assert.rejects(access(join(x.f.cwd,'must-not-exist.txt')),error=>error.code==='ENOENT');
+});
 
 async function setup(t, responses, admissionOptions) {
   const f = await nativeAdmission(t,admissionOptions);

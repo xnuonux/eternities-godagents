@@ -253,6 +253,18 @@ recovery allowance changes the configuration pin and cannot silently alter an
 existing session. Ctrl+C and timeout revoke
 subsequent dispatch; they cannot undo already executed tools or child processes.
 
+Pi's `length` stop means the response was cut off at an output limit. An
+unrecovered final `length` now records `failed` with category
+`native-pi:response-truncated`, preserving the partial private response and
+reported usage. This does not revoke the actor or launch another attempt: an
+explicit `resume` still revalidates the existing identity, grant and history.
+Pi itself may recover after rejecting a truncated tool proposal. If a later
+response ends normally, that turn remains settled with warning
+`native-response-truncated`; the incomplete tool proposal is not executed.
+Warnings and final-response classification reset for the next requested turn.
+Recorded truncated reviews remain failed on offline replay, without redispatch.
+Historical run records are not rewritten.
+
 Usage is measured from provider-reported assistant events, with input, output,
 cache read, cache write and total preserved separately. Missing fields remain
 unknown (`null`). Counters do not add cache fields to an already reported total,
@@ -264,6 +276,8 @@ Nonzero reported failure usage is retained as reported, not certified complete
 billing. Historical run records are not rewritten by this correction.
 Mission token fields are **not certified spending caps**; the configured
 per-response ceiling, tool-call ceiling, expiry and run deadline are distinct.
+The `stopReasons` counters recognize Pi's `length` value. The legacy `max_tokens`
+label remains recognized; it is not substituted for Pi's actual terminal value.
 
 Each new settled or failed run also records `completionBreakdown` beside `usage`,
 not inside it. Its version1 fields are `schemaVersion`, `messageCount`,

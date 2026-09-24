@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { access, lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
+import { access, lstat, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -18,6 +18,8 @@ import { assertVerifiedGodskillsRoutingExecutable } from './routing-executable-v
 
 const MAX_BYTES = 16_777_216;
 const EXECUTION_PROTOCOL = 'eternities-local-godskills-process-execution-v1';
+const TERMINATION_GRACE_MS = 1000;
+const TERMINATION_PROTOCOL = 'eternities-local-godskills-termination-observation-v1';
 const SUCCESS_PROTOCOL = 'eternities-local-godskills-process-success-v1';
 
 function requireInteger(value, label, minimum, maximum) {
@@ -80,29 +82,52 @@ function runNode(args, cwd, timeoutMs) {
   return new Promise((resolvePromise, rejectPromise) => {
     let timedOut = false;
     let settled = false;
-    const child = spawn(process.execPath, args, {
-      cwd,
-      shell: false,
-      windowsHide: true,
-      env: minimalChildEnvironment(),
-      stdio: 'ignore',
-    });
-    const timer = setTimeout(() => {
-      timedOut = true;
-      child.kill();
-    }, timeoutMs);
+    let processError;
+    let graceTimer;
+    let child;
+    try {
+      child = spawn(process.execPath, args, {
+        cwd,
+        shell: false,
+        windowsHide: true,
+        env: minimalChildEnvironment(),
+        stdio: 'ignore',
+      });
+    } catch (cause) {
+      const error = new Error('local Godskills process could not start', { cause });
+      error.processClosed = true; // Synchronous spawn failure: no child exists.
+      rejectPromise(error);
+      return;
+    }
     const finish = (error) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
+      clearTimeout(graceTimer);
       if (error) rejectPromise(error);
       else resolvePromise();
     };
-    child.once('error', (error) => finish(new Error(`local Godskills process failed: ${error.message}`, { cause: error })));
+    const timer = setTimeout(() => {
+      timedOut = true;
+      // Install the deadline first: kill may throw or emit error synchronously.
+      graceTimer = setTimeout(() => {
+        const error = new Error('local Godskills process termination unconfirmed');
+        error.code = 'termination-unconfirmed';
+        child.unref();
+        finish(error);
+      }, TERMINATION_GRACE_MS);
+      try { child.kill(); } catch (error) { processError = error; }
+    }, timeoutMs);
+    // An error (including kill failure) does not prove that the child closed.
+    // Retain this listener after settlement to absorb late process errors.
+    child.on('error', (error) => { if (!settled) processError = error; });
     child.once('close', (code) => {
-      if (timedOut) finish(new Error(`local Godskills process timed out after ${timeoutMs}ms`));
-      else if (code !== 0) finish(new Error(`local Godskills process exited with code ${code}`));
-      else finish();
+      let error;
+      if (timedOut) error = new Error(`local Godskills process timed out after ${timeoutMs}ms`);
+      else if (processError) error = new Error(`local Godskills process failed: ${processError.message}`, { cause: processError });
+      else if (code !== 0) error = new Error(`local Godskills process exited with code ${code}`);
+      if (error) error.processClosed = true;
+      finish(error);
     });
   });
 }
@@ -314,6 +339,8 @@ export async function createLocalRecoverableGodskillsProcessTransport({
       dispatchPath: join(operationRoot, 'dispatch.json'),
       requestPath: join(operationRoot, 'request.json'),
       executionPath: join(operationRoot, 'execution.json'),
+      guardPath: join(operationRoot, 'process-guard.json'),
+      terminationPath: join(operationRoot, 'termination-unconfirmed.json'),
       outputPath: join(operationRoot, 'result.json'),
       successPath: join(operationRoot, 'success.json'),
       completionPath: join(operationRoot, 'completion.json'),
@@ -364,6 +391,39 @@ export async function createLocalRecoverableGodskillsProcessTransport({
     );
     if (!success) throw new Error('local Godskills process success record is missing');
     return success;
+  }
+
+  async function unresolvedProcess(paths, dispatch) {
+    const guard = await readCanonical(paths.guardPath, 'local Godskills process guard',
+      (value) => verifyExecution(value, { stage, dispatchDigest: dispatch.dispatchDigest, configurationDigest }));
+    const observation = await readCanonical(paths.terminationPath, 'local Godskills termination observation');
+    if (!guard && !observation) return false;
+    await verifyOperationRecords(paths, dispatch);
+    const execution = await executionAt(paths, dispatch);
+    if (guard && canonicalJson(guard) !== canonicalJson(execution)) {
+      throw new Error('local Godskills process guard execution binding is invalid');
+    }
+    if (observation) {
+      exactKeys(observation, ['schemaVersion', 'protocolId', 'status', 'dispatchDigest',
+        'executionDigest', 'observedAt', 'graceMs', 'observationDigest'], 'local Godskills termination observation');
+      const { observationDigest, ...unsigned } = observation;
+      if (observation.schemaVersion !== 1 || observation.protocolId !== TERMINATION_PROTOCOL
+          || observation.status !== 'termination-unconfirmed'
+          || observation.dispatchDigest !== dispatch.dispatchDigest
+          || observation.executionDigest !== execution.executionDigest
+          || observation.graceMs !== TERMINATION_GRACE_MS
+          || observationDigest !== sha256Value(unsigned)) {
+        throw new Error('local Godskills termination observation binding is invalid');
+      }
+      iso(observation.observedAt, 'local Godskills termination observation time');
+      if (Date.parse(observation.observedAt) < Date.parse(execution.startedAt)) {
+        throw new Error('local Godskills termination observation precedes execution');
+      }
+      return true;
+    }
+    // A confirmed close removes the guard before publishing success. Never
+    // infer that an outstanding launch guard is settled from other files.
+    return true;
   }
 
   async function completionAt(paths, dispatch) {
@@ -424,11 +484,13 @@ export async function createLocalRecoverableGodskillsProcessTransport({
       transportDescriptor: descriptor,
     });
     const paths = pathsFor(dispatch);
+    if (await unresolvedProcess(paths, dispatch)) return { status: 'pending' };
     const existing = await completionAt(paths, dispatch);
     if (existing) return { status: 'completed', completion: structuredClone(existing) };
     const lock = await acquire(paths);
     if (!lock) return { status: 'pending' };
     try {
+      if (await unresolvedProcess(paths, dispatch)) return { status: 'pending' };
       const rechecked = await completionAt(paths, dispatch);
       if (rechecked) return { status: 'completed', completion: structuredClone(rechecked) };
       const completion = await materialize(paths, dispatch);
@@ -449,6 +511,7 @@ export async function createLocalRecoverableGodskillsProcessTransport({
     if (!lock) return { status: 'pending' };
     try {
       await mkdir(paths.operationRoot, { recursive: true });
+      if (await unresolvedProcess(paths, dispatch)) return { status: 'pending' };
       const existing = await completionAt(paths, dispatch);
       if (existing) return { status: 'completed', completion: structuredClone(existing) };
       const recovered = await materialize(paths, dispatch);
@@ -488,13 +551,34 @@ export async function createLocalRecoverableGodskillsProcessTransport({
         dispatchDigest: dispatch.dispatchDigest,
       });
       await checkpoint(`before-local-godskills-${stage}-process`, context);
-      await runNode(environmentScrubbingArguments(entrypoint, processArguments({
-        stage,
-        mode,
-        requestPath: paths.requestPath,
-        outputPath: paths.outputPath,
-        receiptPath,
-      })), repositoryRoot, timeoutMs);
+      // Publish before spawn so a host crash or failed observation publication
+      // cannot make potentially running work eligible for another launch.
+      await publishExact(paths.guardPath, execution, 'local Godskills process guard');
+      try {
+        await runNode(environmentScrubbingArguments(entrypoint, processArguments({
+          stage,
+          mode,
+          requestPath: paths.requestPath,
+          outputPath: paths.outputPath,
+          receiptPath,
+        })), repositoryRoot, timeoutMs);
+      } catch (error) {
+        if (error.processClosed === true) await rm(paths.guardPath);
+        if (error.code !== 'termination-unconfirmed') throw error;
+        const unsigned = {
+          schemaVersion: 1,
+          protocolId: TERMINATION_PROTOCOL,
+          status: 'termination-unconfirmed',
+          dispatchDigest: dispatch.dispatchDigest,
+          executionDigest: execution.executionDigest,
+          observedAt: iso(clock(), 'local Godskills termination observation time'),
+          graceMs: TERMINATION_GRACE_MS,
+        };
+        await publishExact(paths.terminationPath,
+          { ...unsigned, observationDigest: sha256Value(unsigned) }, 'local Godskills termination observation');
+        return { status: 'pending' };
+      }
+      await rm(paths.guardPath);
       const processResult = await boundedResult(paths.outputPath, maximumResultBytes);
       if (!processResult) throw new Error('local Godskills process produced no result');
       const success = buildSuccess({

@@ -40,7 +40,7 @@ export async function openPiGodagentSession({runtime,bindingOptions,agentDir,mod
   const {sdk,ai}=runtime;
   if(!bindingOptions.resume&&sessionManager.getEntries().length)throw new Error('native-pi:existing-history-requires-adoption');
   const binding=await openNativeHostBinding(bindingOptions);
-  let session,closed=false,busy=false,denial,streamGuard,beforeGuard,afterGuard,providerFailed=false;
+  let session,closed=false,busy=false,denial,streamGuard,beforeGuard,afterGuard,providerFailed=false,responseTruncated=false;
   let inferencePurpose='native';const warnings=new Set();
   const pending=new Map();
   const historyDigest=async()=>{
@@ -149,6 +149,8 @@ export async function openPiGodagentSession({runtime,bindingOptions,agentDir,mod
       }
       if(event.type==='message_end'&&event.message.role==='assistant') {
         providerFailed=['error','aborted'].includes(event.message.stopReason);
+        responseTruncated=event.message.stopReason==='length';
+        if(responseTruncated)warnings.add('native-response-truncated');
       }
     });
     await binding.settle(await historyDigest());
@@ -162,10 +164,13 @@ export async function openPiGodagentSession({runtime,bindingOptions,agentDir,mod
       if(busy)throw new Error('native-pi:prompt-in-flight');busy=true;
       let started=false;
       try {
-        await binding.validateNativeHistory(await historyDigest());providerFailed=false;warnings.clear();
+        await binding.validateNativeHistory(await historyDigest());providerFailed=false;responseTruncated=false;warnings.clear();
         await check(false);started=true;await session.prompt(text);await session.waitForIdle();
         if(denial)throw denial;
         if(providerFailed)throw new Error('native-pi:provider-failed');
+        // Pi may recover a truncated tool proposal in its own loop. Only an
+        // unrecovered terminal truncation fails this turn; authority stays intact.
+        if(responseTruncated)throw new Error('native-pi:response-truncated');
       } finally {
         busy=false;
         if(!closed&&started)await binding.settle(await historyDigest());

@@ -51,11 +51,12 @@ async function setup(t,responses) {
       let content=responses.shift();assert.ok(content,'unexpected inference');
       if(content instanceof Error)throw content;
       const errorMessage=Array.isArray(content)?undefined:content.errorMessage;
-      if(errorMessage)content=content.content??[];
+      const explicitStop=Array.isArray(content)?undefined:content.stopReason;
+      if(!Array.isArray(content))content=content.content??[];
       const stream=runtime.ai.createAssistantMessageEventStream();
       const message={role:'assistant',content,api:model.api,provider:model.provider,model:model.id,
         usage:errorMessage?{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}:{input:3,output:2,cacheRead:1,cacheWrite:0,totalTokens:6,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}},
-        stopReason:errorMessage?'error':content.some(x=>x.type==='toolCall')?'toolUse':'stop',...(errorMessage?{errorMessage}:{}),timestamp:Date.now()};
+        stopReason:errorMessage?'error':explicitStop??(content.some(x=>x.type==='toolCall')?'toolUse':'stop'),...(errorMessage?{errorMessage}:{}),timestamp:Date.now()};
       stream.push(errorMessage?{type:'error',reason:'error',error:message}:{type:'done',reason:message.stopReason,message});stream.end(message);return stream;
     }});
   // Auth is the external seam; keep the real SDK, session, tools and actor validation.
@@ -72,6 +73,20 @@ async function setup(t,responses) {
     runtime,modelRuntime,prompt,...overrides});
   return {f,runtime,modelRuntime,config,contexts,responses,run};
 }
+
+nativeTest('operator records truncated output as a screened failure and fresh resume preserves the actor',async t=>{
+  const x=await setup(t,[{stopReason:'length',content:[{type:'text',text:'private truncated handoff'}]}]);
+  const first=await x.run('launch','first stage');
+  assert.equal(first.status,'failed');assert.equal(first.category,'native-pi:response-truncated');
+  assert.deepEqual(first.usage.stopReasons,{length:1});assert.equal(first.usage.totalTokens,6);
+  assert.doesNotMatch(JSON.stringify(first),/private truncated handoff/);
+  assert.deepEqual(JSON.parse(await readFile(join(first.runPath,'result.json'),'utf8')),first);
+  assert.equal(await readFile(join(first.runPath,'response.md'),'utf8'),'private truncated handoff');
+  const history=await x.run('history');assert.equal(history.counts.failed,1);assert.equal(history.counts.settled,0);
+  x.responses.push(done);const second=await x.run('resume','finish the response');
+  assert.equal(second.status,'native-turn-settled');assert.equal(second.state.associationDigest,first.state.associationDigest);
+  assert.equal(x.contexts.length,2);assert.deepEqual(second.warnings,[]);
+});
 
 nativeTest('operator launch and fresh owner resume continue one actor with real native writes',async t=>{
   const x=await setup(t,[write('op-first','first.txt','stage one'),done]);

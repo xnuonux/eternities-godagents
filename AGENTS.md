@@ -13,6 +13,15 @@ passed without relaxing any assertion or timeout. See
 `docs/audits/2026-09-14-native-completion-breakdown.md`. This is test scheduling,
 not a change to agent permissions, runtime concurrency or model budgets.
 
+If `C:/dev/eternities-godskills` is intentionally on an active feature branch,
+set `ETERNITIES_GODSKILLS_CURRENT_MAIN_ROOT` to a checkout from the same Git
+repository whose `HEAD` equals its local `origin/main`. This root supplies only
+the current-main and ancestry evidence for the historical specialist receipt;
+the path-bound release artifacts still come from the canonical Godskills root.
+The receipt builder rejects an unrelated repository or a non-main currentness
+root. Do not switch or clean an active Godskills checkout just to satisfy this
+gate.
+
 ## Model-backed testing default
 
 Dom's September 13 direction supersedes the tool-free restriction **for native

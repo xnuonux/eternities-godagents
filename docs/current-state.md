@@ -1,5 +1,45 @@
 # Godagents current state and bounded completion path
 
+## Reader entrypoint, September 23
+
+Start with the [project overview](../README.md), [portable quickstart](quickstart.md),
+and [documentation map](README.md). The [product roadmap](roadmap.md) turns the
+existing completion path into operator-facing priorities.
+
+The September 20 truncation, termination, and current-main evidence fixes below
+are included in local `main` through `763fe08`. Their original "not merged"
+statements describe the isolated candidates at the time of those audits.
+The September 23 refinement builds on that integrated source, repairs the local
+demo, and preserves the old README in the [implementation reference](reference/implementation-ledger.md).
+See the [refinement audit](audits/2026-09-23-presentation-refinement.md) for its
+separate validation scope. Historical release counts below were not rerun merely
+to update the presentation and do not serve as a current CI result.
+
+## Dated implementation record
+
+September20 integration candidate combines native truncation classification and
+bounded Godskills termination on `integration/godagents-upgrades-20260920`.
+The combined focused gate passes 88/88. Full release verification passes
+**1,701 tests with zero failures/cancellations and nine existing optional
+skips**. The historical specialist receipt can
+now obtain current-main evidence from an explicitly supplied worktree in the
+same Godskills repository while retaining the canonical path-bound runtime
+identity. This preserves the active Godskills feature checkout and rejects
+unrelated or non-main currentness roots. The result uses local `origin/main`
+state and does not claim a live remote fetch. See
+[the combined implementation and verification audit](audits/2026-09-20-godagents-upgrades-integration.md).
+The integration branch has not been merged or deployed.
+
+September20 bounded Godskills termination candidate is implemented on the isolated
+`fix/bounded-godskills-termination-20260920` branch, not merged or deployed.
+A one-second observation grace and durable pre-launch guard keep unconfirmed
+termination pending across host restarts without duplicate launch. Sixteen focused
+checks and an independent real-child/separate-process restart probe pass.
+Full suite: 1,694 passed, one existing external Godskills checkout failure, nine
+skips and zero cancellations. The full release gate remains non-green.
+See [the implementation, evidence and migration limits](audits/2026-09-20-bounded-godskills-termination.md).
+This branch is separate from the native truncation fix and evidence experiment.
+
 September14 native operator preparation is merged at `d3f01f1` (implementation
 `a54967a`, correction `a2bd5a3`) and passes **1,686 tests with zero failures/cancellations and nine
 existing optional skips**. `prepare` now connects a pinned local admission to

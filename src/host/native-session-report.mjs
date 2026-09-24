@@ -4,7 +4,7 @@ import { nativeToolEffects } from './native-host-binding.mjs';
 const fail = code => { throw new Error(`native-session-report:${code}`); };
 const finite = value => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 const integer = value => Number.isSafeInteger(value) && value >= 0;
-const knownStops = new Set(['end_turn', 'toolUse', 'error', 'aborted', 'stop', 'max_tokens']);
+const knownStops = new Set(['end_turn', 'toolUse', 'error', 'aborted', 'stop', 'length', 'max_tokens']);
 
 function verified(state) {
   if (!state || typeof state !== 'object' || Array.isArray(state)) fail('shape');
