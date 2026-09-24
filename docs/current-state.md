@@ -1,5 +1,22 @@
 # Godagents current state and bounded completion path
 
+## Reader entrypoint, September 23
+
+Start with the [project overview](../README.md), [portable quickstart](quickstart.md),
+and [documentation map](README.md). The [product roadmap](roadmap.md) turns the
+existing completion path into operator-facing priorities.
+
+The September 20 truncation, termination, and current-main evidence fixes below
+are included in local `main` through `763fe08`. Their original "not merged"
+statements describe the isolated candidates at the time of those audits.
+The September 23 refinement builds on that integrated source, repairs the local
+demo, and preserves the old README in the [implementation reference](reference/implementation-ledger.md).
+See the [refinement audit](audits/2026-09-23-presentation-refinement.md) for its
+separate validation scope. Historical release counts below were not rerun merely
+to update the presentation and do not serve as a current CI result.
+
+## Dated implementation record
+
 September20 integration candidate combines native truncation classification and
 bounded Godskills termination on `integration/godagents-upgrades-20260920`.
 The combined focused gate passes 88/88. Full release verification passes
