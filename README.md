@@ -8,7 +8,8 @@ It connects those actors to selected skills and real execution hosts, with expli
 permissions and records of what happened.
 
 **[Try the local demo](#try-it-locally)** · **[Understand the architecture](docs/concepts.md)** ·
-**[Use a coding host](docs/native-pi-operator.md)** · **[Explore the docs](docs/README.md)**
+**[Use a coding host](docs/native-pi-operator.md)** · **[Project update](docs/project-update-2026-09-25.md)** ·
+**[Explore the docs](docs/README.md)**
 
 ## Why Godagents?
 

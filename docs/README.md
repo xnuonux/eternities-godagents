@@ -10,6 +10,7 @@ is the concise introduction; historical implementation detail lives separately.
 | Run the first example | [Quickstart](quickstart.md) |
 | Understand the design | [Concepts and boundaries](concepts.md) |
 | Know what is demonstrated and what remains | [Current state](current-state.md) and [roadmap](roadmap.md) |
+| Read the latest public progress report | [September 25 project update](project-update-2026-09-25.md) |
 | Contribute a focused change | [Contributor guide](../CONTRIBUTING.md) |
 
 ## Use and integrate
