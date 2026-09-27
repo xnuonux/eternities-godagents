@@ -1,3 +1,4 @@
+import { nativeOperatorRevocationEpoch } from './native-operator-binding-policy.mjs';
 import { readFile, stat } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 import { sha256Value } from '../core/digest.mjs';
@@ -83,8 +84,9 @@ export function parseNativeOperatorArgs(argv = []) {
 
 export function validateNativePreparationRequest(request) {
   exact(request, [...TOP.filter(key => key !== 'admission'), 'admissionRoot', 'expectedBindingDigest',
-    ...(object(request) && Object.hasOwn(request, 'godskills') ? ['godskills'] : [])], 'preparation-shape');
+    ...['godskills','revocationEpoch'].filter(key => object(request) && Object.hasOwn(request, key))], 'preparation-shape');
   if (request.schemaVersion !== 1 || request.protocolId !== 'eternities-native-pi-preparation-v1') fail('preparation-protocol');
+  nativeOperatorRevocationEpoch(request);
   if (!path(request.admissionRoot)) fail('preparation-path');
   if (!DIGEST.test(request.expectedBindingDigest ?? '')) fail('admission-pin');
   return request;
@@ -100,8 +102,9 @@ export async function loadNativePreparationRequest({ requestPath, expectedReques
 }
 
 export function validateNativeOperatorConfig(config) {
-  noCredentials(config); exact(config,[...TOP,...['godskills','review'].filter(key=>Object.hasOwn(config,key))]);
+  noCredentials(config); exact(config,[...TOP,...['godskills','review','revocationEpoch'].filter(key=>Object.hasOwn(config,key))]);
   if (config.schemaVersion !== 1 || config.protocolId !== PROTOCOL) fail('protocol');
+  nativeOperatorRevocationEpoch(config);
   exact(config.admission, ADMISSION); exact(config.model, MODEL); exact(config.grant, GRANT);
   exact(config.limits, object(config.limits)&&Object.hasOwn(config.limits,'maxProviderRetries')?[...LIMITS,'maxProviderRetries']:LIMITS);
   for (const key of ['piPackageRoot','authPath','cwd','sessionRoot']) if (!path(config[key])) fail('path');
